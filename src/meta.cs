@@ -32,7 +32,7 @@ namespace Kiezel
             }
             else
             {
-                var sym = package.Intern( key );
+                var sym = package.Intern( key, useMissing: true );
                 if ( export )
                 {
                     sym.Package.Export( key );

@@ -468,6 +468,7 @@ namespace Kiezel
             EnableWarnings = MakeSymbol( "$enable-warnings" );
             StandoutColor = MakeSymbol( "$standout-color" );
             StandoutBackgroundColor = MakeSymbol( "$standout-background-color" );
+            QuickImport = MakeSymbol( "$quick-import" );
             
             // Add bq- prefix when writing an optimizer
             bqAppend = MakeSymbol( "force-append" );
@@ -685,7 +686,7 @@ namespace Kiezel
         internal static Symbol Undefined;
         internal static Symbol StandoutColor;
         internal static Symbol StandoutBackgroundColor;
-
+        internal static Symbol QuickImport;
     }
 
     public partial class Runtime

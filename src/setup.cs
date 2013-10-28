@@ -131,6 +131,7 @@ namespace Kiezel
             Symbols.I.ConstantValue = Complex.ImaginaryOne;
             Symbols.E.ConstantValue = Math.E;
             Symbols.PI.ConstantValue = Math.PI;
+            Symbols.QuickImport.VariableValue = true;
 
 #if KIEZELLISPW
             Symbols.StandoutColor.Value = null;
@@ -191,6 +192,18 @@ namespace Kiezel
 #endif
 
             Symbols.Features.VariableValue = AsList( Sort( ( Cons ) Symbols.Features.Value ) );
+        }
+
+        [Lisp( "exit" )]
+        public static void Exit()
+        {
+            Environment.Exit( 0 );
+        }
+
+        [Lisp( "exit" )]
+        public static void Exit( int code )
+        {
+            Environment.Exit( code );
         }
 
         internal static object RestartDependencies()

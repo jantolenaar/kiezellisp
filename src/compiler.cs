@@ -980,7 +980,12 @@ namespace Kiezel
 
         internal static Expression CompileLambdaDef( Symbol name, Cons forms, AnalysisScope scope, LambdaKind kind, out string doc )
         {
-            CheckMinLength( forms, 2 );
+            CheckMinLength( forms, 0 );
+
+            if ( Length( forms ) == 1 )
+            {
+                PrintWarning( "function body contains no forms." );
+            }
 
             var maybeArgs = First(forms);
             var args = Listp( maybeArgs ) ? ( Cons ) maybeArgs : MakeList( maybeArgs );

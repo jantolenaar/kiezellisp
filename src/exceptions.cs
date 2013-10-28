@@ -30,16 +30,6 @@ namespace Kiezel
 
     }
 
-    public class RestartException : Exception
-    {
-        public string UnusedInput;
-
-    	public RestartException( string msg, string input ): base( msg )
-		{
-            UnusedInput = input;
-		}
-    }
-
     internal class ReturnFromLoadException : Exception
     {
     }

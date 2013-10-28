@@ -59,24 +59,32 @@ namespace Kiezel
 
             try
             {
-                Assembly.LoadFrom( a );
+                a = FindFileInPath( a );
+                Assembly.LoadFile( a );
             }
             catch
             {
                 try
                 {
-                    Assembly.Load( a );
+                    Assembly.LoadFrom( a );
                 }
                 catch
                 {
                     try
                     {
-                        Assembly.LoadFile( a );
+                        Assembly.Load( a );
                     }
                     catch
                     {
-                        a = FindFileInPath( a );
-                        Assembly.LoadFile( a );
+                        try
+                        {
+                            Assembly.LoadFile( a );
+                        }
+                        catch
+                        {
+                            a = FindFileInPath( a );
+                            Assembly.LoadFile( a );
+                        }
                     }
                 }
             }
@@ -111,11 +119,6 @@ namespace Kiezel
 
         internal static bool NamespaceOrClassNameMatch( string pattern, Type type )
         {
-            //if ( String.Compare( pattern, type.FullName, true ) == 0 )
-            //{
-            //    return true;
-            //}
-            //else 
             if ( type.FullName != null && type.FullName.WildcardMatch( pattern ) != null )
             {
                 return true;
@@ -135,6 +138,8 @@ namespace Kiezel
             return allTypes;
         }
 
+        internal static Assembly LastUsedAssembly = null;
+
         internal static Type GetTypeForImport( string typeName, Type[] typeParameters )
         {
             if ( typeParameters != null && typeParameters.Length != 0 )
@@ -144,13 +149,19 @@ namespace Kiezel
 
             Type type = null;
 
-            foreach ( Assembly asm in AppDomain.CurrentDomain.GetAssemblies() )
+            if ( LastUsedAssembly == null || ( type = LastUsedAssembly.GetType( typeName, false, true ) ) == null )
             {
-                type = asm.GetType( typeName, false, true );
-                
-                if ( type != null )
+                LastUsedAssembly = null;
+
+                foreach ( Assembly asm in AppDomain.CurrentDomain.GetAssemblies() )
                 {
-                    break;
+                    type = asm.GetType( typeName, false, true );
+
+                    if ( type != null )
+                    {
+                        LastUsedAssembly = asm;
+                        break;
+                    }
                 }
             }
 
@@ -167,7 +178,7 @@ namespace Kiezel
             return type;
         }
 
-        internal static BindingFlags ImportBindingFlags = BindingFlags.Static | BindingFlags.Instance | BindingFlags.Public | BindingFlags.FlattenHierarchy;
+        internal static BindingFlags ImportBindingFlags = BindingFlags.IgnoreCase | BindingFlags.Static | BindingFlags.Instance | BindingFlags.Public | BindingFlags.FlattenHierarchy;
 
         //[Lisp( "import-namespace" )]
         public static void ImportNamespace( string namespaceName, params object[] args )
@@ -296,7 +307,7 @@ namespace Kiezel
                     continue;
                 }
 
-                Symbol sym = package.InternNoInherit( name.LispName() );
+                Symbol sym = package.InternNoInherit( name.LispName(), useMissing: true );
 
                 if ( sym.Value is ImportedFunction )
                 {
@@ -321,108 +332,126 @@ namespace Kiezel
             }
         }
 
+        internal static void ImportMissingSymbol( string name, Package package )
+        {
+            name = name.LispToPascalCaseName();
+
+            if ( name.StartsWith( "set-" ) )
+            {
+                name = name.Substring( 4 );
+            }
+            else if ( name == "New" )
+            {
+                name = ".ctor";
+            }
+
+            var members = package.ImportedType.GetMember( name, ImportBindingFlags ).ToArray();
+
+            if ( members.Length == 0 )
+            {
+                return;
+            }
+
+            var importable = package.RestrictedImport ? members[ 0 ].GetCustomAttributes( typeof( LispAttribute ), true ).Length != 0 : true;
+
+            if ( !importable )
+            {
+                return;
+            }
+
+            var field = members[ 0 ] as FieldInfo;
+
+            if ( field != null )
+            {
+                if ( field.IsLiteral || ( field.IsStatic && field.IsInitOnly ) )
+                {
+                    Symbol sym = package.InternNoInherit( members[0].Name.LispName().ToUpper() );
+                    sym.ConstantValue = field.GetValue( null );
+                    sym.Package.Export( sym.Name );
+                }
+                return;
+            }
+
+            if ( members[ 0 ] is EventInfo )
+            {
+                Symbol sym = package.InternNoInherit( members[ 0 ].Name.LispName() );
+                sym.ConstantValue = members[ 0 ];
+                sym.Package.Export( sym.Name );
+                return;
+            }
+
+            if ( members[ 0 ] is ConstructorInfo )
+            {
+                var builtin = new ImportedConstructor( members.Cast<ConstructorInfo>().ToArray() );
+                Symbol sym = package.InternNoInherit( "new" );
+                sym.FunctionValue = builtin;
+                sym.Package.Export( sym.Name );
+                package.ImportedConstructor = builtin;
+                return;
+            }
+
+            if ( members[ 0 ] is MethodInfo )
+            {
+                if ( !name.StartsWith( "get_" ) && !name.StartsWith( "set_" ) )
+                {
+                    var sym = package.InternNoInherit( members[ 0 ].Name.LispName() );
+                    var builtin = new ImportedFunction( members.Cast<MethodInfo>().ToArray(), false );
+                    sym.FunctionValue = builtin;
+                    sym.Package.Export( sym.Name );
+                }
+
+                return;
+            }
+
+            if ( members[ 0 ] is PropertyInfo )
+            {
+                var properties = members.Cast<PropertyInfo>().ToArray();
+                var getters = properties.Select( x => x.GetGetMethod() ).Where( x => x != null ).ToArray();
+                var setters = properties.Select( x => x.GetSetMethod() ).Where( x => x != null ).ToArray();
+
+                if ( getters.Length != 0 )
+                {
+                    Symbol sym = package.InternNoInherit( members[ 0 ].Name.LispName() );
+                    var builtin = new ImportedFunction( getters, false );
+                    sym.FunctionValue = builtin;
+                    sym.Package.Export( sym.Name );
+                }
+
+                if ( setters.Length != 0 )
+                {
+                    // use set-xxx
+                    Symbol sym = package.InternNoInherit( "set-" + members[ 0 ].Name.LispName() );
+                    var builtin = new ImportedFunction( setters, false );
+                    sym.FunctionValue = builtin;
+                    sym.Package.Export( sym.Name );
+                }
+                return;
+            }
+
+
+        }
+
         internal static void ImportIntoPackage( Package package, Type type )
         {
             var isbuiltin = type.Assembly == Assembly.GetExecutingAssembly();
             var restrictedImport = type.GetCustomAttributes( typeof( RestrictedImportAttribute ), true ).Length != 0;
-            var names = type.GetMembers( ImportBindingFlags ).Select( x => x.Name ).Distinct().ToArray();
 
-            if ( true )
+            package.ImportedType = type;
+            package.RestrictedImport = restrictedImport;
+            Symbol sym = package.InternNoInherit( "T" );
+            sym.ConstantValue = type;
+            sym.Package.Export( sym.Name );
+            sym.Documentation = MakeList( String.Format( "The .NET type <{0}> imported in this package.", type ) );
+
+            if ( !ToBool( Symbols.QuickImport.Value ) )
             {
-                package.ImportedType = type;
-                Symbol sym = package.InternNoInherit( "T" );
-                sym.ConstantValue = type;
-                sym.Package.Export( sym.Name );
-                sym.Documentation = MakeList( String.Format( "The .NET type <{0}> imported in this package.", type ) );
-            }
-
-            foreach ( var name in names )
-            {
-                var members = type.GetMember( name, ImportBindingFlags ).ToArray();
-                var importable = restrictedImport ? members[ 0 ].GetCustomAttributes( typeof( LispAttribute ), true ).Length != 0 : true;
-
-                if ( !importable )
+                var names = type.GetMembers( ImportBindingFlags ).Select( x => x.Name ).Distinct().ToArray();
+                foreach ( var name in names )
                 {
-                    continue;
-                }
-
-                var fields = members.Select( x => x as FieldInfo ).Where( x => x != null ).ToArray();
-
-                if ( fields.Length != 0 )
-                {
-                    var field = fields[ 0 ];
-                    if ( field.IsLiteral || ( field.IsStatic && field.IsInitOnly ) )
-                    {
-                        Symbol sym = package.InternNoInherit( name.LispName().ToUpper() );
-                        sym.ConstantValue = field.GetValue( null );
-                        sym.Package.Export( sym.Name );
-                    }
-                    continue;
-                }
-
-                var events = members.Select( x => x as EventInfo ).Where( x => x != null ).ToArray();
-
-                if ( events.Length != 0 )
-                {
-                    var evt = events[ 0 ];
-                    Symbol sym = package.InternNoInherit( /*"event-" +*/ name.LispName() );
-                    sym.ConstantValue = evt;
-                    sym.Package.Export( sym.Name );
-                    continue;
-                }
-
-                var constructors = members.Select( x => x as ConstructorInfo ).Where( x => x != null ).ToArray();
-
-                if ( constructors.Length != 0 )
-                {
-                    var builtin = new ImportedConstructor( constructors );
-                    Symbol sym = package.InternNoInherit( "new" );
-                    sym.FunctionValue = builtin;
-                    sym.Package.Export( sym.Name );
-                    package.ImportedConstructor = builtin;
-                    continue;
-                }
-
-                var methods = members.Select( x => x as MethodInfo ).Where( x => x != null ).ToArray();
-
-                if ( methods.Length != 0 && !name.StartsWith( "get_" ) && !name.StartsWith("set_") )
-                {
-                    var sym = package.InternNoInherit( name.LispName() );
-                    var builtin = new ImportedFunction( methods, false );
-                    sym.FunctionValue = builtin;
-                    sym.Package.Export( sym.Name );
-                    continue;
-                }
-
-                var properties = members.Select( x => x as PropertyInfo ).Where( x => x != null ).ToArray();
-                
-                if ( properties.Length != 0 )
-                {
-                    var getters = properties.Select( x => x.GetGetMethod() ).Where( x => x != null ).ToArray();
-                    var setters = properties.Select( x => x.GetSetMethod() ).Where( x => x != null ).ToArray();
-
-                    if ( getters.Length != 0 )
-                    {
-                        Symbol sym = package.InternNoInherit( name.LispName() );
-                        var builtin = new ImportedFunction( getters, false );
-                        sym.FunctionValue = builtin;
-                        sym.Package.Export( sym.Name );
-                    }
-
-                    if ( setters.Length != 0 )
-                    {
-                        // use set-xxx
-                        Symbol sym = package.InternNoInherit( "set-" + name.LispName() );
-                        var builtin = new ImportedFunction( setters, false );
-                        sym.FunctionValue = builtin;
-                        sym.Package.Export( sym.Name );
-                    }
-                    continue;
+                    ImportMissingSymbol( name, package );
                 }
             }
-
         }
-
 
         internal static object InvokeMember( object target, string name, params object[] args )
         {

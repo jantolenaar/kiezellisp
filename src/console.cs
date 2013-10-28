@@ -319,8 +319,7 @@ namespace Kiezel
 
         internal static void RunConsole( string[] args )
         {
-
-            var x = ConsoleMode;
+#if KIEZELLISPW
 
             CommandLineParser parser = new CommandLineParser();
 
@@ -331,57 +330,59 @@ namespace Kiezel
 
             parser.Parse( args );
 
-#if KIEZELLISPW
             ConsoleMode = false;
-#else
-            ConsoleMode = true;
-#endif
-
-            if ( ConsoleMode )
-            {
-                Console.OutputEncoding = System.Text.Encoding.UTF8;
-            }
-
-
+            string expr1 = parser.GetOption( "c" );
             UserArguments = AsList( parser.GetArgumentArray( 0 ) );
 
-            string expr = parser.GetOption( "c" );
+            if ( expr1 == null )
+            {
+                throw new LispException( "Must use --command option when running in windows mode" );
+            }
 
+            try
+            {
+                DebugMode = parser.GetOption( "d" ) == null;
+                OptimizerEnabled = !DebugMode;
+                InteractiveMode = false;
+                Reset( false );
+                var code = ReadFromString( "(do " + expr1 + ")" );
+                Eval( code );
+            }
+            catch ( Exception ex )
+            {
+                PrintLog( GetDiagnostics( ex ) );
+            }
+
+#else
+            CommandLineParser parser = new CommandLineParser();
+
+            parser.AddOption( "-c", "--command code" );
+            parser.AddOption( "-i", "--init code" );
+            parser.AddOption( "-d", "--debug" );
+            parser.AddOption( "-n", "--nodebug" );
+            parser.AddOption( "-o", "--optimize" );
+
+            parser.Parse( args );
+
+
+            ConsoleMode = true;
+            Console.OutputEncoding = System.Text.Encoding.UTF8;
             InitEditor();
 
-            if ( expr == null )
+            string expr1 = parser.GetOption( "c" );
+            string expr2 = parser.GetOption( "i" );
+            UserArguments = AsList( parser.GetArgumentArray( 0 ) );
+
+            if ( expr1 != null )
             {
-                if ( !ConsoleMode )
-                {
-                    throw new LispException( "Must use --command option when running in windows mode" );
-                }
-
-                DebugMode = parser.GetOption( "n" ) == null;
-                OptimizerEnabled = !DebugMode && parser.GetOption( "o" ) != null;
-
-                InteractiveMode = true;
-
-                var assembly = Assembly.GetExecutingAssembly();
-                var fileVersion = FileVersionInfo.GetVersionInfo( assembly.Location );
-                var date = new DateTime( 2000, 1, 1 ).AddDays( fileVersion.FileBuildPart );
-#if DEBUG
-                Console.WriteLine( "{0} {1} (Debug Build {2} - {3:dd/MMM/yyyy})", fileVersion.ProductName, fileVersion.ProductVersion, fileVersion.FileBuildPart, date );
-#else
-                Console.WriteLine( "{0} {1} (Release Build {2} - {3:dd/MMM/yyyy})", fileVersion.ProductName, fileVersion.ProductVersion, fileVersion.FileBuildPart, date );
-#endif
-                Console.WriteLine( fileVersion.LegalCopyright );
-                Console.WriteLine( "Type :help or ? for help on top-level commands" );
-                ReadEvalPrintLoop( true );
-            }
-            else
-            {
+                // run command then exit
                 try
                 {
                     DebugMode = parser.GetOption( "d" ) == null;
                     OptimizerEnabled = !DebugMode;
                     InteractiveMode = false;
                     Reset( false );
-                    var code = ReadFromString( "(do " + expr + ")" );
+                    var code = ReadFromString( "(do " + expr1 + ")" );
                     Eval( code );
                 }
                 catch ( Exception ex )
@@ -389,6 +390,22 @@ namespace Kiezel
                     PrintLog( GetDiagnostics( ex ) );
                 }
             }
+            else
+            {
+                // run command if any then repl
+                DebugMode = parser.GetOption( "n" ) == null;
+                OptimizerEnabled = !DebugMode && parser.GetOption( "o" ) != null;
+                InteractiveMode = true;
+
+                var assembly = Assembly.GetExecutingAssembly();
+                var fileVersion = FileVersionInfo.GetVersionInfo( assembly.Location );
+                var date = new DateTime( 2000, 1, 1 ).AddDays( fileVersion.FileBuildPart );
+                Console.WriteLine( GetVersion() );
+                Console.WriteLine( fileVersion.LegalCopyright );
+                Console.WriteLine( "Type :help or ? for help on top-level commands" );
+                ReadEvalPrintLoop( expr2 );
+            }
+#endif
         }
 
 
@@ -426,44 +443,38 @@ namespace Kiezel
             }
         }
 
-        internal static void ReadEvalPrintLoop( bool restart )
+        internal static void ReadEvalPrintLoop( string commandOptionArgument )
         {
-            var unusedInputFromRestart = "";
-
             Console.TreatControlCAsInput = true;
 
             state = new Stack<ThreadContextState>();
             state.Push( SaveStackAndFrame() );
 
+            timer.Reset();
+            timer.Start();
+            Reset( false );
+            RestartListeners();
+            timer.Stop();
+            var time = timer.ElapsedMilliseconds;
+            Console.WriteLine( "Startup time: {0} ms", time );
+
             while ( true )
             {
                 try
                 {
-                    if ( restart )
+                    if ( String.IsNullOrWhiteSpace( commandOptionArgument ) )
                     {
-                        restart = false;
-                        timer.Reset();
-                        timer.Start();
-                        Reset( false );
-                        RestartListeners();
-                        timer.Stop();
-                        var time = timer.ElapsedMilliseconds;
-                        Console.WriteLine( "Startup time: {0} ms", time );
+                        EvalPrintCommand( ReadCommand() );
                     }
-
-                    ReadEvalPrint( unusedInputFromRestart );
-
-                    unusedInputFromRestart = "";
-                }
-                catch ( RestartException ex )
-                {
-                    unusedInputFromRestart = ex.UnusedInput;
-                    Symbols.Exception.Value = ex;
-                    state.Push( SaveStackAndFrame() );
+                    else
+                    {
+                        var s = commandOptionArgument;
+                        commandOptionArgument = "";
+                        EvalPrintCommand( s );
+                    }
                 }
                 catch ( Exception ex )
                 {
-                    unusedInputFromRestart = "";
                     ex = UnwindException( ex );
                     Symbols.Exception.Value = ex;
                     ConsoleSetColor( GetDynamic( Symbols.StandoutColor ), GetDynamic( Symbols.StandoutBackgroundColor ) );
@@ -491,12 +502,12 @@ namespace Kiezel
             return ex3;
         }
 
-        internal static void ReadEvalPrint( string unusedInputFromRestart )
+        internal static string ReadCommand()
         {
             var data = "";
             bool isExternalInput = false;
 
-            if ( unusedInputFromRestart == "" )
+            while ( String.IsNullOrWhiteSpace( data ) )
             {
                 int counter = le.History.Count + 1;
                 string prompt;
@@ -516,17 +527,13 @@ namespace Kiezel
 
                 data = le.Edit( prompt, clipboard, out isExternalInput );
                 clipboard = "";
-
-                if ( data == null )
-                {
-                    return;
-                }
-            }
-            else
-            {
-                data = unusedInputFromRestart;
             }
 
+            return data;
+        }
+
+        internal static void EvalPrintCommand( string data )
+        {
             Cons code = ReadAllFromString( data );
             
             if ( code == null )

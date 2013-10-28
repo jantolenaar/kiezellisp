@@ -227,6 +227,8 @@ Prints information attached to the global symbol `topic`.
 Command line options:
 
 -c --command <exprs>    Evaluates <exprs> as a DO block and exits.
+-i --init <exprs>       Evaluates <exprs> as a DO block then REPL.
+-d --debug              Slower code and better debugging.
 -n --nodebug            Faster code and worse debugging.
 -o --optimize           Optimize expressions with constants.
 

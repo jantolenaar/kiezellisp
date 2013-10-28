@@ -75,6 +75,12 @@ namespace Kiezel
             internal set;
         }
 
+        public bool RestrictedImport
+        {
+            get;
+            set;
+        }
+
         internal ImportedConstructor ImportedConstructor
         {
             get;
@@ -91,9 +97,9 @@ namespace Kiezel
             Aliases = new Dictionary<string, Package>();
         }
 
-        internal Symbol Intern( string key )
+        internal Symbol Intern( string key, bool useMissing = false )
         {
-            Symbol sym = Find( key );
+            Symbol sym = Find( key, useMissing );
 
             if ( sym == null )
             {
@@ -108,9 +114,9 @@ namespace Kiezel
             return sym;
         }
 
-        internal Symbol InternNoInherit( string key )
+        internal Symbol InternNoInherit( string key, bool useMissing = false )
         {
-            Symbol sym = FindInternal( key );
+            Symbol sym = FindInternal( key, useMissing );
 
             if ( sym == null )
             {
@@ -126,18 +132,18 @@ namespace Kiezel
         }
 
         
-        internal Symbol Find( string key )
+        internal Symbol Find( string key, bool useMissing = false )
         {
-            return FindInternal( key ) ?? FindInherited( key );
+            return FindInternal( key, useMissing ) ?? FindInherited( key, useMissing );
         }
 
-        internal Symbol FindInherited( string key )
+        internal Symbol FindInherited( string key, bool useMissing = false )
         {
             Symbol sym;
 
             foreach ( var package in UseList )
             {
-                if ( ( sym = package.FindExternal( key ) ) != null )
+                if ( ( sym = package.FindExternal( key, useMissing ) ) != null )
                 {
                     return sym;
                 }
@@ -146,13 +152,21 @@ namespace Kiezel
             return null;
         }
 
-        internal Symbol FindInternal( string key )
+        internal Symbol FindInternal( string key, bool useMissing = false )
         {
             Symbol sym;
 
             if ( Dict.TryGetValue( key, out sym ) )
             {
                 return sym;
+            }
+            else if ( useMissing && ImportedType != null )
+            {
+                Runtime.ImportMissingSymbol( key, this );
+                if ( Dict.TryGetValue( key, out sym ) )
+                {
+                    return sym;
+                }
             }
 
             return null;
@@ -170,11 +184,19 @@ namespace Kiezel
             }
         }
 
-        internal Symbol FindExternal( string key )
+        internal Symbol FindExternal( string key, bool useMissing = false )
         {
             if ( ExternalSymbols.Contains( key ) )
             {
                 return FindInternal( key );
+            }
+            else if ( useMissing && ImportedType != null )
+            {
+                Runtime.ImportMissingSymbol( key, this );
+                if ( ExternalSymbols.Contains( key ) )
+                {
+                    return FindInternal( key );
+                }
             }
 
             return null;
@@ -481,7 +503,7 @@ namespace Kiezel
                 }
             }
 
-            var sym = ( creating || descr.Internal ) ? descr.Package.Find( descr.SymbolName ) : descr.Package.FindExternal( descr.SymbolName );
+            var sym = ( creating || descr.Internal ) ? descr.Package.Find( descr.SymbolName, useMissing: true ) : descr.Package.FindExternal( descr.SymbolName, useMissing: true );
 
             if ( sym == null )
             {

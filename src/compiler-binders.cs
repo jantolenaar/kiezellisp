@@ -36,49 +36,74 @@ namespace Kiezel
             _invokeMemberBinders = new ConcurrentDictionary<InvokeMemberBinderKey, CallSiteBinder>();
         }
 
+        internal static CallInfo GetCallInfoFactory( int n )
+        {
+            return new CallInfo( n );
+        }
+        
         internal static CallInfo GetCallInfo( int count )
         {
-            Func<int, CallInfo> factory = n => new CallInfo( n );
-            return _getCallInfo.GetOrAdd( count, factory );
+            return _getCallInfo.GetOrAdd( count, GetCallInfoFactory );
+        }
+
+        internal static CallSiteBinder GetCallSiteBinderFactory( string name )
+        {
+            return new KiezelGetMemberBinder( name );
         }
 
         internal static CallSiteBinder GetGetMemberBinder( string name )
         {
-            Func<string, CallSiteBinder> factory = n => new KiezelGetMemberBinder( n );
-            return _getMemberBinders.GetOrAdd( name, factory );
+            return _getMemberBinders.GetOrAdd( name, GetCallSiteBinderFactory );
         }
 
+        internal static CallSiteBinder GetSetMemberBinderFactory( string name )
+        {
+            return new KiezelSetMemberBinder( name );
+        }
 
         internal static CallSiteBinder GetSetMemberBinder( string name )
         {
-            Func<string, CallSiteBinder> factory = n => new KiezelSetMemberBinder( n );
-            return _setMemberBinders.GetOrAdd( name, factory );
+            return _setMemberBinders.GetOrAdd( name, GetSetMemberBinderFactory );
+        }
+
+        internal static CallSiteBinder GetGetInvokeBinderFactory( int count )
+        {
+            return new KiezelInvokeBinder( count );
         }
 
         internal static CallSiteBinder GetInvokeBinder( int count )
         {
-            Func<int, CallSiteBinder> factory = n => new KiezelInvokeBinder( n );
-            return _invokeBinders.GetOrAdd( count, factory );
+            return _invokeBinders.GetOrAdd( count, GetGetInvokeBinderFactory );
         }
 
+        internal static CallSiteBinder GetGetInvokeMemberBinderFactory( InvokeMemberBinderKey info )
+        {
+            return new KiezelInvokeMemberBinder( info.Name, info.Count );
+        }
 
         internal static CallSiteBinder GetInvokeMemberBinder( InvokeMemberBinderKey info )
         {
-            Func<InvokeMemberBinderKey, CallSiteBinder> factory = n => new KiezelInvokeMemberBinder( n.Name, n.Count );
-            return _invokeMemberBinders.GetOrAdd( info, factory );
+            return _invokeMemberBinders.GetOrAdd( info, GetGetInvokeMemberBinderFactory );
         }
 
+        internal static CallSiteBinder GetGetIndexBinderFactory( int count )
+        {
+            return new KiezelGetIndexBinder( count );
+        }
 
         internal static CallSiteBinder GetGetIndexBinder( int count )
         {
-            Func<int, CallSiteBinder> factory = n => new KiezelGetIndexBinder( n );
-            return _getIndexBinders.GetOrAdd( count, factory );
+            return _getIndexBinders.GetOrAdd( count, GetGetIndexBinderFactory );
+        }
+
+        internal static CallSiteBinder GetSetIndexBinderFactory( int count )
+        {
+            return new KiezelSetIndexBinder( count );
         }
 
         internal static CallSiteBinder GetSetIndexBinder( int count )
         {
-            Func<int, CallSiteBinder> factory = n => new KiezelSetIndexBinder( n );
-            return _setIndexBinders.GetOrAdd( count, factory );
+            return _setIndexBinders.GetOrAdd( count, GetSetIndexBinderFactory );
         }
 
     }

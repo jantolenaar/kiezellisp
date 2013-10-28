@@ -151,9 +151,9 @@ namespace Kiezel
             }
             NestedParameters = null;
             InitForm = initForm;
-            if ( initForm is Vector || initForm is Prototype )
+            if ( initForm is Vector || initForm is Prototype || ( initForm is Cons && Runtime.First( initForm ) == Symbols.Quote ) )
             {
-                Runtime.PrintWarning( "Bad style: using defaults of type vector or prototype." );
+                Runtime.PrintWarning( "Bad style: using literals of type vector, prototype or list as default value." );
             }
         }
 

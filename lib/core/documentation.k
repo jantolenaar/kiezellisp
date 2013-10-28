@@ -187,7 +187,7 @@ $print-short-symbol-names
 
 ($read-eval 
 """
-When `false` the lisp reader does not support `#.` syntax. When `null`, the lisp
+When false the lisp reader does not support `#.` syntax. When `null`, the lisp
 reader allows `#.` syntax only if it is `load`ing or `requiring` a file.
 """
 )
@@ -214,6 +214,15 @@ $repl-listener-port
 ($pprint-right-margin
 """
 The column number of the current right margin used by `pprint`.
+"""
+)
+
+;------------------------------------------------------------------------------
+
+($quick-import
+"""
+When true, the function `import` does not create class member symbols until
+they are referenced. Has an effect on tab completion. By default: true.
 """
 )
 
@@ -1508,6 +1517,15 @@ Returns true if `expr` has type Exception.
 
 ;------------------------------------------------------------------------------
 
+(exit ()
+      (code)
+"""
+Terminates the program with exit-code `0` or `code`.
+"""
+)
+
+;------------------------------------------------------------------------------
+
 (export-documentation (file-name &rest package-names)
 """
 Exports the documentation currently attached to the global symbols of the named
@@ -1913,10 +1931,11 @@ See also [pattern-matching](pattern-matching.html).
 
 (import (type-name &key package-name extends-package-name type-parameters)
 """
-If `extends-package-name` is given, adds extension methods from the CLR type `type-name` to the
-existing import package `extends-package-name`. Otherwise, imports the public fields, properties, 
-events, methods and constructors of the CLR type `type-name` into the package `package-name`, 
-which defaults to the rightmost name part of `type-name`.
+If `extends-package-name` is given, adds extension methods from the CLR type 
+`type-name` to the existing import package `extends-package-name`. Otherwise, 
+imports the public fields, properties, events, methods and constructors of the 
+CLR type `type-name` into the package `package-name`, which defaults to the 
+rightmost name part of `type-name`. See also: `$quick-import`.
 """
 (import "System.String")
 (import "Kiezel.StringExtensions" :extends-package-name "string")
