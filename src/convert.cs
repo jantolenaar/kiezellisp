@@ -1,4 +1,4 @@
-// Copyright (C) 2012-2013 Jan Tolenaar. See the file LICENSE for details.
+// Copyright (C) 2012-2014 Jan Tolenaar. See the file LICENSE for details.
 
 
 using System;
@@ -11,11 +11,12 @@ using System.Linq.Expressions;
 using System.Numerics;
 using Numerics;
 
+
 using KeyFunc = System.Func<object, object>;
 using PredicateFunc = System.Func<object, bool>;
 using TestFunc = System.Func<object, object, bool>;
 using ActionFunc = System.Action<object>;
-using ReduceFunc = System.Func<object, object, object>;
+using ReduceFunc = System.Func<object[], object>;
 using ThreadFunc = System.Func<object>;
 
 
@@ -285,11 +286,11 @@ namespace Kiezel
                 var dt = (DateTime) obj;
                 if ( dt.Hour == 0 && dt.Minute == 0 && dt.Second == 0 )
                 {
-                    return dt.ToString( "dd/MMM/yyyy" );
+                    return dt.ToString( "yyyy-MM-dd" );
                 }
                 else
                 {
-                    return dt.ToString( "dd/MMM/yyyy HH:mm:ss" );
+                    return dt.ToString( "yyyy-MM-dd HH:mm:ss" );
                 }
 
 			}
@@ -526,6 +527,10 @@ namespace Kiezel
                 {
                     return new Func<object, object>( new DelegateWrapper( value as IApply ).Obj_Obj );
                 }
+                else if ( targetType == typeof( Func<object[], object> ) )
+                {
+                    return new Func<object[], object>( new DelegateWrapper( value as IApply ).ObjA_Obj );
+                }
                 else if ( targetType == typeof( Func<object, object, object> ) )
                 {
                     return new Func<object, object, object>( new DelegateWrapper( value as IApply ).Obj_Obj_Obj );
@@ -602,6 +607,10 @@ namespace Kiezel
             if ( arg == null && defaultFunc != null )
             {
                 return defaultFunc;
+            }
+            if ( arg is T )
+            {
+                return ( T ) arg;
             }
             var test = GetClosure( arg );
             var testf = ( T ) ChangeType( test, typeof( T ) );

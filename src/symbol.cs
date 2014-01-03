@@ -321,9 +321,11 @@ namespace Kiezel
             Width = Runtime.MakeSymbol( "width", Runtime.KeywordPackage );
             Padding = Runtime.MakeSymbol( "padding", Runtime.KeywordPackage );
             Base = Runtime.MakeSymbol( "base", Runtime.KeywordPackage );
+            MaxElements = Runtime.MakeSymbol( "max-elements", Runtime.KeywordPackage );
             kwForce = Runtime.MakeSymbol( "force", Runtime.KeywordPackage );
             EofValue = Runtime.MakeSymbol( "eof-value", Runtime.KeywordPackage );
             Color = Runtime.MakeSymbol( "color", Runtime.KeywordPackage );
+            InitialValue = Runtime.MakeSymbol( "initxxxial-value", Runtime.KeywordPackage );
             BackgroundColor = Runtime.MakeSymbol( "background-color", Runtime.KeywordPackage );
 
             Main = Runtime.MakeSymbol( "main", Runtime.UserPackage );
@@ -340,6 +342,7 @@ namespace Kiezel
             GetArgumentOrDefault = MakeSymbol( "get-argument-or-default" );
             TailCall = MakeSymbol( "tailcall" );
             Args = MakeSymbol( @"__args__" );
+            LambdaList = MakeSymbol( @"__lambdas__" );
             Undefined = MakeSymbol( "undefined" );
             ReadEval = MakeSymbol( "$read-eval" );
             ReadSuppress = MakeSymbol( "$read-suppress" );
@@ -350,6 +353,7 @@ namespace Kiezel
             PrintForce = MakeSymbol( "$print-force" );
             PrintEscape = MakeSymbol( "$print-escape" );
             PrintBase = MakeSymbol( "$print-base" );
+            PrintMaxElements = MakeSymbol( "$print-max-elements" );
             PrintShortSymbolNames = MakeSymbol( "$print-short-symbol-names" );
             It = MakeSymbol( "it" );
             Compiling = MakeSymbol( "compiling" );
@@ -395,7 +399,6 @@ namespace Kiezel
             GreekLambda = MakeSymbol( "\u03bb" );
             MakeLambdaParameterBinder = Runtime.MakeSymbol( "make-lambda-parameter-binder", Runtime.SystemPackage );
             Setq = MakeSymbol( "setq" );
-            MultipleSetq = MakeSymbol( "multiple-setq" );
             GetAttr = MakeSymbol( "attr" );
             GetAttrFunc = MakeSymbol( "%attr" );
             GetElt = MakeSymbol( "elt" );
@@ -469,7 +472,7 @@ namespace Kiezel
             StandoutColor = MakeSymbol( "$standout-color" );
             StandoutBackgroundColor = MakeSymbol( "$standout-background-color" );
             QuickImport = MakeSymbol( "$quick-import" );
-            
+
             // Add bq- prefix when writing an optimizer
             bqAppend = MakeSymbol( "force-append" );
             bqList = MakeSymbol( "list" );
@@ -530,6 +533,7 @@ namespace Kiezel
         internal static Symbol GetArgumentOrDefault;
         internal static Symbol TailCall;
         internal static Symbol Args;
+        internal static Symbol LambdaList;
         internal static Symbol ReadEval;
         internal static Symbol ReadSuppress;
         internal static Symbol Underscore;
@@ -545,6 +549,7 @@ namespace Kiezel
         internal static Symbol PrintForce;
         internal static Symbol PrintEscape;
         internal static Symbol PrintBase;
+        internal static Symbol PrintMaxElements;
         internal static Symbol PrintShortSymbolNames;
         internal static Symbol Escape;
         internal static Symbol Stream;
@@ -557,6 +562,7 @@ namespace Kiezel
         internal static Symbol Width;
         internal static Symbol Padding;
         internal static Symbol Base;
+        internal static Symbol MaxElements;
         internal static Symbol Def;
         internal static Symbol DefConstant;
         internal static Symbol Defun;
@@ -598,7 +604,6 @@ namespace Kiezel
         internal static Symbol Lambda;
         internal static Symbol GreekLambda;
         internal static Symbol Setq;
-        internal static Symbol MultipleSetq;
         internal static Symbol GetAttr;
         internal static Symbol GetAttrFunc;
         internal static Symbol GetElt;
@@ -687,6 +692,7 @@ namespace Kiezel
         internal static Symbol StandoutColor;
         internal static Symbol StandoutBackgroundColor;
         internal static Symbol QuickImport;
+        internal static Symbol InitialValue;
     }
 
     public partial class Runtime

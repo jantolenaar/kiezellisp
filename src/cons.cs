@@ -305,6 +305,7 @@ namespace Kiezel
             buf.Write( "(" );
             Cons list = this;
             bool needcomma = false;
+            int maxCount = ( int ) Runtime.GetDynamic( Symbols.PrintMaxElements );
 
             while ( list != null )
             {
@@ -313,6 +314,12 @@ namespace Kiezel
                     buf.Write( " " );
                 }
 
+                if ( maxCount-- <= 0 )
+                {
+                    buf.Write( "..." );
+                    break;
+                }
+                
                 buf.Write( Runtime.ToPrintString( list.Car, escape, radix ) );
 
                 if ( list.cdr is IEnumerator || list.cdr is DelayedExpression )

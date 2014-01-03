@@ -1,4 +1,4 @@
-// Copyright (C) 2012-2013 Jan Tolenaar. See the file LICENSE for details.
+// Copyright (C) 2012-2014 Jan Tolenaar. See the file LICENSE for details.
 
 using System;
 using System.Collections;
@@ -341,6 +341,9 @@ namespace Kiezel
                     // Mono: long enough for program to exit before restarting listener
                     Sleep( 1000 );
                 }
+
+                // no recovery
+                break;
             }
         }
 

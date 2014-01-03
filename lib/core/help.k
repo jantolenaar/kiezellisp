@@ -1,5 +1,5 @@
 
-;;;; Copyright (C) 2012-2013 Jan Tolenaar. See the file LICENSE for details.
+;;;; Copyright (C) 2012-2014 Jan Tolenaar. See the file LICENSE for details.
 
 (defpackage "lisp"
     (:export 
@@ -267,7 +267,7 @@ Enter                   Execute input when it is a complete lisp expression, oth
                         continue editing.
 Tab                     Autocomplete symbol.
 Escape                  Cancels input or tab completion.
-Ctrl+Enter              Add closing parentheses.
+Ctrl+Enter              Make a complete function call and execute.
 Ctrl+LeftArrow          Move to left word.
 Ctrl+RightArrow         Move to right word.
 Ctrl+BackSpace          Delete left word.

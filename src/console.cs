@@ -1,4 +1,4 @@
-// Copyright (C) 2012-2013 Jan Tolenaar. See the file LICENSE for details.
+// Copyright (C) 2012-2014 Jan Tolenaar. See the file LICENSE for details.
 
 using System;
 using System.Collections;
@@ -246,6 +246,13 @@ namespace Kiezel
         {
             if ( lispCode != null )
             {
+                var head = First(lispCode) as Symbol;
+                if ( head != null && Cdr( lispCode ) != null )
+                {
+                    // Symbol and Parameters: assume function call.
+                    lispCode = MakeCons( lispCode, ( Cons ) null );
+                }
+            
                 var scope = ReconstructAnalysisScope( CurrentThreadContext.Frame );
 
                 timer.Reset();
@@ -310,9 +317,9 @@ namespace Kiezel
             var fileVersion = FileVersionInfo.GetVersionInfo( assembly.Location );
             var date = new DateTime( 2000, 1, 1 ).AddDays( fileVersion.FileBuildPart );
 #if DEBUG
-            return String.Format( "{0} {1} (Debug Build {2} - {3:dd/MMM/yyyy})", fileVersion.ProductName, fileVersion.ProductVersion, fileVersion.FileBuildPart, date );
+            return String.Format( "{0} {1} (Debug Build {2} - {3:yyyy-MM-dd})", fileVersion.ProductName, fileVersion.ProductVersion, fileVersion.FileBuildPart, date );
 #else
-            return String.Format( "{0} {1} (Release Build {2} - {3:dd/MMM/yyyy})", fileVersion.ProductName, fileVersion.ProductVersion, fileVersion.FileBuildPart, date );
+            return String.Format( "{0} {1} (Release Build {2} - {3:yyyy-MM-dd})", fileVersion.ProductName, fileVersion.ProductVersion, fileVersion.FileBuildPart, date );
 #endif
 
         }
@@ -450,18 +457,24 @@ namespace Kiezel
             state = new Stack<ThreadContextState>();
             state.Push( SaveStackAndFrame() );
 
-            timer.Reset();
-            timer.Start();
-            Reset( false );
-            RestartListeners();
-            timer.Stop();
-            var time = timer.ElapsedMilliseconds;
-            Console.WriteLine( "Startup time: {0} ms", time );
+            var initialized = false;
 
             while ( true )
             {
                 try
                 {
+                    if ( !initialized )
+                    {
+                        initialized = true;
+                        timer.Reset();
+                        timer.Start();
+                        Reset( false );
+                        RestartListeners();
+                        timer.Stop();
+                        var time = timer.ElapsedMilliseconds;
+                        Console.WriteLine( "Startup time: {0} ms", time );
+                    }
+
                     if ( String.IsNullOrWhiteSpace( commandOptionArgument ) )
                     {
                         EvalPrintCommand( ReadCommand() );

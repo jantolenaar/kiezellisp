@@ -33,7 +33,7 @@
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|x86' ">
     <PlatformTarget>x86</PlatformTarget>
     <DebugSymbols>true</DebugSymbols>
-    <DebugType>full</DebugType>
+    <DebugType>pdbonly</DebugType>
     <Optimize>false</Optimize>
     <OutputPath>bin\WinDebug\</OutputPath>
     <DefineConstants>TRACE;DEBUG;KIEZELLISPW CLR40</DefineConstants>
@@ -124,6 +124,7 @@
     <Compile Include="prototype.cs" />
     <Compile Include="reader-parser.cs" />
     <Compile Include="reader-scanner.cs" />
+    <Compile Include="seq-reducers.cs" />
     <Compile Include="seq.cs" />
     <Compile Include="setup.cs" />
     <Compile Include="string-extensions.cs" />
@@ -168,7 +169,7 @@
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <ProjectExtensions>
     <VisualStudio>
-      <UserProperties BuildVersion_BuildVersioningStyle="None.None.Increment.None" BuildVersion_AssemblyInfoFilename="Properties\AssemblyInfo.cs" BuildVersion_UpdateFileVersion="True" />
+      <UserProperties BuildVersion_UpdateFileVersion="True" BuildVersion_AssemblyInfoFilename="Properties\AssemblyInfo.cs" BuildVersion_BuildVersioningStyle="None.None.Increment.None" />
     </VisualStudio>
   </ProjectExtensions>
   <PropertyGroup>

@@ -29,7 +29,6 @@ namespace Kiezel
             return type;
         }
 
-
         [Lisp( "set-find-type" )]
         public static Prototype SetFindType( Symbol name, Prototype type )
         {

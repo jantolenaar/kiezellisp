@@ -180,7 +180,7 @@ namespace Kiezel
         {
             // eq-expr: add-expr
             // eq-expr: add-expr eq-op add-expr
-            // eq-op: = '=' | '<>' | '>' | '<' | '<=' | '>='
+            // eq-op: = '=' | '/=' | '>' | '<' | '<=' | '>='
             return CompileTests( CompileUneq, "==", "/=" );
         }
 

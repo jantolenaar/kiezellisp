@@ -1,4 +1,4 @@
-// Copyright (C) 2012-2013 Jan Tolenaar. See the file LICENSE for details.
+// Copyright (C) 2012-2014 Jan Tolenaar. See the file LICENSE for details.
 
 //
 // getline.cs: A command line editor
@@ -622,10 +622,11 @@ namespace Kiezel
 
         void CmdCloseParens()
         {
-            int parens = 0;
-            int errors = 0;
+            var parens = 0;
+            var errors = 0;
+            var str = text.ToString();
 
-            foreach ( char ch in text.ToString() )
+            foreach ( char ch in str )
             {
                 if ( ch == '(' )
                 {
@@ -646,8 +647,10 @@ namespace Kiezel
             if ( errors != 0 )
             {
                 Console.Beep();
+                return;
             }
-            else if ( parens > 0 )
+            
+            if ( parens > 0 )
             {
                 while ( parens-- > 0 )
                 {
@@ -655,6 +658,15 @@ namespace Kiezel
                     Console.Write( ')' );
                 }
             }
+
+            var cleanText = str.TrimStart();
+            if ( !cleanText.StartsWith( "(" ) )
+            {
+                text.Insert( 0, "(" );
+                text.Append( ")" );
+            }
+
+            done = true;
         }
 
         void CmdTab()

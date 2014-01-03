@@ -8,6 +8,8 @@ using Numerics;
 using System.Globalization;
 using System.Text.RegularExpressions;
 
+using TestFunc = System.Func<object, object, bool>;
+
 namespace Kiezel
 {
 
@@ -392,11 +394,40 @@ namespace Kiezel
             }
    
         }
-  
+
+        [Pure, Lisp( "=" )]
+        public static bool Equal( object a, object b, params object[] c )
+        {
+            return false;
+        }
+
+        internal static bool IterateBinaryTestOperator( TestFunc test, object[] args)
+        {
+            if ( args.Length < 2 )
+            {
+                //throw new LispException("Too few arguments"); 
+                return true;
+            }
+            for ( int i = 0; i + 1 < args.Length; ++i )
+            {
+                if ( !test( args[ i ], args[ i + 1 ] ) )
+                {
+                    return false;
+                }
+            }
+            return true;
+        }
+
         [Pure, Lisp( "<" )]
         public static bool Less( object a1, object a2 )
         {
             return Compare( a1, a2 ) < 0;
+        }
+
+        [Pure, Lisp( "<" )]
+        public static bool Less( params object[] args )
+        {
+            return IterateBinaryTestOperator( Less, args );
         }
 
         [Pure, Lisp( ">" )]
@@ -405,10 +436,36 @@ namespace Kiezel
             return Compare( a1, a2 ) > 0;
         }
 
+        [Pure, Lisp( "<" )]
+        public static bool Greater( params object[] args )
+        {
+            return IterateBinaryTestOperator( Greater, args );
+        }
+
         [Pure, Lisp( "/=" )]
         public static bool NotEqual( object a, object b )
         {
             return !Equal( a, b );
+        }
+
+        [Pure, Lisp( "/=" )]
+        public static bool NotEqual( params object[] args )
+        {
+            if ( args.Length < 2 )
+            {
+                throw new LispException( "Too few arguments." );
+            }
+            for ( int i = 0; i < args.Length-1; ++i )
+            {
+                for ( int j = i + 1; j < args.Length; ++j )
+                {
+                    if ( Equal( args[ i ], args[ j ] ) )
+                    {
+                        return false;
+                    }
+                }
+            }
+            return true;
         }
 
         [Pure, Lisp( ">=" )]
@@ -417,10 +474,22 @@ namespace Kiezel
             return Compare( a1, a2 ) >= 0;
         }
 
+        [Pure, Lisp( ">=" )]
+        public static bool NotLess( params object[] args )
+        {
+            return IterateBinaryTestOperator( NotLess, args );
+        }
+
         [Pure, Lisp( "<=" )]
         public static bool NotGreater( object a1, object a2 )
         {
             return Compare( a1, a2 ) <= 0;
+        }
+
+        [Pure, Lisp( "<=" )]
+        public static bool NotGreater( params object[] args )
+        {
+            return IterateBinaryTestOperator( NotGreater, args );
         }
 
         [Pure, Lisp( "complex" )]
@@ -444,21 +513,21 @@ namespace Kiezel
             }
             else if ( args.Length == 1 )
             {
-                return Add( args[ 0 ], 0 );
+                return Add2( args[ 0 ], 0 );
             }
             else
             {
                 object result = args[ 0 ];
                 for ( int i = 1; i < args.Length; ++i )
                 {
-                    result = Add( result, args[ i ] );
+                    result = Add2( result, args[ i ] );
                 }
                 return result;
             }
         }
  
 
-        internal static object Add( object a1, object a2 )
+        internal static object Add2( object a1, object a2 )
         {
             // commonest case first
             if ( a1 is Int32 && a2 is Int32 )
@@ -548,7 +617,7 @@ namespace Kiezel
             }
             else
             {
-                return Add( Convert.ToInt32( a1 ), Convert.ToInt32( a2 ) );
+                return Add2( Convert.ToInt32( a1 ), Convert.ToInt32( a2 ) );
             }
         }
 
@@ -1083,7 +1152,7 @@ namespace Kiezel
             }
             else
             {
-                return Add( a1, 1 );
+                return Add2( a1, 1 );
             }
         }
 

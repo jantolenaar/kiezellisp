@@ -1,4 +1,4 @@
-// Copyright (C) 2012-2013 Jan Tolenaar. See the file LICENSE for details.
+// Copyright (C) 2012-2014 Jan Tolenaar. See the file LICENSE for details.
 
 
 using System;
@@ -16,8 +16,10 @@ using KeyFunc = System.Func<object, object>;
 using PredicateFunc = System.Func<object, bool>;
 using TestFunc = System.Func<object, object, bool>;
 using ActionFunc = System.Action<object>;
-using ReduceFunc = System.Func<object, object, object>;
+using ReduceFunc = System.Func<object[], object>;
 using ThreadFunc = System.Func<object>;
+using ReduceTransformFunc = System.Func<System.Func<object[], object>, System.Func<object[], object>>;
+
 
 namespace Kiezel
 {
@@ -288,6 +290,24 @@ namespace Kiezel
             return new UnisonIterator( seqs );
         }
 
+        [Lisp("conj")]
+        public static object Conjoin( IEnumerable seq, object item )
+        {
+            if ( Listp( seq ) )
+            {
+                return MakeCons( item, (Cons) seq );
+            }
+            else if ( Vectorp( seq ) )
+            {
+                ( ( Vector ) seq ).Add( item );
+                return seq;
+            }
+            else
+            {
+                throw new NotImplementedException();
+            }
+        }
+
         [Lisp( "zip" )]
         public static Cons Zip( params IEnumerable[] seqs )
         {
@@ -403,33 +423,68 @@ namespace Kiezel
         }
 
         [Lisp( "as-tuple" )]
-        public static Vector AsTuple( object seq, int size )
+        public static object[] AsTuple( object seq, int size )
         {
-            var v = new Vector( size );
 
             if ( seq is DictionaryEntry )
             {
+                size = ( size < 0 ) ? 2 : size;
+                var v = new object[ size ];
                 var de = ( DictionaryEntry ) seq;
-                v.Add( de.Key );
-                v.Add( de.Value );
+                if ( size > 0 )
+                {
+                    v[0] = de.Key;
+                }
+                if ( size > 1 )
+                {
+                    v[1] = de.Value;
+                }
+                return v;
             }
             else if ( seq is KeyValuePair<object, object> )
             {
+                size = ( size < 0 ) ? 2 : size;
+                var v = new object[ size ];
                 var de = ( KeyValuePair<object, object> ) seq;
-                v.Add( de.Key );
-                v.Add( de.Value );
+                if ( size > 0 )
+                {
+                    v[ 0 ] = de.Key;
+                }
+                if ( size > 1 )
+                {
+                    v[ 1 ] = de.Value;
+                }
+                return v;
             }
             else
             {
-                v.AddRange( Enum.Take( size, ToIter( seq ) ) );
+                if ( size < 0 )
+                {
+                    var v = AsArray( ToIter( seq ) );
+                    return v;
+                }
+                else
+                {
+                    var v = new object[ size ];
+                    var i = 0;
+                    foreach ( var item in ToIter( seq ) )
+                    {
+                        if ( i == size )
+                        {
+                            break;
+                        }
+                        v[ i++ ] = item;
+                    }
+                    return v;
+                }
             }
 
-            while ( v.Count < size )
-            {
-                v.Add( null );
-            }
+        }
 
-            return v;
+        [Lisp( "as-tuple" )]
+        public static object[] AsTuple( object seq )
+        {
+            return AsTuple( seq, -1 );
         }
 
         [Lisp( "as-vector" )]
@@ -557,7 +612,7 @@ namespace Kiezel
                     }
                     else
                     {
-                        result = Add( result, val );
+                        result = Add2( result, val );
                     }
                 }
 
@@ -834,6 +889,12 @@ namespace Kiezel
             return AsLazyList( Enum.Intersect( seq1, seq2, args ) );
         }
 
+        [Lisp( "mapcat" )]
+        public static Cons MapCat( object key, IEnumerable seq )
+        {
+            return AsLazyList( Enum.MapCat( GetClosure( key ), seq ) );
+        }
+
         [Lisp( "map" )]
         public static Cons Map( object key, IEnumerable seq )
         {
@@ -856,8 +917,8 @@ namespace Kiezel
         {
             var kwargs = ParseKwargs( args, new string[] { "key" } );
             var key = GetKeyFunc( kwargs[ 0 ] );
-            ReduceFunc adder = ( x, y ) => NotLess( x, y ) ? x : y;
-            return Reduce( seq, adder, DefaultValue.Value, key );
+            ReduceFunc adder = ( x ) => NotLess( x ) ? First( x ) : Second( x );
+            return Reduce( adder, seq, DefaultValue.Value, key );
         }
 
         [Lisp( "min" )]
@@ -865,8 +926,8 @@ namespace Kiezel
         {
             var kwargs = ParseKwargs( args, new string[] { "key" } );
             var key = GetKeyFunc( kwargs[ 0 ] );
-            ReduceFunc adder = ( x, y ) => NotGreater( x, y ) ? x : y;
-            return Reduce( seq, adder, DefaultValue.Value, key );
+            ReduceFunc adder = ( x ) => NotGreater( x ) ? First( x ) : Second( x );
+            return Reduce( adder, seq, DefaultValue.Value, key );
         }
 
         [Lisp( "mismatch" )]
@@ -912,16 +973,30 @@ namespace Kiezel
         [Lisp( "reduce" )]
         public static object Reduce( object adder, IEnumerable seq, params object[] args )
         {
-            var red = GetReduceFunc( adder );
+            var func = GetReduceFunc( adder );
             var kwargs = ParseKwargs( args, new string[] { "initial-value", "key" }, DefaultValue.Value, null );
             var seed = kwargs[ 0 ];
             var key = GetKeyFunc( kwargs[ 1 ] );
-            return Reduce( seq, red, seed, key );
+            return Reduce( func, seq, seed, key );
         }
 
-        internal static object Reduce( IEnumerable seq, ReduceFunc adder, object seed, KeyFunc key )
+        internal static object Reduce( ReduceFunc adder, IEnumerable seq, object seed, KeyFunc key )
         {
-            object result = seed;
+            if ( seq is Reducible )
+            {
+                var red = ( Reducible ) seq;
+                return red.Reduce( adder, seed, key );
+
+            }
+            else
+            {
+                return ReduceSeq( adder, seq, seed, key );
+            }
+        }
+
+        internal static object ReduceSeq( ReduceFunc adder, IEnumerable seq, object seed, KeyFunc key )
+        {
+            var result = seed;
             foreach ( object x in ToIter( seq ) )
             {
                 if ( result == DefaultValue.Value )
@@ -930,10 +1005,15 @@ namespace Kiezel
                 }
                 else
                 {
-                    result = adder( result, key( x ) );
+                    result = adder( new object[] { result, key( x ) } );
+                }
+                if ( result is ReduceBreakValue )
+                {
+                    result = ( ( ReduceBreakValue ) result ).Value;
+                    break;
                 }
             }
-            return result;
+            return result == DefaultValue.Value ? null : result;
         }
 
         [Lisp( "repeat" )]
@@ -999,8 +1079,7 @@ namespace Kiezel
         {
             var kwargs = ParseKwargs( args, new string[] { "key" } );
             var key = GetKeyFunc( kwargs[ 0 ] );
-            ReduceFunc adder = (r,x) => x == null ? r : Add( r, x );
-            return Reduce( seq, adder, 0, key );
+            return Reduce( Add, seq, 0, key );
         }
 
         [Lisp( "distinct" )]
@@ -1639,6 +1718,21 @@ namespace Kiezel
                 }
             }
 
+            public static IEnumerable MapCat( IApply key, IEnumerable seq )
+            {
+                var args = new object[ 1 ];
+
+                foreach ( var item in ToIter( seq ) )
+                {
+                    args[ 0 ] = item;
+                    var seq2 = (IEnumerable) key.Apply( args );
+                    foreach ( var item2 in ToIter( seq2 ) )
+                    {
+                        yield return item2;
+                    }
+                }
+            }
+
             public static IEnumerable Merge( IEnumerable seq1, IEnumerable seq2, object[] args )
             {
                 var kwargs = ParseKwargs( args, new string[] { "test", "key" } );
@@ -1790,6 +1884,7 @@ namespace Kiezel
             }
 
         }
+
 
     }
 

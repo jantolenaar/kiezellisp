@@ -176,6 +176,17 @@ The REPL sets this to false. By default: false.
 
 ;------------------------------------------------------------------------------
 
+($print-max-elements
+"""
+The function `write` truncates output of a list, vector or array to this number
+of elements. When negative, all elements are printed.
+"""
+$print-max-elements
+(series 20)
+)
+
+;------------------------------------------------------------------------------
+
 ($print-short-symbol-names 
 """
 When true, symbol names are never printed with their package names.
@@ -445,49 +456,49 @@ is given, returns its reciprocal.
 
 ;------------------------------------------------------------------------------
 
-(/= (a b)
+(/= (&rest args)
 """
-Returns true if a is not equal to b.
-"""
-)
-
-;------------------------------------------------------------------------------
-
-(< (a b)
-"""
-Returns true if a is less than b. See `compare`.
+Returns true if all arguments are not `equal` to each other.
 """
 )
 
 ;------------------------------------------------------------------------------
 
-(<= (a b)
+(< (&rest args)
 """
-Returns true if a is less than or equal to a. See `compare`.
-"""
-)
-
-;------------------------------------------------------------------------------
-
-(= (a b)
-"""
-Returns true if a is equal to b.
+Returns true if `args` is in strictly monotonic increasing order. See `compare`.
 """
 )
 
 ;------------------------------------------------------------------------------
 
-(> (a b)
+(<= (&rest args)
 """
-Returns true if a is greater than b. See `compare`.
+Returns true if `args` is in monotonic increasing order. See `compare`.
 """
 )
 
 ;------------------------------------------------------------------------------
 
-(>= (a b)
+(= (&rest args)
 """
-Returns true if a is greater than or equal to b. See `compare`.
+Returns true if all arguments are `equal` to each other.
+"""
+)
+
+;------------------------------------------------------------------------------
+
+(> (&rest args)
+"""
+Returns true if `args` is in strictly monotonic decreasing order. See `compare`.
+"""
+)
+
+;------------------------------------------------------------------------------
+
+(>= (&rest args)
+"""
+Returns true if `args` is in monotonic increasing order. See `compare`.
 """
 )
 
@@ -1612,7 +1623,7 @@ Returns the prototype or System.Type associated with the symbol `name`.
 Returns the first element in `seq` matching the conditions.
 """
 (find-if even? '(1 2 3 4 5))
-(find-if 'even? '("aap" "noot" "mies") :key .length)
+(find-if even? '("aap" "noot" "mies") :key .length)
 )
 
 ;------------------------------------------------------------------------------
@@ -2028,7 +2039,7 @@ Evaluates lisp code embedded in `str` and returns a new string. String literals
 in source code are automatically interpolated. And that is why this example is so 
 difficult to type in.
 """
-(string (string (string (string "aap#{(+ "))) "3 4)}noot")
+(string (string (string (string "aap``(+ "))) "3 4)``noot")
 (interpolate-string it)
 )
 
@@ -2266,6 +2277,16 @@ function `func`.
 """
 (map length (vector "aap" "noot" "mies"))
 (EXAMPLE #q{(map (λx (odd? (length x))) (vector "aap" "noot" "mies"))})
+)
+
+;------------------------------------------------------------------------------
+
+(mapcat (func seq)
+"""
+Returns a lazy sequence where each element of `seq` is transformed by the
+function `func` and all `func` outputs are concatenated.
+"""
+(mapcat series (series 5))
 )
 
 ;------------------------------------------------------------------------------
@@ -2808,6 +2829,55 @@ written as `'expr` instead of `(quote expr)`.
 '(+ 3 4)
 )
 
+
+;------------------------------------------------------------------------------
+
+(r/filter (predicate seq)
+"""
+Returns a `reducible` where each element of `seq` is filtered by the
+function `predicate`. 
+"""    
+(reduce + (r/filter even? (r/map length (vector "aap" "noot" "mies"))))
+)
+
+;------------------------------------------------------------------------------
+
+(r/map (func seq)
+"""
+Returns a `reducible` where each element of `seq` is transformed by the
+function `func`. 
+"""
+(reduce + (r/map length (vector "aap" "noot" "mies")))
+)
+
+;------------------------------------------------------------------------------
+
+(r/mapcat (func seq)
+"""
+Returns a `reducible` where each element of `seq` is transformed by the
+function `func` and all `func` outputs are concatenated.
+"""
+(reduce + (r/mapcat series (series 5)))
+)
+
+;------------------------------------------------------------------------------
+
+(r/take (count seq)
+"""
+Returns the first `count` items in `seq`.
+"""
+(reduce + (r/take 3 (series 10)))
+)
+
+;------------------------------------------------------------------------------
+
+(r/take-while (predicate seq)
+"""
+Returns items from `seq` while they satisfy the function `predicate`.
+"""
+(reduce + (r/take-while (λx (< x 3)) (series 10)))
+)
+
 ;------------------------------------------------------------------------------
 
 (range (start end step)
@@ -3027,8 +3097,8 @@ includes its upper bound.
 
 (set (sym value)
 """
-Assigns `value` to the global or dynamic variable `sym`. Does not work for lexical
-variables.
+Assigns `value` to the global or dynamic variable named by the value of `sym`. 
+Does not work for lexical variables.
 """
 (setq x 'a137)
 (set x 1)
@@ -3146,12 +3216,12 @@ See also: `kiezellisp-init.k`.
 
 ;------------------------------------------------------------------------------
 
-(set-package-alias (package-name nick-name)
+(use-package-alias (package-name nick-name)
 """
 Gives the package with the long offical name `package-name` a short `nick-name`
 but only within the current package.
 """
-(set-package-alias "lisp" "l")
+(use-package-alias "lisp" "l")
 )
 
 ;------------------------------------------------------------------------------
@@ -3249,7 +3319,7 @@ Returns a random reordering of `seq`.
 
 (skip (count seq)
 """
-Skips `count` elements of `seq` and returns the remainder which may be empty.
+Skips `count` elements of `seq` and returns the remainder, which may be empty.
 """
 (skip 3 '(a b c d e f))
 (skip 33 '(a b c d e f))
@@ -3506,7 +3576,7 @@ The third form is a Kiezellisp extension.
 
 (string.parse-date (str &key format culture)
 """
-See also: [try-parse-date](#try-parse-date). 
+See also: [try-parse-date](#string.try-parse-date). 
 """
 )
 
@@ -3514,7 +3584,7 @@ See also: [try-parse-date](#try-parse-date).
 
 (string.parse-number (str &key base culture)
 """
-See also: [try-parse-number](#try-parse-number). 
+See also: [try-parse-number](#string.try-parse-number). 
 """
 )
 

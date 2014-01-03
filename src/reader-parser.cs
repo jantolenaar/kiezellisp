@@ -503,7 +503,7 @@ namespace Kiezel
 
         }
 
-        internal static Regex InterpolationPatterns = new Regex( @"#\{(.*?)\}|\<\%(.*?)\%\>|\<\!(.*?)\!\>", RegexOptions.Singleline );
+        internal static Regex InterpolationPatterns = new Regex( @"``(.*?)``|\<\%(.*?)\%\>|\<\!(.*?)\!\>", RegexOptions.Singleline );
 
         internal static object InterpolateString( string s )
         {
@@ -521,7 +521,7 @@ namespace Kiezel
 
                 if ( match.Groups[ 1 ].Success )
                 {
-                    // #{...}
+                    // ``...``
                     script = match.Groups[ 1 ].Value;
                     sideEffect = false;
                 }

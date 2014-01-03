@@ -146,7 +146,7 @@ namespace Kiezel
                 }
             }
 
-            if ( !( a is ICollection ) )
+            if ( !( a is ICollection ) || ( a is IList ) )
             {
                 z[ "value" ] = a;
             }
@@ -156,7 +156,7 @@ namespace Kiezel
                 return result;
             }
 
-            if ( !( a is ICollection ) )
+            else if ( !( a is ICollection ) || ( a is IList ) )
             {
                 z[ "type" ] = a.GetType().ToString();
             }
@@ -229,15 +229,6 @@ namespace Kiezel
             {
                 var p = ( Prototype ) a;
                 z[ "superclasses" ] = p.GetSuperclasses();
-            }
-            else if ( a is IList )
-            {
-                int index = 0;
-                foreach ( object item in ( IList ) a )
-                {
-                    z[ "[" + index.ToString() + "]" ] = item;
-                    ++index;
-                }
             }
             else
             {

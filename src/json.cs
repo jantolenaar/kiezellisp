@@ -282,6 +282,21 @@ namespace Kiezel
 
             if ( tokenIsNumber )
             {
+                if ( token == "true" )
+                {
+                    return true;
+                }
+
+                if ( token == "false" )
+                {
+                    return false;
+                }
+
+                if ( token == "null" )
+                {
+                    return null;
+                }
+                
                 double val;
 
                 if ( !double.TryParse( token, System.Globalization.NumberStyles.Any, null, out val ) )
@@ -289,21 +304,6 @@ namespace Kiezel
                     throw new LispException( "json: invalid number: {0}", token );
                 }
                 return val;
-            }
-
-            if ( Match( "true" ) )
-            {
-                return true;
-            }
-
-            if ( Match( "false" ) )
-            {
-                return false;
-            }
-
-            if ( Match( "null" ) )
-            {
-                return null;
             }
 
             if ( Match( "[" ) )

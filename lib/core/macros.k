@@ -30,6 +30,7 @@
         "when-let"
         "with-input-from-string"
         "with-output-to-string"
+        "macroexpand-all"
     ))
 
 (in-package "lisp")
@@ -150,8 +151,8 @@
 ;;; generic methods
 ;;;
 
-(defmacro call-next-method (&rest args)
-    `(system.call-next-method recur (array ,@args)))
+(defmacro call-next-method ()
+    `(system.call-next-method __lambdas__ __args__))
 
 ;;;
 ;;; exception handling

@@ -17,17 +17,129 @@ namespace Kiezel
 {
     public partial class Runtime
     {
-
-        [Pure, Lisp( "type?" )]
-        public static object Typep( object target, Symbol type )
+        [Lisp( "subtype?" )]
+        public static bool Subtypep( Symbol subtype, Symbol supertype )
         {
-            var t = GetType( type );
-            return InstanceOfp( target, t );
+            return IsSubtype( GetType( subtype ), GetType( supertype ), false );
         }
 
-        internal static object InstanceOfp( object target, object type )
+        internal static bool IsSubtype( object subtype, object type, bool strict )
         {
-            if ( type is Prototype )
+            if ( Equal( subtype, type ) )
+            {
+                return !strict;
+            }
+
+            if ( type == null )
+            {
+                return true;
+            }
+
+            if ( type is bool && ( bool ) type )
+            {
+                return true;
+            }
+
+            if ( type == (object) typeof( object ) )
+            {
+                return true;
+            }
+
+            if ( subtype == null )
+            {
+                return false;
+            }
+
+            if ( subtype is bool && ( bool ) subtype )
+            {
+                return false;
+            }
+
+            if ( subtype == (object) typeof( object ) )
+            {
+                return false;
+            }
+
+            if ( subtype is EqlSpecializer )
+            {
+                var sub = ( ( EqlSpecializer ) subtype ).Value;
+                if ( type is EqlSpecializer )
+                {
+                    var super = ( ( EqlSpecializer ) type ).Value;
+                    return strict ? false : Eql( sub, super );
+                }
+                else if ( type is Prototype )
+                {
+                    return false;
+                }
+                else
+                {
+                    var super = ( Type ) type;
+                    return IsInstanceOf( sub, super );
+                }
+            }
+            else if ( subtype is Prototype )
+            {
+                var sub = ( Prototype ) subtype;
+                if ( type is Prototype )
+                {
+                    var super = ( Prototype ) type;
+                    return sub.IsSubTypeOf( super );
+                }
+                else
+                {
+                    return false;
+                }
+            }
+            else
+            {
+                var sub = ( Type ) subtype;
+                if ( type is Type )
+                {
+                    var super = ( Type ) type;
+                    List<Type> subtypes;
+                    if ( AbstractTypes.TryGetValue( super, out subtypes ) )
+                    {
+                        return subtypes.Contains(sub);
+                    }
+                    else
+                    {
+                        return super.IsAssignableFrom( sub );
+                    }
+                }
+                else
+                {
+                    return false;
+                }
+            }
+           
+        }
+
+        [Pure, Lisp( "type?" )]
+        public static bool Typep( object target, Symbol type )
+        {
+            var t = GetType( type );
+            return IsInstanceOf( target, t );
+        }
+
+        internal static bool IsInstanceOf( object target, object type )
+        {
+            if ( type == null )
+            {
+                return true;
+            }
+
+            if ( type is bool && ( bool ) type )
+            {
+                return true;
+            }
+
+            if ( type is EqlSpecializer )
+            {
+                var value = ( ( EqlSpecializer ) type ).Value;
+                return Eql( target, value );
+            }
+            else if ( type is Prototype )
             {
                 var inst = target as Prototype;
                 return inst != null && ( inst == type || inst.IsSubTypeOf( ( Prototype ) type ) );
@@ -35,7 +147,7 @@ namespace Kiezel
             else if ( type is Type )
             {
                 var t = ( Type ) type;
-
+                
                 if ( t == typeof( Number ) )
                 {
                     return Numberp( target );
@@ -185,6 +297,12 @@ namespace Kiezel
         public static bool Enumerablep( object expr )
         {
             return expr == null || expr is IEnumerable;
+        }
+
+        [Pure, Lisp( "ilist?" )]
+        public static bool IListp( object expr )
+        {
+            return expr is IList;
         }
 
         [Pure, Lisp( "symbol?" )]

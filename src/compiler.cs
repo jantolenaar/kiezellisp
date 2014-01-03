@@ -112,7 +112,12 @@ namespace Kiezel
             return ( Func<object> ) CompileToDelegate( expr );
         }
 
-        internal static Delegate CompileToDelegate2( Expression expr, ParameterExpression[] parameters )
+        internal static Func<object, object[],object> CompileToFunction2( Expression expr, params ParameterExpression[] parameters )
+        {
+            return ( Func<object, object[],object> ) CompileToDelegate( expr, parameters );
+        }
+
+        internal static Delegate CompileToDelegate( Expression expr, ParameterExpression[] parameters )
         {
             var lambda = expr as LambdaExpression;
 
@@ -131,9 +136,9 @@ namespace Kiezel
             }
         }
 
-        internal static Func<object, object[],object> CompileToFunction2( Expression expr, params ParameterExpression[] parameters )
+        internal static Func<Cons, object, object[], object> CompileToFunction3( Expression expr, params ParameterExpression[] parameters )
         {
-            return ( Func<object, object[],object> ) CompileToDelegate2( expr, parameters );
+            return ( Func<Cons, object, object[], object> ) CompileToDelegate( expr, parameters );
         }
 
         internal static bool TryOptimize( ref object expr )
@@ -241,8 +246,13 @@ namespace Kiezel
             else
             {
                 // anything else is a literal
-                return Expression.Constant( expr, typeof( object ) );
+                return CompileLiteral( expr );
             }
+        }
+
+        internal static Expression CompileLiteral( object expr )
+        {
+            return Expression.Constant( expr, typeof( object ) );
         }
 
         internal static object Execute( Expression expr )
@@ -272,54 +282,16 @@ namespace Kiezel
         }
 
 
-        internal static Expression CompileBinary( CompilerHelper helper, object seed, object oper, Cons args, AnalysisScope scope )
-        {
-            int count = Length( args );
-
-            if ( count == 0 )
-            {
-                return Expression.Constant( seed, typeof( object ) );
-            }
-            else if ( count == 1 )
-            {
-                return Compile( First( args ), scope );
-            }
-            else
-            {
-                Cons newForm = RewriteAsBinaryExpression( oper, args );
-                return helper( newForm, scope );
-            }
-        }
-
-        internal static Expression CompileAnd( Cons form, AnalysisScope scope )
-        {
-            return CompileBinary( Compile, true, Symbols.If, Cdr( form ), scope );
-        }
-
-        internal static Expression CompileOr( Cons form, AnalysisScope scope )
-        {
-            return CompileBinary( CompileOr2, false, Symbols.Or, Cdr( form ), scope );
-        }
-
-        internal static Expression CompileOr2( Cons form, AnalysisScope scope )
-        {
-            var Do = Symbols.Do;
-            var Var = Symbols.Var;
-            var X = Symbols.Temp;
-            var If = Symbols.If;
-            var code = MakeList( Do, MakeList( Var, X, Second( form ) ), MakeList( If, X, X, Third( form ) ) );
-            return Compile( code, scope );
-        }
-
         internal static Expression CompileQuote( Cons form, AnalysisScope scope )
         {
             CheckMinLength( form, 2 );
-            return Expression.Constant( Second( form ), typeof( object ) );
+            return CompileLiteral( Second( form ) );
         }
 
         internal static MethodInfo RuntimeMethod( string name )
         {
-            return typeof( Runtime ).GetMethod( name, BindingFlags.Static | BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic );
+            var methods = typeof( Runtime ).GetMethods( BindingFlags.Static | BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic );
+            return methods.First( x => x.Name == name );
         }
 
         internal static Expression CallRuntime( MethodInfo method, params Expression[] exprs )
@@ -329,8 +301,6 @@ namespace Kiezel
 
         internal static MethodInfo SetLexicalMethod = RuntimeMethod( "SetLexical" );
         internal static MethodInfo UnwindExceptionIntoNewExceptionMethod = RuntimeMethod( "UnwindExceptionIntoNewException" );
-        internal static MethodInfo SaveStackMethod = RuntimeMethod( "SaveStack" );
-        internal static MethodInfo RestoreStackMethod = RuntimeMethod( "RestoreStack" );
         internal static MethodInfo SaveStackAndFrameMethod = RuntimeMethod( "SaveStackAndFrame" );
         internal static MethodInfo SaveStackAndFrameWithMethod = RuntimeMethod( "SaveStackAndFrameWith" );
         internal static MethodInfo RestoreStackAndFrameMethod = RuntimeMethod( "RestoreStackAndFrame" );
@@ -351,6 +321,11 @@ namespace Kiezel
         internal static MethodInfo CastMethod = typeof( System.Linq.Enumerable ).GetMethod( "Cast" );
         internal static MethodInfo AddEventHandlerMethod = RuntimeMethod( "AddEventHandler" );
         internal static MethodInfo ConvertToEnumTypeMethod = RuntimeMethod( "ConvertToEnumType" );
+        internal static MethodInfo AsListMethod = RuntimeMethod( "AsList" );
+        internal static MethodInfo AsVectorMethod = RuntimeMethod( "AsVector" );
+        internal static MethodInfo EqualMethod = RuntimeMethod( "Equal" );
+        internal static MethodInfo IsInstanceOfMethod = RuntimeMethod( "IsInstanceOf" );
+        internal static MethodInfo NotMethod = RuntimeMethod( "Not" );
         internal static Type GenericListType = GetTypeForImport( "System.Collections.Generic.List`1", null );
 
         internal static object NullOperation( object a )
@@ -541,173 +516,76 @@ namespace Kiezel
         internal static LambdaSignature CompileFormalArgs( Cons args, AnalysisScope scope, LambdaKind kind )
         {
             var signature = new LambdaSignature( kind );
-            var FormalSlots = signature.Parameters;
+            signature.ArgModifier = null;
 
-            Modifier nextMod = 0;
-            Modifier defaultMod = 0;
-            Modifier usedMods = 0;
-
-            bool haveNextMod = false;
-
-            if ( kind == LambdaKind.Optional )
+            foreach ( object item in ToIter( args ) )
             {
-                usedMods |= Modifier.Optional;
-                defaultMod = nextMod = Modifier.Optional;
-                haveNextMod = false;
-            }
+                if ( item is Symbol )
+                {
+                    var sym = ( Symbol ) item;
 
-            foreach ( object item in ToIter(args) )
-            {
-                if ( item == Symbols.Returns )
-                {
-                    // for doc gen
-                    // should be last
-                    break;
-                }
-                else if ( item == Symbols.Optional )
-                {
-                    if ( kind == LambdaKind.Optional )
+                    if ( sym == Symbols.Optional || sym == Symbols.Key || sym == Symbols.Rest || sym == Symbols.Body || sym == Symbols.Params || sym == Symbols.Vector )
                     {
-                        throw new LispException( "Invalid use of &optional" );
+                        if ( signature.ArgModifier != null )
+                        {
+                            throw new LispException( "Only one modifier can be used: &key, &optional, &rest, &body, &vector or &params" );
+                        }
+                        signature.ArgModifier = sym;
+                        signature.RequiredArgsCount = signature.Parameters.Count;
+                        continue;
                     }
-                    if ( ( usedMods & Modifier.Key ) != 0 )
+                    else
                     {
-                        throw new LispException( "&optional cannot be used with &key" );
+                        ParameterDef arg = new ParameterDef( sym );
+                        signature.Parameters.Add( arg );
+                        signature.Names.Add( sym );
                     }
-                    usedMods |= Modifier.Optional;
-                    defaultMod = nextMod = Modifier.Optional;
-                    haveNextMod = true;
-                    continue;
-                }
-                else if ( item == Symbols.Key )
-                {
-                    if ( kind == LambdaKind.Optional )
-                    {
-                        throw new LispException( "Invalid use of &key" );
-                    }
-                    if ( ( usedMods & ( Modifier.Optional | Modifier.Rest | Modifier.Params | Modifier.Vector ) ) != 0 )
-                    {
-                        throw new LispException( "&key cannot be used with &optional, &rest, &vector and &params" );
-                    }
-                    usedMods |= Modifier.Key;
-                    defaultMod = nextMod = Modifier.Key;
-                    haveNextMod = true;
-                    continue;
-                }
-                else if ( item == Symbols.Rest || item == Symbols.Body )
-                {
-                    if ( kind == LambdaKind.Optional )
-                    {
-                        throw new LispException( "Invalid use of &rest or &body" );
-                    }
-                    if ( ( usedMods & Modifier.Key ) != 0 )
-                    {
-                        throw new LispException( "&rest and &body cannot be used with &key" );
-                    }
-                    usedMods |= Modifier.Rest;
-                    nextMod = Modifier.Rest;
-                    haveNextMod = true;
-                    continue;
-                }
-                else if ( item == Symbols.Params )
-                {
-                    if ( kind == LambdaKind.Optional )
-                    {
-                        throw new LispException( "Invalid use of &params" );
-                    }
-                    if ( ( usedMods & Modifier.Key ) != 0 )
-                    {
-                        throw new LispException( "&params cannot be used with &key" );
-                    }
-                    usedMods |= Modifier.Params;
-                    nextMod = Modifier.Params;
-                    haveNextMod = true;
-                    continue;
-                }
-                else if ( item == Symbols.Vector )
-                {
-                    if ( kind == LambdaKind.Optional )
-                    {
-                        throw new LispException( "Invalid use of &vector" );
-                    }
-
-                    if ( ( usedMods & Modifier.Key ) != 0 )
-                    {
-                        throw new LispException( "&vector cannot be used with &key" );
-                    }
-                    usedMods |= Modifier.Vector;
-                    nextMod = Modifier.Vector;
-                    haveNextMod = true;
-                    continue;
-                }
-                else if ( item == Symbols.Whole )
-                {
-                    if ( kind == LambdaKind.Optional )
-                    {
-                        throw new LispException( "Invalid use of &whole" );
-                    }
-                    if ( ( usedMods & Modifier.Key ) != 0 )
-                    {
-                        //throw new LispException( "&whole cannot be used with &key" );
-                    }
-                    usedMods |= Modifier.Whole;
-                    nextMod = Modifier.Whole;
-                    haveNextMod = true;
-                    continue;
-                }
-                else if ( item is Symbol )
-                {
-                    Modifier mod = haveNextMod ? nextMod : defaultMod;
-                    haveNextMod = false;
-                    Symbol sym = ( Symbol ) item;
-                    ParameterDef arg = new ParameterDef( mod, sym, null, null );
-                    signature.Parameters.Add( arg );
-                    signature.Names.Add( sym );
                 }
                 else if ( item is Cons )
                 {
-                    Modifier mod = haveNextMod ? nextMod : defaultMod;
-                    haveNextMod = false;
+                    var list = ( Cons ) item;
 
-                    Cons list = ( Cons ) item;
-
-                    if ( kind == LambdaKind.Optional )
-                    {
-                        throw new LispException( "Invalid CONS in variable list" );
-                    }
-                    else if ( mod == Modifier.Key || mod == Modifier.Optional )
+                    if ( signature.ArgModifier == Symbols.Key || signature.ArgModifier == Symbols.Optional )
                     {
                         Symbol sym = ( Symbol ) First( list );
                         var initForm = Second( list );
-                        signature.Parameters.Add( new ParameterDef( mod, sym, null, initForm ) );
-                        signature.Names.Add( sym );
-                    }
-                    else if ( kind == LambdaKind.Macro )
-                    {
-                        if ( mod != 0 )
+                        if ( initForm == null )
                         {
-                            // error
+                            signature.Parameters.Add( new ParameterDef( sym ) );
+                            signature.Names.Add( sym );
                         }
-
+                        else
+                        {
+                            if ( initForm is Vector || initForm is Prototype || ( initForm is Cons && Runtime.First( initForm ) == Symbols.Quote ) )
+                            {
+                                Runtime.PrintWarning( "Bad style: using literals of type vector, prototype or list as default value." );
+                            }
+                            var initForm2 = Compile( initForm, scope );
+                            signature.Parameters.Add( new ParameterDef( sym, initForm: initForm2 ) );
+                            signature.Names.Add( sym );
+                        }
+                    }
+                    else if ( signature.ArgModifier == null && kind == LambdaKind.Macro )
+                    {
                         var nestedArgs = CompileFormalArgs( list, scope, kind );
-                        ParameterDef arg = new ParameterDef( 0, nestedArgs );
+                        ParameterDef arg = new ParameterDef( null, nestedParameters: nestedArgs );
                         signature.Parameters.Add( arg );
                         signature.Names.AddRange( nestedArgs.Names );
                     }
-                    else if ( mod == 0 && kind == LambdaKind.Method )
+                    else if ( signature.ArgModifier == null && kind == LambdaKind.Method )
                     {
                         var sym = ( Symbol ) First( list );
                         var type = Second( list );
                         if ( type == null )
                         {
-                            ParameterDef arg = new ParameterDef( mod, sym, null, null );
+                            ParameterDef arg = new ParameterDef( sym );
                             signature.Parameters.Add( arg );
                             signature.Names.Add( sym );
                         }
                         else if ( type is Cons && First( type ) == MakeSymbol( "eql", LispPackage ) )
                         {
                             var expr = Compile( Second( type ), scope );
-                            ParameterDef arg = new ParameterDef( mod | Modifier.EqlSpecializer, sym, expr, null );
+                            ParameterDef arg = new ParameterDef( sym, specializer: new EqlSpecializer( expr ));
                             signature.Parameters.Add( arg );
                             signature.Names.Add( sym );
                         }
@@ -717,7 +595,7 @@ namespace Kiezel
                             {
                                 throw new LispException( "Invalid type specifier: {0}", type );
                             }
-                            ParameterDef arg = new ParameterDef( mod | Modifier.TypeSpecializer, sym, type, null );
+                            ParameterDef arg = new ParameterDef( sym, specializer: type );
                             signature.Parameters.Add( arg );
                             signature.Names.Add( sym );
                         }
@@ -729,16 +607,19 @@ namespace Kiezel
                 }
             }
 
-            signature.RequiredArgsCount = signature.Parameters.Count( x => (int) x.Modifiers < 4 );
+            if ( signature.ArgModifier == null )
+            {
+                signature.RequiredArgsCount = signature.Parameters.Count;
+            }
 
             if ( kind == LambdaKind.Function )
             {
-                if ( signature.RequiredArgsCount + 1 == signature.Parameters.Count )
+                var sym = signature.ArgModifier;
+                if ( sym == Symbols.Rest || sym == Symbols.Body || sym == Symbols.Params || sym == Symbols.Vector )
                 {
-                    var mod = signature.Parameters[ signature.Parameters.Count - 1 ].Modifiers;
-                    if ( mod == Modifier.Params || mod == Modifier.Rest || mod == Modifier.Vector )
+                    if ( signature.RequiredArgsCount + 1 != signature.Parameters.Count )
                     {
-                        signature.LastArgModifier = mod;
+                        throw new LispException( "Invalid placement of &rest or similar modifier." );
                     }
                 }
             }
@@ -791,7 +672,7 @@ namespace Kiezel
 
         internal static Expression CompileDefMulti( Cons form, AnalysisScope scope )
         {
-            // defmulti name args body
+            // defmulti name args [doc] body
             CheckMinLength( form, 3 );
             var sym = CheckSymbol( Second( form ) );
             if ( sym.IsDynamic )
@@ -801,14 +682,13 @@ namespace Kiezel
             var args = ( Cons ) Third( form );
             var body = Cdr( Cddr ( form ) );
             var syntax = MakeListStar( sym, args );
-            var lispParams = CompileFormalArgs( args, new AnalysisScope(), LambdaKind.Method );
-            var count = lispParams.RequiredArgsCount;
+            var lispParams = CompileFormalArgs( args, new AnalysisScope(), LambdaKind.Function );
             string doc = "";
             if ( Length( body ) >= 1 && body.Car is string )
             {
                 doc = ( string ) body.Car;
             }
-            return CallRuntime( DefineMultiMethodMethod, Expression.Constant( sym ), Expression.Constant( count ), Expression.Constant( doc, typeof( string ) ) );
+            return CallRuntime( DefineMultiMethodMethod, Expression.Constant( sym ), Expression.Constant( lispParams ), Expression.Constant( doc, typeof( string ) ) );
         }
 
         internal static Expression CompileReturn( Cons form,  AnalysisScope scope )
@@ -854,130 +734,6 @@ namespace Kiezel
             return CompileLambdaDef( null, Cdr( form ), scope, LambdaKind.Function, out doc );
         }
 
-        /*
-        internal static Expression CompileBinder( Cons forms, AnalysisScope scope )
-        {
-            // (binder [type] (arg...) expr)
-            CheckMinLength( forms, 3 );
-            CheckMaxLength( forms, 4 );
-
-            LambdaKind kind;
-            Cons args;
-            object expr;
-
-            if ( Length( forms ) == 3 )
-            {
-                args = ( Cons ) Second( forms );
-                expr = Third( forms );
-                kind = LambdaKind.Macro;
-            }
-            else
-            {
-                args = ( Cons ) Third( forms );
-                expr = Fourth( forms );
-                kind = TranslateLambdaKind( ( Symbol ) Second( forms ) );
-            }
-
-            var template = new LambdaBinder();
-            template.Signature = CompileFormalArgs( args, scope, kind );
-
-            return Expression.New( typeof( LambdaBinder ).GetConstructor( new Type[] { typeof( LambdaBinder ), typeof( object ) } ),
-                                            Expression.Constant( template, typeof( LambdaBinder ) ),
-                                            Compile( expr, scope ) );
-
-        }
-        */
-
-        internal static Symbol TranslateLambdaKind( LambdaKind kind )
-        {
-            switch ( kind )
-            {
-                case LambdaKind.Optional:
-                {
-                    return Symbols.OptionalKeyword;
-                }
-                case LambdaKind.Macro:
-                {
-                    return Symbols.MacroKeyword;
-                }
-                case LambdaKind.Method:
-                {
-                    return Symbols.MethodKeyword;
-                }
-                default:
-                {
-                    return Symbols.FunctionKeyword;
-                }
-            }
-        }
-
-        internal static LambdaKind TranslateLambdaKind( Symbol kind )
-        {
-            if ( kind == Symbols.OptionalKeyword )
-            {
-                return LambdaKind.Optional;
-            }
-            else if ( kind == Symbols.MacroKeyword )
-            {
-                return LambdaKind.Macro;
-            }
-            else if ( kind == Symbols.MethodKeyword )
-            {
-                return LambdaKind.Method;
-            }
-            else if ( kind == Symbols.FunctionKeyword )
-            {
-                return LambdaKind.Function;
-            }
-            else
-            {
-                throw new LispException( "Expected :function :macro or :method keyword" );
-            }
-        }
-
-        internal static Cons RewriteCode( Cons code, object[] args )
-        {
-            return ( Cons ) RewriteObject( code, args );
-        }
-
-        internal static object RewriteObject( object code, object[] args )
-        {
-            if ( code is Symbol )
-            {
-                var sym = ( Symbol ) code;
-
-                if ( sym.Name.Length == 3 && sym.Name[ 0 ] == '{' && char.IsDigit( sym.Name, 1 ) && sym.Name[ 2 ] == '}' )
-                {
-                    int i = sym.Name[ 1 ] - '0';
-                    return args[ i ];
-                }
-                else
-                {
-                    return code;
-                }
-            }
-            else if ( code is Cons )
-            {
-                var list = ( Cons ) code;
-                var head = RewriteObject( list.Car,args );
-                var tail = RewriteObject( list.Cdr,args );
-                if ( head == list.Car && tail == list.Cdr )
-                {
-                    return code;
-                }
-                else
-                {
-                    return MakeCons( head, (Cons)tail );
-                }
-            }
-            else
-            {
-                return code;
-            }
-        }
-
-        internal static Cons LambdaTemplate = null;
-
         internal static Expression CompileLambdaDef( Symbol name, Cons forms, AnalysisScope scope, LambdaKind kind, out string doc )
         {
             CheckMinLength( forms, 0 );
@@ -1000,6 +756,59 @@ namespace Kiezel
             template.Name = name;
             template.Signature = CompileFormalArgs( args, scope, kind );
 
+            if ( kind == LambdaKind.Method )
+            {
+                var container = name.Value as MultiMethod;
+                if ( container != null )
+                {
+                    var m = template.Signature;
+                    var g = container.Signature;
+                    var m1 = m.RequiredArgsCount;
+                    var m2 = m.Parameters.Count;
+                    var m3 = m.ArgModifier;
+                    var g1 = g.RequiredArgsCount;
+                    var g2 = g.Parameters.Count;
+                    var g3 = g.ArgModifier;
+
+                    if ( m1 != g1 )
+                    {
+                        throw new LispException( "Method does not match multi-method: number of required arguments" );
+                    }
+                    if ( m3 != g3 )
+                    {
+                        throw new LispException( "Method does not match multi-method: different argument modifiers" );
+                    }
+                    if ( g3 != Symbols.Key && m2 != g2 )
+                    {
+                        throw new LispException( "Method does not match multi-method: number of arguments" );
+                    }
+                    if ( g3 == Symbols.Key )
+                    {
+                        // Replace keyword parameters with the full list from the generic definition, but keep the defaults
+                        var usedKeys = template.Signature.Parameters.GetRange( m1, m2 - m1 );
+                        var replacementKeys = container.Signature.Parameters.GetRange( g1, g2 - g1 );
+                        template.Signature.Parameters.RemoveRange( m1, m2 - m1 );
+                        template.Signature.Names.RemoveRange( m1, m2 - m1 );
+                        foreach ( var par in replacementKeys )
+                        {
+                            var oldpar = usedKeys.FirstOrDefault( x => x.Sym == par.Sym );
+                            if ( oldpar != null )
+                            {
+                                var newpar = new ParameterDef( par.Sym, initForm: oldpar.InitForm );
+                                template.Signature.Parameters.Add( newpar );
+                                template.Signature.Names.Add( par.Sym );
+                            }
+                            else
+                            {
+                                // Insert place holder 
+                                var newpar = new ParameterDef( par.Sym, hidden: true );
+                                template.Signature.Parameters.Add( newpar );
+                                template.Signature.Names.Add( newpar.Sym );
+                            }
+                        }
+                    }
+                }
+            }
             if ( name != null )
             {
                 template.Syntax = MakeListStar( template.Name, args );
@@ -1023,6 +832,7 @@ namespace Kiezel
 #if DEBUG
             template.Source = MakeListStar( Symbols.Lambda, MakeList( Symbols.Params, Symbols.Args ), body );
 #endif
+            var lambdaListNative = funscope.DefineNativeLocal( Symbols.LambdaList, ScopeFlags.All );
             var recurNative = funscope.DefineNativeLocal( Symbols.Recur, ScopeFlags.All );
             var argsNative = funscope.DefineNativeLocal( Symbols.Args, ScopeFlags.All );
 
@@ -1044,7 +854,7 @@ namespace Kiezel
                 }
             }
 
-            template.Proc = CompileToFunction2( code, recurNative, argsNative );
+            template.Proc = CompileToFunction3( code, lambdaListNative, recurNative, argsNative );
 
             return Expression.New( typeof( Lambda ).GetConstructor( new Type[] { typeof( Lambda ) } ), Expression.Constant( template, typeof( Lambda ) ) );
 
@@ -1055,21 +865,16 @@ namespace Kiezel
         {
             var temp = GenTemp( "temp" );
             var code = new Vector();
-            code.Add( MakeList( Symbols.HiddenVar, temp, MakeList( Symbols.MakeLambdaParameterBinder, Symbols.Recur, Symbols.Args ) ) );
-
             for ( int i = 0; i < signature.Names.Count; ++i )
             {
                 if ( signature.Names[ i ] != Symbols.Underscore )
                 {
-                    var initForm = signature.FlattenedParameters[ i ].InitForm;
-                    if ( initForm != null )
+                    if ( i >= signature.Parameters.Count || !signature.Parameters[ i ].Hidden )
                     {
-                        initForm = Runtime.MakeList( Symbols.Lambda, null, initForm );
+                        code.Add( MakeList( Symbols.Var, signature.Names[ i ], MakeList( Symbols.GetElt, Symbols.Args, i ) ) );
                     }
-                    code.Add( MakeList( Symbols.Var, signature.Names[ i ], MakeList( MakeList( Symbols.Accessor, Symbols.GetElt.Name ), temp, i, initForm ) ) );
                 }
             }
-
             return AsList( code );
         }
 
@@ -1101,7 +906,7 @@ namespace Kiezel
                 return null;
             }
 
-            if (scope.UsesReturn)
+            if ( scope.UsesReturn )
             {
                 var temp = Expression.Parameter( typeof( object ), "temp" );
                 code = Expression.Block( typeof( object ), new ParameterExpression[] { temp },
@@ -1257,13 +1062,62 @@ namespace Kiezel
             // if expr expr [expr]
             CheckMinLength( form, 3 );
             CheckMaxLength( form, 4 );
-            object testExpr = Second( form );
-            object thenExpr = Third( form );
-            object elseExpr = Fourth( form );
-            Expression alt = Compile( elseExpr, scope );
-            return Expression.Condition( WrapBooleanTest( Compile( testExpr, scope ) ),
-                                         Expression.Convert( Compile( thenExpr, scope ), typeof( object ) ),
-                                         Expression.Convert( alt, typeof( object ) ) );
+            var testExpr = Compile( Second( form ), scope );
+            var thenExpr = Compile( Third( form ), scope );
+            var elseExpr = Compile( Fourth( form ), scope );
+            return Expression.Condition( WrapBooleanTest( testExpr ), thenExpr, elseExpr );
+        }
+
+        internal static Expression CompileAnd( Cons form, AnalysisScope scope )
+        {
+            // AND forms
+            return CompileAndExpression( Cdr( form ), scope );
+        }
+
+        internal static Expression CompileAndExpression( Cons forms, AnalysisScope scope )
+        {
+            if ( forms == null )
+            {
+                return CompileLiteral( true );
+            }
+            else if ( Cdr( forms ) == null )
+            {
+                return Compile( First( forms ), scope );
+            }
+            else
+            {
+                return Expression.Condition( WrapBooleanTest( Compile( First( forms ), scope ) ),
+                                             CompileAndExpression( Cdr( forms ), scope ),
+                                             CompileLiteral( null ) );
+            }
+        }
+
+        internal static Expression CompileOr( Cons form, AnalysisScope scope )
+        {
+            // OR forms
+            return CompileOrExpression( Cdr( form ), scope );
+        }
+
+        internal static Expression CompileOrExpression( Cons forms, AnalysisScope scope )
+        {
+            if ( forms == null )
+            {
+                return CompileLiteral( false );
+            }
+            else if ( Cdr( forms ) == null )
+            {
+                return Compile( First( forms ), scope );
+            }
+            else
+            {
+                var expr1 = Compile( First( forms ), scope );
+                var expr2 = CompileOrExpression( Cdr( forms ), scope );
+                var temp = Expression.Variable( typeof( object ), "temp" );
+                var tempAssign = Expression.Assign( temp, expr1 );
+                var result = Expression.Condition( WrapBooleanTest( temp ), temp, expr2 );
+
+                return Expression.Block( typeof( object ), new ParameterExpression[] { temp }, tempAssign, result );
+            }
         }
 
         internal static Expression CompileDo( Cons form,  AnalysisScope scope )
@@ -1286,7 +1140,7 @@ namespace Kiezel
         {
             if ( forms == null )
             {
-                return Expression.Constant( null, typeof( object ) );
+                return CompileLiteral( null );
             }
 
             var bodyScope = new AnalysisScope( scope, "body" );
@@ -1307,7 +1161,7 @@ namespace Kiezel
             {
                 if ( bodyExprs.Count == 0 )
                 {
-                    return Expression.Constant( null, typeof( object ) );
+                    return CompileLiteral( null );
                 }
 
                 if ( bodyExprs.Count == 1 )
@@ -1550,7 +1404,7 @@ namespace Kiezel
             // Initializer must be compiled before adding the variable
             // since it may already exist. Works like nested LET forms.
             var flags = Length( form ) == 2 ? 0 : ScopeFlags.Initialized;
-            var val = Length( form ) == 2 ? Expression.Constant( null ) : Compile( Third( form ), scope );
+            var val = Length( form ) == 2 ? CompileLiteral( null ) : Compile( Third( form ), scope );
 
             if ( sym.IsDynamic )
             {
@@ -1575,10 +1429,10 @@ namespace Kiezel
         }
 
 
-        internal static Expression CompileThrow( Cons form,  AnalysisScope scope )
+        internal static Expression CompileThrow( Cons form, AnalysisScope scope )
         {
             CheckMaxLength( form, 2 );
-            return Expression.Block( typeof(object), Expression.Throw( Compile( Second( form ), scope ) ), Expression.Constant(null) );
+            return Expression.Block( typeof( object ), Expression.Throw( Compile( Second( form ), scope ) ), CompileLiteral( null ) );
         }
 
         internal static bool EnableCatch = true;

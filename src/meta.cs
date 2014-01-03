@@ -26,6 +26,11 @@ namespace Kiezel
 
         internal static Symbol MakeSymbol( string key, Package package, bool export )
         {
+            if ( String.IsNullOrWhiteSpace( key ) )
+            {
+                throw new LispException( "Symbol name cannot be null or blank" );
+            }
+
             if ( package == null )
             {
                 return new Symbol( key );
@@ -168,7 +173,7 @@ namespace Kiezel
 
             var args = AsArray( Cdr( form ) );
             
-            result = macro.ApplyLambda( args );
+            result = macro.ApplyLambdaBind( null, args, false );
 
             return true;
         }

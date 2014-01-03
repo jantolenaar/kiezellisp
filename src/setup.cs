@@ -1,6 +1,7 @@
-// Copyright (C) 2012-2013 Jan Tolenaar. See the file LICENSE for details.
+// Copyright (C) 2012-2014 Jan Tolenaar. See the file LICENSE for details.
 
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
@@ -33,6 +34,7 @@ namespace Kiezel
         internal static Dictionary<object, string> Documentation;
         internal static string HomeDirectory = Directory.GetCurrentDirectory();
         internal static long GentempCounter = 0;
+        internal static Dictionary<Type, List<Type>> AbstractTypes;
 
         internal static Stopwatch StopWatch = Stopwatch.StartNew();
 
@@ -59,6 +61,8 @@ namespace Kiezel
         {
             SetupMode = true;
 
+            InitAbstractTypes();
+
             RestartVariables();
             RestartDependencies();
             RestartBinders();
@@ -82,6 +86,47 @@ namespace Kiezel
             Documentation = new Dictionary<object, string>();
             Packages = new Dictionary<string, Package>();
             Types = new Dictionary<Symbol, object>();
+        }
+
+        internal static void InitAbstractTypes()
+        {
+            var types = new Type[]
+            {
+                typeof(Number), typeof(Complex), typeof(Integer), typeof(BigInteger), typeof(Numerics.BigRational), 
+                        typeof(Rational), typeof(decimal), typeof(double), typeof(long), typeof(int), null,
+                typeof(Rational), typeof(Numerics.BigRational), typeof(Integer), typeof(BigInteger), typeof(long), typeof(int), null,
+                typeof(Integer), typeof(BigInteger), typeof(long), typeof(int), null,
+                typeof(List), typeof(Cons),null,
+                typeof(Sequence), typeof( List), typeof(Vector), null,
+                typeof(Enumerable), typeof(IEnumerable),null,
+                typeof(Symbol),typeof(Keyword),null,
+                typeof(Atom),typeof(Symbol),typeof(Keyword),typeof(ValueType),typeof(string),typeof(Number),
+                        typeof(Complex), typeof(Integer), typeof(BigInteger), typeof(Numerics.BigRational), typeof(Rational),null,
+                null
+            };
+
+            AbstractTypes = new Dictionary<Type, List<Type>>();
+
+            Type key = null;
+            List<Type> subtypes = null;
+
+            foreach (var t in types)
+            {
+                if ( key == null )
+                {
+                    key = t;
+                    subtypes = new List<Type>();
+                }
+                else if ( t == null )
+                {
+                    AbstractTypes[ key ] = subtypes;
+                    key = null;
+                }
+                else
+                {
+                    subtypes.Add( t );
+                }
+            }
         }
 
         internal static void RestartSymbols()
@@ -112,6 +157,7 @@ namespace Kiezel
             Symbols.PrintForce.VariableValue = true;
             Symbols.PrintEscape.VariableValue = true;
             Symbols.PrintBase.VariableValue = 10;
+            Symbols.PrintMaxElements.VariableValue = 50;
             Symbols.PrintShortSymbolNames.VariableValue = false;
             Symbols.It.VariableValue = null;
             Symbols.HelpHook.VariableValue = null;

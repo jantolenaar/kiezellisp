@@ -6,8 +6,8 @@
 ;;;
 
 (import "System.ConsoleColor")
-(setq $standout-color console-color.YELLOW)
-(setq $standout-background-color console-color.BLUE)
+(setq $standout-color console-color.DARK-MAGENTA)
+(setq $standout-background-color console-color.WHITE)
 
 (set-load-path "d:/projects/kiezellisp-private/lib"
                "d:/projects/kiezellisp-private/app"

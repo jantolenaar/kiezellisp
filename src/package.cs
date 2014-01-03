@@ -413,8 +413,8 @@ namespace Kiezel
             return sym;
         }
 
-        [Lisp( "set-package-alias" )]
-        public static string SetPackageAlias( object packageName, object nickName )
+        [Lisp( "use-package-alias" )]
+        public static string UsePackageAlias( object packageName, object nickName )
         {
             var currentPackage = CurrentPackage();
             var n = GetDesignatedString( nickName );
@@ -445,6 +445,10 @@ namespace Kiezel
                     descr.PackageName = "keyword";
                     descr.Internal = false;
                     descr.SymbolName = name.Substring( 1 );
+                    if ( descr.SymbolName.Length == 0 )
+                    {
+                        throw new LispException( "Keyword name cannot be null or blank" );
+                    }
                 }
                 else
                 {
@@ -452,7 +456,12 @@ namespace Kiezel
                     descr.PackageName = "";
                     descr.Internal = true;
                     descr.SymbolName = name;
+                    if ( descr.SymbolName.Length == 0 )
+                    {
+                        throw new LispException( "Symbol name cannot be null or blank" );
+                    }
                 }
+
 
                 return descr;
             }
@@ -463,7 +472,7 @@ namespace Kiezel
 
             if ( descr.SymbolName.Length == 0 )
             {
-                throw new LispException( "Invalid symbol reference: {0}", name );
+                throw new LispException( "Symbol name cannot be null or blank: {0}", name );
             }
 
             if ( descr.PackageName == "" )

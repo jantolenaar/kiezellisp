@@ -20,6 +20,16 @@ namespace Kiezel
         Greater
     }
 
+    class EqlSpecializer
+    {
+        public object Value;
+
+        public EqlSpecializer( object value )
+        {
+            Value = value;
+        }
+    }
+
     class LambdaSignatureComparer : IComparer<LambdaSignature>
     {
         // if x more specific than y then return -1
@@ -39,14 +49,11 @@ namespace Kiezel
 
             for ( int i = 0; i < x.RequiredArgsCount; ++i )
             {
-                var flags1 = x.Parameters[ i ].Modifiers & Modifier.MaskSpecializer;
-                var class1 = x.Parameters[ i ].Specializer;
-
-                var flags2 = y.Parameters[ i ].Modifiers & Modifier.MaskSpecializer;
-                var class2 = y.Parameters[ i ].Specializer;
+                var type1 = x.Parameters[ i ].Specializer;
+                var type2 = y.Parameters[ i ].Specializer;
 
 
-                var result = Runtime.CompareClass( flags1, class1, flags2, class2 );
+                var result = Runtime.CompareClass( type1, type2 );
 
                 switch ( result )
                 {
@@ -54,7 +61,7 @@ namespace Kiezel
                     {
                         // implies both are not null
                         // anything will do but the value must be reproducible.
-                        return Runtime.Compare( class1.GetHashCode(), class2.GetHashCode() );
+                        return Runtime.Compare( type1.GetHashCode(), type2.GetHashCode() );
                     }
                     case CompareClassResult.Less:
                     {
@@ -80,15 +87,16 @@ namespace Kiezel
         }
     }
 
-
-    public class MultiMethod: DynamicObject, IApply, ISyntax
+    public class MultiMethod : IDynamicMetaObjectProvider, IApply, ISyntax
     {
+        internal LambdaSignature Signature;
         internal int RequiredArgsCount;
         internal List<Lambda> Lambdas = new List<Lambda>();
 
-        public MultiMethod( int requiredArgsCount )
+        public MultiMethod( LambdaSignature signature )
         {
-            RequiredArgsCount = requiredArgsCount;
+            Signature = signature;
+            RequiredArgsCount = signature.RequiredArgsCount;
         }
 
         Cons ISyntax.GetSyntax( Symbol context )
@@ -121,17 +129,21 @@ namespace Kiezel
             Lambdas.Add( method );
         }
 
+        public Cons Match( object[] args )
+        {
+            return Runtime.AsList( Lambdas.Where( x => x.Signature.ParametersMatchArguments( args ) ) );
+        }
+
         object IApply.Apply( object[] args )
         {
-            foreach ( var lambda in Lambdas )
+            var methods = Match( args );
+            if ( methods == null )
             {
-                if ( lambda.Signature.ParametersMatchArguments( args ) )
-                {
-                    return ( ( IApply ) lambda ).Apply( args );
-                }
+                throw new LispException( "No matching multi-method found" );
             }
-
-            throw new LispException( "No matching multi-method found" );
+            var method = ( Lambda ) methods.Car;
+            var newargs = method.MakeArgumentFrame( args );
+            return Runtime.CallNextMethod( methods, newargs );
         }
 
         internal object ApplyNext( Lambda current, object[] args )
@@ -154,18 +166,64 @@ namespace Kiezel
             return null;
         }
 
-        public override bool TryInvoke( InvokeBinder binder, object[] args, out object result )
+        //public override bool TryInvoke( InvokeBinder binder, object[] args, out object result )
+        //{
+        //    result = ( ( IApply ) this ).Apply( args );
+        //    return true;
+        //}
+
+        DynamicMetaObject IDynamicMetaObjectProvider.GetMetaObject( Expression parameter )
         {
-            result = ( ( IApply ) this ).Apply( args );
-            return true;
+            return new MultiMethodApplyMetaObject( parameter, this );
         }
     }
 
+
+    class MultiMethodApplyMetaObject : DynamicMetaObject
+    {
+        internal MultiMethod Generic;
+
+        public MultiMethodApplyMetaObject( Expression objParam, MultiMethod generic )
+            : base( objParam, BindingRestrictions.Empty, generic )
+        {
+            this.Generic = generic;
+        }
+
+        public Cons Match( DynamicMetaObject[] args )
+        {
+            return Runtime.AsList( Generic.Lambdas.Where( x => x.Signature.ParametersMatchArguments( args ) ) );
+        }
+
+  
+
+        public override DynamicMetaObject BindInvoke( InvokeBinder binder, DynamicMetaObject[] args )
+        {
+            var methods = Match( args );
+            if ( methods == null )
+            {
+                throw new LispException( "No matching multi-method found" );
+            }
+            var lambda = ( Lambda ) methods.Car;
+            if ( lambda.GenericRestrictions == null )
+            {
+                lambda.GenericRestrictions = LambdaHelpers.GetGenericRestrictions( lambda, args );
+            }
+            var restrictions = lambda.GenericRestrictions;
+            var callArgs = LambdaHelpers.FillDataFrame( lambda.Signature, args, ref restrictions );
+            MethodInfo method = Runtime.RuntimeMethod( "CallNextMethod" );
+            var expr = Expression.Call( method, Expression.Constant( methods ), callArgs );
+            restrictions = BindingRestrictions.GetInstanceRestriction( this.Expression, this.Value ).Merge( restrictions );
+            return new DynamicMetaObject( RuntimeHelpers.EnsureObjectResult( expr ), restrictions );
+        }
+
+    }
+
+
     public partial class Runtime
     {
-        internal static MultiMethod DefineMultiMethod( Symbol sym, int requiredArgsCount, string doc )
+        internal static MultiMethod DefineMultiMethod( Symbol sym, LambdaSignature signature, string doc )
         {
-            var func = new MultiMethod( requiredArgsCount );
+            var func = new MultiMethod( signature );
             sym.FunctionValue = func;
             sym.Documentation = String.IsNullOrWhiteSpace( doc ) ? null : MakeList( doc );
             return func;
@@ -177,7 +235,7 @@ namespace Kiezel
 
             if ( container == null )
             {
-                container = DefineMultiMethod( sym, lambda.Signature.RequiredArgsCount, null );
+                container = DefineMultiMethod( sym, lambda.Signature, null );
             }
             else if ( container.RequiredArgsCount != 0 && lambda.Signature.RequiredArgsCount != container.RequiredArgsCount )
             {
@@ -188,27 +246,25 @@ namespace Kiezel
         }
 
         [Lisp( "system.call-next-method" )]
-        public static object CallNextMethod( Lambda currentMethod, object[] args )
+        public static object CallNextMethod( Cons nextLambdas, object[] args )
         {
-            if ( currentMethod != null && currentMethod.Generic != null )
-            {
-                return currentMethod.Generic.ApplyNext( currentMethod, args );
-            }
-            else
+            if ( nextLambdas == null )
             {
                 return null;
             }
+            var lambda = ( Lambda ) nextLambdas.Car;
+            return lambda.ApplyLambdaBind( nextLambdas.Cdr, args, true );
         }
 
-        internal static CompareClassResult CompareClass( Modifier flags1, object class1, Modifier flags2, object class2 )
+        internal static CompareClassResult CompareClass( object left, object right )
         {
             //
             // The most specialized class is the 'smallest'.
             //
 
-            if ( flags1 == 0 )
+            if ( left == null )
             {
-                if ( flags2 == 0 )
+                if ( right == null )
                 {
                     // no specializer
                     return CompareClassResult.Equal;
@@ -219,25 +275,14 @@ namespace Kiezel
                     return CompareClassResult.Greater;
                 }
             }
-            else if ( flags2 == 0 )
+            else if ( right == null )
             {
                 // lhs is more specialized
                 return CompareClassResult.Less;
             }
-            else if ( flags1 != flags2 )
+            else if ( left is EqlSpecializer && right is EqlSpecializer )
             {
-                if ( flags1 == Modifier.EqlSpecializer )
-                {
-                    return CompareClassResult.Less;
-                }
-                else
-                {
-                    return CompareClassResult.Greater;
-                }
-            }
-            else if ( flags1 == Modifier.EqlSpecializer )
-            {
-                if ( Eql( class1, class2 ) )
+                if ( Eql( ( ( EqlSpecializer ) left ).Value, ( ( EqlSpecializer ) right ).Value ) )
                 {
                     return CompareClassResult.Equal;
                 }
@@ -246,10 +291,20 @@ namespace Kiezel
                     return CompareClassResult.NotComparable;
                 }
             }
-            else if ( class1 is Type && class2 is Type )
+            else if ( left is EqlSpecializer )
             {
-                var c1 = ( Type ) class1;
-                var c2 = ( Type ) class2;
+                // eql sorts before type
+                return CompareClassResult.Less;
+            }
+            else if ( right is EqlSpecializer )
+            {
+                // eql sorts before type
+                return CompareClassResult.Greater;
+            }
+            else if ( left is Type && right is Type )
+            {
+                var c1 = ( Type ) left;
+                var c2 = ( Type ) right;
 
                 if ( c1 == c2 )
                 {
@@ -267,11 +322,12 @@ namespace Kiezel
                 {
                     return CompareClassResult.NotComparable;
                 }
+
             }
-            else if ( class1 is Prototype && class2 is Prototype )
+            else if ( left is Prototype && right is Prototype )
             {
-                var c1 = ( Prototype ) class1;
-                var c2 = ( Prototype ) class2;
+                var c1 = ( Prototype ) left;
+                var c2 = ( Prototype ) right;
 
                 if ( c1 == c2 )
                 {
@@ -295,7 +351,7 @@ namespace Kiezel
                 return CompareClassResult.NotComparable;
             }
         }
+
     }
 }
-
 

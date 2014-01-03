@@ -1,5 +1,31 @@
 # Change Log
 
+## 2014/01/03
+
+*   Added DLR restrictions for calls to multi-methods.
+*   Fixed bug in `reduce`.
+*   Added `mapcat`.
+*   Added `conjoin`.
+*   Added `r/map`, `r/mapcat`, `r/filter`, `r/take`, `r/take-while`.
+*   Added `$print-max-elements`.
+*   Changed Ctrl+ENTER action in the REPL.
+
+## 2013/11/29
+
+*   Renamed `set-package-alias` to `use-package-alias`.
+*   Restricted use of parameter modifiers such as `&key` to just one in
+    order to optimize calls to lisp functions.
+*   Removed the `&whole` modifier.
+*   Extended `<=` and other relational parameters to have two or more arguments.
+
+## 2013/11/14
+
+*   Replaced `#{...}` string interpolation markers with `double-back-tick...double-back-tick`.
+
+## 2013/11/04
+
+*   Fixed bug in `json-decode`.
+
 ## 2013/10/21
 
 *   Refactored `console.cs`.

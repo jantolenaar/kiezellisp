@@ -33,7 +33,7 @@
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|x86' ">
     <PlatformTarget>x86</PlatformTarget>
     <DebugSymbols>true</DebugSymbols>
-    <DebugType>full</DebugType>
+    <DebugType>pdbonly</DebugType>
     <Optimize>false</Optimize>
     <OutputPath>bin\Debug\</OutputPath>
     <DefineConstants>TRACE;DEBUG;CLR40</DefineConstants>
@@ -42,6 +42,7 @@
     <AllowUnsafeBlocks>false</AllowUnsafeBlocks>
     <UseVSHostingProcess>true</UseVSHostingProcess>
     <Prefer32Bit>false</Prefer32Bit>
+    <FileAlignment>512</FileAlignment>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|x86' ">
     <PlatformTarget>x86</PlatformTarget>
@@ -128,6 +129,7 @@
     <Compile Include="prototype.cs" />
     <Compile Include="reader-parser.cs" />
     <Compile Include="reader-scanner.cs" />
+    <Compile Include="seq-reducers.cs" />
     <Compile Include="seq.cs" />
     <Compile Include="setup.cs" />
     <Compile Include="string-extensions.cs" />
@@ -182,7 +184,7 @@
 copy /y "$(TargetDir)kiezellisp-init.k" c:\bin\k-init.k
 copy /y "$(TargetPath)" c:\bin\kiezellisp.exe
 copy /y "$(TargetDir)kiezellisp-init.k" c:\bin\kiezellisp-init.k
-</PostBuildEvent>
+C:\Windows\Microsoft.NET\Framework\v4.0.30319\ngen.exe install c:\bin\kiezellisp.exe</PostBuildEvent>
   </PropertyGroup>
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it.
        Other similar extension points exist, see Microsoft.Common.targets.

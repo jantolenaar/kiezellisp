@@ -8,7 +8,7 @@
     (:export
         "$pprint-left-margin"
         "$pprint-right-margin"
-        "pprint"
+        "pprint"        
     ))
 
 (in-package "lisp")
@@ -80,7 +80,7 @@ $print-escape and $print-base.
     (cond
         ((cons? expr)
             (pprint-cons expr))
-        ((vector? expr)
+        ((ilist? expr)
             (pprint-sequence expr "[" "]"))
         ((prototype? expr)
             (pprint-prototype expr))
@@ -183,8 +183,17 @@ $print-escape and $print-base.
             (pprint-vector-items-vertically seq newline))))
 
 (defun pprint-cons-items-vertically (seq newline)
+    (var max-elements $print-max-elements)
     (loop
         (break-if (= null seq))
+        (when (<= max-elements 0)
+            (when newline
+                (print-line)
+                (pprint-left-margin))
+            (print-line "...")
+            (setf seq null)
+            (break))
+        (decf max-elements)
         (when newline
             (print-line)
             (pprint-left-margin))
@@ -198,8 +207,16 @@ $print-escape and $print-base.
         (print "...")))
 
 (defun pprint-vector-items-vertically (seq newline)
+    (var max-elements $print-max-elements)
     (loop
         (for item in seq)
+        (when (<= max-elements 0)
+            (when newline
+                (print-line)
+                (pprint-left-margin))
+            (print-line "...")
+            (break))
+        (decf max-elements)
         (when newline
             (print-line)
             (pprint-left-margin))
@@ -207,13 +224,21 @@ $print-escape and $print-base.
         (pprint-expr item)))
 
 (defun pprint-prototype-items-vertically (seq newline)
+    (var max-elements $print-max-elements)
     (loop
         (for key in (.keys seq))
+        (when (<= max-elements 0)
+            (when newline
+                (print-line)
+                (pprint-left-margin))
+            (print-line "...")
+            (break))
+        (decf max-elements)
         (when newline
             (print-line)
             (pprint-left-margin))
         (setf newline true)
-        (var head (string ":" key " "))
+        (var head (string (if (.starts-with key "[") "" ":") key " "))
         (print head)
         (var $pprint-left-margin (+ $pprint-left-margin (.length head)))
         (pprint-expr (attr seq key))))

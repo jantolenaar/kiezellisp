@@ -61,6 +61,11 @@ namespace Kiezel
             return Runtime.Funcall( function, item );
         }
 
+        internal object ObjA_Obj( object[] items )
+        {
+            return Runtime.Apply( function, new object[] { items } );
+        }
+
         internal object Obj_Obj_Obj( object item1, object item2 )
         {
             return Runtime.Funcall( function, item1, item2 );

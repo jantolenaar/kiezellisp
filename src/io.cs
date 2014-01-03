@@ -1,4 +1,4 @@
-// Copyright (C) 2012-2013 Jan Tolenaar. See the file LICENSE for details.
+// Copyright (C) 2012-2014 Jan Tolenaar. See the file LICENSE for details.
 
 
 using System;
@@ -175,11 +175,11 @@ namespace Kiezel
                 string s;
                 if ( dt.Hour == 0 && dt.Minute == 0 && dt.Second == 0 )
                 {
-                    s = dt.ToString( "dd/MMM/yyyy" );
+                    s = dt.ToString( "yyyy-dd-MM" );
                 }
                 else
                 {
-                    s = dt.ToString( "dd/MMM/yyyy HH:mm:ss" );
+                    s = dt.ToString( "yyyy-MM-dd HH:mm:ss" );
                 }
 
                 if ( escape )
@@ -235,13 +235,20 @@ namespace Kiezel
             {
                 return obj.ToString();
             }
-            else if ( obj is Vector )
+            else if ( obj is IList )
             {
                 var buf = new StringWriter();
                 buf.Write( "[" );
                 var space = "";
-                foreach ( object item in ( Vector ) obj )
+                int maxCount = (int) GetDynamic( Symbols.PrintMaxElements );
+                foreach ( object item in ( IList ) obj )
                 {
+                    if ( maxCount-- <= 0 )
+                    {
+                        buf.Write( space );
+                        buf.Write( "..." );
+                        break;
+                    }
                     buf.Write( space );
                     buf.Write( ToPrintString( item, escape, radix ) );
                     space = " ";
@@ -258,7 +265,10 @@ namespace Kiezel
                 foreach ( string key in ToIter( proto.Keys ) )
                 {
                     buf.Write( space );
-                    buf.Write( ":");
+                    if ( !key.StartsWith( "[" ) )
+                    {
+                        buf.Write( ":" );
+                    }
                     buf.Write( key );
                     buf.Write( " " );
                     buf.Write( ToPrintString( proto.GetValue( key ), escape, radix ) );
