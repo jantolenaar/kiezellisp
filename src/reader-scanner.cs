@@ -1,430 +1,536 @@
-// Copyright (C) 2012-2013 Jan Tolenaar. See the file LICENSE for details.
-
+// Copyright (C) Jan Tolenaar. See the file LICENSE for details.
 
 using System;
-using System.IO;
-using System.Text;
 using System.Collections;
-using System.Globalization;
 using System.Collections.Generic;
-using System.Numerics;
+using System.Linq;
+using System.Text;
+using System.IO;
 using System.Text.RegularExpressions;
+using System.Numerics;
 
 namespace Kiezel
 {
-
-	class Token
-	{
-		internal object Value;
-		internal int Offset;
-		internal int Line;
-		internal int Col;
-
-		internal Token( object value, int offset, int line, int col )
-		{
-			Value = value;
-			Offset = offset;
-			Line = line;
-			Col = col;
-		}
-	}
-
-    class SyntacticToken
+    [RestrictedImport]
+    public class LispReader : IEnumerable, IEnumerator
     {
-        internal string Text;
+        public static char EofChar = Convert.ToChar( 0 );
 
-        internal SyntacticToken( string text )
-        {
-            Text = text;
-        }
-
-        public override string ToString()
-        {
-            return Text;
-        }
-
-        internal static object EOF = new SyntacticToken("EOF");
-        internal static object SHARP_EVAL = new SyntacticToken( "#." );
-        internal static object SHARP_PLUS = new SyntacticToken( "#+" );
-        internal static object SHARP_MINUS = new SyntacticToken( "#-" );
-        internal static object SHARP_SKIP = new SyntacticToken( "#;" );
-        internal static object COMPLEX_LITERAL = new SyntacticToken("#c");
-        internal static object QUOTE = new SyntacticToken("'");
-        internal static object QUASI_QUOTE = new SyntacticToken("`");
-        internal static object UNQUOTE = new SyntacticToken(",");
-        internal static object UNQUOTE_SPLICING = new SyntacticToken(",@");
-        internal static object UNQUOTE_DOT = new SyntacticToken( ",." );
-        internal static object LEFT_PAR = new SyntacticToken( "(" );
-        internal static object RIGHT_PAR = new SyntacticToken(")");
-        internal static object LEFT_BRACE = new SyntacticToken( "{" );
-        internal static object RIGHT_BRACE= new SyntacticToken( "}" );
-        internal static object LEFT_BRACKET = new SyntacticToken( "[" );
-        internal static object RIGHT_BRACKET = new SyntacticToken( "]" );
-
-    }
-
-    enum StringTokenType
-    {
-        DoubleQuote,
-        AtDoubleQuote,
-        TripleQuote,
-        Parenthesis,
-        Bracket,
-        Brace,
-        Angle
-    }
-
-    class StringToken
-    {
-        internal string Text;
-        internal StringTokenType Type;
-
-        public StringToken( string text, StringTokenType type )
-        {
-            Text = text;
-            Type = type;
-        }
-    }
-
-	class Scanner
-	{
-        Parser parser;
-		internal string filename;
-		internal string buffer;
-		int index;
-		int line;
-		int offset;
-		int col;
-		int startcol;
-		char eofChar = Convert.ToChar( 0 );
-        internal Cons preparedTokens = null;
+        string buffer;
+        int pos;
+        int linePos;
+        int line;
+        int col;
+        object currentExpression;
+        Cons insertedForms = null;
         bool loading;
+        int symbolSuppression = 0;
 
-		internal Scanner( Parser parser, string filename, string buffer, bool loading )
-		{
-            this.parser = parser;
-			this.filename = filename;
-			this.buffer = buffer;
+        [Lisp]
+        public LispReader( string sourceCode )
+            : this( sourceCode, false )
+        {
+        }
+
+        internal LispReader( string sourceCode, bool loading )
+        {
+            buffer = sourceCode;
+            linePos = pos = 0;
+            line = 0;
+            col = 0;
             this.loading = loading;
-
-			offset = index = 0;
-			line = 1;
-			col = 0;
-		}
-
-        internal Token Next()
-        {
-            object token;
-
-            if ( preparedTokens != null )
-            {
-                token = preparedTokens.Car;
-                preparedTokens = preparedTokens.Cdr;
-            }
-            else
-            {
-                token = ScanToken();
-            }
-
-            //Console.Write( token );
-            //Console.Write( " " );
-
-            return new Token( token, offset, line, startcol );
         }
 
-		public static bool IsTerminator( char ch )
-		{
-            return ch == '\'' || ch == '"' || ch == '(' || ch == ')' || ch == '{' || ch == '}' || ch == '[' || ch == ']' || ch == ',' || ch == ';' || ch == '#' || ch == '`';
-		}
-
-		bool GoesBeforeLeadingDot( char ch )
-		{
-			return IsWhiteSpace(ch) || ch == '(' || ch == '[' || ch == '{' || ch == '\'' || ch == '`';
-		}
-
-		public static bool IsWhiteSpace( char ch )
-		{
-			return Char.IsWhiteSpace( ch ) || Char.IsControl( ch );
-		}
-
-		void EatChars( int count )
-		{
-			while ( count-- > 0 && index < buffer.Length )
-			{
-				++index;
-				++col;
-
-				if ( buffer[index - 1] == '\n' )
-				{
-					++line;
-					offset = index;
-					col = 1;
-				}
-			}
-		}
-
-		char PeekChar( int offset )
-		{
-			if ( index + offset < 0 )
-			{
-				return ' ';
-			}
-			else if ( index + offset >= buffer.Length )
-			{
-				return eofChar;
-			}
-			else
-			{
-				return buffer[index + offset];
-			}
-		}
-
-        bool EatWord( string str )
+        object IEnumerator.Current
         {
-            for ( int i = 0; i < str.Length; ++i )
+            get
             {
-                if ( PeekChar( i ) != str[ i ] )
-                {
-                    return false;
-                }
+                return currentExpression;
+            }
+        }
+
+        bool IEnumerator.MoveNext()
+        {
+            currentExpression = Read( EOF.Value );
+            return currentExpression != EOF.Value;
+        }
+
+        void IEnumerator.Reset()
+        {
+            throw new NotImplementedException();
+        }
+
+        [Lisp]
+        public Vector ReadAll()
+        {
+            return Runtime.AsVector( this );
+        }
+
+        IEnumerator IEnumerable.GetEnumerator()
+        {
+            return this;
+        }
+
+        [Lisp]
+        public object Read()
+        {
+            return Read( null );
+        }
+
+        [Lisp]
+        public object Read( object eofValue = null )
+        {
+            object obj;
+            while ( ( obj = MaybeRead( eofValue ) ) == VOID.Value )
+            {
+            }
+            return obj;
+        }
+
+        internal void ReadSuppressed()
+        {
+            try
+            {
+                ++symbolSuppression;
+                Read();
+            }
+            finally
+            {
+                --symbolSuppression;
+            }
+        }
+
+        internal object MaybeRead( object eofValue = null )
+        {
+            if ( insertedForms != null )
+            {
+                var obj = insertedForms.Car;
+                insertedForms = insertedForms.Cdr;
+                return obj;
             }
 
-            var ch = PeekChar( str.Length);
-            
-            if ( ch == eofChar || IsTerminator( ch ) || IsWhiteSpace( ch ) )
+            ReadWhitespace();
+
+            var code = PeekChar();
+            var item = GetEntry( code );
+
+            if ( item.Type == CharacterType.EOF )
             {
-                EatChars( str.Length );
+                return eofValue;
+            }
+
+            if ( item.Type == CharacterType.TerminatingMacro || item.Type == CharacterType.NonTerminatingMacro )
+            {
+                if ( item.DispatchReadtable == null )
+                {
+                    if ( item.Handler == null )
+                    {
+                        throw MakeScannerException( "Invalid character: '{0}'", code );
+                    }
+                    else
+                    {
+                        SkipChars( 1 );
+                        return item.Handler( this, code );
+                    }
+                }
+                else
+                {
+                    SkipChars( 1 );
+                    var arg = ReadDecimalArg();
+                    var subcode = PeekChar();
+                    var subitem = item.DispatchReadtable.GetEntry( subcode );
+                    if ( subitem.Handler2 != null )
+                    {
+                        SkipChars( 1 );
+                        return subitem.Handler2( this, subcode, arg );
+                    }
+                    else
+                    {
+                        throw MakeScannerException( "Invalid character combination: '{0}{1}'", code, subcode  );
+                    }
+                }
+
+            }
+
+            var token = ReadToken();
+
+            object numberValue;
+            object timespan;
+
+            if ( symbolSuppression > 0 )
+            {
+                return null;
+            }
+            else if ( ( numberValue = token.TryParseNumber() ) != null )
+            {
+                return numberValue;
+            }
+            else if ( ( timespan = token.TryParseTime() ) != null )
+            {
+                return timespan;
+            }
+            else if ( token == "true" )
+            {
                 return true;
             }
-
-            return false;
-        }
-
-        bool Eat( string str )
-        {
-            for ( int i = 0; i < str.Length; ++i )
-            {
-                if ( PeekChar( i ) != str[ i ] )
-                {
-                    return false;
-                }
-            }
-
-            EatChars( str.Length );
-            return true;
-        }
-
-        bool Eat( char ch )
-        {
-            if ( PeekChar( 0 ) == ch )
-            {
-                EatChars( 1 );
-                return true;
-            }
-            else
+            else if ( token == "false" )
             {
                 return false;
             }
+            else if ( token == "null" )
+            {
+                return null;
+            }
+            else if ( token.Length > 1 && token[ 0 ] == '.' )
+            {
+                // .a.b.c maps to ( . "a" "b" "c" )
+                return Runtime.MakeList( Symbols.Dot, token.Substring( 1 ) );
+            }
+            else if ( token.Length > 1 && token[ 0 ] == '?' )
+            {
+                // ?a.b.c maps to ( ? "a" "b" "c" )
+                return Runtime.MakeList( Symbols.NullableDot, token.Substring( 1 ) );
+            }
+            else
+            {
+                return Runtime.FindSymbol( token );
+            }
         }
 
-        void EatTokens( int count )
-		{
-			index += count;
-		}
+        [Lisp]
+        public string ReadToken()
+        {
+            var buf = new StringBuilder();
 
+            while ( true )
+            {
+                var code = PeekChar();
+                var item = GetEntry( code );
 
-		void ThrowScannerException( string fmt, params object[] args )
-		{
-			string msg = System.String.Format( fmt, args );
-			int lineStart = offset;
-			int lineEnd = offset;
-			while ( lineEnd < buffer.Length && buffer[lineEnd] != '\n' )
-			{
-				++lineEnd;
-			}
-			string lineData = buffer.Substring( lineStart, lineEnd - lineStart );
-			if ( filename == null )
-			{
-				throw new LispException( "Line {1}: col {2}: {3}\n{4}", filename, line, col, lineData, msg );
-			}
-			else
-			{
-				throw new LispException( "{0}: line {1}: col {2}: {3}\n{4}", filename, line, col, lineData, msg );
-			}
-		}
-
-		char SkipWhiteSpace()
-		{
-			char ch;
-
-			while ( ( ch = PeekChar( 0 ) ) != eofChar )
-			{
-				if ( !IsWhiteSpace( ch ) )
-				{
-					break;
-				}
-				EatChars( 1 );
-			}
-
-			return ch;
-		}
-
-		string SkipComment()
-		{
-            var buf = new StringWriter();
-			char ch;
-
-			while ( ( ch = PeekChar( 0 ) ) != eofChar )
-			{
-				if ( ch == '\n' )
-				{
-					EatChars( 1 );
-					break;
-				}
-                if ( ch != '\r' )
+                if ( item.Type == CharacterType.SingleEscape )
                 {
-                    buf.Write( ch );
+                    if ( PeekChar( 1 ) == EofChar )
+                    {
+                        throw MakeScannerException( "EOF: expected character after '{0}'", item.Character );
+                    }
+
+                    buf.Append( PeekChar( 1 ) );
+                    SkipChars( 2 );
                 }
-				EatChars( 1 );
-			}
+                else if ( item.Type == CharacterType.MultipleEscape )
+                {
+                    while ( true )
+                    {
+                        SkipChars( 1 );
+                        var code2 = PeekChar();
+                        if ( code2 == EofChar )
+                        {
+                            throw MakeScannerException( "EOF: expected character '{0}'", item.Character );
+                        }
+                        if ( code2 == code )
+                        {
+                            SkipChars( 1 );
+                            break;
+                        }
+                        buf.Append( code2 );
+                    }
+                }
+                else if ( item.Type == CharacterType.Constituent || item.Type == CharacterType.NonTerminatingMacro )
+                {
+                    buf.Append( code );
+                    SkipChars( 1 );
+                }
+                else
+                {
+                    break;
+                }
+            }
 
-            return buf.ToString();
-		}
+            var token = buf.ToString();
 
-		void SkipBalancedComment()
-		{
-			int count = 1;
-			char ch;
+            if ( token == "" )
+            {
+                throw MakeScannerException( "Empty token???" );
+            }
 
-			while ( ( ch = PeekChar( 0 ) ) != eofChar )
-			{
-				if ( Eat( "#|" ) )
-				{
-					++count;
-				}
-				else if ( Eat( "|#" ) )
-				{
-					if ( --count == 0 )
-					{
-						break;
-					}
-				}
-				else
-				{
-					EatChars( 1 );
-				}
-			}
+            return token;
 
-			if ( count != 0 )
-			{
-				ThrowScannerException( "EOF: unclosed comment" );
-			}
-		}
+        }
 
-		string ParseSingleLineString()
-		{
+        [Lisp]
+        public Cons ReadDelimitedList( string terminator )
+        {
+            while ( true )
+            {
+                ReadWhitespace();
+                if ( PeekChar( 0 ) == EofChar )
+                {
+                    throw MakeScannerException( "Unexpected EOF: '{0}' expected", terminator );
+                }
+                if ( TryTakeChars( terminator ) )
+                {
+                    return null;
+                }
+                var first = MaybeRead();
+                if ( first != VOID.Value )
+                {
+                    var rest = ( Cons ) ReadDelimitedList( terminator );
+                    return Runtime.MakeCons( first, rest );
+                }
+            }
+        }
+
+
+        [Lisp]
+        public void SkipChars( int count )
+        {
+            while ( count-- > 0 && pos < buffer.Length )
+            {
+                ++pos;
+                ++col;
+
+                if ( buffer[ pos - 1 ] == '\n' )
+                {
+                    ++line;
+                    linePos = pos;
+                    col = 0;
+                }
+            }
+        }
+
+        [Lisp]
+        public char PeekChar( int offset = 0 )
+        {
+            if ( pos + offset >= buffer.Length )
+            {
+                return EofChar;
+            }
+            else
+            {
+                return buffer[ pos + offset ];
+            }
+        }
+
+        [Lisp]
+        public bool TryTakeChars( string str )
+        {
+            for ( int i = 0; i < str.Length; ++i )
+            {
+                if ( PeekChar( i ) != str[ i ] )
+                {
+                    return false;
+                }
+            }
+
+            SkipChars( str.Length );
+            return true;
+        }
+
+        [Lisp]
+        public char ReadChar()
+        {
+            var chr = PeekChar();
+            SkipChars( 1 );
+            return chr;
+        }
+
+        internal void UnreadChar()
+        {
+            if ( pos > 0 )
+            {
+                --pos;
+            }
+        }
+
+        ReadtableEntry GetEntry( char ch )
+        {
+            var readTable = ( Readtable ) Runtime.GetDynamic( Symbols.Readtable );
+            return readTable.GetEntry( ch );
+        }
+
+        int ReadDecimalArg()
+        {
+            int arg = 0;
+            while ( true )
+            {
+                var ch = PeekChar();
+                if ( ch == EofChar || !char.IsDigit( ( char ) ch ) )
+                {
+                    break;
+                }
+                arg = 10 * arg + ( ch - '0' );
+                SkipChars( 1 );
+            }
+            return arg;
+        }
+
+        internal LispException MakeScannerException( string message )
+        {
+            int lineStart = linePos;
+            int lineEnd = linePos;
+            while ( lineEnd < buffer.Length && buffer[ lineEnd ] != '\n' )
+            {
+                ++lineEnd;
+            }
+            string lineData = buffer.Substring( lineStart, lineEnd - lineStart );
+            return new LispException( "Line {0} column {1}: {2}\n{3}", line + 1, col, lineData, message );
+        }
+
+        internal LispException MakeScannerException( string fmt, params object[] args )
+        {
+            return MakeScannerException( string.Format( fmt, args ) );
+        }
+
+        [Lisp]
+        public string ReadWhitespace()
+        {
+            var start = pos;
+            while ( true )
+            {
+                var code = PeekChar();
+                var item = GetEntry( code );
+                if ( item.Type != CharacterType.Whitespace )
+                {
+                    break;
+                }
+                SkipChars( 1 );
+            }
+            return buffer.Substring( start, pos - start );
+        }
+
+        internal void SkipLineComment()
+        {
+            ReadLine();
+        }
+
+        [Lisp]
+        public string ReadLine()
+        {
+            var start = pos;            
+            char code;
+
+            while ( ( code = ReadChar() ) != EofChar )
+            {
+                if ( code == '\n' )
+                {
+                    return buffer.Substring( start, pos - 1 - start );
+                }
+            }
+            return buffer.Substring( start, pos-start );
+        }
+
+        internal string ReadBlockComment( string startDelimiter, string endDelimiter )
+        {
+            var start = pos - startDelimiter.Length;
+            var nesting = 1;
+            char ch;
+
+            while ( ( ch = PeekChar() ) != EofChar )
+            {
+                if ( TryTakeChars( startDelimiter ) )
+                {
+                    ++nesting;
+                }
+                else if ( TryTakeChars( endDelimiter ) )
+                {
+                    if ( --nesting == 0 )
+                    {
+                        break;
+                    }
+                }
+                else
+                {
+                    SkipChars( 1 );
+                }
+            }
+
+            if ( nesting != 0 )
+            {
+                throw MakeScannerException( "EOF: Unterminated comment" );
+            }
+
+            return buffer.Substring( start, pos - start );
+        }
+
+        internal string ParseString()
+        {
+            if ( TryTakeChars( "\"\"" ) )
+            {
+                return ParseDocString( "\"\"\"" );
+            }
+            else
+            {
+                return ParseSingleLineString();
+            }
+        }
+
+        internal string ParseSingleLineString()
+        {
             // supports backsslash escapes
             // single line
 
-			char ch;
-			StringBuilder buf = new StringBuilder();
-
-			while ( true )
-			{
-				ch = PeekChar( 0 );
-
-				if ( ch == '\n' || ch == eofChar )
-				{
-					ThrowScannerException( "EOF: Unterminated string" );
-				}
-
-                if ( ch == '"' )
-                {
-                    EatChars( 1 );
-                    break;
-                }
-
-				if ( ch == '\\' )
-				{
-                    EatChars( 1 );
-                    ch = PeekChar( 0 );
-
-					if ( ch == eofChar )
-					{
-						ThrowScannerException( "EOF: Unterminated string" );
-					}
-
-					switch ( ch )
-					{
-						case 'x':
-						{
-							char ch1 = PeekChar( 1 );
-							char ch2 = PeekChar( 2 );
-							EatChars( 1 + 2 );
-                            int n = (int) Number.ParseNumberBase( new string( new char[] { ch1, ch2 } ), 16 );
-							buf.Append( Convert.ToChar( n ) );
-							break;
-						}
-						case 'u':
-						{
-							char ch1 = PeekChar( 1 );
-							char ch2 = PeekChar( 2 );
-							char ch3 = PeekChar( 3 );
-							char ch4 = PeekChar( 4 );
-							EatChars( 1 + 4 );
-                            int n = (int) Number.ParseNumberBase( new string( new char[] { ch1, ch2, ch3, ch4 } ), 16 );
-							buf.Append( Convert.ToChar( n ) );
-							break;
-						}
-                        default:
-						{
-                            buf.Append( Runtime.UnescapeCharacter( ch ) );
-                            EatChars( 1 );
-							break;
-						}
-					}
-				}
-				else
-				{
-					buf.Append( ch );
-					EatChars( 1 );
-				}
-			}
-
-			return buf.ToString();
-
-		}
-
-        string ParseInfixExpressionString()
-        {
             char ch;
             StringBuilder buf = new StringBuilder();
-            int count = 0;
 
             while ( true )
             {
                 ch = PeekChar( 0 );
 
-                if ( ch == eofChar )
+                if ( ch == '\n' || ch == EofChar )
                 {
-                    ThrowScannerException( "EOF: Unterminated infix expression" );
+                    throw MakeScannerException( "EOF: Unterminated string" );
                 }
 
-                EatChars( 1 );
-
-                buf.Append(ch);
-
-                if ( ch == '(' )
+                if ( ch == '"' )
                 {
-                    ++count;
+                    SkipChars( 1 );
+                    break;
                 }
-                else if ( ch == ')' )
+
+                if ( ch == '\\' )
                 {
-                    --count;
-                    if ( count == 0 )
+                    SkipChars( 1 );
+                    ch = PeekChar( 0 );
+
+                    if ( ch == EofChar )
                     {
-                        break;
+                        throw MakeScannerException( "EOF: Unterminated string" );
                     }
+
+                    switch ( ch )
+                    {
+                        case 'x':
+                        {
+                            char ch1 = PeekChar( 1 );
+                            char ch2 = PeekChar( 2 );
+                            SkipChars( 1 + 2 );
+                            int n = ( int ) Number.ParseNumberBase( new string( new char[] { ch1, ch2 } ), 16 );
+                            buf.Append( Convert.ToChar( n ) );
+                            break;
+                        }
+                        case 'u':
+                        {
+                            char ch1 = PeekChar( 1 );
+                            char ch2 = PeekChar( 2 );
+                            char ch3 = PeekChar( 3 );
+                            char ch4 = PeekChar( 4 );
+                            SkipChars( 1 + 4 );
+                            int n = ( int ) Number.ParseNumberBase( new string( new char[] { ch1, ch2, ch3, ch4 } ), 16 );
+                            buf.Append( Convert.ToChar( n ) );
+                            break;
+                        }
+                        default:
+                        {
+                            buf.Append( Runtime.UnescapeCharacter( ch ) );
+                            SkipChars( 1 );
+                            break;
+                        }
+                    }
+                }
+                else
+                {
+                    buf.Append( ch );
+                    SkipChars( 1 );
                 }
             }
 
@@ -432,7 +538,7 @@ namespace Kiezel
 
         }
 
-        string ParseMultiLineString()
+        internal string ParseMultiLineString()
         {
             // @"..."
             // supports double double quote escape
@@ -445,9 +551,9 @@ namespace Kiezel
             {
                 ch = PeekChar( 0 );
 
-                if ( ch == eofChar )
+                if ( ch == EofChar )
                 {
-                    ThrowScannerException( "EOF: Unterminated string" );
+                    throw MakeScannerException( "EOF: Unterminated string" );
                 }
 
                 if ( ch == '"' )
@@ -455,25 +561,25 @@ namespace Kiezel
                     if ( PeekChar( 1 ) == '"' )
                     {
                         buf.Append( ch );
-                        EatChars( 2 );
+                        SkipChars( 2 );
                     }
                     else
                     {
-                        EatChars( 1 );
+                        SkipChars( 1 );
                         break;
                     }
                 }
                 else
                 {
                     buf.Append( ch );
-                    EatChars( 1 );
+                    SkipChars( 1 );
                 }
             }
 
             return buf.ToString();
         }
 
-        Regex ParseRegexString()
+        internal Regex ParseRegexString( char terminator )
         {
             // #"..."
 
@@ -484,28 +590,28 @@ namespace Kiezel
             {
                 ch = PeekChar( 0 );
 
-                if ( ch == '\n' || ch == eofChar )
+                if ( ch == '\n' || ch == EofChar )
                 {
-                    ThrowScannerException( "EOF: Unterminated string" );
+                    throw MakeScannerException( "EOF: Unterminated string" );
                 }
 
-                if ( ch == '"' )
+                if ( ch == terminator )
                 {
-                    if ( PeekChar( 1 ) == '"' )
+                    if ( PeekChar( 1 ) == terminator )
                     {
                         buf.Append( ch );
-                        EatChars( 2 );
+                        SkipChars( 2 );
                     }
                     else
                     {
-                        EatChars( 1 );
+                        SkipChars( 1 );
                         break;
                     }
                 }
                 else
                 {
                     buf.Append( ch );
-                    EatChars( 1 );
+                    SkipChars( 1 );
                 }
             }
 
@@ -521,25 +627,24 @@ namespace Kiezel
                         case 'i':
                         {
                             options |= RegexOptions.IgnoreCase;
-                            EatChars( 1 );
+                            SkipChars( 1 );
                             break;
                         }
                         case 's':
                         {
                             options |= RegexOptions.Singleline;
-                            EatChars( 1 );
+                            SkipChars( 1 );
                             break;
                         }
                         case 'm':
                         {
                             options |= RegexOptions.Multiline;
-                            EatChars( 1 );
+                            SkipChars( 1 );
                             break;
                         }
                         default:
                         {
-                            ThrowScannerException( "invalid regular expresssion option" );
-                            break;
+                            throw MakeScannerException( "invalid regular expresssion option" );
                         }
                     }
                 }
@@ -552,7 +657,7 @@ namespace Kiezel
             return new Regex( buf.ToString(), options );
         }
 
-        string ParseDocString( string terminator )
+        internal string ParseDocString( string terminator )
         {
             // """..."""
             char ch;
@@ -562,9 +667,9 @@ namespace Kiezel
             {
                 ch = PeekChar( 0 );
 
-                if ( ch == eofChar )
+                if ( ch == EofChar )
                 {
-                    ThrowScannerException( "EOF: Unterminated string" );
+                    throw MakeScannerException( "EOF: Unterminated string" );
                 }
 
                 bool haveSeparator = true;
@@ -589,13 +694,13 @@ namespace Kiezel
 
                 if ( haveSeparator )
                 {
-                    EatChars( terminator.Length );
+                    SkipChars( terminator.Length );
                     break;
                 }
                 else
                 {
                     buf.Write( ch );
-                    EatChars( 1 );
+                    SkipChars( 1 );
                 }
             }
 
@@ -603,409 +708,187 @@ namespace Kiezel
 
         }
 
+        internal string ParseSpecialString()
+        {
+            var begin = ReadChar();
+            var end = ' ';
 
-        object ScanToken()
+            switch ( begin )
+            {
+                case '(':
+                {
+                    end = ')';
+                    break;
+                }
+                case '{':
+                {
+                    end = '}';
+                    break;
+                }
+                case '[':
+                {
+                    end = ']';
+                    break;
+                }
+                case '<':
+                {
+                    end = '>';
+                    break;
+                }
+                case '|':
+                {
+                    end = '|';
+                    break;
+                }
+                default:
+                {
+                    throw MakeScannerException( "Invalid #q string character: '{0}'", begin );
+                }
+            }
+
+            return ParseDocString( new string( end, 1 ) );
+        }
+
+        internal object ParseInfixExpression()
+        {
+            var str = ReadInfixExpressionString();
+            var code = Infix.CompileString( str );
+            InsertForm( code );
+            return VOID.Value;
+        }
+
+        internal string ReadInfixExpressionString()
         {
             char ch;
-            string token;
+            StringBuilder buf = new StringBuilder();
+            int count = 0;
 
-        retry:
-
-            ch = SkipWhiteSpace();
-
-            if ( ch == ';' )
-            {
-                EatChars( 1 );
-                SkipComment();
-                goto retry;
-            }
-
-            if ( ch == '#' )
-            {
-                EatChars( 1 );
-
-                // Eat the decimal number in front of the letter
-                var digits = 0;
-                while ( char.IsDigit( PeekChar( 0 ) ) )
-                {
-                    digits = 10 * digits + PeekChar( 0 ) - '0';
-                    EatChars( 1 );
-                }
-
-                if ( Eat( 'r' ) )
-                {
-                    token = ScanSimpleToken( false );
-                    return Number.ParseNumberBase( token, digits == 0 ? 10 : digits );
-                }
-
-                if ( Eat( 'b' ) )
-                {
-                    token = ScanSimpleToken( false );
-                    return Number.ParseNumberBase( token, 2 );
-                }
-
-                if ( Eat( 'o' ) )
-                {
-                    token = ScanSimpleToken( false );
-                    return Number.ParseNumberBase( token, 8 );
-                }
-
-                if ( Eat( 'x' ) )
-                {
-                    token = ScanSimpleToken( false );
-                    return Number.ParseNumberBase( token, 16 );
-                }
-
-                if ( Eat( "q(" ) )
-                {
-                    return new StringToken( ParseDocString( ")" ), StringTokenType.Parenthesis );
-                }
-
-                if ( Eat( "q[" ) )
-                {
-                    return new StringToken( ParseDocString( "]" ), StringTokenType.Bracket );
-                }
-
-                if ( Eat( "q{" ) )
-                {
-                    return new StringToken( ParseDocString( "}" ), StringTokenType.Brace );
-                }
-
-                if ( Eat( "q<" ) )
-                {
-                    return new StringToken( ParseDocString( ">" ), StringTokenType.Angle );
-                }
-
-                if ( Eat( '"' ) )
-                {
-                    return ParseRegexString();
-                }
-
-                if ( Eat( '.' ) )
-                {
-                    var readEval = Runtime.GetDynamic( Symbols.ReadEval );
-                    if ( readEval == null )
-                    {
-                        readEval = loading;
-                    }
-                    if ( !Runtime.ToBool( readEval ) )
-                    {
-                        ThrowScannerException( "Invalid use of '#.' (prohibited by $read-eval variable)" );
-                    }
-
-                    return SyntacticToken.SHARP_EVAL;
-                }
-
-                if ( Eat( '!' ) )
-                {
-                    SkipComment();
-                    goto retry;
-                }
-
-                if ( Eat( '|' ) )
-                {
-                    // balanced comment
-                    SkipBalancedComment();
-                    goto retry;
-                }
-
-                if ( Eat( ';' ) )
-                {
-                    return SyntacticToken.SHARP_SKIP;
-                }
-
-                if ( Eat( ':' ) )
-                {
-                    var sym = ( Symbol ) ScanToken();
-                    return Runtime.MakeSymbol( sym.Name, ( Package ) null );
-                }
-
-                if ( Eat( '+' ) )
-                {
-                    return SyntacticToken.SHARP_PLUS;
-                }
-
-                if ( Eat( '-' ) )
-                {
-                    return SyntacticToken.SHARP_MINUS;
-                }
-
-                if ( PeekChar( 0 ) == '\\' )
-                {
-                    //EatChars( 1 );
-                    var sym = ( Symbol ) ScanToken();
-                    return Runtime.DecodeCharacterName( sym.Name );
-                }
-
-                if ( Eat( 'c' ) || Eat( 'C' ) )
-                {
-                    return SyntacticToken.COMPLEX_LITERAL;
-                }
-
-                if ( ( PeekChar( 0 ) == 'i' || PeekChar( 0 ) == 'I' ) && PeekChar( 1 ) == '(' )
-                {
-                    EatChars( 1 );
-                    var str = ParseInfixExpressionString();
-                    var code1 = Runtime.ParseInfixExpression( str );
-                    var code2 = RewriteCodeForParser( code1 );
-                    preparedTokens = code2.Cdr;
-                    return code2.Car;
-                }
-
-                ThrowScannerException( "Invalid use of '#'" );
-            }
-
-            if ( ch == eofChar )
-            {
-                return SyntacticToken.EOF;
-            }
-
-            startcol = col;
-
-            if ( Eat( '\'' ) )
-            {
-                return SyntacticToken.QUOTE;
-            }
-
-            if ( Eat( '`' ) )
-            {
-                return SyntacticToken.QUASI_QUOTE;
-            }
-
-            if ( Eat( '(' ) )
-            {
-                return SyntacticToken.LEFT_PAR;
-            }
-
-            if ( Eat( ')' ) )
-            {
-                return SyntacticToken.RIGHT_PAR;
-            }
-
-            if ( Eat( '[' ) )
-            {
-                return SyntacticToken.LEFT_BRACKET;
-            }
-
-            if ( Eat( ']' ) )
-            {
-                return SyntacticToken.RIGHT_BRACKET;
-            }
-
-            if ( Eat( '{' ) )
-            {
-                return SyntacticToken.LEFT_BRACE;
-            }
-
-            if ( Eat( '}' ) )
-            {
-                return SyntacticToken.RIGHT_BRACE;
-            }
-
-            if ( Eat( ',' ) )
-            {
-                if ( Eat( '@' ) )
-                {
-                    return SyntacticToken.UNQUOTE_SPLICING;
-                }
-                else if ( Eat( '.' ) )
-                {
-                    return SyntacticToken.UNQUOTE_DOT;
-                }
-                else
-                {
-                    return SyntacticToken.UNQUOTE;
-                }
-            }
-
-            if ( Eat( "\"\"\"" ) )
-            {
-                return new StringToken( ParseDocString( "\"\"\"" ), StringTokenType.TripleQuote );
-            }
-
-            if ( Eat( "@\"" ) )
-            {
-                return new StringToken( ParseMultiLineString(), StringTokenType.AtDoubleQuote );
-            }
-
-            if ( Eat( "\"" ) )
-            {
-                return new StringToken( ParseSingleLineString(), StringTokenType.DoubleQuote );
-            }
-
-            if ( Eat( Runtime.LambdaCharacter ) )
-            {
-                var buf = new Vector();
-                buf.Add( SyntacticToken.LEFT_PAR );
-
-                while ( Char.IsLetter( PeekChar( 0 ) ) )
-                {
-                    buf.Add( Runtime.FindSymbol( new string( PeekChar( 0 ), 1 ), false ) );
-                    EatChars( 1 );
-                }
-
-                buf.Add( SyntacticToken.RIGHT_PAR );
-
-                var lastChar = PeekChar( 0 );
-
-                if ( lastChar == '.' )
-                {
-                    EatChars( 1 );
-                    preparedTokens = Runtime.AsList( buf );
-                }
-                else if ( !IsWhiteSpace( lastChar ) && !IsTerminator( lastChar ) )
-                {
-                    throw new LispException( "Invalid single-letter variable name in {0}: {1}", Runtime.LambdaCharacter, lastChar );
-                }
-                else if ( buf.Count > 2 )
-                {
-                    preparedTokens = Runtime.AsList( buf );
-                }
-                else
-                {
-                    preparedTokens = null;
-                }
-
-                return Symbols.GreekLambda;
-            }
-
-            token = ScanSimpleToken( true );
-
-            if ( token == "" )
-            {
-                throw new LispException( "Empty token???" );
-            }
-
-            object numberValue;
-            object timespan;
-
-            if ( ( numberValue = token.TryParseNumber() ) != null )
-            {
-                return numberValue;
-            }
-            else if ( ( timespan = token.TryParseTime() ) != null )
-            {
-                return timespan;
-            }
-            else
-            {
-
-                if ( token == "true" )
-                {
-                    return true;
-                }
-
-                if ( token == "false" )
-                {
-                    return false;
-                }
-
-                if ( token == "null" )
-                {
-                    return null;
-                }
-
-                if ( token == "." )
-                {
-                    return Symbols.Accessor;
-                }
-                else if ( token.StartsWith( "." ) )
-                {
-                    // .name maps to ( . "name" )
-                    preparedTokens = Runtime.MakeList( Symbols.Accessor, token.Substring( 1 ), SyntacticToken.RIGHT_PAR );
-                    return SyntacticToken.LEFT_PAR;
-                }
-                else
-                {
-                    return Runtime.FindSymbol( token, false );
-                }
-            }
-        }
-
-        Cons RewriteCodeForParser( object code )
-        {
-            var v = new Vector();
-            RewriteCodeForParser( v, code );
-            return Runtime.AsList( v );
-        }
-
-        void RewriteCodeForParser( Vector output, object code )
-        {
-            if ( code is Cons )
-            {
-                output.Add( SyntacticToken.LEFT_PAR );
-                foreach ( var item in Runtime.ToIter( code ) )
-                {
-                    RewriteCodeForParser( output, item );
-                }
-                output.Add( SyntacticToken.RIGHT_PAR );
-            }
-            else
-            {
-                output.Add( code );
-            }
-        }
-
-        string ScanSimpleToken( bool backslashEscapes )
-        {
-            bool isEscaped;
-            return ScanSimpleToken( backslashEscapes, out isEscaped );
-        }
-
-        string ScanSimpleToken( bool backslashEscapes, out bool isEscaped )
-        {
-            isEscaped = false;
-            var buf = new StringWriter();
-            var empty = true;
+            //ch = ReadChar();
+            //if ( ch != '(' )
+            //{
+            //   throw MakeScannerException( "EOF: infix expression must begin with a '('" );
+            //}
 
             while ( true )
             {
-                var ch = PeekChar( 0 );
+                ch = PeekChar( 0 );
 
-                if ( ch == eofChar )
+                if ( ch == EofChar )
                 {
-                    break;
+                    throw MakeScannerException( "EOF: Unterminated infix expression" );
                 }
 
-                if ( backslashEscapes && ch == '\\' )
+                SkipChars( 1 );
+
+                buf.Append( ch );
+
+                if ( ch == '(' )
                 {
-                    EatChars( 1 );
-                    ch = PeekChar( 0 );
-                    if ( ch == eofChar )
-                    {
-                        ThrowScannerException( "EOF: unexpected end" );
-                    }
-                    isEscaped = true;
+                    ++count;
                 }
-                else if ( IsTerminator( ch ) || IsWhiteSpace( ch ) )
+                else if ( ch == ')' )
                 {
-                    if ( !empty && ch == ',' )
-                    {
-                        // allow embedded comma in numbers
-                    }
-                    else
+                    --count;
+                    if ( count == 0 )
                     {
                         break;
                     }
                 }
-
-                buf.Write( ch );
-                empty = false;
-
-                EatChars( 1 );
             }
 
-            var token = buf.ToString();
+            return buf.ToString();
 
-            if ( token == "" )
-            {
-                throw new LispException( "Empty token???" );
-            }
-
-            return token;
         }
 
-	}
+        [Lisp]
+        public void InsertForm( object form )
+        {
+            insertedForms = Runtime.MakeCons( form, insertedForms );
+        }
 
+        internal int GrepShortLambdaParameters( Cons form )
+        {
+            var last = 0;
+
+            if ( form != null )
+            {
+                for ( var head = form; head != null; head = head.Cdr )
+                {
+                    var sym = head.Car as Symbol;
+                    var seq = head.Car as Cons;
+                    var index = -1;
+
+                    if ( sym != null )
+                    {
+                        var position = Runtime.Position( sym, Symbols.ShortLambdaVariables );
+                        if ( position != null )
+                        {
+                            index = ( int ) position;
+                            if ( index == 0 )
+                            {
+                                index = 1;
+                                head.Car = Symbols.ShortLambdaVariables[ index ];
+                            }
+                        }
+                    }
+                    else if ( seq != null )
+                    {
+                        index = GrepShortLambdaParameters( seq );
+                    }
+
+                    if ( index != -1 )
+                    {
+                        last = ( last < index ) ? index : last;
+                    }
+                }
+            }
+
+            return last;
+        }
+
+        internal object ParseShortLambdaExpression( string delimiter )
+        {
+            var body = ReadDelimitedList( delimiter );
+            if ( !Runtime.Consp( Runtime.First( body ) ) )
+            {
+                body = Runtime.MakeList( body );
+            }
+            var lastIndex = GrepShortLambdaParameters( body );
+            var args = Runtime.AsList( Symbols.ShortLambdaVariables.Skip( 1 ).Take( lastIndex ) );
+            var code = Runtime.MakeListStar( Symbols.Lambda, args, body );
+            return code;
+        }
+
+        internal object ParseLambdaCharacter()
+        {
+            var buf = new Vector();
+
+            while ( Char.IsLetter( PeekChar() ) )
+            {
+                buf.Add( Runtime.FindSymbol( new string( PeekChar(), 1 ) ) );
+                SkipChars( 1 );
+            }
+
+            var lastChar = PeekChar();
+            var item = GetEntry( lastChar );
+
+            if ( lastChar == '.' )
+            {
+                SkipChars( 1 );
+                InsertForm( Runtime.AsList( buf ) );
+            }
+            else if ( item.Type == CharacterType.Constituent || item.Type == CharacterType.NonTerminatingMacro )
+            {
+                throw MakeScannerException( "Invalid single-letter variable name in {0}: {1}", Runtime.LambdaCharacter, lastChar );
+            }
+            else if ( buf.Count != 0 )
+            {
+                InsertForm( Runtime.AsList( buf ) );
+            }
+
+            return Symbols.GreekLambda;
+        }
+
+    }
 
 }

@@ -1,4 +1,4 @@
-// Copyright (C) 2012-2014 Jan Tolenaar. See the file LICENSE for details.
+// Copyright (C) Jan Tolenaar. See the file LICENSE for details.
 
 using System;
 using System.Collections;
@@ -22,6 +22,7 @@ namespace Kiezel
         internal static bool OptimizerEnabled;
         internal static bool SetupMode;
         internal static bool InteractiveMode;
+        internal static bool ListenerEnabled;
         internal static bool UnicodeOutputEnable = true;
         internal static char LambdaCharacter = (char)0x3bb;
         internal static Cons UserArguments;
@@ -31,10 +32,12 @@ namespace Kiezel
         internal static Package LispDocPackage;
         internal static Package SystemPackage;
         internal static Package MathPackage;
+        internal static Package TempPackage;
         internal static Dictionary<object, string> Documentation;
         internal static string HomeDirectory = Directory.GetCurrentDirectory();
         internal static long GentempCounter = 0;
         internal static Dictionary<Type, List<Type>> AbstractTypes;
+        internal static Readtable DefaultReadtable;
 
         internal static Stopwatch StopWatch = Stopwatch.StartNew();
 
@@ -85,7 +88,10 @@ namespace Kiezel
             UserPackage = null;
             Documentation = new Dictionary<object, string>();
             Packages = new Dictionary<string, Package>();
+            PackagesByType = new Dictionary<Type, Package>();
             Types = new Dictionary<Symbol, object>();
+
+            DefaultReadtable = GetStandardReadtable();
         }
 
         internal static void InitAbstractTypes()
@@ -99,8 +105,8 @@ namespace Kiezel
                 typeof(List), typeof(Cons),null,
                 typeof(Sequence), typeof( List), typeof(Vector), null,
                 typeof(Enumerable), typeof(IEnumerable),null,
-                typeof(Symbol),typeof(Keyword),null,
-                typeof(Atom),typeof(Symbol),typeof(Keyword),typeof(ValueType),typeof(string),typeof(Number),
+                typeof(Symbol),typeof(KeywordClass),null,
+                typeof(Atom),typeof(Symbol),typeof(KeywordClass),typeof(ValueType),typeof(string),typeof(Number),
                         typeof(Complex), typeof(Integer), typeof(BigInteger), typeof(Numerics.BigRational), typeof(Rational),null,
                 null
             };
@@ -131,8 +137,12 @@ namespace Kiezel
 
         internal static void RestartSymbols()
         {
+            // these two do not use lisp package
             KeywordPackage = MakePackage( "keyword", false );
+            TempPackage = MakePackage( "temp", true );
+
             LispPackage = MakePackage( "lisp", true );
+            
             UserPackage = MakePackage( "user", true );
             LispDocPackage = MakePackage( "example", true );
             SystemPackage = MakePackage( "system", true );
@@ -143,7 +153,7 @@ namespace Kiezel
             // standard set of variables
             Symbols.Recur.ReadonlyValue = null;
             Symbols.ReadEval.VariableValue = null;
-            Symbols.ReadSuppress.ReadonlyValue = false;
+            Symbols.Readtable.VariableValue = GetStandardReadtable();
             Symbols.Features.VariableValue = null;
             Symbols.LoadPath.ReadonlyValue = null;
             Symbols.ScriptDirectory.ReadonlyValue = NormalizePath( HomeDirectory );
@@ -157,7 +167,6 @@ namespace Kiezel
             Symbols.PrintForce.VariableValue = true;
             Symbols.PrintEscape.VariableValue = true;
             Symbols.PrintBase.VariableValue = 10;
-            Symbols.PrintMaxElements.VariableValue = 50;
             Symbols.PrintShortSymbolNames.VariableValue = false;
             Symbols.It.VariableValue = null;
             Symbols.HelpHook.VariableValue = null;
@@ -173,11 +182,11 @@ namespace Kiezel
             Symbols.PrintCompact.Value = false;
             Symbols.PrintColor.Value = null;
             Symbols.PrintBackgroundColor.Value = null;
-            Symbols.Strict.Value = false;
             Symbols.I.ConstantValue = Complex.ImaginaryOne;
             Symbols.E.ConstantValue = Math.E;
             Symbols.PI.ConstantValue = Math.PI;
-            Symbols.QuickImport.VariableValue = true;
+            Symbols.LazyImport.VariableValue = true;
+            Symbols.PackageNamePrefix.VariableValue = null;
 
 #if KIEZELLISPW
             Symbols.StandoutColor.Value = null;
@@ -278,11 +287,11 @@ namespace Kiezel
                 if ( attrs.Length != 0 )
                 {
                     var pure = members[ 0 ].GetCustomAttributes( typeof( PureAttribute ), false ).Length != 0;
-                    var builtin = new ImportedFunction( members, pure );
+                    var builtin = new ImportedFunction( name, type, members, pure );
 
                     foreach ( string symbolName in ( ( LispAttribute ) attrs[ 0 ] ).Names )
                     {
-                        var sym = ( symbolName == "." ) ? Symbols.Accessor : FindSymbol( symbolName, true );
+                        var sym = FindSymbol( symbolName, true );
                         if ( !sym.IsUndefined || sym.SpecialFormValue != null )
                         {
                             PrintWarning( "Duplicate builtin name: ", sym.Name );
@@ -310,7 +319,7 @@ namespace Kiezel
 
         internal static void RestartListeners()
         {
-            if ( InteractiveMode )
+            if ( ListenerEnabled )
             {
                 CreateCommandListener( Convert.ToInt32( Symbols.ReplListenerPort.Value ) );
             }
@@ -318,7 +327,7 @@ namespace Kiezel
 
         internal static void AbortListeners()
         {
-            if ( InteractiveMode )
+            if ( ListenerEnabled )
             {
                 AbortCommandListener();
             }

@@ -1,4 +1,4 @@
-// Copyright (C) 2012-2014 Jan Tolenaar. See the file LICENSE for details.
+// Copyright (C) Jan Tolenaar. See the file LICENSE for details.
 
 //
 // getline.cs: A command line editor
@@ -850,11 +850,6 @@ namespace Kiezel
             return Char.IsWhiteSpace( ch );
         }
 
-        bool IsWordChar( char ch )
-        {
-            return !IsWhiteChar( ch ) && !Scanner.IsTerminator( ch );
-        }
-
         int WordForward( int p )
         {
             if ( p >= text.Length )
@@ -864,12 +859,12 @@ namespace Kiezel
 
             int i = p;
 
-            while  ( i < text.Length && IsWordChar( text[i] ))
+            while  ( i < text.Length && Runtime.IsWordChar( text[i] ))
             {
                 ++i;
             }
 
-            while ( i < text.Length && !IsWordChar( text[i] ) )
+            while ( i < text.Length && !Runtime.IsWordChar( text[i] ) )
             {
                 ++i;
             }
@@ -891,12 +886,12 @@ namespace Kiezel
                 return 0;
             }
 
-            while ( i >= 0 && !IsWordChar( text[i] ) )
+            while ( i >= 0 && !Runtime.IsWordChar( text[i] ) )
             {
                 --i;
             }
 
-            while ( i >= 0 && IsWordChar( text[i] ) )
+            while ( i >= 0 && Runtime.IsWordChar( text[i] ) )
             {
                 --i;
             }
@@ -1159,7 +1154,7 @@ namespace Kiezel
                         while ( start > 0 )
                         {
                             var ch = input[ start - 1 ];
-                            if ( Scanner.IsWhiteSpace( ch ) || Scanner.IsTerminator( ch ) )
+                            if ( !Runtime.IsWordChar( ch ) )
                             {
                                 break;
                             }

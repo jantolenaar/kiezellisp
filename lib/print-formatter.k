@@ -1,4 +1,4 @@
-;;;; Copyright (C) 2012-2013 Jan Tolenaar. See the file LICENSE for details.
+;;;; Copyright (c) Jan Tolenaar. See the file LICENSE for details.
 
 ;;;;
 ;;;; print-formatter.k
@@ -15,9 +15,9 @@
     (var name null)
     (var title null)
     (var width null)
-    (var f1 (first field))
-    (var f2 (second field))
-    (var f3 (third field))
+    (let f1 (first field))
+    (let f2 (second field))
+    (let f3 (third field))
     (cond
         ((symbol? f1)
             (setf name f1))
@@ -53,8 +53,8 @@
                               (list field))))
 
 (defun print-records (records fields)
-    (var $print-escape false)
-    (var fields (map make-field fields))
+    (let $print-escape false)
+    (let fields (map make-field fields))
     (var counter 0)
     (print-headers fields)
     (print-separators fields)
@@ -81,7 +81,7 @@
 
 (defun print-separators (fields)
     (foreach (f fields)
-        (write (string.repeat "=" (math.abs (.width f))))
+        (write (string:repeat "=" (math:abs (.width f))))
         (write " "))
     (write "\n"))
 

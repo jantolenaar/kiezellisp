@@ -1,4 +1,4 @@
-;;;; Copyright (C) 2012-2013 Jan Tolenaar. See the file LICENSE for details.
+;;;; Copyright (c) Jan Tolenaar. See the file LICENSE for details.
 
 ;;;;
 ;;;; unit-test.k
@@ -13,7 +13,7 @@
 (in-package "unit-test")
 
 (defun run-function (name)
-    (var result (try-and-catch (funcall name)))
+    (let result (try-and-catch (funcall name)))
     (if (exception? result)
             (do
                 (write "FAIL" 

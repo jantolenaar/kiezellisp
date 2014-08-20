@@ -1,4 +1,4 @@
-;;;; Copyright (C) 2012-2013 Jan Tolenaar. See the file LICENSE for details.
+;;;; Copyright (c) Jan Tolenaar. See the file LICENSE for details.
 
 (require "html")
 
@@ -19,49 +19,48 @@
     (var row-number 0)
     (var row null)
 
-    (var get-class 
-            (λx (cond
-                    ((= x MAGIC-NUMBER) "solid")
-                    ((not grouping) "border")
-                    ((= 0 (% row-number grouping)) "even")
-                    (true "odd"))))
+    (letfun get-class (x)
+        (cond
+            ((= x MAGIC-NUMBER) "solid")
+            ((not grouping) "border")
+            ((= 0 (% row-number grouping)) "even")
+            (true "odd")))
 
-    (var format-header-col 
-            (λx (if (not (.width x))
-                    (<th> :class "data" (.caption x))
-                    (<th> :class "data" :style "width:<%=(.width x)%>em;" (.caption x)))))
+    (letfun format-header-col (x)
+        (if (not (.width x))
+                (<th> :class "data" (.caption x))
+                (<th> :class "data" :style "width:<%=(.width x)%>em;" (.caption x))))
 
-    (var format-header-row
-            (λ () (<tr> (map format-header-col layout))))
+    (letfun format-header-row ()
+        (<tr> (map format-header-col layout)))
 
-    (var format-data-col
-            (λ (col)
-                (var format (or (.format col) "{0}"))
-                (var numeric (.starts-with format "{0:"))
-                (var value1 (attr row (.expr col)))
-                (var value2
-                    (if (and blank-when-zero
-                             numeric
-                             (number? value1)
-                             (= 0 value1))
-                          null
-                        value1))
-                (var value3
-                    (cond
-                        ((null? value2) "&nbsp;")
-                        ((= "" value2) "&nbsp;")
-                        ((= value2 MAGIC-NUMBER) "x")
-                        (true (string.format format value2))))
-                (var align
-                    (if (.centered col) "center" (if numeric "right" "left")))
-                (if (= value3 "&nbsp;")
-                    (<td> :class (get-class value2) value3)
-                    (<td> :class (get-class value2) :style "text-align:<%=align%>" value3))))
+    (letfun format-data-col (col)
+        (let format (or (.format col) "{0}"))
+        (let numeric (.starts-with format "{0:"))
+        (let value1 (attr row (.expr col)))
+        (let value2
+            (if (and blank-when-zero
+                     numeric
+                     (number? value1)
+                     (= 0 value1))
+                  null
+                value1))
+        (let value3
+            (cond
+                ((null? value2) "&nbsp;")
+                ((= "" value2) "&nbsp;")
+                ((= value2 MAGIC-NUMBER) "x")
+                (true (string:format format value2))))
+        (let align
+            (if (.centered col) "center" (if numeric "right" "left")))
+        (if (= value3 "&nbsp;")
+            (<td> :class (get-class value2) value3)
+            (<td> :class (get-class value2) :style "text-align:<%=align%>" value3)))
 
-    (var format-data-row
-            (λr (setf row r)
-                (setf row-number (+ 1 row-number))
-                (<tr> (map format-data-col layout))))
+    (letfun format-data-row (r)
+        (setf row r)
+        (setf row-number (+ 1 row-number))
+        (<tr> (map format-data-col layout)))
 
     (<table> :cellspacing 0 :class "data"
             (format-header-row)

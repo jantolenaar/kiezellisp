@@ -1,4 +1,4 @@
-;;;; Copyright (C) 2012-2013 Jan Tolenaar. See the file LICENSE for details.
+;;;; Copyright (c) Jan Tolenaar. See the file LICENSE for details.
 
 ;;;;
 ;;;; markdown.k
@@ -18,7 +18,7 @@
 (import "MarkdownDeep.Markdown" :package-name "markdown-deep")
 
 (defun convert-to-html (str)
-    (var md (markdown-deep.new))
+    (let md (markdown-deep:new))
     (setf (.extra-mode md) true)
     (.transform md str))
 

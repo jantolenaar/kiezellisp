@@ -1,4 +1,4 @@
-// Copyright (C) 2012-2014 Jan Tolenaar. See the file LICENSE for details.
+// Copyright (C) Jan Tolenaar. See the file LICENSE for details.
 
 using System;
 using System.Collections;
@@ -27,7 +27,6 @@ namespace Kiezel
             Runtime.RunConsole( args );
         }
     }
-
 
     public partial class Runtime
     {
@@ -79,7 +78,7 @@ namespace Kiezel
         internal static string[] ReplCommands = new string[] 
         {
             "?", ":help", 
-            ":clear", ":globals", ":history", ":quit",
+            ":clear", ":continue", ":globals", ":history", ":quit",
             ":abort", ":backtrace", ":variables", ":$variables",
             ":top", ":exception", ":Exception", ":force",
             ":describe", ":reset", ":Reset", ":time"
@@ -93,7 +92,7 @@ namespace Kiezel
             while ( start > 0 )
             {
                 var ch = text[ start - 1 ];
-                if ( Scanner.IsWhiteSpace( ch ) || Scanner.IsTerminator( ch ) )
+                if ( !IsWordChar( ch ) )
                 {
                     terminator = ch;
                     break;
@@ -130,12 +129,13 @@ namespace Kiezel
             }
 
             var currentPackage = CurrentPackage();
+            VerifyNoMissingSymbols( currentPackage );
 
             foreach ( var sym in currentPackage.Dict.Values )
             {
                 var s = sym.Name;
 
-                if ( !sym.IsTemp && s.StartsWith( prefix ) )
+                if ( s.StartsWith( prefix ) )
                 {
                     nameset.Add( s.Substring( prefix.Length ) );
                 }
@@ -143,11 +143,13 @@ namespace Kiezel
 
             foreach ( var package in currentPackage.UseList )
             {
+                VerifyNoMissingSymbols( package );
+
                 foreach ( var sym in package.Dict.Values )
                 {
                     var s = sym.Name;
 
-                    if ( !sym.IsTemp && s.StartsWith( prefix ) && package.FindExternal( s ) != null )
+                    if ( s.StartsWith( prefix ) && package.FindExternal( s ) != null )
                     {
                         nameset.Add( s.Substring( prefix.Length ) );
                     }
@@ -160,11 +162,11 @@ namespace Kiezel
             {
                 if ( package.StartsWith( prefix ) )
                 {
-                    nameset.Add( package.Substring( prefix.Length ) + "." );
+                    nameset.Add( package.Substring( prefix.Length ) + ":" );
                 }
             }
 
-            if ( prefix.IndexOf( "." ) > 0 )
+            if ( prefix.IndexOf( "::" ) > 0 )
             {
                 foreach ( var name in packageNames )
                 {
@@ -175,41 +177,16 @@ namespace Kiezel
                         continue;
                     }
 
-                    // Show only external symbols
-                    foreach ( var sym in package.Dict.Values )
-                    {
-                        if ( package.FindExternal( sym.Name ) != null )
-                        {
-                            var s = name + "." + sym.Name;
-
-                            if ( !sym.IsTemp && s.StartsWith( prefix ) )
-                            {
-                                nameset.Add( s.Substring( prefix.Length ) );
-                            }
-                        }
-                    }
-                }
-            }
-
-            if ( prefix.IndexOf( "!" ) > 0 )
-            {
-                foreach ( var name in packageNames )
-                {
-                    var package = FindPackage( name );
-
-                    if ( package == null || package.Name == "" )
-                    {
-                        continue;
-                    }
+                    VerifyNoMissingSymbols( package );
 
                     // Show only internal symbols
                     foreach ( var sym in package.Dict.Values )
                     {
                         if ( !package.ExternalSymbols.Contains( sym.Name ) )
                         {
-                            var s = name + "!" + sym.Name;
+                            var s = name + "::" + sym.Name;
 
-                            if ( !sym.IsTemp && s.StartsWith( prefix ) )
+                            if ( s.StartsWith( prefix ) )
                             {
                                 nameset.Add( s.Substring( prefix.Length ) );
                             }
@@ -217,6 +194,35 @@ namespace Kiezel
                     }
                 }
             }
+            else if ( prefix.IndexOf( ":" ) > 0 )
+            {
+                foreach ( var name in packageNames )
+                {
+                    var package = FindPackage( name );
+
+                    if ( package == null || package.Name == "" )
+                    {
+                        continue;
+                    }
+
+                    VerifyNoMissingSymbols( package );
+
+                    // Show only external symbols
+                    foreach ( var sym in package.Dict.Values )
+                    {
+                        if ( package.FindExternal( sym.Name ) != null )
+                        {
+                            var s = name + ":" + sym.Name;
+
+                            if ( s.StartsWith( prefix ) )
+                            {
+                                nameset.Add( s.Substring( prefix.Length ) );
+                            }
+                        }
+                    }
+                }
+            }
+
 
         exit:
 
@@ -247,7 +253,7 @@ namespace Kiezel
             if ( lispCode != null )
             {
                 var head = First(lispCode) as Symbol;
-                if ( head != null && Cdr( lispCode ) != null )
+                if ( head != null && ( Functionp( head.Value ) || SpecialFormp( head.Value ) ) )
                 {
                     // Symbol and Parameters: assume function call.
                     lispCode = MakeCons( lispCode, ( Cons ) null );
@@ -266,8 +272,11 @@ namespace Kiezel
                     if ( func == null )
                     {
                         Symbols.It.Value = val;
-                        Console.Write( "it: " );
-                        PrettyPrint( Console.Out, 4, val );
+                        if ( val != VOID.Value )
+                        {
+                            Console.Write( "it: " );
+                            PrettyPrint( Console.Out, 4, val );
+                        }
                     }
                     else
                     {
@@ -351,6 +360,7 @@ namespace Kiezel
                 DebugMode = parser.GetOption( "d" ) == null;
                 OptimizerEnabled = !DebugMode;
                 InteractiveMode = false;
+                ListenerEnabled = false;
                 Reset( false );
                 var code = ReadFromString( "(do " + expr1 + ")" );
                 Eval( code );
@@ -368,6 +378,7 @@ namespace Kiezel
             parser.AddOption( "-d", "--debug" );
             parser.AddOption( "-n", "--nodebug" );
             parser.AddOption( "-o", "--optimize" );
+            parser.AddOption( "-l", "--listener" );
 
             parser.Parse( args );
 
@@ -403,6 +414,7 @@ namespace Kiezel
                 DebugMode = parser.GetOption( "n" ) == null;
                 OptimizerEnabled = !DebugMode && parser.GetOption( "o" ) != null;
                 InteractiveMode = true;
+                ListenerEnabled = parser.GetOption( "l" ) != null;
 
                 var assembly = Assembly.GetExecutingAssembly();
                 var fileVersion = FileVersionInfo.GetVersionInfo( assembly.Location );
@@ -410,7 +422,7 @@ namespace Kiezel
                 Console.WriteLine( GetVersion() );
                 Console.WriteLine( fileVersion.LegalCopyright );
                 Console.WriteLine( "Type :help or ? for help on top-level commands" );
-                ReadEvalPrintLoop( expr2 );
+                ReadEvalPrintLoop( commandOptionArgument: expr2, initialized: false );
             }
 #endif
         }
@@ -450,14 +462,38 @@ namespace Kiezel
             }
         }
 
-        internal static void ReadEvalPrintLoop( string commandOptionArgument )
+        [Lisp( "breakpoint" )]
+        public static void Breakpoint()
         {
-            Console.TreatControlCAsInput = true;
-
+            var oldState = state;
             state = new Stack<ThreadContextState>();
             state.Push( SaveStackAndFrame() );
 
-            var initialized = false;
+            try
+            {
+                ReadEvalPrintLoop( initialized: true, debugging: true );
+            }
+            catch ( ContinueFromBreakpointException )
+            {
+            }
+            catch ( AbortingDebuggerException )
+            {
+                throw new AbortedDebuggerException();
+            }
+            finally
+            {
+                state = oldState;
+            }
+        }
+
+        internal static void ReadEvalPrintLoop( string commandOptionArgument = null, bool initialized = false, bool debugging = false )
+        {
+            if ( !initialized )
+            {
+                Console.TreatControlCAsInput = true;
+                state = new Stack<ThreadContextState>();
+                state.Push( SaveStackAndFrame() );
+            }
 
             while ( true )
             {
@@ -477,14 +513,31 @@ namespace Kiezel
 
                     if ( String.IsNullOrWhiteSpace( commandOptionArgument ) )
                     {
-                        EvalPrintCommand( ReadCommand() );
+                        EvalPrintCommand( ReadCommand( debugging ), debugging );
                     }
                     else
                     {
                         var s = commandOptionArgument;
                         commandOptionArgument = "";
-                        EvalPrintCommand( s );
+                        EvalPrintCommand( s, debugging );
                     }
+                }
+                catch ( ContinueFromBreakpointException )
+                {
+                    if ( debugging )
+                    {
+                        throw;
+                    }
+                }
+                catch ( AbortingDebuggerException )
+                {
+                    if ( debugging )
+                    {
+                        throw;
+                    }
+                }
+                catch ( AbortedDebuggerException )
+                {
                 }
                 catch ( Exception ex )
                 {
@@ -515,7 +568,7 @@ namespace Kiezel
             return ex3;
         }
 
-        internal static string ReadCommand()
+        internal static string ReadCommand( bool debugging = false )
         {
             var data = "";
             bool isExternalInput = false;
@@ -524,16 +577,17 @@ namespace Kiezel
             {
                 int counter = le.History.Count + 1;
                 string prompt;
+                string debugText = debugging ? "> debug " : "";
 
                 if ( state.Count == 1 )
                 {
                     Console.WriteLine();
-                    prompt = System.String.Format( "{0} {1} > ", ( ( Package ) Symbols.Package.Value ).Name, counter );
+                    prompt = System.String.Format( "{0} {1} {2}> ", ( ( Package ) Symbols.Package.Value ).Name, counter, debugText );
                 }
                 else
                 {
                     Console.WriteLine();
-                    prompt = System.String.Format( "{0} {1} : {2} > ", ( ( Package ) Symbols.Package.Value ).Name, counter, state.Count - 1 );
+                    prompt = System.String.Format( "{0} {1} {2}: {3} > ", ( ( Package ) Symbols.Package.Value ).Name, counter, debugText, state.Count - 1 );
                 }
 
                 le.ReadingFromREPL = true;
@@ -545,7 +599,7 @@ namespace Kiezel
             return data;
         }
 
-        internal static void EvalPrintCommand( string data )
+        internal static void EvalPrintCommand( string data, bool debugging )
         {
             Cons code = ReadAllFromString( data );
             
@@ -592,6 +646,14 @@ namespace Kiezel
 
                 switch ( command )
                 {
+                    case ":continue":
+                    {
+                        if ( debugging )
+                        {
+                            throw new ContinueFromBreakpointException();
+                        }
+                        break;
+                    }
                     case ":clear":
                     {
                         Console.Clear();
@@ -613,6 +675,10 @@ namespace Kiezel
                         if ( state.Count > 1 )
                         {
                             state.Pop();
+                        }
+                        else if ( debugging )
+                        {
+                            throw new AbortingDebuggerException();
                         }
                         break;
                     }

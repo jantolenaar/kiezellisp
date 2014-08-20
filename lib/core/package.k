@@ -1,4 +1,4 @@
-;;;; Copyright (C) 2012-2013 Jan Tolenaar. See the file LICENSE for details.
+;;;; Copyright (c) Jan Tolenaar. See the file LICENSE for details.
 
 ;;;;
 ;;;; package.k
@@ -18,7 +18,7 @@
         (map rest ~)))
 
 (defun defpackage-imp (name options)
-    (var $package (make-package name))
+    (let $package (make-package name))
     (each (λx (set-doc $package (apply string x)))
           (get-option :documentation options))
     (each use-package (flatten (get-option :use options)))

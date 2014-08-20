@@ -1,4 +1,4 @@
-// Copyright (C) 2012-2013 Jan Tolenaar. See the file LICENSE for details.
+// Copyright (C) Jan Tolenaar. See the file LICENSE for details.
 
 using System;
 using System.Collections;
@@ -16,13 +16,13 @@ namespace Kiezel
 
     public partial class Runtime
     {
-        [Lisp( "csv.read-string-to-grid" )]
+        [Lisp( "csv:read-string-to-grid" )]
         public static Vector CsvReadStringToGrid( string str )
         {
             return CsvReadStringToGrid( str, null );
         }
 
-        [Lisp( "csv.read-string-to-grid" )]
+        [Lisp( "csv:read-string-to-grid" )]
         public static Vector CsvReadStringToGrid( string str, Prototype options )
         {
             options = options ?? new Prototype( null );
@@ -111,7 +111,7 @@ namespace Kiezel
             return lines;
         }
 
-        [Lisp("csv.write-value-to-string")]
+        [Lisp("csv:write-value-to-string")]
         public static string CsvWriteValueToString( object value, CultureInfo culture )
         {
 
@@ -140,7 +140,7 @@ namespace Kiezel
             }
         }
 
-        [Lisp( "csv.write-grid-to-string" )]
+        [Lisp( "csv:write-grid-to-string" )]
         public static string CsvWriteGridToString( IEnumerable lines, Prototype options )
         {
             options = options ?? new Prototype( null );

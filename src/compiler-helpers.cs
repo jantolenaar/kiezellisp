@@ -1,4 +1,4 @@
-// Copyright (C) 2012-2013 Jan Tolenaar. See the file LICENSE for details.
+// Copyright (C) Jan Tolenaar. See the file LICENSE for details.
 
 using System;
 using System.Collections;
@@ -18,6 +18,91 @@ namespace Kiezel
 
     public static partial class RuntimeHelpers
     {
+
+        internal static T GetMostSpecific<T>( List<T> methods ) where T: MethodBase
+        {
+            methods.Sort( CompareMethodBase );
+            return methods[ 0 ];
+        }
+
+        internal static int CompareMethodBase( MethodBase m1, MethodBase m2 )
+        {
+            var p1 = m1.GetParameters();
+            var p2 = m2.GetParameters();
+            return CompareParameterInfo( p1, p2 );
+        }
+
+        internal static PropertyInfo GetMostSpecific( List<PropertyInfo> methods ) 
+        {
+            methods.Sort( ComparePropertyInfo );
+            return methods[ 0 ];
+        }
+
+        internal static int ComparePropertyInfo( PropertyInfo m1, PropertyInfo m2 )
+        {
+            var p1 = m1.GetIndexParameters();
+            var p2 = m2.GetIndexParameters();
+            return CompareParameterInfo( p1, p2 );
+        }
+
+        internal static int CompareParameterInfo( ParameterInfo[] p1, ParameterInfo[] p2)
+        {
+            var i = 0;
+            for ( ; i < p1.Length && i < p2.Length; ++i )
+            {
+                var t1 = p1[ i ].ParameterType;
+                var t2 = p2[ i ].ParameterType;
+                var cmp = 0;
+
+                if ( t1 == t2 )
+                {
+                    cmp = 0;
+                }
+                else if ( t1.IsAssignableFrom( t2 ) )
+                {
+                    cmp = 1;
+                }
+                else if ( t2.IsAssignableFrom( t1 ) )
+                {
+                    cmp = -1;
+                }
+                else 
+                {
+                    var param1 = p1[ i ].IsDefined( typeof( ParamArrayAttribute ), false );
+                    var param2 = p2[ i ].IsDefined( typeof( ParamArrayAttribute ), false );
+                    if ( param1 && !param2 )
+                    {
+                        cmp = 1;
+                    }
+                    else if ( !param1 && param2 )
+                    {
+                        cmp = -1;
+                    }
+                    else
+                    {
+                        //throw new LispException( "Cannot resolve parameter type comparison" );
+                        cmp = t1.GetHashCode().CompareTo( t2.GetHashCode() );
+                    }
+                }
+
+                if ( cmp != 0 )
+                {
+                    return cmp;
+                }
+            }
+            if ( i == p1.Length && i == p2.Length )
+            {
+                return 0;
+            }
+            else if ( i == p1.Length )
+            {
+                return -1;
+            }
+            else
+            {
+                return 1;
+            }
+        }
 
         internal static DynamicMetaObject CheckTargetNullReference( DynamicMetaObject target, string context )
         {
@@ -217,6 +302,12 @@ namespace Kiezel
                     var m = Runtime.CastMethod.MakeGenericMethod( ts );
                     argExpr = Expression.Call( null, m, Expression.Convert( argExpr, typeof( IEnumerable ) ) );
                 }
+                else if ( type != parameterType && typeof( IConvertible ).IsAssignableFrom( type ) && typeof( IConvertible ).IsAssignableFrom( parameterType ) )
+                {
+                    //argExpr = Expression.Convert( argExpr, typeof( object ) );
+                    argExpr = Expression.Call( Runtime.ChangeTypeMethod, argExpr, Expression.Constant( parameterType ) );
+                    argExpr = Expression.Convert( argExpr, parameterType );
+                }
                 else
                 {
                     argExpr = Expression.Convert( argExpr, parameterType );
@@ -238,6 +329,12 @@ namespace Kiezel
                     var ts = parameterType.GetGenericArguments();
                     var m = Runtime.CastMethod.MakeGenericMethod( ts );
                     argExpr = Expression.Call( null, m, Expression.Constant( arg, type ) );
+                }
+                else if ( type != parameterType && typeof( IConvertible ).IsAssignableFrom( type ) && typeof( IConvertible ).IsAssignableFrom( parameterType ) )
+                {
+                    argExpr = Expression.Constant( arg, typeof( object ) );
+                    argExpr = Expression.Call( Runtime.ChangeTypeMethod, argExpr, Expression.Constant( parameterType ) );
+                    argExpr = Expression.Convert( argExpr, parameterType );
                 }
                 else
                 {
@@ -319,27 +416,27 @@ namespace Kiezel
             else
             {
                 var props = target.LimitType.GetProperties();
-                var indexers = props.Where( idx => idx.GetIndexParameters().Length == indexes.Length ).ToArray();
-                PropertyInfo indexer = null;
+                var allIndexers = props.Where( idx => idx.GetIndexParameters().Length == indexes.Length ).ToArray();
+                var indexers = new List<PropertyInfo>();
                 ParameterInfo[] indexerParams = null;
 
-                foreach ( var idxer in indexers )
+                foreach ( var idxer in allIndexers )
                 {
                     indexerParams = idxer.GetIndexParameters();
                     if ( RuntimeHelpers.ParametersMatchArguments( indexerParams, indexes ) )
                     {
-                        indexer = idxer;
-                        break;
+                        indexers.Add( idxer );
                     }
                 }
 
-                if ( indexer == null )
+                if ( indexers.Count == 0 )
                 {
                     //Console.WriteLine( "no match" );
                     return null;
                 }
 
-                var indexExpressions = RuntimeHelpers.ConvertArguments( indexes, indexerParams );
+                var indexer = GetMostSpecific( indexers );
+                var indexExpressions = RuntimeHelpers.ConvertArguments( indexes, indexer.GetIndexParameters() );
 
                 return Expression.MakeIndex(
                             Expression.Convert( target.Expression, target.LimitType ), indexer, indexExpressions );
@@ -459,34 +556,14 @@ namespace Kiezel
             }
         }
 
-        internal static MemberInfo[] GetExtensionMethods( Type targetType, string name )
-        {
-            var flags = BindingFlags.IgnoreCase | BindingFlags.FlattenHierarchy | BindingFlags.Public | BindingFlags.Static;
-
-            if ( targetType == typeof( String ) )
-            {
-                return typeof( StringExtensions ).GetMember( name, flags );
-            }
-            else if ( targetType == typeof( File ) )
-            {
-                return typeof( FileExtensions ).GetMember( name, flags );
-            }
-            else if ( targetType == typeof( Path ) )
-            {
-                return typeof( PathExtensions ).GetMember( name, flags );
-            }
-            else
-            {
-                return new MemberInfo[ 0 ];
-            }
-        }
-
         internal static LambdaExpression GetDelegateExpression( Expression lambda, Type delegateType )
         {
             MethodInfo method = delegateType.GetMethod( "Invoke" );
-            var parameters = method.GetParameters().Select( p => Expression.Parameter( p.ParameterType ) ).ToArray();
+            var parameters1 = method.GetParameters();
+            var parameters2 = parameters1.Select( p => Expression.Parameter( p.ParameterType ) ).ToArray();
+            var parameters3 = parameters2.Select( p => EnsureObjectResult( p ) ).ToArray();
             var funcall = typeof( Runtime ).GetMethod( "Funcall" );
-            var argumentArray = Expression.NewArrayInit( typeof( object ), parameters );
+            var argumentArray = Expression.NewArrayInit( typeof( object ), parameters3 );
             var lambdaCall = Expression.Call( funcall, lambda, argumentArray );
             Expression returnVal;
             if ( method.ReturnType == typeof( void ) )
@@ -497,7 +574,7 @@ namespace Kiezel
             {
                 returnVal = Expression.Convert( lambdaCall, method.ReturnType );
             }
-            var expression = Expression.Lambda( delegateType, returnVal, parameters );
+            var expression = Expression.Lambda( delegateType, returnVal, parameters2 );
             return expression;
         }
 

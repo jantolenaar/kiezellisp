@@ -1,4 +1,4 @@
-// Copyright (C) 2012-2013 Jan Tolenaar. See the file LICENSE for details.
+// Copyright (C) Jan Tolenaar. See the file LICENSE for details.
 
 using System;
 using System.Collections.Generic;
@@ -17,36 +17,213 @@ namespace Kiezel
 
     public class AccessorLambda : IDynamicMetaObjectProvider, IApply
     {
-        internal string MemberName;
+        internal string Members;
+        internal bool Nullable;
+        internal Func<object> Proc0;
+        internal Func<object, object> Proc1;
+        internal Func<object, object, object> Proc2;
+        internal Func<object, object, object, object> Proc3;
+        internal Func<object, object, object, object, object> Proc4;
+        internal Func<object, object, object, object, object, object> Proc5;
+        internal Func<object, object, object, object, object, object, object> Proc6;
 
-        public AccessorLambda( string memberName )
+        public AccessorLambda( bool nullable, string members )
         {
-            MemberName = memberName;
+            Members = members;
+            Nullable = nullable;
         }
 
         public override string ToString()
         {
-            return String.Format( "AccessorLambda Name=\"{0}\"", MemberName );
+            return String.Format( "AccessorLambda Name=\"{0}\" Nullable=\"{1}\"", Members, Nullable );
         }
 
         DynamicMetaObject IDynamicMetaObjectProvider.GetMetaObject( Expression parameter )
         {
-            return new GenericApplyMetaObject<AccessorLambda>( parameter, this );
+            return new AccessorLambdaMetaObject( parameter, this );
         }
 
         object IApply.Apply( object[] args )
         {
-            return Runtime.InvokeMember( MemberName, args );
+            if ( args.Length > 6 )
+            {
+                var args2 = args.Select( x => ( Expression ) Expression.Constant( x ) ).ToArray();
+                var expr = AccessorLambdaMetaObject.MakeExpression( Nullable, Members, args2 );
+                var proc = Runtime.CompileToFunction( expr );
+                var val = proc();
+                return val;
+            }
+            else
+            {
+                switch ( args.Length )
+                {
+                    case 0:
+                    {
+                        if ( Proc0 == null )
+                        {
+                            Proc0 = ( Func<object> ) MakeExpressionProc( 0 );
+                        }
+                        return Proc0();
+                    }
+                    case 1:
+                    {
+                        if ( Proc1 == null )
+                        {
+                            Proc1 = (Func<object,object>) MakeExpressionProc( 1 );
+                        }
+                        return Proc1( args[0] );
+                    }
+                    case 2:
+                    {
+                        if ( Proc2 == null )
+                        {
+                            Proc2 = ( Func<object, object,object> ) MakeExpressionProc( 2 );
+                        }
+                        return Proc2( args[ 0 ], args[ 1 ] );
+                    }
+                    case 3:
+                    {
+                        if ( Proc3 == null )
+                        {
+                            Proc3 = ( Func<object, object, object, object> ) MakeExpressionProc( 3 );
+                        }
+                        return Proc3( args[ 0 ], args[ 1 ], args[ 2 ] );
+                    }
+                    case 4:
+                    {
+                        if ( Proc4 == null )
+                        {
+                            Proc4 = ( Func<object, object, object, object, object> ) MakeExpressionProc( 4 );
+                        }
+                        return Proc4( args[ 0 ], args[ 1 ], args[ 2 ], args[ 3 ] );
+                    }
+                    case 5:
+                    {
+                        if ( Proc5 == null )
+                        {
+                            Proc5 = ( Func<object, object, object, object, object, object> ) MakeExpressionProc( 1 );
+                        }
+                        return Proc5( args[ 0 ], args[ 1 ], args[ 2 ], args[ 3 ], args[ 4 ] );
+                    }
+                    case 6:
+                    {
+                        if ( Proc6 == null )
+                        {
+                            Proc6 = ( Func<object, object, object, object, object, object, object> ) MakeExpressionProc( 6 );
+                        }
+                        return Proc6( args[ 0 ], args[ 1 ], args[ 2 ], args[ 3 ], args[ 4 ], args[ 5 ] );
+                    }
+                    default:
+                    {
+                        throw new NotImplementedException( "Apply supports up to 6 arguments" );
+                    }
+                }
+            }
         }
+
+        internal Delegate MakeExpressionProc( int argCount )
+        {
+            var names = Members.Split( new char[] { '.' }, StringSplitOptions.RemoveEmptyEntries );
+            var args = new ParameterExpression[ argCount ];
+            for ( var i = 0; i < argCount; ++i )
+            {
+                args[ i ] = Expression.Parameter( typeof( object ) );
+            }
+            var code = AccessorLambdaMetaObject.MakeExpression( Nullable, Members, args );
+            var proc = Runtime.CompileToDelegate( code, args );
+            return proc;
+        }
+      
 
     }
 
 
-  
+    public class AccessorLambdaMetaObject : DynamicMetaObject
+    {
+        internal AccessorLambda Lambda;
+
+        public AccessorLambdaMetaObject( Expression parameter, AccessorLambda lambda )
+            : base( parameter, BindingRestrictions.Empty, lambda )
+        {
+            this.Lambda = lambda;
+        }
+
+        public override DynamicMetaObject BindInvoke( InvokeBinder binder, DynamicMetaObject[] args )
+        {
+            var args2 = args.Select(x=>x.Expression).ToArray();
+            var code = MakeExpression( false, Lambda.Members, args2 );
+            var restrictions = BindingRestrictions.GetInstanceRestriction( this.Expression, this.Value );
+            return new DynamicMetaObject( code, restrictions );
+        }
+
+        public static Expression MakeExpression( bool nullable, string members, Expression[] args )
+        {
+            // Warning: modifies args
+
+            if ( args.Length == 0 )
+            {
+                throw new LispException( "Member accessor invoked without a target: {0}", members );
+            }
+
+            var names = members.Split( new char[] { '.' }, StringSplitOptions.RemoveEmptyEntries );
+            var code = args[ 0 ];
+
+            if ( nullable )
+            {
+                var temp = Expression.Parameter( typeof( object ) );
+
+                for ( var i = 0; i < names.Length; ++i )
+                {
+                    Expression code2;
+
+                    if ( i < names.Length - 1 )
+                    {
+                        var binder = Runtime.GetInvokeMemberBinder( new InvokeMemberBinderKey( names[ i ], 0 ) );
+                        code2 = Runtime.CompileDynamicExpression( binder, typeof( object ), new Expression[] { code } );
+                    }
+                    else
+                    {
+                        var binder = Runtime.GetInvokeMemberBinder( new InvokeMemberBinderKey( names[ i ], args.Length - 1 ) );
+                        args[ 0 ] = code;
+                        code2 = Runtime.CompileDynamicExpression( binder, typeof( object ), args );
+                    }
+
+                    code = Expression.Condition( Runtime.WrapBooleanTest( Expression.Assign( temp, code ) ), code2, Expression.Constant( null ) );
+
+                }
+
+                code = Expression.Block( typeof( object ), new ParameterExpression[] { temp }, code );
+            }
+            else
+            {
+                for ( var i = 0; i < names.Length; ++i )
+                {
+                    if ( i < names.Length - 1 )
+                    {
+                        var binder = Runtime.GetInvokeMemberBinder( new InvokeMemberBinderKey( names[ i ], 0 ) );
+                        code = Runtime.CompileDynamicExpression( binder, typeof( object ), new Expression[] { code } );
+                    }
+                    else
+                    {
+                        var binder = Runtime.GetInvokeMemberBinder( new InvokeMemberBinderKey( names[ i ], args.Length - 1 ) );
+                        args[ 0 ] = code;
+                        code = Runtime.CompileDynamicExpression( binder, typeof( object ), args );
+                    }
+                }
+            }
+
+            return code;
+        }
+    }
+
     public class ImportedFunction : IDynamicMetaObjectProvider, IApply, ISyntax
     {
+        internal string Name;
+        internal Type DeclaringType;
         internal bool Pure;
+        internal MethodInfo[] BuiltinExtensionMembers;
         internal MethodInfo[] Members;
+        internal MethodInfo[] ExternalExtensionMembers;
         internal dynamic Proc0;
         internal dynamic Proc1;
         internal dynamic Proc2;
@@ -62,9 +239,21 @@ namespace Kiezel
         internal dynamic Proc12;
 
 
-        internal ImportedFunction( MethodInfo[] members, bool pure )
+        internal ImportedFunction( string name, Type declaringType )
         {
+
             Init();
+            Name = name;
+            DeclaringType = declaringType;
+            BuiltinExtensionMembers = new MethodInfo[ 0 ];
+            Members = new MethodInfo[0];
+            ExternalExtensionMembers = new MethodInfo[ 0 ];
+            Pure = false;
+        }
+
+        internal ImportedFunction( string name, Type declaringType, MethodInfo[] members, bool pure )
+            : this( name, declaringType )
+        {
             Members = members;
             Pure = pure;
         }
@@ -106,7 +295,7 @@ namespace Kiezel
 
         public override string ToString()
         {
-            return String.Format( "Function Name=\"{0}.{1}\"", Members[0].DeclaringType, Members[0].Name );
+            return String.Format( "Function Name=\"{0}.{1}\"", DeclaringType, Name );
         }
 
         DynamicMetaObject IDynamicMetaObjectProvider.GetMetaObject( Expression parameter )
@@ -190,6 +379,145 @@ namespace Kiezel
             }
         }
 
+        //internal Delegate MakeExpressionProc( int argCount )
+        //{
+        //    var args = new ParameterExpression[ argCount ];
+        //    for ( var i = 0; i < argCount; ++i )
+        //    {
+        //        args[ i ] = Expression.Parameter( typeof( object ) );
+        //    }
+        //    var binder = Runtime.GetInvokeBinder( args.Length );
+        //    var code = Runtime.CompileDynamicExpression( binder, typeof( object ), args );
+        //    var proc = Runtime.CompileToDelegate( code, args );
+        //    return proc;
+        //}
+
+        public bool TryBindInvokeBestMethod( bool restrictionOnTargetInstance, DynamicMetaObject target, DynamicMetaObject[] args, out DynamicMetaObject result )
+        {
+            DynamicMetaObject argsFirst = null;
+            DynamicMetaObject[] argsRest = null;
+            return TryBindInvokeBestMethod( restrictionOnTargetInstance,  target, args, argsFirst, argsRest, out result );
+        }
+
+        public bool TryBindInvokeBestMethod( bool restrictionOnTargetInstance, DynamicMetaObject target, DynamicMetaObject argsFirst, DynamicMetaObject[] argsRest, out DynamicMetaObject result )
+        {
+            return TryBindInvokeBestMethod( restrictionOnTargetInstance, target, null, argsFirst, argsRest, out result );
+        }
+
+        public bool TryBindInvokeBestMethod( bool restrictionOnTargetInstance, DynamicMetaObject target, DynamicMetaObject[] args, DynamicMetaObject argsFirst, DynamicMetaObject[] argsRest, out DynamicMetaObject result )
+        {
+            var methods = new List<MethodInfo>();
+            args = args ?? RuntimeHelpers.GetCombinedTargetArgs( argsFirst, argsRest );
+
+            foreach ( MethodInfo m in BuiltinExtensionMembers )
+            {
+                if ( m.IsStatic )
+                {
+                    if ( RuntimeHelpers.ParametersMatchArguments( m.GetParameters(), args ) )
+                    {
+                        methods.Add( m );
+                    }
+                }
+                else
+                {
+                    if ( argsRest == null )
+                    {
+                        RuntimeHelpers.SplitCombinedTargetArgs( args, out argsFirst, out argsRest );
+                    }
+
+                    if ( argsRest != null && RuntimeHelpers.ParametersMatchArguments( m.GetParameters(), argsRest ) )
+                    {
+                        methods.Add( m );
+                    }
+                }
+
+            }
+
+            if ( methods.Count == 0 )
+            {
+                foreach ( MethodInfo m in Members )
+                {
+                    if ( m.IsStatic )
+                    {
+                        if ( RuntimeHelpers.ParametersMatchArguments( m.GetParameters(), args ) )
+                        {
+                            methods.Add( m );
+                        }
+                    }
+                    else
+                    {
+                        if ( argsRest == null )
+                        {
+                            RuntimeHelpers.SplitCombinedTargetArgs( args, out argsFirst, out argsRest );
+                        }
+
+                        if ( argsRest != null && RuntimeHelpers.ParametersMatchArguments( m.GetParameters(), argsRest ) )
+                        {
+                            methods.Add( m );
+                        }
+                    }
+
+                }
+            }
+
+            if ( methods.Count == 0 )
+            {
+                foreach ( MethodInfo m in ExternalExtensionMembers )
+                {
+                    if ( m.IsStatic )
+                    {
+                        if ( RuntimeHelpers.ParametersMatchArguments( m.GetParameters(), args ) )
+                        {
+                            methods.Add( m );
+                        }
+                    }
+                    else
+                    {
+                        if ( argsRest == null )
+                        {
+                            RuntimeHelpers.SplitCombinedTargetArgs( args, out argsFirst, out argsRest );
+                        }
+
+                        if ( argsRest != null && RuntimeHelpers.ParametersMatchArguments( m.GetParameters(), argsRest ) )
+                        {
+                            methods.Add( m );
+                        }
+                    }
+
+                }
+            }
+
+            if ( methods.Count == 0 )
+            {
+                result = null;
+                return false;
+            }
+
+            var method = RuntimeHelpers.GetMostSpecific( methods );
+
+            if ( method.IsStatic )
+            {
+                var restrictions = RuntimeHelpers.GetTargetArgsRestrictions( target, args, true );
+                var callArgs = RuntimeHelpers.ConvertArguments( args, method.GetParameters() );
+                result = new DynamicMetaObject( RuntimeHelpers.EnsureObjectResult( Expression.Call( method, callArgs ) ), restrictions );
+            }
+            else
+            {
+                if ( argsRest == null )
+                {
+                    RuntimeHelpers.SplitCombinedTargetArgs( args, out argsFirst, out argsRest );
+                }
+
+                // When called from FallbackInvokeMember we want to restrict on the type.
+                var restrictions = RuntimeHelpers.GetTargetArgsRestrictions( target, argsRest, restrictionOnTargetInstance );
+                var targetInst = Expression.Convert( argsFirst.Expression, method.DeclaringType );
+                var callArgs = RuntimeHelpers.ConvertArguments( argsRest, method.GetParameters() );
+                result = new DynamicMetaObject( RuntimeHelpers.EnsureObjectResult( Expression.Call( targetInst, method, callArgs ) ), restrictions );
+            }
+
+            return true;
+        }
+
     }
 
     public class ImportedFunctionMetaObject : DynamicMetaObject
@@ -204,59 +532,12 @@ namespace Kiezel
 
         public override DynamicMetaObject BindInvoke( InvokeBinder binder, DynamicMetaObject[] args )
         {
-            string suitable = "";
-            DynamicMetaObject argsFirst = null;
-            DynamicMetaObject[] argsRest = null;
-            MethodInfo method = null;
-
-            foreach ( MethodInfo m in runtimeModel.Members )
+            DynamicMetaObject result;
+            if ( !runtimeModel.TryBindInvokeBestMethod( true, this, args, out result ))
             {
-                suitable = "suitable ";
-
-                if ( m.IsStatic )
-                {
-                    if ( RuntimeHelpers.ParametersMatchArguments( m.GetParameters(), args ) )
-                    {
-                        method = m;
-                        break;
-                    }
-                }
-                else
-                {
-                    if ( argsRest == null )
-                    {
-                        RuntimeHelpers.SplitCombinedTargetArgs( args, out argsFirst, out argsRest );
-                    }
-
-                    if ( argsRest != null && RuntimeHelpers.ParametersMatchArguments( m.GetParameters(), argsRest ) )
-                    {
-                        method = m;
-                        break;
-                    }
-                }
-
+                throw new MissingMemberException( "No (suitable) method found: " + runtimeModel.Name );
             }
-
-            if ( method == null )
-            {
-                throw new MissingMemberException( "No " + suitable + "method found: " + runtimeModel.Members[0].Name );
-            }
-
-
-            var restrictions = RuntimeHelpers.GetTargetArgsRestrictions( this, args, true );
-
-            if ( method.IsStatic )
-            {
-                var callArgs = RuntimeHelpers.ConvertArguments( args, method.GetParameters() );
-                return new DynamicMetaObject( RuntimeHelpers.EnsureObjectResult( Expression.Call( method, callArgs ) ), restrictions );
-            }
-            else
-            {
-                var target = Expression.Convert( argsFirst.Expression, method.DeclaringType );
-                var callArgs = RuntimeHelpers.ConvertArguments( argsRest, method.GetParameters() );
-                return new DynamicMetaObject( RuntimeHelpers.EnsureObjectResult( Expression.Call( target, method, callArgs ) ), restrictions );
-            }
-
+            return result;
         }
 
         //public override DynamicMetaObject BindConvert( ConvertBinder binder )
@@ -412,7 +693,7 @@ namespace Kiezel
         public override DynamicMetaObject BindInvoke( InvokeBinder binder, DynamicMetaObject[] args )
         {
             string suitable = "";
-            ConstructorInfo ctor = null;
+            var ctors = new List<ConstructorInfo>();
 
             foreach ( ConstructorInfo m in runtimeModel.Members )
             {
@@ -425,17 +706,16 @@ namespace Kiezel
 
                 if ( RuntimeHelpers.ParametersMatchArguments( m.GetParameters(), args ) )
                 {
-                    ctor = m;
-                    break;
+                    ctors.Add( m );
                 }
             }
 
-            if ( ctor == null )
+            if ( ctors.Count == 0 )
             {
                 throw new MissingMemberException( "No " + suitable + "constructor found: " + runtimeModel.Members[ 0 ].Name );
             }
 
-
+            var ctor = RuntimeHelpers.GetMostSpecific( ctors );
             var restrictions = RuntimeHelpers.GetTargetArgsRestrictions( this, args, true );
             var callArgs = RuntimeHelpers.ConvertArguments( args, ctor.GetParameters() );
 

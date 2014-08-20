@@ -1,5 +1,5 @@
 
-;;;; Copyright (C) 2012-2013 Jan Tolenaar. See the file LICENSE for details.
+;;;; Copyright (c) Jan Tolenaar. See the file LICENSE for details.
 
 ;;;;
 ;;;; match.k
@@ -7,42 +7,26 @@
 
 (defpackage "lisp"
     (:export 
-        "="
-        "and"
         "case-match"
-        "cons"
-        "enumerable"
-        "eq"
-        "eql"
-        "equal"
-        "equal-ci"
-        "guard"
+        "ecase-match"
         "if-match"
-        "type"
-        "list"
-        "not"
-        "or"
-        "property"
-        "quote"
-        "regex"
-        "satisfies"
-        "sequence"
-        "vector"
         "when-match"
     ))
 
 (in-package "lisp")
 
 (defmacro case-match (expr &rest clauses)
-    (var $temp (gentemp "expr"))
-    `(do
-        (var ,$temp ,expr)
-        (var $loop-result null)
-        (tagbody
-            (do 
-                ,@(map match-clause clauses))
-            break-label)
-        $loop-result))
+    (do-case-match expr clauses false))
+
+(defmacro ecase-match (expr &rest clauses)
+    (do-case-match expr clauses true))
+
+(defun do-case-match (expr clauses error)
+    (let $temp (gentemp "expr"))
+    `(block case-match
+        (let ,$temp ,expr)
+        ,@(map match-clause clauses)
+        ,@(if error '((throw-error "Unhandled case-match.")))))
 
 (defmacro if-match (pattern expr then-form &optional else-form)
     (cond
@@ -59,23 +43,44 @@
         (,pattern ,@forms)))
 
 (defun match-clause (clause)
-    (var $variables (vector))
-    (var pattern (first clause))
-    (var original-body (rest clause))
-    (var body (if (< 1 (length original-body)) 
+    (let $variables (vector))
+    (let pattern (first clause))
+    (let original-body (rest clause))
+    (let body (if (< 1 (length original-body)) 
                     `(do ,@original-body) 
                     (first original-body)))
-    (var test-form (encode-pattern $temp pattern))
+    (let test-form (encode-pattern $temp pattern))
     (force (cond
         ($variables
             `(do
                 (var ,(as-list $variables) null)
-                (break-if ,test-form ,body)))
+                (if ,test-form (return-from case-match ,body))))
         ((= test-form true)
-            `(break ,body))
+            `(return-from case-match ,body))
         (true
-            `(break-if ,test-form ,body)))))
+            `(if ,test-form (return-from case-match ,body))))))
 
+(def encode-handlers (new
+    :quote 'encode-quote
+    :guard 'encode-guard
+    :and 'encode-and
+    :or 'encode-or
+    :not 'encode-not
+    :satisfies 'encode-satisfies
+    :cons 'encode-cons
+    :vector 'encode-vector
+    :list 'encode-list
+    :sequence 'encode-sequence
+    :enumerable 'encode-enumerable
+    :eq 'encode-eq
+    :eql 'encode-eql
+    :equal 'encode-equal
+    := 'encode-equal
+    :equal-ci 'encode-equal-ci
+    :type 'encode-type
+    :regex 'encode-regex
+    :property 'encode-property
+    ))
 
 (defun encode-pattern (expr pattern)
     (cond
@@ -86,46 +91,10 @@
         ((literal? pattern)
             (encode-literal expr pattern))
         ((cons? pattern)
-            (var key (first pattern))
-            (var args (rest pattern))
-            (case key
-                (quote
-                    (encode-quote expr args))
-                (guard
-                    (encode-guard expr args))
-                (and
-                    (encode-and expr args))
-                (or
-                    (encode-or expr args))
-                (not
-                    (encode-not expr args))
-                (satisfies
-                    (encode-satisfies expr args))
-                (cons
-                    (encode-cons expr args))
-                (vector
-                    (encode-vector expr args))
-                (list
-                    (encode-list expr args))
-                (sequence
-                    (encode-sequence expr args))
-                (enumerable
-                    (encode-enumerable 'enumerable? expr args))
-                (eq 
-                    (encode-eq expr args))
-                (eql 
-                    (encode-eql expr args))
-                ((equal =) 
-                    (encode-equal expr args))
-                (equal-ci
-                    (encode-equal-ci expr args))
-                (type 
-                    (encode-type expr args))
-                (regex 
-                    (encode-regex expr args))
-                (property
-                    (encode-property expr args))
-            ))))
+            (let key (first pattern))
+            (let args (rest pattern))
+            (if-let (proc (elt encode-handlers key))
+                (funcall proc expr args)))))
 
 (defun encode-symbol (expr pattern)
     (if (not (find pattern $variables))
@@ -141,24 +110,24 @@
     (encode-pattern expr `(equal ,pattern)))
 
 (defun encode-cons (expr pattern)
-    (var pcar (first pattern))
-    (var pcdr (second pattern))
-    (var temp (gentemp "cons"))
+    (let pcar (first pattern))
+    (let pcdr (second pattern))
+    (let temp (gentemp "cons"))
     `(do
-        (var ,temp ,expr)
+        (let ,temp ,expr)
         (and (cons? ,temp)
              ,(encode-pattern `(car ,temp) pcar)
              ,(encode-pattern `(cdr ,temp) pcdr))))
 
 (defun encode-guard (expr args)
-    (var sym (first args))
-    (var test (second args))
+    (let sym (first args))
+    (let test (second args))
     `(do
-        (var ,sym ,expr)
+        (let ,sym ,expr)
         ,test))
 
 (defun encode-satisfies (expr args)
-    (var func (first args))
+    (let func (first args))
     (encode-pattern expr `(guard x (,func x))))
 
 (defun encode-vector (expr args)
@@ -177,13 +146,13 @@
         (collect (encode-pattern `(elt ,items ,i) p))))
 
 (defun encode-enumerable (testf expr args)
-    (var items (gentemp "seq"))
-    (var patterns (as-vector args))
+    (let items (gentemp "seq"))
+    (let patterns (as-vector args))
     `(do
-        (var ,items ,expr)
+        (let ,items ,expr)
         (and (,testf ,items)
              (do
-                (var ,items (as-vector ,items))
+                (let ,items (as-vector ,items))
                 (and (= (length ,items) ,(length patterns))
                      ,@(get-vector-items items patterns))))))
 
@@ -212,26 +181,26 @@
     `(not ,(encode-pattern expr (first args))))
 
 (defun encode-regex (expr args)
-    (var str (gentemp "str"))
+    (let str (gentemp "str"))
     `(do
-        (var ,str ,expr)
+        (let ,str ,expr)
         (and (string? ,str)
              (.regex-match ,str ,(first args)))))
 
 (defun encode-property (expr args)
-    (var obj (gentemp "obj"))
-    (var patterns (map (λx (flatten x 1)) (partition-all 2 (partition-by keyword? args))))
+    (let obj (gentemp "obj"))
+    (let patterns (map (λx (flatten x 1)) (partition-all 2 (partition-by keyword? args))))
     `(do
-        (var ,obj ,expr)
+        (let ,obj ,expr)
         (and (prototype? ,obj)
              ,@(map (λx (get-property-items obj x)) patterns))))
 
 (defun get-property-items (obj args)
-    (var name (first args))
-    (var patterns (rest args))
-    (var prop (gentemp "prop"))
+    (let name (first args))
+    (let patterns (rest args))
+    (let prop (gentemp "prop"))
     `(do
-        (var ,prop (attr ,obj ,name))
+        (let ,prop (attr ,obj ,name))
         ,(encode-and prop patterns)))
 
 

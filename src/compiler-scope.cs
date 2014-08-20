@@ -1,4 +1,4 @@
-// Copyright (C) 2012-2013 Jan Tolenaar. See the file LICENSE for details.
+// Copyright (C) Jan Tolenaar. See the file LICENSE for details.
 
 using System;
 using System.Collections.Generic;
@@ -10,17 +10,20 @@ using System.Reflection;
 namespace Kiezel
 {
     [Flags]
-    internal enum ScopeFlags
+    public enum ScopeFlags
     {
         Initialized = 1,
         Referenced = 2,
         Assigned = 4,
         Ignore = 8,
         Ignorable = 16,
+        Future = 32,
+        Lazy = 64,
+        Constant = 128,
         All = 31
     }
 
-    internal class ScopeEntry
+    public class ScopeEntry
     {
         public int Index;
         public ParameterExpression Parameter;
@@ -85,13 +88,10 @@ namespace Kiezel
 
     }
 
-    internal class AnalysisScope
+    public class AnalysisScope
     {
         public AnalysisScope()
         {
-#if DEBUG
-            Ident = Runtime.GenTemp( "scope" );
-#endif
         }
 
         public AnalysisScope( AnalysisScope parent, string name )
@@ -101,21 +101,23 @@ namespace Kiezel
             Name = name;
         }
 
-#if DEBUG
-        public Symbol Ident;
-#endif
         public bool IsFileScope;
         public bool IsBlockScope;
-        public bool IsTagBodyScope;
         public string Name;
         public AnalysisScope Parent;
         public bool IsLambda;
         public bool UsesTilde;
-        public bool UsesReturn;
-        public LabelTarget ReturnLabel;
-
+        public ParameterExpression TagBodySaved;
         public List<LabelTarget> Tags = new List<LabelTarget>();
         public List<ScopeEntry> Variables = new List<ScopeEntry>();
+
+        public bool UsesLabels
+        {
+            get
+            {
+                return Tags.Count != 0;
+            }
+        }
 
         public List<ParameterExpression> Parameters
         {
@@ -130,9 +132,9 @@ namespace Kiezel
         public bool UsesFramedVariables = false;
         public HashSet<Symbol> FreeVariables;
 
-        public ParameterExpression DefineNativeLocal( Symbol sym, ScopeFlags flags )
+        public ParameterExpression DefineNativeLocal( Symbol sym, ScopeFlags flags, Type type = null )
         {
-            var parameter = Expression.Parameter( typeof( object ), sym.Name );
+            var parameter = Expression.Parameter( type ?? typeof( object ), sym.Name );
             Variables.Add( new ScopeEntry( sym, parameter, flags ) );
 
             return parameter;
@@ -157,17 +159,18 @@ namespace Kiezel
             int depth;
             int index;
             ParameterExpression parameter;
+            ScopeFlags flags;
             int realDepth;
-            return FindLocal( sym, reason, out realDepth, out depth, out index, out parameter );
+            return FindLocal( sym, reason, out realDepth, out depth, out index, out parameter, out flags );
         }
 
-        public bool FindLocal( Symbol sym, ScopeFlags reason, out int depth, out int index, out ParameterExpression parameter )
+        public bool FindLocal( Symbol sym, ScopeFlags reason, out int depth, out int index, out ParameterExpression parameter, out ScopeFlags flags )
         {
             int realDepth;
-            return FindLocal( sym, reason, out realDepth, out depth, out index, out parameter );
+            return FindLocal( sym, reason, out realDepth, out depth, out index, out parameter, out flags );
         }
 
-        public bool FindLocal( Symbol sym, ScopeFlags reason, out int realDepth, out int depth, out int index, out ParameterExpression parameter )
+        public bool FindLocal( Symbol sym, ScopeFlags reason, out int realDepth, out int depth, out int index, out ParameterExpression parameter, out ScopeFlags flags )
         {
             bool noCapturedNativeParametersBeyondThisPoint = false;
 
@@ -175,6 +178,7 @@ namespace Kiezel
             depth = 0;
             index = 0;
             parameter = null;
+            flags = 0;
 
             for ( AnalysisScope sc = this; sc != null; sc = sc.Parent )
             {
@@ -216,6 +220,8 @@ namespace Kiezel
                             item.Flags |= reason;
                         }
 
+                        flags = item.Flags;
+
                         return true;
                     }
                 }
@@ -252,7 +258,8 @@ namespace Kiezel
             int depth;
             int index;
             ParameterExpression parameter;
-            return FindLocal( name, 0, out realDepth, out depth, out index, out parameter ) && realDepth <= maxDepth;
+            ScopeFlags flags;
+            return FindLocal( name, 0, out realDepth, out depth, out index, out parameter, out flags ) && realDepth <= maxDepth;
         }
 
         public void CheckVariables()
@@ -276,7 +283,7 @@ namespace Kiezel
                 }
                 else if ( !v.Referenced )
                 {
-                    if ( !v.Key.Name.StartsWith( "__" ) && !v.Key.Name.StartsWith( "~" ) && !v.Ignore )
+                    if ( !v.Key.Name.StartsWith( "__" ) && !v.Key.Name.StartsWith( "~" ) && !v.Key.Name.StartsWith( "%" ) && !v.Ignore )
                     {
                         PrintWarning( context, "unreferenced variable", v.Key );
                     }

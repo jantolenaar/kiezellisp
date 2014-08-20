@@ -1,4 +1,4 @@
-;;;; Copyright (C) 2012-2013 Jan Tolenaar. See the file LICENSE for details.
+;;;; Copyright (c) Jan Tolenaar. See the file LICENSE for details.
 
 
 (defpackage "csv"
@@ -31,7 +31,7 @@
 
     :quote-character "\""
     :field-separator ","
-    :culture (culture-info.new "en-us")
+    :culture (culture-info:new "en-us")
     :trim-spaces? true
 ))
 
@@ -51,7 +51,7 @@
 ;;;
 
 (defun read-string-to-records (text &rest args)
-    (var options (find-in-property-list :options args))
+    (let options (find-in-property-list :options args))
     (do 
         (read-string-to-grid text options)
         (apply read-grid-to-subgrid (list* ~ args))
@@ -65,7 +65,7 @@
          grid))
 
 (defun read-grid-line-to-record (prototype headers fields)
-    (var record (new prototype))
+    (let record (new prototype))
     (loop
         (for h in headers)
         (for f in fields)
@@ -76,8 +76,8 @@
 (defun read-grid-to-subgrid (grid &key keep-empty-lines?
                                        (top 0)
                                        (left 0)
-                                       (width int32.MAX-VALUE)
-                                       (height int32.MAX-VALUE))
+                                       (width int32:MAX-VALUE)
+                                       (height int32:MAX-VALUE))
     (do 
         (subseq grid top :count height)
         (map (λ (v) (subseq v left :count width)) ~)
@@ -90,7 +90,7 @@
 ;;;
 
 (defun write-records-to-string (records headers &key (options $options))
-    (var grid (write-records-to-grid records headers))
+    (let grid (write-records-to-grid records headers))
     (write-grid-to-string grid options))
 
 (defun write-records-to-grid (records headers)
@@ -107,22 +107,22 @@
 ;;;
 
 (defun convert-to-default (text &optional (options $options))
-    (var culture (.culture options))
-    (var date-pattern (.short-date-pattern (.date-time-format culture)))
+    (let culture (.culture options))
+    (let date-pattern (.short-date-pattern (.date-time-format culture)))
     (or (.try-parse-number text :culture culture :base 10)
         (.try-parse-date text :format date-pattern
                               :culture culture)
         text))
 
 (defun convert-to-date (text &optional (options $options))
-    (var culture (.culture options))
-    (var date-pattern (.short-date-pattern (.date-time-format culture)))
+    (let culture (.culture options))
+    (let date-pattern (.short-date-pattern (.date-time-format culture)))
     (or (.try-parse-date text :format  date-pattern
                               :culture culture)
         text))
 
 (defun convert-to-number (text &optional (options $options))
-    (var culture (.culture options))
+    (let culture (.culture options))
     (or (.try-parse-number text :culture culture :base 10)
         text))
 

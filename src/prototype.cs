@@ -1,4 +1,4 @@
-// Copyright (C) 2012-2013 Jan Tolenaar. See the file LICENSE for details.
+// Copyright (C) Jan Tolenaar. See the file LICENSE for details.
 
 
 using System;
@@ -13,8 +13,40 @@ using System.ComponentModel;
 
 namespace Kiezel
 {
+    class CaseInsensitiveEqualityComparer : IEqualityComparer<object>
+    {
+        CaseInsensitiveComparer comparer = CaseInsensitiveComparer.DefaultInvariant;
+
+        bool IEqualityComparer<object>.Equals( object x, object y )
+        {
+            return comparer.Compare( x, y ) == 0;
+        }
+
+        int IEqualityComparer<object>.GetHashCode( object obj )
+        {
+            if ( obj is string )
+            {
+                return obj.ToString().ToLowerInvariant().GetHashCode();
+            }
+            else
+            {
+                return obj.GetHashCode();
+            }
+        }
+    }
+
     public class PrototypeDictionary : Dictionary<object, object>
     {
+        public PrototypeDictionary()
+        {
+
+        }
+
+        public PrototypeDictionary( bool caseInsensitive )
+            : base( caseInsensitive ? new CaseInsensitiveEqualityComparer() : null )
+        {
+
+        }
     }
 
     [RestrictedImport]
@@ -22,7 +54,7 @@ namespace Kiezel
     {
         internal static Prototype Dummy = new Prototype();
 
-        internal PrototypeDictionary Dict = new PrototypeDictionary();
+        internal PrototypeDictionary Dict = new PrototypeDictionary( false );
 
         internal List<Prototype> Parents = new List<Prototype>();
 
@@ -188,17 +220,22 @@ namespace Kiezel
         [Lisp]
         public object GetValue( object ident )
         {
+            return GetValueFor( this, ident );
+        }
+
+        internal object GetValueFor( Prototype target, object ident )
+        {
             var name = GetKey( ident );
             object result = null;
 
             if ( Dict.TryGetValue( name, out result ) )
             {
-                if ( result is Lambda )
+                if ( result is LambdaClosure )
                 {
-                    var lambda = ( Lambda ) result;
+                    var lambda = ( LambdaClosure ) result;
                     if ( lambda.IsGetter )
                     {
-                        return Runtime.Funcall( lambda, this );
+                        return Runtime.Funcall( lambda, target );
                     }
                     else
                     {
@@ -213,7 +250,7 @@ namespace Kiezel
 
             foreach ( var parent in Parents )
             {
-                result = parent.GetValue( ident );
+                result = parent.GetValueFor( target, ident );
                 if ( result != null )
                 {
                     return result;
@@ -337,9 +374,9 @@ namespace Kiezel
                 if ( !dict.ContainsKey( item.Key ) )
                 {
                     var result = item.Value;
-                    if ( result is Lambda )
+                    if ( result is LambdaClosure )
                     {
-                        var lambda = ( Lambda ) result;
+                        var lambda = ( LambdaClosure ) result;
                         if ( lambda.IsGetter )
                         {
                             result = Runtime.Funcall( lambda, original );

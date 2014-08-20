@@ -1,4 +1,4 @@
-;;;; Copyright (C) 2012-2013 Jan Tolenaar. See the file LICENSE for details.
+;;;; Copyright (c) Jan Tolenaar. See the file LICENSE for details.
 
 
 ;;;;
@@ -12,24 +12,17 @@
 ;;;
 
 (import "Kiezel.Atom")
+(import "Kiezel.Integer")
+(import "Kiezel.KeywordClass" )
 (import "Kiezel.List")
 (import "Kiezel.Number")
-(import "Kiezel.Sequence")
-(import "Kiezel.Integer")
-(import "Kiezel.Keyword")
 (import "Kiezel.Rational")
+(import "Kiezel.Sequence")
 
 ;;;
 ;;; real classes
 ;;;
 
-(import "Kiezel.Symbol")
-(import "Kiezel.ThreadContext")
-(import "Kiezel.Cons")
-(import "Kiezel.Vector")
-(import "Kiezel.Prototype")
-(import "Kiezel.AssertFailedException")
-(import "Kiezel.LispException")
 
 (import "Numerics.BigRational")
 
@@ -46,27 +39,35 @@
 (import "System.Globalization.CultureInfo")
 (import "System.IO.Directory")
 (import "System.IO.File")
-(import "Kiezel.FileExtensions" :extends-package-name "file")
 (import "System.IO.Path")
-(import "Kiezel.PathExtensions" :extends-package-name "path")
 (import "System.IO.StreamReader")
 (import "System.IO.StreamWriter")
 (import "System.IO.StringReader")
 (import "System.IO.StringWriter")
-(import "System.Int32")
 (import "System.Int32" :package-name "int")
+(import "System.Int32")
 (import "System.Int64")
-;;;(import "System.Math")
 (import "System.Numerics.BigInteger")
 (import "System.Numerics.Complex")
 (import "System.Object")
 (import "System.String")
-(import "Kiezel.StringExtensions" :extends-package-name "string")
-(import "System.Text.RegularExpressions.Regex")
-(import "System.Text.RegularExpressions.RegexOptions")
 (import "System.StringSplitOptions")
 (import "System.Text.Encoding")
+(import "System.Text.RegularExpressions.Regex")
+(import "System.Text.RegularExpressions.RegexOptions")
 (import "System.TimeSpan")
+
+(import "Kiezel.AssertFailedException")
+(import "Kiezel.Cons")
+(import "Kiezel.FileExtensions" :extends-package-name "file")
+(import "Kiezel.LispException")
+(import "Kiezel.LispReader")
+(import "Kiezel.PathExtensions" :extends-package-name "path")
+(import "Kiezel.Prototype")
+(import "Kiezel.StringExtensions" :extends-package-name "string")
+(import "Kiezel.Symbol")
+(import "Kiezel.ThreadContext")
+(import "Kiezel.Vector")
 
 ;;;
 ;;; Interfaces

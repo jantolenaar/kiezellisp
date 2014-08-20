@@ -1,4 +1,4 @@
-// Copyright (C) 2012-2013 Jan Tolenaar. See the file LICENSE for details.
+// Copyright (C) Jan Tolenaar. See the file LICENSE for details.
 
 using System;
 using System.Collections;
@@ -19,46 +19,54 @@ namespace Kiezel
         Macro
     }
 
-    public class Lambda : IDynamicMetaObjectProvider, IApply, ISyntax
+    public class LambdaDefinition
     {
         internal Func<Cons, object, object[], object> Proc;
         internal Symbol Name;
-        internal MultiMethod Generic;
-        internal BindingRestrictions GenericRestrictions;
         internal Cons Syntax;
         internal Cons Source;
         internal LambdaSignature Signature;
-        internal Frame Frame;
-        internal bool IsGetter;
 
-        public Lambda()
+        internal static LambdaClosure MakeLambdaClosure( LambdaDefinition def )
         {
+            var closure = new LambdaClosure
+            {
+                Definition = def,
+                Frame = Runtime.CurrentThreadContext.Frame
+            };
+
+            return closure;
         }
+    }
 
-        public Lambda( Lambda template )
+    public class LambdaClosure : IDynamicMetaObjectProvider, IApply, ISyntax
+    {
+        internal LambdaDefinition Definition;
+        internal Frame Frame;
+        internal MultiMethod Generic;
+        internal BindingRestrictions GenericRestrictions;
+
+        internal bool IsGetter
         {
-            Name = template.Name;
-            Proc = template.Proc;
-            Signature = template.Signature.EvalSpecializers();
-            Syntax = template.Syntax;
-            Source = template.Source;
-            Frame = Runtime.CurrentThreadContext.Frame;
-            IsGetter = Signature.IsGetter();
+            get
+            {
+                return Definition.Signature.IsGetter();
+            }
         }
 
         internal LambdaKind Kind
         {
             get
             {
-                return Signature.Kind;
+                return Definition.Signature.Kind;
             }
         }
 
         Cons ISyntax.GetSyntax( Symbol context )
         {
-            if ( Syntax != null )
+            if ( Definition.Syntax != null )
             {
-                return new Cons( Syntax, null );
+                return new Cons( Definition.Syntax, null );
             }
             else
             {
@@ -73,16 +81,16 @@ namespace Kiezel
             {
                 throw new LispException( "Macros must be defined before use." );
             }
-            return ApplyLambdaBind( null, args, false  );
+            return ApplyLambdaBind( null, args, false, null  );
         }
 
         public object ApplyLambdaFast( object[] args )
         {
             // Entrypoint used by compiler after rearranging args.
-            return ApplyLambdaBind( null, args, true );
+            return ApplyLambdaBind( null, args, true, null );
         }
 
-        internal object ApplyLambdaBind( Cons lambdaList, object[] args, bool bound )
+        internal object ApplyLambdaBind( Cons lambdaList, object[] args, bool bound, object env )
         {
             var context = Runtime.CurrentThreadContext;
             var saved = context.Frame;
@@ -91,18 +99,18 @@ namespace Kiezel
 
             if ( !bound )
             {
-                args = MakeArgumentFrame( args );
+                args = MakeArgumentFrame( args, env );
             }
 
             if ( Runtime.DebugMode )
             {
                 context.EvaluationStack = Runtime.MakeListStar( saved, context.SpecialStack, context.EvaluationStack );
-                result = Proc( lambdaList, this, args );
+                result = Definition.Proc( lambdaList, this, args );
                 context.EvaluationStack = Runtime.Cddr( context.EvaluationStack );
             }
             else
             {
-                result = Proc( lambdaList, this, args );
+                result = Definition.Proc( lambdaList, this, args );
             }
             context.Frame = saved;
 
@@ -115,20 +123,22 @@ namespace Kiezel
             return result;
         }
 
-        internal object[] MakeArgumentFrame( object[] input )
+        internal object[] MakeArgumentFrame( object[] input, object env )
         {
-            if ( Signature.Kind != LambdaKind.Macro && Signature.RequiredArgsCount == input.Length && Signature.Names.Count == input.Length )
+            var sig = Definition.Signature;
+
+            if ( sig.Kind != LambdaKind.Macro && sig.RequiredArgsCount == input.Length && sig.Names.Count == input.Length && sig.WholeArg == null )
             {
                 // fast track if all arguments (no nested parameters) are accounted for.
                 return input;
             }
 
-            var output = new object[ Signature.Names.Count ];
-            FillDataFrame( Signature, input, output, 0 );
+            var output = new object[ sig.Names.Count + ( sig.WholeArg == null ? 0 : 1 ) + ( sig.EnvArg == null ? 0 : 1 ) ];
+            FillDataFrame( sig, input, output, 0, env );
             return output;
         }
 
-        internal Exception FillDataFrame( LambdaSignature signature, object[] input, object[] output, int offsetOutput )
+        internal Exception FillDataFrame( LambdaSignature signature, object[] input, object[] output, int offsetOutput, object env )
         {
             var offset = 0;
             var firstKey = -1;
@@ -241,13 +251,28 @@ namespace Kiezel
                 {
                     // required macro parameter
                     var nestedInput = Runtime.AsArray( ( IEnumerable ) val );
-                    FillDataFrame( arg.NestedParameters, nestedInput, output, offsetOutput );
+                    FillDataFrame( arg.NestedParameters, nestedInput, output, offsetOutput, env );
                     offsetOutput += arg.NestedParameters.Names.Count;
                 }
                 else
                 {
                     output[ offsetOutput++ ] = val;
                 }
+            }
+
+            if ( signature.WholeArg != null )
+            {
+                Cons list = null;
+                for ( int i = input.Length - 1; i >= 0; --i )
+                {
+                    list = new Cons( input[ i ], list );
+                }
+                output[ output.Length - 1 ] = list;
+            }
+
+            if ( signature.EnvArg != null )
+            {
+                output[ output.Length - 1 ] = env;
             }
 
             if ( offset < input.Length && !haveAll && firstKey == -1 )
@@ -260,13 +285,15 @@ namespace Kiezel
 
         public override string ToString()
         {
+            var name = Definition.Name;
+
             if ( Kind == LambdaKind.Macro )
             {
-                return String.Format( "Macro Name=\"{0}\"", Name == null ? "" : Name.Name );
+                return String.Format( "Macro Name=\"{0}\"", name == null ? "" : name.Name );
             }
             else
             {
-                return String.Format( "Lambda Name=\"{0}\"", Name == null ? "" : Name.Name );
+                return String.Format( "Lambda Name=\"{0}\"", name == null ? "" : name.Name );
             }
         }
 
@@ -317,9 +344,9 @@ namespace Kiezel
 
     class LambdaApplyMetaObject : DynamicMetaObject
     {
-        internal Lambda lambda;
+        internal LambdaClosure lambda;
 
-        public LambdaApplyMetaObject( Expression objParam, Lambda lambda )
+        public LambdaApplyMetaObject( Expression objParam, LambdaClosure lambda )
             : base( objParam, BindingRestrictions.Empty, lambda )
         {
             this.lambda = lambda;
@@ -328,9 +355,9 @@ namespace Kiezel
         public override DynamicMetaObject BindInvoke( InvokeBinder binder, DynamicMetaObject[] args )
         {
             var restrictions = BindingRestrictions.Empty;
-            var callArgs = LambdaHelpers.FillDataFrame( lambda.Signature, args, ref restrictions );
-            MethodInfo method = typeof( Lambda ).GetMethod( "ApplyLambdaFast", BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance );
-            var expr = Expression.Call( Expression.Convert( this.Expression, typeof( Lambda ) ), method, callArgs );
+            var callArgs = LambdaHelpers.FillDataFrame( lambda.Definition.Signature, args, ref restrictions );
+            MethodInfo method = typeof( LambdaClosure ).GetMethod( "ApplyLambdaFast", BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance );
+            var expr = Expression.Call( Expression.Convert( this.Expression, typeof( LambdaClosure ) ), method, callArgs );
             restrictions = BindingRestrictions.GetInstanceRestriction( this.Expression, this.Value ).Merge( restrictions );
             return new DynamicMetaObject( RuntimeHelpers.EnsureObjectResult( expr ), restrictions );
         }
@@ -340,7 +367,7 @@ namespace Kiezel
     class LambdaHelpers
     {
 
-        internal static BindingRestrictions GetGenericRestrictions( Lambda method, DynamicMetaObject[] args )
+        internal static BindingRestrictions GetGenericRestrictions( LambdaClosure method, DynamicMetaObject[] args )
         {
             var methodList = method.Generic.Lambdas;
             var restrictions = BindingRestrictions.Empty;
@@ -349,9 +376,9 @@ namespace Kiezel
             // Restrictions for this method
             //
 
-            for ( int i = 0; i < method.Signature.RequiredArgsCount; ++i )
+            for ( int i = 0; i < method.Definition.Signature.RequiredArgsCount; ++i )
             {
-                var par = method.Signature.Parameters[ i ];
+                var par = method.Definition.Signature.Parameters[ i ];
                 if ( par.Specializer != null )
                 {
                     var restr = BindingRestrictions.GetExpressionRestriction( Expression.Call( Runtime.IsInstanceOfMethod, args[ i ].Expression, Expression.Constant( par.Specializer ) ) );
@@ -363,7 +390,7 @@ namespace Kiezel
             // Additional NOT restrictions for lambdas that come before the method and fully subtype the method.
             //
 
-            foreach ( Lambda lambda in methodList )
+            foreach ( LambdaClosure lambda in methodList )
             {
                 if ( lambda == method )
                 {
@@ -372,10 +399,10 @@ namespace Kiezel
 
                 bool lambdaSubtypesMethod = true;
 
-                for ( int i = 0; i < method.Signature.RequiredArgsCount; ++i )
+                for ( int i = 0; i < method.Definition.Signature.RequiredArgsCount; ++i )
                 {
-                    var par = method.Signature.Parameters[ i ];
-                    var par2 = lambda.Signature.Parameters[ i ];
+                    var par = method.Definition.Signature.Parameters[ i ];
+                    var par2 = lambda.Definition.Signature.Parameters[ i ];
 
                     if ( !Runtime.IsSubtype( par2.Specializer, par.Specializer, false ) )
                     {
@@ -391,10 +418,10 @@ namespace Kiezel
 
                 Expression tests = null;
 
-                for ( int i = 0; i < method.Signature.RequiredArgsCount; ++i )
+                for ( int i = 0; i < method.Definition.Signature.RequiredArgsCount; ++i )
                 {
-                    var par = method.Signature.Parameters[ i ];
-                    var par2 = lambda.Signature.Parameters[ i ];
+                    var par = method.Definition.Signature.Parameters[ i ];
+                    var par2 = lambda.Definition.Signature.Parameters[ i ];
 
                     if ( Runtime.IsSubtype( par2.Specializer, par.Specializer, true ) )
                     {
@@ -429,7 +456,7 @@ namespace Kiezel
 
             for ( offset = 0; offset < signature.RequiredArgsCount; ++offset )
             {
-                if ( input.Length < offset )
+                if ( offset >= input.Length )
                 {
                     throw new LispException( "Missing required parameters" );
                 }
@@ -467,7 +494,7 @@ namespace Kiezel
                 {
                     for ( int i = offset; i < input.Length && i < signature.Parameters.Count; ++i )
                     {
-                        output.Add( input[ i ].Expression );
+                        output.Add( Expression.Convert( input[ i ].Expression, elementType ) );
                     }
                     for ( int i = input.Length; i < signature.Parameters.Count; ++i )
                     {
@@ -514,10 +541,22 @@ namespace Kiezel
                         }
                         else
                         {
-                            output.Add( val );
+                            output.Add( Expression.Convert( val, elementType ) );
                         }
                     }
                 }
+            }
+
+            if ( signature.WholeArg != null )
+            {
+                var tail = new List<Expression>();
+                for ( int i = 0; i < input.Length; ++i )
+                {
+                    tail.Add( Expression.Convert( input[ i ].Expression, elementType ) );
+                }
+                var tailExpr = Expression.NewArrayInit( elementType, tail );
+                var conversion = Expression.Call( Runtime.AsListMethod, tailExpr );
+                output.Add( conversion );
             }
 
             return Expression.NewArrayInit( elementType, output );
@@ -555,7 +594,7 @@ namespace Kiezel
 
     public partial class Runtime
     {
-        [Lisp( "system.create-tailcall" )]
+        [Lisp( "system:create-tailcall" )]
         public static object CreateTailCall( IApply proc, params object[] args )
         {
             return new TailCall( proc, args );

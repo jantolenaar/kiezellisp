@@ -1,4 +1,4 @@
-;;;; Copyright (C) 2012-2013 Jan Tolenaar. See the file LICENSE for details.
+;;;; Copyright (c) Jan Tolenaar. See the file LICENSE for details.
 
 (require "xml")
 
@@ -20,20 +20,20 @@
 (def long-tags '(script textarea div))
 
 (defun make-html-function (tag)
-    (var name (symbol-name tag))
-    (var func-name (string "<" name ">"))
-    (var func (make-symbol func-name))
+    (let name (symbol-name tag))
+    (let func-name (string "<" name ">"))
+    (let func (make-symbol func-name))
     (eval `(do
-                (var html-specific-type 
-                    (new 'xml!xml-base-type
+                (let html-specific-type 
+                    (new 'xml::xml-base-type
                         :tag ,name
                         :supports-empty-tag ,(boolean (find tag empty-tags))
                         :has-long-tag ,(boolean (find tag long-tags))))
                 (defun ,func (&rest args) 
-                    (var target (new html-specific-type
+                    (let target (new html-specific-type
                                     :attributes (new)
                                     :elements (vector)))
-                    (xml.add-range target args))))
+                    (xml:add-range target args))))
     (export-symbol func-name))
 
 (each make-html-function tags)
@@ -51,5 +51,5 @@
 (def DOC-TYPE "<!DOCTYPE HTML>\n")
 
 (defun to-string (obj &optional doc-type)
-    (xml.to-string obj doc-type))
+    (xml:to-string obj doc-type))
 

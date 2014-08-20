@@ -1,4 +1,4 @@
-;;;; Copyright (C) 2012-2013 Jan Tolenaar. See the file LICENSE for details.
+;;;; Copyright (c) Jan Tolenaar. See the file LICENSE for details.
 
 (require :constructor-factory)
 
@@ -70,6 +70,6 @@
         open-file-dialog
     ))
 
-(constructor-factory.make-constructors tags)
+(constructor-factory:make-constructors tags)
 
 

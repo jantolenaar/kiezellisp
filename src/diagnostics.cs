@@ -1,4 +1,4 @@
-// Copyright (C) 2012-2013 Jan Tolenaar. See the file LICENSE for details.
+// Copyright (C) Jan Tolenaar. See the file LICENSE for details.
 
 using System;
 using System.Collections;
@@ -14,6 +14,9 @@ using System.Diagnostics;
 using System.IO;
 using System.Threading;
 
+#if KIEZELLISPW
+using System.Windows.Forms;
+#endif
 namespace Kiezel
 {
   
@@ -192,11 +195,11 @@ namespace Kiezel
                 {
                     usage = Symbols.SpecialForm;
                 }
-                else if ( a is Lambda )
+                else if ( a is LambdaClosure )
                 {
-                    var l = ( Lambda ) a;
+                    var l = ( LambdaClosure ) a;
 
-                    z[ "function-source" ] = l.Source;
+                    z[ "function-source" ] = l.Definition.Source;
 
                     switch ( l.Kind )
                     {
@@ -265,12 +268,28 @@ namespace Kiezel
         [Lisp( "as-prototype" )]
         public static Prototype AsPrototype( object obj )
         {
+            return AsPrototype( obj, false );
+        }
+
+        [Lisp( "as-prototype-ignore-case" )]
+        public static Prototype AsPrototypeIgnoreCase( object obj )
+        {
+            return AsPrototype( obj, true );
+        }
+
+        internal static Prototype AsPrototype( object obj, bool caseInsensitive )
+        {
             Type type = obj.GetType();
             TypeCode typecode = Type.GetTypeCode( type );
 
-            if ( obj is IDictionary )
+            if ( obj is Prototype )
             {
-                var dict = ConvertToLispDictionary( ( IDictionary ) obj );
+                var dict = ConvertToLispDictionary( (( Prototype ) obj).Dict, caseInsensitive );
+                return Prototype.FromDictionary( dict );
+            }
+            else if ( obj is IDictionary )
+            {
+                var dict = ConvertToLispDictionary( ( IDictionary ) obj, caseInsensitive );
                 return Prototype.FromDictionary( dict );
             }
             else if ( obj is Type )
@@ -289,9 +308,9 @@ namespace Kiezel
             }
         }
 
-        internal static PrototypeDictionary ConvertToLispDictionary( IDictionary obj )
+        internal static PrototypeDictionary ConvertToLispDictionary( IDictionary obj, bool caseInsensitive )
         {
-            var dict = new PrototypeDictionary();
+            var dict = new PrototypeDictionary( caseInsensitive );
             foreach ( DictionaryEntry item in obj )
             {
                 dict[ item.Key ] = item.Value;
@@ -348,6 +367,9 @@ namespace Kiezel
         internal static void PrintLog( params object[] args )
         {
             PrintLogColor( null, null, args );
+#if KIEZELLISPW
+            MessageBox.Show( MakeString( args ), "EXCEPTION", MessageBoxButtons.OK );
+#endif
         }
 
         internal static int GetConsoleWidth()
@@ -365,6 +387,11 @@ namespace Kiezel
 
         internal static void DumpDictionary( object stream, Prototype prototype )
         {
+            if ( prototype == null )
+            {
+                return;
+            }
+
             var dict = prototype.Dict;
 
             foreach ( string key in ToIter( Sort( dict.Keys, NaturalLess, Identity ) ) )
@@ -450,9 +477,16 @@ namespace Kiezel
         //[Lisp( "get-lexical-variables-dictionary" )]
         public static Prototype GetLexicalVariablesDictionary( int pos )
         {
+            Frame frame = GetFrameAt( pos );
+
+            if ( frame == null )
+            {
+                return null;
+            }
+
             var env = new PrototypeDictionary();
 
-            for ( Frame frame = GetFrameAt(pos); frame != null; frame = frame.Link )
+            for ( ; frame != null; frame = frame.Link )
             {
                 if ( frame.Names != null )
                 {
@@ -507,8 +541,16 @@ namespace Kiezel
             }
             buf.WriteLine( "LEXICAL ENVIRONMENT" );
             buf.WriteLine( new string( '=', 80 ) );
-            DumpDictionary( buf, GetLexicalVariablesDictionary( 0 ) );
-            buf.WriteLine( new string( '=', 80 ) );
+            for ( int i = 0; ; ++i )
+            {
+                var obj = GetLexicalVariablesDictionary( i );
+                if ( obj == null )
+                {
+                    break;
+                }
+                DumpDictionary( buf, obj );
+                buf.WriteLine( new string( '=', 80 ) );
+            }
             buf.WriteLine( "DYNAMIC ENVIRONMENT" );
             buf.WriteLine( new string( '=', 80 ) );
             DumpDictionary( buf, GetDynamicVariablesDictionary( 0 ) );

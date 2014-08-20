@@ -1,4 +1,4 @@
-;;;; Copyright (C) 2012-2013 Jan Tolenaar. See the file LICENSE for details.
+;;;; Copyright (c) Jan Tolenaar. See the file LICENSE for details.
 
 (reference "c:/program files (x86)/reference assemblies/microsoft/framework/.netframework/v4.0/PresentationCore")
 
@@ -14,11 +14,11 @@
 
 (defun paste ()
     "Returns the contents of the clipboard as a string"
-    (windows-clipboard.get-text))
+    (windows-clipboard:get-text))
 
 (defun copy (str)
     "Copies the given string to the clipboard"
-    (windows-clipboard.set-text str))
+    (windows-clipboard:set-text str))
 
 
 

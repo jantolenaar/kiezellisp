@@ -1,4 +1,4 @@
-// Copyright (C) 2012-2013 Jan Tolenaar. See the file LICENSE for details.
+// Copyright (C) Jan Tolenaar. See the file LICENSE for details.
 
 using System;
 using System.Collections.Generic;
@@ -14,9 +14,15 @@ namespace Kiezel
         // Handled by compiler if used as function in function call; otherwise
         // accessor creates a lambda.
         [Lisp( "." )]
-        public static object MemberAccessor( string member )
+        public static object MemberAccessor( string members )
         {
-            return new AccessorLambda( member );
+            return new AccessorLambda( false, members );
+        }
+
+        [Lisp( "?" )]
+        public static object NullableMemberAccessor( string members )
+        {
+            return new AccessorLambda( true, members );
         }
 
         [Lisp( "%attr" )]

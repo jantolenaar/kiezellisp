@@ -1,4 +1,4 @@
-;;;; Copyright (C) 2012-2013 Jan Tolenaar. See the file LICENSE for details.
+;;;; Copyright (c) Jan Tolenaar. See the file LICENSE for details.
 
 ;;;;
 ;;;; xml.k
@@ -25,14 +25,14 @@
     (add-range target args))
 
 (defun add-range (target args)
-    (var attributes (.attributes target))
-    (var elements (.elements target))
+    (let attributes (.attributes target))
+    (let elements (.elements target))
     (loop
-        (var item (pop args))
+        (let item (pop args))
         (break-if (not item))
         (cond
             ((keyword? item)
-                (var value (pop args))
+                (let value (pop args))
                 (.set-value attributes item value))
             (true
                 (.add elements item))))
@@ -73,23 +73,23 @@
             (print " />"))))
 
 (defun print-xml-attribute (attr)
-    (var key (.key attr))
-    (var val (.to-string (.value attr)))
-    (var quote (if (find #\' val) "\"" "'"))
+    (let key (.key attr))
+    (let val (.to-string (.value attr)))
+    (let quote (if (find #\' val) "\"" "'"))
     (print " " key "=" quote (.html-encode val) quote))
 
 (defun make-xml-function (tag)
-    (var name (symbol-name tag))
-    (var func-name (string "<" name ">"))
-    (var func (make-symbol func-name))
+    (let name (symbol-name tag))
+    (let func-name (string "<" name ">"))
+    (let func (make-symbol func-name))
     (eval `(do
-                (var xml-specific-type 
+                (let xml-specific-type 
                     (new 'xml-base-type
                         :tag ,name
                         :supports-empty-tag false
                         :has-long-tag false))
                 (defun ,func (&rest args) 
-                    (var target (new xml-specific-type
+                    (let target (new xml-specific-type
                                     :attributes (new)
                                     :elements (vector)))
                     (add-range target args))))

@@ -1,4 +1,4 @@
-// Copyright (C) 2012-2013 Jan Tolenaar. See the file LICENSE for details.
+// Copyright (C) Jan Tolenaar. See the file LICENSE for details.
 
 
 using System;
@@ -31,6 +31,18 @@ namespace Kiezel
     }
 
     internal class ReturnFromLoadException : Exception
+    {
+    }
+
+    internal class AbortingDebuggerException : Exception
+    {
+    }
+
+    internal class AbortedDebuggerException : Exception
+    {
+    }
+
+    internal class ContinueFromBreakpointException : Exception
     {
     }
 

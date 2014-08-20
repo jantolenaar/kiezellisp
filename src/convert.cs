@@ -1,4 +1,4 @@
-// Copyright (C) 2012-2014 Jan Tolenaar. See the file LICENSE for details.
+// Copyright (C) Jan Tolenaar. See the file LICENSE for details.
 
 
 using System;
@@ -18,7 +18,7 @@ using TestFunc = System.Func<object, object, bool>;
 using ActionFunc = System.Action<object>;
 using ReduceFunc = System.Func<object[], object>;
 using ThreadFunc = System.Func<object>;
-
+using JustFunc = System.Func<object>;
 
 namespace Kiezel
 {
@@ -553,6 +553,11 @@ namespace Kiezel
                 }
             }
 
+            if ( typeof( IConvertible ).IsAssignableFrom( value.GetType() ) && typeof( IConvertible ).IsAssignableFrom( targetType ) )
+            {
+                return Convert.ChangeType( value, targetType );
+            }
+
             return value;
         }
 
@@ -623,6 +628,11 @@ namespace Kiezel
                 return defaultFunc;
             }
             throw new LispException( "{0} function cannot be null", typeof( T ) );
+        }
+
+        internal static JustFunc GetJustFunc( object arg )
+        {
+            return GetFunc<JustFunc>( arg, null );
         }
 
         internal static TestFunc GetTestFunc( object arg )

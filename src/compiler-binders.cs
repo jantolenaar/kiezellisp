@@ -1,4 +1,4 @@
-// Copyright (C) 2012-2013 Jan Tolenaar. See the file LICENSE for details.
+// Copyright (C) Jan Tolenaar. See the file LICENSE for details.
 
 
 using System;
@@ -9,6 +9,7 @@ using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
 using System.Runtime.CompilerServices;
+using System.Collections.Generic;
 
 namespace Kiezel
 {
@@ -247,64 +248,48 @@ namespace Kiezel
                 return RuntimeHelpers.CheckTargetNullReference( target, "Cannot invoke a method on a null reference" );
             }
 
-            var flags = BindingFlags.IgnoreCase | BindingFlags.Instance | BindingFlags.Public | BindingFlags.FlattenHierarchy;
-            var name = this.Name.LispToPascalCaseName();
+            var builtin = Runtime.FindImportedFunction( limitType, this.Name );
 
-            MethodInfo method = null;
-            var suitable = "";
+            if ( builtin != null )
+            {
+                DynamicMetaObject result;
+                if ( builtin.TryBindInvokeBestMethod( false, target, target, args, out result ) )
+                {
+                    return result;
+                }
+            }
+
+            var name = this.Name.LispToPascalCaseName();
+            var flags = BindingFlags.IgnoreCase | BindingFlags.Instance | BindingFlags.Public | BindingFlags.FlattenHierarchy;
+            var methods = new List<MethodInfo>();
             var callArgs = args;
 
-            var extensions = RuntimeHelpers.GetExtensionMethods( limitType, name ).Where( m => m is MethodInfo ).ToArray();
-
-            if ( extensions.Length != 0 )
+            foreach ( var m in limitType.GetMember( name, flags ) )
             {
-                callArgs = RuntimeHelpers.GetCombinedTargetArgs( target, args );
-                suitable = "suitable ";
+                MethodInfo mi;
 
-                foreach ( MethodInfo m in extensions )
+                if ( m is PropertyInfo )
                 {
-                    if ( RuntimeHelpers.ParametersMatchArguments( m.GetParameters(), callArgs ) )
-                    {
-                        method = m;
-                        break;
-                    }
+                    mi = ( ( PropertyInfo ) m ).GetGetMethod();
+                }
+                else
+                {
+                    mi = m as MethodInfo;
+                }
+
+                if ( mi != null && RuntimeHelpers.ParametersMatchArguments( mi.GetParameters(), callArgs ) )
+                {
+                    methods.Add( mi );
                 }
             }
 
-            if ( method == null )
-            {
-                callArgs = args;
-
-                foreach ( var m in limitType.GetMember( name, flags ) )
-                {
-                    suitable = "suitable ";
-                    MethodInfo mi;
-
-                    if ( m is PropertyInfo )
-                    {
-                        mi = ( ( PropertyInfo ) m ).GetGetMethod();
-                    }
-                    else
-                    {
-                        mi = m as MethodInfo;
-                    }
-
-                    if ( mi != null && RuntimeHelpers.ParametersMatchArguments( mi.GetParameters(), callArgs ) )
-                    {
-                        method = mi;
-                        break;
-                    }
-                }
-            }
-
-            if ( method == null && ( this.Name.StartsWith( "set-" ) || this.Name.StartsWith( "get-" ) ) )
+            if ( methods.Count == 0 && ( this.Name.StartsWith( "set-" ) || this.Name.StartsWith( "get-" ) ) )
             {
                 // Fallback to special handling to change .set-bla to .set_bla if the former has failed.
                 name = this.Name.Left( 3 ) + "_" + this.Name.Substring( 4 ).LispToPascalCaseName();
 
                 foreach ( var m in limitType.GetMember( name, flags ) )
                 {
-                    suitable = "suitable ";
                     MethodInfo mi;
 
                     if ( m is PropertyInfo )
@@ -318,23 +303,21 @@ namespace Kiezel
 
                     if ( mi != null && RuntimeHelpers.ParametersMatchArguments( mi.GetParameters(), callArgs ) )
                     {
-                        method = mi;
-                        break;
+                        methods.Add( mi );
                     }
                 }
-
-
             }
 
             var restrictions = RuntimeHelpers.GetTargetArgsRestrictions( target, args, false );
 
-            if ( method == null )
+            if ( methods.Count == 0 )
             {
                 return errorSuggestion ??  RuntimeHelpers.CreateThrow( target, args, restrictions, typeof( MissingMemberException ),
-                        "No " + suitable + "method found: " + limitType.Name + "." + name );
+                        "No (suitable) method found: " + limitType.Name + "." + name );
             }
             else
             {
+                var method = RuntimeHelpers.GetMostSpecific( methods );
                 var callArgs2 = RuntimeHelpers.ConvertArguments( callArgs, method.GetParameters() );
                 Expression expr;
 
@@ -580,4 +563,5 @@ namespace Kiezel
 
     } //InvokeMemberBinderKey
 
+    
 }

@@ -1,4 +1,4 @@
-;;;; Copyright (C) 2012-2013 Jan Tolenaar. See the file LICENSE for details.
+;;;; Copyright (c) Jan Tolenaar. See the file LICENSE for details.
 
 ;;;;
 ;;;; scope-guard
@@ -30,11 +30,11 @@
 (in-package "scope-guard")
 
 (defmacro with-scope (&body forms)
-    (var $scope-list (gentemp "scope-list"))
-    (var scope-result (gentemp "scope-result"))
+    (let $scope-list (gentemp "scope-list"))
+    (let scope-result (gentemp "scope-result"))
     `(do
         (var ,$scope-list null)
-        (var ,scope-result (try-and-catch (do ,@(force (map translate-scope-form forms)))))
+        (let ,scope-result (try-and-catch ,@(force (map translate-scope-form forms))))
         (run-exit-scopes ,$scope-list ,scope-result)
         (return-or-throw ,scope-result)))
 
@@ -50,24 +50,24 @@
             (scope-exit      `(setf ,$scope-list (cons ,(make-exit-trigger      (rest form)) ,$scope-list))))))
 
 (defun make-exit-fail-trigger (forms)
-    (var failing (gentemp "failing"))
+    (let failing (gentemp "failing"))
     `(lambda (,failing)
         (when ,failing
             ,@forms)))
 
 (defun make-exit-pass-trigger (forms)
-    (var failing (gentemp "failing"))
+    (let failing (gentemp "failing"))
     `(lambda (,failing)
         (when (not ,failing)
             ,@forms)))
 
 (defun make-exit-trigger (forms)
-    (var failing (gentemp "failing"))
+    (let failing (gentemp "failing"))
     `(lambda (,failing)
         ,@forms))
 
 (defun run-exit-scopes (scope-list result)
-    (var failing (exception? result))
+    (let failing (exception? result))
     (loop
         (for func in scope-list)
         (funcall func failing)))

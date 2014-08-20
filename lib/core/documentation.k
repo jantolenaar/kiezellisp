@@ -1,3 +1,4 @@
+;;;; Copyright (c) Jan Tolenaar. See the file LICENSE for details.
 
 (in-package "lisp")
 
@@ -122,7 +123,7 @@ $pprint-hook
 The default value of the parameter `background-color` of the function `write`. Initially `null`.
 """
 $print-background-color
-(do (var $print-background-color :red) (print-line 13))
+(do (let $print-background-color :red) (print-line 13))
 )
 
 ;------------------------------------------------------------------------------
@@ -132,7 +133,7 @@ $print-background-color
 The default value of the parameter `base` of the function `write`. Initially `10`.
 """
 $print-base
-(do (var $print-base 7) (print-line 13))
+(do (let $print-base 7) (print-line 13))
 )
 
 ;------------------------------------------------------------------------------
@@ -142,7 +143,7 @@ $print-base
 The default value of the parameter `color` of the function `write`. Initially `null`.
 """
 $print-color
-(do (var $print-color :red) (print-line 13))
+(do (let $print-color :red) (print-line 13))
 )
 
 ;------------------------------------------------------------------------------
@@ -151,8 +152,8 @@ $print-color
 """
 Used by `pprint`.
 """
-(EXAMPLE "(write '(.to-upper \"abc\"))")
-(EXAMPLE "(do (var $print-compact true) (write '(.to-upper \"abc\")))")
+(EXAMPLE "(write-line '(.to-upper \"abc\"))")
+(EXAMPLE "(do (let $print-compact true) (write-line '(.to-upper \"abc\")))")
 )
 
 ;------------------------------------------------------------------------------
@@ -176,17 +177,6 @@ The REPL sets this to false. By default: false.
 
 ;------------------------------------------------------------------------------
 
-($print-max-elements
-"""
-The function `write` truncates output of a list, vector or array to this number
-of elements. When negative, all elements are printed.
-"""
-$print-max-elements
-(series 20)
-)
-
-;------------------------------------------------------------------------------
-
 ($print-short-symbol-names 
 """
 When true, symbol names are never printed with their package names.
@@ -205,17 +195,10 @@ reader allows `#.` syntax only if it is `load`ing or `requiring` a file.
 
 ;------------------------------------------------------------------------------
 
-($read-suppress 
-"""
-Internal use.
-"""
-)
-
-;------------------------------------------------------------------------------
-
 ($repl-listener-port 
 """
-The TCP port number used by the REPL listener. Defaults to 8080.
+The TCP port number used by the REPL listener. Defaults to 8080. See also 
+the `--listener` command line option. 
 """
 $repl-listener-port
 )
@@ -296,7 +279,7 @@ Error output stream. Default is `true` which means to use whatever `$stdout` use
 
 ($stdin 
 """
-A `LispReader` stream created by `make-reader`. Not a `TextReader` stream! 
+A `LispReader` stream created by `lisp-reader:new`. Not a `TextReader` stream! 
 The functions `read` and `read-all` read lisp expressions.
 """
 )
@@ -318,18 +301,6 @@ is `true` which is console output. When `null`, output is discarded. When a stri
 a write will go to the file named by the string with the current date appended. 
 After the write the file will be closed.
 """
-)
-
-;------------------------------------------------------------------------------
-
-($strict 
-"""
-When true, the compiler emits warnings about undefined variables.
-Whether true or false, an undefined variable may result in a runtime error.
-The function `strict` sets the variable `$strict` to true for the currently 
-`loading` or `requiring` file.
-"""
-$strict
 )
 
 ;------------------------------------------------------------------------------
@@ -432,14 +403,33 @@ number is given, negates the number.
 
 ;------------------------------------------------------------------------------
 
-(. (member)
+(. (members)
 """
 Returns a function to access a member of an arbitrary object,
-e.g. `(. 'to-upper)`. This is usually written as `.to-upper` and 
+e.g. `(. "to-upper")`. This is usually written as `.to-upper` and 
 expanded by the lisp reader to the former expression.
 """
-(EXAMPLE "((. 'to-upper) \"hello\")")
+(EXAMPLE #q{((. "to-upper") "hello")})
 (.to-upper "hello")
+(let obj (new :name "piet"))
+(.name.to-upper obj)
+(.city.to-upper obj)
+)
+
+;------------------------------------------------------------------------------
+
+(? (members)
+"""
+Returns a function to access a member of an arbitrary object allowing for
+null reference, e.g. `(? "to-upper")`. This is usually written as `?to-upper` 
+and expanded by the lisp reader to the former expression.
+"""
+(EXAMPLE #q{((? "to-upper") "hello")})
+(?to-upper "hello")
+(let obj (new :name "piet"))
+(?name.to-upper obj)
+(?city.to-upper obj)
+(.city.to-upper obj)
 )
 
 ;------------------------------------------------------------------------------
@@ -521,7 +511,7 @@ with `item` as the first item.
 Returns the value of the first argument that evaluates as false. Otherwise 
 returns the value of the last argument.
 """
-(var n 12)
+(let n 12)
 (and (number? n) (< n 13))
 )
 
@@ -554,7 +544,7 @@ argument to `func`.
 """
 (apply + 1 2 '(3 4))
 (apply + '(1 2 3 4))
-(var f (apply +))
+(let f (apply +))
 (f '(1 2 3 4))
 )
 
@@ -660,7 +650,7 @@ Converts a number to Int64.
 """
 Converts a sequence to a lazy list.
 """
-(var z (as-lazy-list (series 5)))
+(let z (as-lazy-list (series 5)))
 (first z)
 (rest z)
 z
@@ -674,7 +664,7 @@ z
 """
 Converts a sequence to a list.
 """
-(var z (as-list (series 5)))
+(let z (as-list (series 5)))
 (first z)
 (rest z)
 )
@@ -694,10 +684,19 @@ Converts a number to Int64.
 Adds the contents of a hashtable, the values of static properties of a type
 or the instance properties of an object to a prototype hashtable.
 """
-(as-prototype date-time.T)
+(as-prototype date-time:T)
 :d
-(as-prototype (date-time.now))
+(as-prototype (date-time:now))
 :d
+)
+
+;------------------------------------------------------------------------------
+
+(as-prototype-ignore-case (obj)
+"""
+Adds the contents of a hashtable, the values of static properties of a type
+or the instance properties of an object to a case-insensitive prototype hashtable.
+"""
 )
 
 ;------------------------------------------------------------------------------
@@ -732,7 +731,7 @@ when `$debug-mode` is false.
 
 ;------------------------------------------------------------------------------
 
-(assert-throws-no-exception (expr &key msg)
+(assert-throws-no-exception (expr)
 """
 Throws an AssertFailedException if `expr` throws an exception. Generates no code 
 when `$debug-mode` is false.
@@ -760,7 +759,7 @@ generates efficient code if `attr-name` is a compile-time constant, otherwise
 the compiler uses a call to the function `%attr`.
 """
 (attr "hello" :length)
-(var s "length")
+(let s "length")
 (attr "hello" s)
 )
 
@@ -832,6 +831,18 @@ Returns the bitwise exclusive or of the given integer numbers.
 
 ;------------------------------------------------------------------------------
 
+(block (name form*)
+"""
+A named block is a `do` block that one can `return-from` with or without a value.
+"""
+(block abc
+    (let x 1)
+    (return-from abc 2)   
+    x)
+)
+
+;------------------------------------------------------------------------------
+
 (boolean (a)
 """
 Returns `true` if `a` is true, otherwise `false`.
@@ -849,12 +860,22 @@ Returns `true` if `a` is true, otherwise `false`.
 
 (break (&optional val)
 """
-Breaks out of the current `loop`, `while` or `foreach` loop returning the value 
-of `val`.
+Breaks out of the current `loop`, `while` or `foreach` loop skipping the
+`finally` clause and returning the value of `val` instead of any accumulated
+values.
 """
 (loop (break))
 (loop (break 123))
 )
+
+;------------------------------------------------------------------------------
+
+(breakpoint ()
+"""
+Inserts a breakpoint in the code. Use the command `:continue` to continue
+from the breakpoint. Use `:abort` to stop the program.
+"""
+)    
 
 ;------------------------------------------------------------------------------
 
@@ -923,11 +944,19 @@ or `=` to one of the items. The value of the `clause` is the value of the implic
 `do` block consisting of the `rest` of the `clauses`. The non-list items `true`
 and `otherwise` indicate that the `clause` matches anything.
 """
-(var s 'aap)
+(let s 'aap)
 (case s
     ((not mies) (print-line 1) false)
     (aap (print-line 2) true)
     (otherwise (print-line 3) false))
+)
+
+;------------------------------------------------------------------------------
+
+(ecase (key-form clause*)
+"""
+Like `case`, but throws an exception if no case matches.
+"""
 )
 
 ;------------------------------------------------------------------------------
@@ -938,6 +967,14 @@ and `otherwise` indicate that the `clause` matches anything.
     test-form := true | otherwise | pattern
 
 Patterns are described in [pattern-matching](pattern-matching.html).
+"""
+)
+
+;------------------------------------------------------------------------------
+
+(ecase-match (key-form clause*)
+"""
+Like `case-match`, but throws an exception if no case matches.
 """
 )
 
@@ -1007,7 +1044,7 @@ Compares two numbers, characters, strings, symbols, dates and timespans.
 (compare 3 null)
 (compare "een" "twee")
 (compare #\a "a")
-(compare (date-time.today) (.add-years (date-time.today) 1))
+(compare (date-time:today) (.add-years (date-time:today) 1))
 )
 
 ;------------------------------------------------------------------------------
@@ -1026,7 +1063,7 @@ Like `compare`, but compares strings and characters case-insensitively.
 """
 Returns a complex number with real part `r` and imaginary part `i`.
 """
-(var a (complex 1 1))
+(let a (complex 1 1))
 (* a a)
 )
 
@@ -1036,7 +1073,7 @@ Returns a complex number with real part `r` and imaginary part `i`.
 """
 Returns a complex number with magnitude `m` and phase `ph`.
 """
-(var a (complex-from-polar-coordinates 1 (/ math.PI 4)))
+(let a (complex-from-polar-coordinates 1 (/ math:PI 4)))
 (* a a)
 )
 
@@ -1056,7 +1093,7 @@ Returns true if `expr` has type `System.Numerics.Complex`.
 """
 Creates a new function that applies the given functions from the right to the left.
 """
-(var f (compose dec .length))
+(let f (compose dec .length))
 (f "hello")
 )
 
@@ -1066,7 +1103,7 @@ Creates a new function that applies the given functions from the right to the le
 """
     clause := '( test-expr form* ')'
 """
-(var a 137)
+(let a 137)
 (cond 
     ((< a 100) (print-line 'smaller-than-100))
     ((< a 200) (print-line 'smaller-than-200))
@@ -1120,9 +1157,25 @@ Starts the next iteration of the current `loop`, `while` or `foreach` loop if
 
 ;------------------------------------------------------------------------------
 
+(copy-readtable (&key (readtable $readtable))
+"""
+Returns a copy of 'readtable'. If `null` returns the standard readtable.
+"""
+)
+
+;------------------------------------------------------------------------------
+
 (copy-seq (seq)
 """
 Returns a copy of `seq`.
+"""
+)
+
+;------------------------------------------------------------------------------
+
+(copy-tree (list)
+"""
+Returns a recursive copy of `list`.
 """
 )
 
@@ -1152,13 +1205,13 @@ Counts the number of elements in `seq` that match the `predicate` function.
 """
 Creates an array.
 """
-(var a (create-array 'int64 4))
+(let a (create-array 'int64 4))
 :d
 )
 
 ;------------------------------------------------------------------------------
 
-(csv.read-string-to-grid (str)
+(csv:read-string-to-grid (str)
                          (str options)
 """
 TO DO
@@ -1167,7 +1220,7 @@ TO DO
 
 ;------------------------------------------------------------------------------
 
-(csv.write-grid-to-string (lines options)
+(csv:write-grid-to-string (lines options)
 """
 TO DO
 """
@@ -1175,11 +1228,22 @@ TO DO
 
 ;------------------------------------------------------------------------------
 
-(csv.write-value-to-string (value culture)
+(csv:write-value-to-string (value culture)
 """
 TO DO
 """
 )
+
+;------------------------------------------------------------------------------
+
+(cycle (seq)
+"""
+Returns a lazy sequence of the elements of `seq` fllowed by the elements of
+`seq` and so on. Returns `null` if `seq` is empty.
+"""
+(take 8 (cycle '(1 2 3)))
+)    
+
 
 ;------------------------------------------------------------------------------
 
@@ -1187,7 +1251,7 @@ TO DO
 """
 Returns true if `expr` is a DateTime.
 """
-(date? (date-time.now))
+(date? (date-time:now))
 )
 
 ;------------------------------------------------------------------------------
@@ -1197,7 +1261,7 @@ Returns true if `expr` is a DateTime.
 Decrements `number` by `1`.
 """
 (dec 123)
-(dec int32.MIN-VALUE)
+(dec int32:MIN-VALUE)
 )
 
 ;------------------------------------------------------------------------------
@@ -1206,12 +1270,25 @@ Decrements `number` by `1`.
 """
 Decrements the variable or any `setf`-able expression by `1`.
 """
-(var a 3)
+(let a 3)
 (decf a)
 a
 (def b '(1 1 3))
 (decf (second b))
 b
+)
+
+;------------------------------------------------------------------------------
+(declare (&rest args)
+
+"""
+Gives compiling instructions to the compiler.
+
+`(declare (ignore a b c...))`
+
+An `ignore` declaration instructs the compiler to not emit warning messages about already
+defined lexical variables that are unreferenced.
+"""
 )
 
 ;------------------------------------------------------------------------------
@@ -1329,7 +1406,7 @@ See also: [Functions](functions.html)
 Creates a delayed expression which is not evaluated until the function `force` is called.
 Unfortunately, the example processor always calls `force`.
 """
-(var z (delay (+ 1 2)))
+(let z (delay (+ 1 2)))
 )
 
 ;------------------------------------------------------------------------------
@@ -1380,9 +1457,9 @@ of a function is an implicit `do` block. Macros such as `when` and `loop`
 generate `do` blocks.
 """
 """
-The `var` special form declares a lexical or dynamic variable.
+The `let` and `var` special forms declare lexical or dynamic variables.
 """
-(do (var x 3) (var y 2) (+ x y))
+(do (let x 3) (let y 2) (+ x y))
 """
 Use `do` to perform method chaining. The compiler creates the variable `~` 
 automatically.
@@ -1411,7 +1488,7 @@ Applies the function `action` to each element of `seq`.
 """
 `Elt` can be used on every object with an indexer method.
 """
-(var a '(a b c d e))
+(let a '(a b c d e))
 (elt a 1)
 (elt a 2)
 )
@@ -1486,7 +1563,7 @@ Like `equal` but compares strings and characters case-insensitively.
 """
 Evaluates a lisp expression.
 """
-(var n 3)
+(let n 3)
 (eval '(+ 3 4))
 (eval '(+ 3 n))
 )
@@ -1567,7 +1644,7 @@ Returns the fifth element in a `seq`; or `null` if there is no fifth element.
 
 ;------------------------------------------------------------------------------
 
-(file.read-all-text (path)
+(file:read-all-text (path)
                     (path encoding)
 """
 As the original, but (on Windows) with CRLF to LF conversion.
@@ -1576,7 +1653,7 @@ As the original, but (on Windows) with CRLF to LF conversion.
 
 ;------------------------------------------------------------------------------
 
-(file.write-all-text (path contents)
+(file:write-all-text (path contents)
                      (path contents encoding)
 """
 As the original, but (on Windows) with LF to CRLF conversion.
@@ -1624,6 +1701,14 @@ Returns the first element in `seq` matching the conditions.
 """
 (find-if even? '(1 2 3 4 5))
 (find-if even? '("aap" "noot" "mies") :key .length)
+)
+
+;------------------------------------------------------------------------------
+
+(find-name-in-environment (name env)
+"""
+Returns true if the symbol `name` is in the lexical environment `env`.
+"""
 )
 
 ;------------------------------------------------------------------------------
@@ -1679,6 +1764,32 @@ Returns the first occurrence of `subseq` within `seq`.
 
 ;------------------------------------------------------------------------------
 
+(finish ()
+"""
+When used within the main body of a `loop`, transfers control to the `finally` 
+clause of that `loop`. 
+"""
+(loop (for i in '(1 2 3 a 5 6))
+      (when (symbol? i) (finish))
+      (collect i)
+      (finally (collect 999)))
+)
+
+;------------------------------------------------------------------------------
+
+(finish-if (test)
+"""
+When used within the main body of a `loop`, transfers control to the `finally` 
+clause of that `loop` if `test` is true.
+"""
+(loop (for i in '(1 2 3 a 5 6))
+      (finish-if (symbol? i))
+      (collect i)
+      (finally (collect 999)))
+)
+
+;------------------------------------------------------------------------------
+
 (first (seq)
 """
 Returns the first element in a `seq`; or `null` if there is no first element.
@@ -1688,7 +1799,7 @@ Returns the first element in a `seq`; or `null` if there is no first element.
 
 ;------------------------------------------------------------------------------
 
-(flatten (seq &optional (depth int32.MAX-VALUE))
+(flatten (seq &optional (depth int32:MAX-VALUE))
 """
 Returns a lazy sequence with subsequences replaced by their elements up to a
 certain depth.
@@ -1767,6 +1878,16 @@ Returns true if `expr` is a function, i.e. a suitable argument to `apply` and
 
 ;------------------------------------------------------------------------------
 
+(future (sym expr)
+"""
+The form `(future a expr)` compiles to `(let a (system:create-task (lambda () expr)))`.
+The task is started immediately. Reading references to `a` are compiled 
+as `(system:get-task-result a)`.
+"""
+)
+
+;------------------------------------------------------------------------------
+
 (generator (&body forms)
 """
 Returns an `IEnumerable` that returns a value for each `yield` statement in `forms`.
@@ -1783,10 +1904,7 @@ implemented as native threads.
 (gentemp (prefix)
         ()
 """
-Returns a new symbol in the current package. For use by macro writers. Works as 
-in Commonlisp. 
-The function `gensym` does not exist in Kiezellisp because uninterned
-symbols are not debug-friendly.
+Returns a new symbol in the "temp" package. For use by macro writers.
 """
 (gentemp "xyz")
 (gentemp)
@@ -1805,7 +1923,7 @@ Like `find-type`. Throws exception if not found.
 (get-description (obj)
                  (obj show-non-public)
 """
-Returns a prototype object describing the given `object`. Used by the function
+Returns a prototype object describing the given object `obj`. Used by the function
 `describe`.
 """
 (get-description 'when)
@@ -1815,7 +1933,7 @@ Returns a prototype object describing the given `object`. Used by the function
 
 (get-designated-string (target)
 """
-Returns the string representation of a keyword name or a symbol name or string.
+Returns the string representation of a keyword name, a symbol name or a value type.
 """
 (get-designated-string 'aap)
 (get-designated-string :aap)
@@ -1854,16 +1972,16 @@ Returns the package corresponding to `name`. Throws an exception if not found.
 
 (get-version ()
 """
-Returns Kiezellisps version string.
+Returns Kiezellisp's version string.
 """
 (get-version)
 )
 
 ;------------------------------------------------------------------------------
 
-(go (tag-symbol)
+(goto (tag-symbol)
 """
-Jumps around in a `tagbody`. Internal use.
+Jumps around in a `do`. Internal use.
 """
 )
 
@@ -1950,9 +2068,9 @@ rightmost name part of `type-name`. See also: `$quick-import`.
 """
 (import "System.String")
 (import "Kiezel.StringExtensions" :extends-package-name "string")
-string.compare
-string.T
-string.capitalize
+string:compare
+string:T
+string:capitalize
 (import "System.Net.WebRequestMethods+Ftp" :package-name :ftp-methods)
 (import "System.Collections.Generic.List" :type-parameters '(int))
 )
@@ -2001,10 +2119,10 @@ Returns `number` incremented by 1.
 """
 Increments the value of the `setf`able `place`.
 """
-(var x 3)
+(let x 3)
 (incf x)
 x
-(var a '(1 2 3))
+(let a '(1 2 3))
 (incf (second a))
 a
 )
@@ -2054,6 +2172,17 @@ Returns the intersection of two sequences.
 
 ;------------------------------------------------------------------------------
 
+(iterate (func initial-value)
+"""
+Returns an infinite sequence with `initial-value` as its first element. The next 
+element is the result of calling `func` with the previous element as the argument.
+"""
+(take 10 (iterate inc 1))
+(take 10 (iterate - 1))
+)
+
+;------------------------------------------------------------------------------
+
 (keyword? (expr)
 """
 Returns true if `expr` is a keyword.
@@ -2065,7 +2194,15 @@ Returns true if `expr` is a keyword.
 
 ;------------------------------------------------------------------------------
 
-(lambda ((args*) forms*)
+(label (tag-symbol)
+"""
+Defines a `goto` target in a `do` block. Internal use.
+"""
+)
+
+;------------------------------------------------------------------------------
+
+(lambda ((arg*) form*)
 """
 See also: [Functions](functions.html).
 """
@@ -2098,12 +2235,118 @@ Returns the last 1 or `count` cons cells of a list.
 
 ;------------------------------------------------------------------------------
 
+(lazy (sym expr)
+"""
+The form `(lazy a expr)` compiles to `(let a (system:create-delayed-expression (lambda () expr)))`.
+The expression is not evaluated until the variable is read. Reading references to `a` are 
+compiled as `(system:get-delayed-expression-result a)`.
+"""
+)
+
+;------------------------------------------------------------------------------
+
 (length (seq)
 """
 Returns the length of a sequence or string.
 """
 (length "abc")
 (length (range 10))
+)
+
+;------------------------------------------------------------------------------
+
+(let (sym expr)
+"""
+Declares a readonly variable. Lazy and future variables are also readonly variables.
+"""
+)
+
+;------------------------------------------------------------------------------
+
+(letfun (sym (arg*) form*)
+"""
+Declares a readonly variable whose value is a function.
+"""
+)
+
+
+;------------------------------------------------------------------------------
+
+(lisp-reader:new (source-code)
+"""
+Creates a lisp reader stream for the string `source-code`. The value of `$stdin`
+is a reader stream. See also `read` and `read-all`.
+"""
+)
+
+;------------------------------------------------------------------------------
+
+(lisp-reader:insert-form (form)
+"""
+"""
+)
+
+;------------------------------------------------------------------------------
+
+(lisp-reader:peek-char (offset)
+"""
+"""
+)
+
+;------------------------------------------------------------------------------
+
+(lisp-reader:read ()
+"""
+"""
+)
+
+;------------------------------------------------------------------------------
+
+(lisp-reader:read-all ()
+"""
+"""
+)
+
+;------------------------------------------------------------------------------
+
+(lisp-reader:read-delimited-list (terminator)
+"""
+"""
+)
+
+;------------------------------------------------------------------------------
+
+(lisp-reader:read-line (offset)
+"""
+"""
+)
+
+;------------------------------------------------------------------------------
+
+(lisp-reader:read-token ()
+"""
+"""
+)
+
+;------------------------------------------------------------------------------
+
+(lisp-reader:read-whitespace ()
+"""
+"""
+)
+
+;------------------------------------------------------------------------------
+
+(lisp-reader:skip-chars ()
+"""
+"""
+)
+
+;------------------------------------------------------------------------------
+
+(lisp-reader:try-take-chars (str)
+"""
+"""
 )
 
 ;------------------------------------------------------------------------------
@@ -2211,7 +2454,7 @@ Returns true if `expr` is a macro.
 
 ;------------------------------------------------------------------------------
 
-(macroexpand (expr)
+(macroexpand (expr &optional environment)
 """
 Returns the macro expansion of `expr` by repeatedly calling `macroexpand-1`.
 """
@@ -2221,17 +2464,30 @@ Returns the macro expansion of `expr` by repeatedly calling `macroexpand-1`.
 
 ;------------------------------------------------------------------------------
 
-(macroexpand-1 (expr)
+(macroexpand-1 (expr &optional environment)
 """
-Returns the macro expansion of `expr`.
+Returns a list with the macro expansion of `expr` and a flag indicating that 
+expansion actually occurred.
 """
 (macroexpand-1 '(setf (car x) 123))
 (macroexpand-1 '(while a b))
+(macroexpand-1 '(if a b))
 )
 
 ;------------------------------------------------------------------------------
 
 (make-environment ()
+"""
+Returns an object representing an empty lexical scope. Non empty lexical
+environment objects are only visible during macro expansion of a macro with
+an `&environment` parameter. For an example see the file `loop.k` 
+and [Loops](loops.html).
+"""
+)
+
+;------------------------------------------------------------------------------
+
+(make-extended-environment ()
 """
 Internal use.
 """
@@ -2248,23 +2504,14 @@ Returns an existing package or creates a new one. Called by the macro `defpackag
 
 ;------------------------------------------------------------------------------
 
-(make-reader (text)
-"""
-Creates a reader stream for the string `text`. The value of `$stdin` is a reader 
-stream. See also `read` and `read-all`.
-"""
-)
-
-;------------------------------------------------------------------------------
-
 (make-symbol (key package-name)
              (key package)
              (key)
 """
 Returns an existing symbol or creates a new one. For use by macros.
 """
-(var a 'test1)
-(var b (make-symbol (string "test" 1) $package))
+(let a 'test1)
+(let b (make-symbol (string "test" 1) $package))
 (eq a b)
 )
 
@@ -2291,11 +2538,11 @@ function `func` and all `func` outputs are concatenated.
 
 ;------------------------------------------------------------------------------
 
-(math.conjugate (a)
+(math:conjugate (a)
 """
 Returns the conjugate of a number.
 """
-(math.conjugate #c(3 4))
+(math:conjugate #c(3 4))
 )
 
 ;------------------------------------------------------------------------------
@@ -2319,10 +2566,16 @@ Merges two ordered sequences into one. Used by the function `sort`.
 
 ;------------------------------------------------------------------------------
 
-(merge-with-outer-do (form*)
+(merging-do (form*)
 """
-Internal use.
+If possible, inserts forms as part of the directly enclosing `do` block; 
+otherwise the same as `do`.
 """
+(EXAMPLE #q{(defmacro some-variables ()
+    `(merging-do
+        (var a)
+        (var b)
+        (var c)))})
 )
 
 ;------------------------------------------------------------------------------
@@ -2333,6 +2586,14 @@ Returns the smallest number in a sequence.
 """
 (min '(1 2 4 1 3))
 (min (vector "aap" "noot" "mies") :key length)
+)
+
+;------------------------------------------------------------------------------
+
+(minus? (number)
+"""
+Return true is `number` is a negative number.
+"""
 )
 
 ;------------------------------------------------------------------------------
@@ -2381,7 +2642,7 @@ Compares the string representations of objects.
 (new (&rest args)
      (parent &rest args)
 """
-Equivalent to `prototype.new`.
+Equivalent to `prototype:new`.
 Creates a new prototype object. A single argument can be a parent prototype. Two 
 consecutive arguments can be a name/value pair used to initialize
 the new object. Names can be given as strings, symbols and keywords.
@@ -2570,7 +2831,7 @@ the function `key` has a different value for two adjacent elements of `seq`.
 
 ;------------------------------------------------------------------------------
 
-(path.combine (path1 path2)
+(path:combine (path1 path2)
               (path1 path2 path3)
               (path1 path2 path3 path4)
               (&rest paths)
@@ -2581,7 +2842,7 @@ Like the original but with forward slashes.
 
 ;------------------------------------------------------------------------------
 
-(path.get-directory-name (path)
+(path:get-directory-name (path)
 """
 Like the original but with forward slashes.
 """
@@ -2589,7 +2850,7 @@ Like the original but with forward slashes.
 
 ;------------------------------------------------------------------------------
 
-(path.get-unix-name (name)
+(path:get-unix-name (name)
 """
 Converts backward slashes to forward slashes.
 """
@@ -2597,9 +2858,17 @@ Converts backward slashes to forward slashes.
 
 ;------------------------------------------------------------------------------
 
-(path.get-windows-name (name)
+(path:get-windows-name (name)
 """
 Converts forward slashes to backward slashes.
+"""
+)
+
+;------------------------------------------------------------------------------
+
+(plus? (number)
+"""
+Return true is `number` is a positive number.
 """
 )
 
@@ -2610,7 +2879,7 @@ Converts forward slashes to backward slashes.
 Returns the `first` element of the list `place` and updates the `setf`able 
 `place` to the `rest` of the list.
 """
-(var a '(1 2 3))
+(let a '(1 2 3))
 (pop a)
 a
 )
@@ -2641,13 +2910,13 @@ Returns the position of the first item in `seq` that satisfies the function
 
 ;------------------------------------------------------------------------------
 
-(math.pow (number1 number2)
+(math:pow (number1 number2)
 """
 Raises `number1` to the power of `number2`.
 """
-(math.pow 2 3)
-(math.pow -1 1)
-(math.pow -1 (/ 1 2))
+(math:pow 2 3)
+(math:pow -1 1)
+(math:pow -1 (/ 1 2))
 (* it it)
 )
 
@@ -2692,18 +2961,18 @@ Prints a warning message to `$stdlog`. Warning messages are prefixed by `;; warn
 
 ;------------------------------------------------------------------------------
 
-(prototype.get-parents (object &key (inherited false))
+(prototype:get-parents (object &key (inherited false))
 """
 Returns the list of parent objects of the prototype object `object`.
 """
-(var a (new :color "black" :model "0"))
-(var b (new a :model "12"))
+(let a (new :color "black" :model "0"))
+(let b (new a :model "12"))
 (.get-parents b)
 )
 
 ;------------------------------------------------------------------------------
 
-(prototype.get-superclasses (obj)
+(prototype:get-superclasses (obj)
 """
 Returns a list of the superclasses of the prototype object `obj`.
 """
@@ -2716,13 +2985,13 @@ b
 
 ;------------------------------------------------------------------------------
 
-(prototype.get-value (object name)
+(prototype:get-value (object name)
 """
 Returns the value of property `name` of prototype object `object`.
 """
-(var z (new "name" "Piet"))
-(prototype.get-value z "name")
-(prototype.get-value z :name)
+(let z (new "name" "Piet"))
+(prototype:get-value z "name")
+(prototype:get-value z :name)
 (.get-value z :name)
 (.name z)
 (elt z "name")
@@ -2731,41 +3000,41 @@ Returns the value of property `name` of prototype object `object`.
 
 ;------------------------------------------------------------------------------
 
-(prototype.has-property (object ident &key (inherited true))
+(prototype:has-property (object ident &key (inherited true))
 """
 
 """
-(var z (new "name" "Piet"))
+(let z (new "name" "Piet"))
 (.has-property z :name)
 (.has-property z :address)
 )
 
 ;------------------------------------------------------------------------------
 
-(prototype.keys (object)
+(prototype:keys (object)
 """
 Returns a list of strings.
 """
-(var z (new "name" "Piet" :city "Amsterdam"))
+(let z (new "name" "Piet" :city "Amsterdam"))
 (.keys z)
 )
 
 ;------------------------------------------------------------------------------
 
-(prototype.new (&rest args)
+(prototype:new (&rest args)
 """
 Equivalent to `new`.
 Creates a new prototype object. A single argument can be a parent prototype. Two 
 consecutive arguments can be a name/value pair used to initialize
 the new object. Names can be given as strings, symbols and keywords.
 """
-(var a (new :color "black" :model "0"))
+(let a (new :color "black" :model "0"))
 (new a :model "12")
 )
 
 ;------------------------------------------------------------------------------
 
-(prototype.set-parents (object parents)
+(prototype:set-parents (object parents)
 """
 Sets the list of the direct parents of `object` to `parents`.
 """
@@ -2773,12 +3042,12 @@ Sets the list of the direct parents of `object` to `parents`.
 
 ;------------------------------------------------------------------------------
 
-(prototype.set-value (object name value)
+(prototype:set-value (object name value)
 """
 Sets the value of property `name` of prototype object `object` to `value`.
 """
-(var z (new "name" "Piet"))
-(prototype.set-value z :name "Jan")
+(let z (new "name" "Piet"))
+(prototype:set-value z :name "Jan")
 z
 (setf (.name z) "Mies")
 z
@@ -2800,7 +3069,7 @@ Returns true if `expr` is a prototype object.
 Prepends `item` to the list `place` and updates the `setf`able `place` to 
 the new list.
 """
-(var a '(1 2 3))
+(let a '(1 2 3))
 (push 4 a)
 )
 
@@ -2811,7 +3080,7 @@ the new list.
 Prepends `item` to the list `place` if `item` is not in in the list and updates 
 the `setf`able `place` to the new list.
 """
-(var a '(1 2 3))
+(let a '(1 2 3))
 (pushnew 4 a)
 (pushnew 3 a)
 )
@@ -2891,6 +3160,17 @@ excludes its upper bound.
 (range 3 10 2)
 (range 3 10)
 (range 10)
+(range 10 3 -1)
+)
+
+;------------------------------------------------------------------------------
+
+(ratio? (expr)
+"""
+Returns true if `expr` is a BigRational number.
+"""
+(ratio? (/ 1 2))
+(ratio? (/ 2 2))
 )
 
 ;------------------------------------------------------------------------------
@@ -2901,14 +3181,14 @@ Returns true if `expr` is a rational number.
 """
 (rational? (/ 1 2))
 (rational? 1)
-(rational? (math.pow 2 0.5))
+(rational? (math:pow 2 0.5))
 )
 
 ;------------------------------------------------------------------------------
 
 (read (&key (stream $stdin) eof-value)
 """
-Reads an expression from a stream created by `make-reader`.
+Reads an expression from a stream created by `lisp-reader:new`.
 """
 )
 
@@ -2916,7 +3196,7 @@ Reads an expression from a stream created by `make-reader`.
 
 (read-all (&key (stream $stdin))
 """
-Reads a list of expressions from a stream created by `make-reader`.
+Reads a list of expressions from a stream created by `lisp-reader:new`.
 """
 )
 
@@ -2989,6 +3269,18 @@ infinite number of times.
 
 ;------------------------------------------------------------------------------
 
+(repeatedly (count func)
+            (func)
+"""
+Returns a lazy sequence of the values returned by repeated calls to `func`. 
+The second form yields an infinite sequence.
+"""
+(repeatedly 10 (lambda () "a"))
+)
+
+
+;------------------------------------------------------------------------------
+
 (require (file &key (verbose $load-verbose) (print $load-print))
 """
 Does nothing if `file` is already on the list `$modules`. Otherwise adds `file`
@@ -3020,6 +3312,14 @@ the was `yield`ed by the generator thread.
 (return (&optional value)
 """
 Returns `value` or `null` from a function.
+"""
+)
+
+;------------------------------------------------------------------------------
+
+(return-from (name &optional value)
+"""
+Returns `value` or `null` from a named block.
 """
 )
 
@@ -3091,6 +3391,7 @@ includes its upper bound.
 (series 3 10 2)
 (series 3 10)
 (series 10)
+(series 10 3 -1)
 )
 
 ;------------------------------------------------------------------------------
@@ -3113,7 +3414,7 @@ a137
 """
 Assigns `value` to `property` of `object`.
 """
-(var obj (new))
+(let obj (new))
 (set-attr obj 'name "mies")
 (attr obj 'name)
 (.name obj)
@@ -3126,7 +3427,7 @@ Assigns `value` to `property` of `object`.
 """
 Assigns `item` to the first item of `list`.
 """
-(var z '(111 2 3))
+(let z '(111 2 3))
 (set-car z 111)
 z
 (macroexpand '(setf (car z) 111))
@@ -3138,7 +3439,7 @@ z
 """
 Assigns the list `item` to the rest or cdr of `list`.
 """
-(var z '(1 111))
+(let z '(1 111))
 (set-cdr z '(111))
 z
 (macroexpand '(setf (cdr z) '(111)))
@@ -3155,12 +3456,28 @@ See also: `system.k`
 
 ;------------------------------------------------------------------------------
 
+(set-dispatch-macro-character (dispatch-char sub-char handler &key (readtable $readtable))
+"""
+TO DO
+"""
+)
+
+;------------------------------------------------------------------------------
+
+(set-macro-character (char handler &key (non-terminating? false) (readtable $readtable))
+"""
+TO DO
+"""
+)
+
+;------------------------------------------------------------------------------
+
 (set-elt (obj "index..." value)
 """
 Assigns `value` to the place `index...` of `obj`. A multi-dimensional array uses
 more than one index.
 """
-(var obj (new))
+(let obj (new))
 (set-elt obj "name" "mies")
 (elt obj "name")
 (attr obj 'name)
@@ -3192,7 +3509,7 @@ See also: `deftype`.
 """
 Sets the first element of `seq` to `item.
 """
-(var seq '(a 2 3 4))
+(let seq '(a 2 3 4))
 (set-first seq 'a)
 (macroexpand '(setf (first seq) 'a))
 )
@@ -3274,7 +3591,7 @@ Sets the third element of `seq` to `item.
 """
 Assigns `value` to `place`. See the file core/setf.
 """
-(var a '(1 two 3))
+(let a '(1 two 3))
 (setf (second a) 'two)
 a
 (macroexpand '(setf (second a) 'two))
@@ -3287,9 +3604,9 @@ a
 """
 Sets the value of the lexical, dynamic or global variables.
 """
-(var x 1)
+(let x 1)
 (setq x 3)
-(var y)
+(let y)
 (setq (x y) '(1 2))
 x
 y
@@ -3393,14 +3710,6 @@ Equivalent to `(list (take-while predicate seq) (skip-while predicate seq))`.
 
 ;------------------------------------------------------------------------------
 
-(strict ()
-"""
-Sets the dynamic variable `$strict` to `true`. 
-"""
-)
-
-;------------------------------------------------------------------------------
-
 (string (&rest values)
 """
 Returns the concatenation of the pure string representations of each `value`.
@@ -3410,7 +3719,7 @@ Returns the concatenation of the pure string representations of each `value`.
 
 ;------------------------------------------------------------------------------
 
-(string.capitalize (str)
+(string:capitalize (str)
 """
 Capitalizes each word of a string.
 """
@@ -3419,7 +3728,7 @@ Capitalizes each word of a string.
 
 ;------------------------------------------------------------------------------
 
-(string.convert-to-external-line-endings (str)
+(string:convert-to-external-line-endings (str)
 """
 On Windows, changes LF to CRLF.
 """
@@ -3427,7 +3736,7 @@ On Windows, changes LF to CRLF.
 
 ;------------------------------------------------------------------------------
 
-(string.convert-to-internal-line-endings (str)
+(string:convert-to-internal-line-endings (str)
 """
 On Windows, changes CRLF to LF.
 """
@@ -3435,7 +3744,7 @@ On Windows, changes CRLF to LF.
 
 ;------------------------------------------------------------------------------
 
-(string.html-decode (str)
+(string:html-decode (str)
 """
 Same as HttpUtility.HtmlDecode
 """
@@ -3443,7 +3752,7 @@ Same as HttpUtility.HtmlDecode
 
 ;------------------------------------------------------------------------------
 
-(string.html-encode (str)
+(string:html-encode (str)
 """
 Same as HttpUtility.HtmlEncode
 """
@@ -3451,7 +3760,7 @@ Same as HttpUtility.HtmlEncode
 
 ;------------------------------------------------------------------------------
 
-(string.indent (text prefix)
+(string:indent (text prefix)
 """
 Adds a prefix string to each line in `text`.
 """
@@ -3460,7 +3769,7 @@ Adds a prefix string to each line in `text`.
 
 ;------------------------------------------------------------------------------
 
-(string.indent-with-line-numbers (text line-number width separator)
+(string:indent-with-line-numbers (text line-number width separator)
 """
 Adds a line number and prefix string to each line in `text`.
 """
@@ -3469,7 +3778,7 @@ Adds a line number and prefix string to each line in `text`.
 
 ;------------------------------------------------------------------------------
 
-(string.join (separator values)
+(string:join (separator values)
              (separator value start-index count)
              (separator seq)
 """
@@ -3480,26 +3789,26 @@ The third form is a Kiezellisp extension.
 
 ;------------------------------------------------------------------------------
 
-(string.json-decode (str)
+(string:json-decode (str)
 """
 Decodes a JSON string.
 """
-(string.json-encode (new :name "mies"))
+(string:json-encode (new :name "mies"))
 (.json-decode it)
 )
 
 ;------------------------------------------------------------------------------
 
-(string.json-encode (value)
+(string:json-encode (value)
 """
 Encodes a value as a JSON string.
 """
-(print-line (string.json-encode (new :name "mies")))
+(print-line (string:json-encode (new :name "mies")))
 )
 
 ;------------------------------------------------------------------------------
 
-(string.latex-encode (str)
+(string:latex-encode (str)
 """
 Escapes characters that have a meaning in latex source.
 """
@@ -3507,7 +3816,7 @@ Escapes characters that have a meaning in latex source.
 
 ;------------------------------------------------------------------------------
 
-(string.left (str count)
+(string:left (str count)
 """
 Returns the leftmost `count` characters of `str`.
 """
@@ -3517,7 +3826,7 @@ Returns the leftmost `count` characters of `str`.
 
 ;------------------------------------------------------------------------------
 
-(string.lisp-name (name)
+(string:lisp-name (name)
 """
 Converts between naming conventions.
 """
@@ -3526,7 +3835,7 @@ Converts between naming conventions.
 
 ;------------------------------------------------------------------------------
 
-(string.lisp-to-camel-case-name (name)
+(string:lisp-to-camel-case-name (name)
 """
 Converts between naming conventions.
 """
@@ -3535,7 +3844,7 @@ Converts between naming conventions.
 
 ;------------------------------------------------------------------------------
 
-(string.lisp-to-pascal-case-name (name)
+(string:lisp-to-pascal-case-name (name)
 """
 Converts between naming conventions.
 """
@@ -3544,7 +3853,7 @@ Converts between naming conventions.
 
 ;------------------------------------------------------------------------------
 
-(string.next (str)
+(string:next (str)
 """
 Returns the string that succeeds `str`.
 """
@@ -3554,7 +3863,7 @@ Returns the string that succeeds `str`.
 
 ;------------------------------------------------------------------------------
 
-(string.pad-left (str width)
+(string:pad-left (str width)
                  (str width padding-char)
                  (str width padding-str)
 """
@@ -3564,7 +3873,7 @@ The third form is a Kiezellisp extension.
 
 ;------------------------------------------------------------------------------
 
-(string.pad-right (str width)
+(string:pad-right (str width)
                  (str width padding-char)
                  (str width padding-str)
 """
@@ -3574,23 +3883,23 @@ The third form is a Kiezellisp extension.
 
 ;------------------------------------------------------------------------------
 
-(string.parse-date (str &key format culture)
+(string:parse-date (str &key format culture)
 """
-See also: [try-parse-date](#string.try-parse-date). 
-"""
-)
-
-;------------------------------------------------------------------------------
-
-(string.parse-number (str &key base culture)
-"""
-See also: [try-parse-number](#string.try-parse-number). 
+See also: [try-parse-date](#string:try-parse-date). 
 """
 )
 
 ;------------------------------------------------------------------------------
 
-(string.prev (str)
+(string:parse-number (str &key base culture)
+"""
+See also: [try-parse-number](#string:try-parse-number). 
+"""
+)
+
+;------------------------------------------------------------------------------
+
+(string:prev (str)
 """
 Returns the string that preceeds `str`.
 """
@@ -3600,7 +3909,7 @@ Returns the string that preceeds `str`.
 
 ;------------------------------------------------------------------------------
 
-(string.regex-encode (str)
+(string:regex-encode (str)
 """
 Same as Regex.Escape.
 """
@@ -3608,7 +3917,7 @@ Same as Regex.Escape.
 
 ;------------------------------------------------------------------------------
 
-(string.regex-match (str pattern)
+(string:regex-match (str pattern)
 """
 Compares `str` to the string or Regex `pattern`. Returns null if no match.
 Returns a list of matches otherwise.
@@ -3618,7 +3927,7 @@ Returns a list of matches otherwise.
 
 ;------------------------------------------------------------------------------
 
-(string.regex-replace (str pattern transform-func)
+(string:regex-replace (str pattern transform-func)
                       (str pattern replacement-str)
 """
 Compares `str` to the string or Regex `pattern`. The number of arguments of 
@@ -3629,7 +3938,7 @@ Compares `str` to the string or Regex `pattern`. The number of arguments of
 
 ;------------------------------------------------------------------------------
 
-(string.regex-split (str pattern)
+(string:regex-split (str pattern)
 """
 
 """
@@ -3637,7 +3946,7 @@ Compares `str` to the string or Regex `pattern`. The number of arguments of
 
 ;------------------------------------------------------------------------------
 
-(string.repeat (str count)
+(string:repeat (str count)
 """
 Returns a string consisting of `count` copies of `str`.
 """
@@ -3646,7 +3955,7 @@ Returns a string consisting of `count` copies of `str`.
 
 ;------------------------------------------------------------------------------
 
-(string.right (s count)
+(string:right (s count)
 """
 Returns the rightmost `count` characters of `str`.
 """
@@ -3656,7 +3965,7 @@ Returns the rightmost `count` characters of `str`.
 
 ;------------------------------------------------------------------------------
 
-(string.split (str)
+(string:split (str)
               (str count)
               (str separators)
               (str separators count)
@@ -3675,7 +3984,7 @@ string.
 
 ;------------------------------------------------------------------------------
 
-(string.trim (str)
+(string:trim (str)
              (str &rest trim-chars)
              (str trim-chars-str)
 """
@@ -3686,7 +3995,7 @@ The third form is a Kiezellisp extension.
 
 ;------------------------------------------------------------------------------
 
-(string.trim-end (str)
+(string:trim-end (str)
                  (str &rest trim-chars)
                  (str trim-chars-str)
 """
@@ -3697,7 +4006,7 @@ The third form is a Kiezellisp extension.
 
 ;------------------------------------------------------------------------------
 
-(string.trim-start (str)
+(string:trim-start (str)
                    (str &rest trim-chars)
                    (str trim-chars-str)
 """
@@ -3709,7 +4018,7 @@ The third form is a Kiezellisp extension.
 
 ;------------------------------------------------------------------------------
 
-(string.try-parse-date (str &key format culture)
+(string:try-parse-date (str &key format culture)
 """
 Converts a string to a DateTime.
 """
@@ -3719,7 +4028,7 @@ Converts a string to a DateTime.
 
 ;------------------------------------------------------------------------------
 
-(string.try-parse-number (str &key base culture)
+(string:try-parse-number (str &key base culture)
 """
 Converts a string to a number.
 """
@@ -3730,7 +4039,7 @@ Converts a string to a number.
 
 ;------------------------------------------------------------------------------
 
-(string.url-decode (str)
+(string:url-decode (str)
 """
 Same as HttpUtility.UrlDecode
 """
@@ -3738,7 +4047,7 @@ Same as HttpUtility.UrlDecode
 
 ;------------------------------------------------------------------------------
 
-(string.url-encode (str)
+(string:url-encode (str)
 """
 Same as HttpUtility.UrlEncode
 """
@@ -3810,7 +4119,7 @@ Returns the sum of elements in `seq`.
 """
 Returns the string name of the symbol `target`.
 """
-(symbol-name 'csv.read-string-to-grid)
+(symbol-name 'csv:read-string-to-grid)
 )
 
 ;------------------------------------------------------------------------------
@@ -3819,7 +4128,7 @@ Returns the string name of the symbol `target`.
 """
 Returns the package owning the symbol `sym`.
 """
-(symbol-package 'csv.read-string-to-grid)
+(symbol-package 'csv:read-string-to-grid)
 )
 
 ;------------------------------------------------------------------------------
@@ -3828,9 +4137,9 @@ Returns the package owning the symbol `sym`.
 """
 Returns the value of the global variable `sym`.
 """
-(var a 'csv.read-string-to-grid)
+(let a 'csv:read-string-to-grid)
 (symbol-value a)
-csv.read-string-to-grid
+csv:read-string-to-grid
 )
 
 ;------------------------------------------------------------------------------
@@ -3844,7 +4153,7 @@ Returns true if `expr` is a symbol.
 
 ;------------------------------------------------------------------------------
 
-(system.call-next-method (current-method args)
+(system:call-next-method (current-method args)
 """
 Internal use.
 """
@@ -3852,7 +4161,7 @@ Internal use.
 
 ;------------------------------------------------------------------------------
 
-(system.create-delayed-expression (func)
+(system:create-delayed-expression (func)
 """
 Internal use.
 """
@@ -3860,7 +4169,7 @@ Internal use.
 
 ;------------------------------------------------------------------------------
 
-(system.create-generator (code &rest kwargs)
+(system:create-generator (func &rest kwargs)
 """
 Internal use.
 """
@@ -3868,7 +4177,7 @@ Internal use.
 
 ;------------------------------------------------------------------------------
 
-(system.create-tailcall (proc &rest args)
+(system:create-tailcall (func &rest args)
 """
 Internal use.
 """
@@ -3876,7 +4185,7 @@ Internal use.
 
 ;------------------------------------------------------------------------------
 
-(system.create-task (code)
+(system:create-task (func)
 """
 Internal use.
 """
@@ -3884,7 +4193,7 @@ Internal use.
 
 ;------------------------------------------------------------------------------
 
-(system.dispose (resource)
+(system:dispose (resource)
 """
 Internal use.
 """
@@ -3892,7 +4201,7 @@ Internal use.
 
 ;------------------------------------------------------------------------------
 
-(system.enable-benchmark (flag)
+(system:enable-benchmark (flag)
 """
 Internal use.
 """
@@ -3900,7 +4209,7 @@ Internal use.
 
 ;------------------------------------------------------------------------------
 
-(system.get-current-thread ()
+(system:get-current-thread ()
 """
 Internal use.
 """
@@ -3908,7 +4217,7 @@ Internal use.
 
 ;------------------------------------------------------------------------------
 
-(system.get-safe-enumerator (list)
+(system:get-safe-enumerator (list)
 """
 Internal use.
 """
@@ -3916,15 +4225,16 @@ Internal use.
 
 ;------------------------------------------------------------------------------
 
-(system.optimizer (expr)
+(system:get-task-result (obj)
 """
-Internal use.
+Internal use. 
 """
 )
 
+
 ;------------------------------------------------------------------------------
 
-(tagbody 
+(system:optimizer (expr)
 """
 Internal use.
 """
@@ -3971,11 +4281,11 @@ Returns items from `seq` while they satisfy the function `predicate`.
 (task (&body forms)
 """
 Creates a task that runs `forms`. The return value of `task` is a ThreadContext
-object that exposes the properties `Result` and `IsCompleted`. `Result` blocks
-until IsCompleted is true.
+object that exposes the method `GetResult` and the property `IsCompleted`. 
+`GetResult` blocks until `IsCompleted` is true.
 """
-(var a (task (* 1 2 3 4 5)))
-(.result a)
+(let a (task (* 1 2 3 4 5)))
+(.get-result a)
 (.is-completed a)
 )
 
@@ -3995,7 +4305,7 @@ Returns the third item in `seq`.
 """
 Throws an exception.
 """
-(throw (lisp-exception.new "Bad things happened."))
+(throw (lisp-exception:new "Bad things happened."))
 )
 
 ;------------------------------------------------------------------------------
@@ -4005,7 +4315,7 @@ Throws an exception.
 Throws an exception of type LispException. The arguments are combined as if by 
 the function `string`.
 """
-(var n 2)
+(let n 2)
 (throw-error "There are " n " things wrong.")
 )
 
@@ -4017,16 +4327,16 @@ Conditionally writes the source code of `expr` and its value to `$stdlog`, depen
 on the value of `$tracing`. `expr` must not have side effects. Trace code is compiled
 away when running in production mode.
 """
-(do (var $tracing true) (trace (+ 1 2)))
+(do (let $tracing true) (trace (+ 1 2)))
 )
 
 ;------------------------------------------------------------------------------
 
-(try (&body forms)
+(ignore-errors (&body forms)
 """
 Executes `forms`. Returns `null` if an exception is thrown.
 """
-(try (+ 3 hello))
+(ignore-errors (+ 3 hello))
 )
 
 ;------------------------------------------------------------------------------
@@ -4040,12 +4350,12 @@ Executes `forms`. Returns an exception if an exception is thrown.
 
 ;------------------------------------------------------------------------------
 
-(try-finally (form cleanup-form)
+(try (&body forms)
 """
 Returns `form`. `cleanup-form` is executed when `form` returns normally and
 when `form` throws an exception.
 """
-(try-finally (+ 3 hello) (print-line 111))
+(try (+ 3 hello) (catch (ex) (print-line ex)) (finally (print-line 111)))
 )
 
 ;------------------------------------------------------------------------------
@@ -4065,11 +4375,19 @@ Returns true if `target` has type `type`.
     otherwise-clause := '(' {true|otherwise} form* ')'
     type := symbol corresponding to a (imported) class
 """
-(var s 'aap)
+(let s 'aap)
 (typecase s
     (integer (print-line 1))
     (symbol (print-line 2))
     (otherwise (print-line 3)))
+)
+
+;------------------------------------------------------------------------------
+
+(etypecase (keyform normal-clause* \[otherwise-clause\])
+"""
+Like `typecase`, but throws an exception if no case matches.
+"""
 )
 
 ;------------------------------------------------------------------------------
@@ -4128,7 +4446,7 @@ on the variable `sym` to release the `resource`.
 
 ;------------------------------------------------------------------------------
 
-(var (sym \[value\])
+(let (sym \[value\])
      (sym-list \[seq\])
 """
 The first form declares a lexical variable `sym`, initialized to `value` or `null`. 
@@ -4136,8 +4454,8 @@ The second form declares a list of variables that are initialized from the
 sequence `seq`.
 This form must be used in an implicit or explicit `do` block.
 """
-(do (var x 111) (+ x x))
-(do (var (a b c) (series 2)) (list a b c))
+(do (let x 111) (+ x x))
+(do (let (a b c) (series 2)) (list a b c))
 )
 
 ;------------------------------------------------------------------------------
@@ -4166,6 +4484,27 @@ sequence.
 """
 Returns true if `expr` is a vector.
 """
+)
+
+;------------------------------------------------------------------------------
+
+(void ()
+"""
+Returns the unique instance of the class `VOID`. May be used to signal the absence
+of a return value, similar to Common Lisp's `(values)`.
+"""
+(void)
+(if (void) 1 2)
+)    
+
+;------------------------------------------------------------------------------
+
+(void? (expr)
+"""
+Returns true if `expr` is of class VOID.
+"""
+(void? (void))
+(void? null)
 )
 
 ;------------------------------------------------------------------------------

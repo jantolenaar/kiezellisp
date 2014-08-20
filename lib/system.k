@@ -1,4 +1,4 @@
-;;;; Copyright (C) 2012-2013 Jan Tolenaar. See the file LICENSE for details.
+;;;; Copyright (c) Jan Tolenaar. See the file LICENSE for details.
 
 ;;;;
 ;;;; system.k
@@ -20,5 +20,6 @@
 (when $interactive-mode
     (load "core/documentation")
     (set-console-key-binding 'f12 '() (λx x "(λ")))
+
 
 

@@ -1,4 +1,4 @@
-;;;; Copyright (C) 2012-2013 Jan Tolenaar. See the file LICENSE for details.
+;;;; Copyright (c) Jan Tolenaar. See the file LICENSE for details.
 
 ;;;;
 ;;;; http-server.k
@@ -51,12 +51,12 @@
 (defun start ()
     (stop)
     (when $prefixes)
-        (setf $listener (http-listener.new))
+        (setf $listener (http-listener:new))
         (foreach (prefix $prefixes)
             (.add (.prefixes $listener) prefix))
         (.start $listener)
         (loop 
-            (var context (.get-context $listener))
+            (let context (.get-context $listener))
             (process-context context)))
 
 (defun stop ()
@@ -72,25 +72,21 @@
 
 
 (defun create-prefix-dispatcher (handler virtual-root args)
-    (var call-prefix-handler 
-        (lambda url
-            (funcall handler url virtual-root args)))
-    (var try-get-prefix-handler
-        (lambda url
-            (if (or (= url virtual-root)
-                    (and (.starts-with url virtual-root)
-                         (= (elt url (length virtual-root)) #\/)))
-                call-prefix-handler)))
+    (letfun call-prefix-handler (url)
+        (funcall handler url virtual-root args))
+    (letfun try-get-prefix-handler (url)
+        (if (or (= url virtual-root)
+                (and (.starts-with url virtual-root)
+                     (= (elt url (length virtual-root)) #\/)))
+            call-prefix-handler))
     try-get-prefix-handler)
 
 (defun create-exact-dispatcher (handler virtual-root args)
-    (var call-exact-handler 
-        (lambda url
-            (funcall handler url virtual-root args)))
-    (var try-get-exact-handler 
-        (lambda url
-            (if (= url virtual-root)
-                call-exact-handler)))
+    (letfun call-exact-handler (url)
+        (funcall handler url virtual-root args))
+    (letfun try-get-exact-handler (url)
+        (if (= url virtual-root)
+            call-exact-handler))
     try-get-exact-handler)
 
 ;;;
@@ -98,18 +94,18 @@
 ;;;
 
 (defun process-context (context)
-    (var $request (.request context))
+    (let $request (.request context))
     (using ($response (.response context))
         (setf $$request $request)
         (setf $$response $response)
-        (var url (.trim-end (.local-path (.url $request)) "/"))
-        (var result (try-and-catch (find-and-call-url-handler url)))
+        (let url (.trim-end (.local-path (.url $request)) "/"))
+        (let result (try-and-catch (find-and-call-url-handler url)))
         (when (exception? result)
-            (var diag (get-diagnostics result))
+            (let diag (get-diagnostics result))
             (write-response-text diag))))
 
 (defun find-and-call-url-handler (url)
-    (var handler (get-url-handler url))
+    (let handler (get-url-handler url))
     (funcall handler url))
 
 (defun get-url-handler (url)
@@ -123,8 +119,8 @@
 
 (defun get (url)
     ;; Used for debugging
-    (var $request null)
-    (var $response null)
+    (let $request null)
+    (let $response null)
     (find-and-call-url-handler (.trim-end url "/")))
 
 ;;;
@@ -133,7 +129,7 @@
 
 (defun write-response-text (text &key content-type)
     (if $response
-          (write-response-bytes (.get-bytes (encoding.utf8) text) :content-type content-type)
+          (write-response-bytes (.get-bytes (encoding:utf8) text) :content-type content-type)
         (print-line text)))
 
 (defun write-response-bytes (bytes &key content-type)
@@ -150,6 +146,6 @@
 
 
 (defun write-response-file (path &key content-type)
-    (var content-type (or content-type (mime-types.get-mime-type path)))
-    (var bytes (file.read-all-bytes path))
+    (let content-type (or content-type (mime-types:get-mime-type path)))
+    (let bytes (file:read-all-bytes path))
     (write-response-bytes bytes :content-type content-type))

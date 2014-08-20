@@ -1,13 +1,12 @@
 
-;;; Copyright (C) 2012-2013 Jan Tolenaar. See the file LICENSE for details.
+;;; Copyright (C) Jan Tolenaar. See the file LICENSE for details.
 
 ;;;
 ;;; kiezellisp-init.k
 ;;;
 
-(import "System.ConsoleColor")
-(setq $standout-color console-color.DARK-MAGENTA)
-(setq $standout-background-color console-color.WHITE)
+(if (find :windows-mode $features)
+    (setq $stdlog "d:/temp/stdlog"))
 
 (set-load-path "d:/projects/kiezellisp-private/lib"
                "d:/projects/kiezellisp-private/app"
@@ -19,5 +18,5 @@
 
 (require "system")
 (require "shell")
-
+(require "unit-test")
 

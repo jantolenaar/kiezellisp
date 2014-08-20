@@ -1,4 +1,4 @@
-﻿// Copyright (C) 2012-2013 Jan Tolenaar. See the file LICENSE for details.
+﻿// Copyright (C) Jan Tolenaar. See the file LICENSE for details.
 
 using System;
 using System.Collections;
@@ -10,7 +10,7 @@ namespace Kiezel
 
     public partial class Runtime
     {
-        [Pure, Lisp( "math.abs" )]
+        [Pure, Lisp( "math:abs" )]
         public static object Abs( object a )
         {
             if ( a is int )
@@ -44,7 +44,7 @@ namespace Kiezel
 
         }
 
-        [Pure, Lisp( "math.acos" )]
+        [Pure, Lisp( "math:acos" )]
         public static object Acos( object a )
         {
             if ( a is Complex )
@@ -57,7 +57,7 @@ namespace Kiezel
             }
         }
 
-        [Pure, Lisp( "math.asin" )]
+        [Pure, Lisp( "math:asin" )]
         public static object Asin( object a )
         {
             if ( a is Complex )
@@ -70,7 +70,7 @@ namespace Kiezel
             }
         }
 
-        [Pure, Lisp( "math.atan" )]
+        [Pure, Lisp( "math:atan" )]
         public static object Atan( object a )
         {
             if ( a is Complex )
@@ -84,7 +84,7 @@ namespace Kiezel
         }
 
 
-        [Pure, Lisp( "math.ceiling" )]
+        [Pure, Lisp( "math:ceiling" )]
         public static object Ceiling( object a )
         {
             if ( a is double )
@@ -101,7 +101,7 @@ namespace Kiezel
             }
         }
 
-        [Pure, Lisp( "math.cos" )]
+        [Pure, Lisp( "math:cos" )]
         public static object Cos( object a )
         {
             if ( a is Complex )
@@ -114,7 +114,7 @@ namespace Kiezel
             }
         }
 
-        [Pure, Lisp( "math.cosh" )]
+        [Pure, Lisp( "math:cosh" )]
         public static object Cosh( object a )
         {
             if ( a is Complex )
@@ -127,7 +127,7 @@ namespace Kiezel
             }
         }
 
-        [Pure, Lisp( "math.exp" )]
+        [Pure, Lisp( "math:exp" )]
         public static object Exp( object a )
         {
             if ( a is Complex )
@@ -140,7 +140,7 @@ namespace Kiezel
             }
         }
 
-        [Pure, Lisp( "math.floor" )]
+        [Pure, Lisp( "math:floor" )]
         public static object Floor( object a )
         {
             if ( a is double )
@@ -157,7 +157,7 @@ namespace Kiezel
             }
         }
 
-        [Pure, Lisp( "math.log" )]
+        [Pure, Lisp( "math:log" )]
         public static object Log( object a )
         {
             if ( a is Complex )
@@ -174,7 +174,7 @@ namespace Kiezel
             }
         }
 
-        [Pure, Lisp( "math.log10" )]
+        [Pure, Lisp( "math:log10" )]
         public static object Log10( object a )
         {
             if ( a is Complex )
@@ -191,7 +191,7 @@ namespace Kiezel
             }
         }
 
-        [Pure, Lisp( "math.pow" )]
+        [Pure, Lisp( "math:pow" )]
         public static object Pow( object a1, object a2 )
         {
             if ( a1 is Complex || a2 is Complex )
@@ -233,7 +233,7 @@ namespace Kiezel
             }
         }
 
-        [Pure, Lisp( "math.round" )]
+        [Pure, Lisp( "math:round" )]
         public static object Round( object a )
         {
             if ( a is double )
@@ -250,7 +250,7 @@ namespace Kiezel
             }
         }
 
-        [Pure, Lisp( "math.round" )]
+        [Pure, Lisp( "math:round" )]
         public static object Round( object a, int decimals )
         {
             if ( a is double )
@@ -267,7 +267,7 @@ namespace Kiezel
             }
         }
 
-        [Pure, Lisp( "math.sign" )]
+        [Pure, Lisp( "math:sign" )]
         public static int Sign( object a )
         {
             if ( a is int )
@@ -302,7 +302,7 @@ namespace Kiezel
             }
         }
 
-        [Pure, Lisp( "math.sin" )]
+        [Pure, Lisp( "math:sin" )]
         public static object Sin( object a )
         {
             if ( a is Complex )
@@ -315,7 +315,7 @@ namespace Kiezel
             }
         }
 
-        [Pure, Lisp( "math.sinh" )]
+        [Pure, Lisp( "math:sinh" )]
         public static object Sinh( object a )
         {
             if ( a is Complex )
@@ -328,7 +328,7 @@ namespace Kiezel
             }
         }
 
-        [Pure, Lisp( "math.sqrt" )]
+        [Pure, Lisp( "math:sqrt" )]
         public static object Sqrt( object a )
         {
             if ( a is Complex )
@@ -345,7 +345,7 @@ namespace Kiezel
             }
         }
 
-        [Pure, Lisp( "math.tan" )]
+        [Pure, Lisp( "math:tan" )]
         public static object Tan( object a )
         {
             if ( a is Complex )
@@ -358,7 +358,7 @@ namespace Kiezel
             }
         }
 
-        [Pure, Lisp( "math.tanh" )]
+        [Pure, Lisp( "math:tanh" )]
         public static object Tanh( object a )
         {
             if ( a is Complex )
@@ -371,7 +371,7 @@ namespace Kiezel
             }
         }
 
-        [Pure, Lisp( "math.truncate" )]
+        [Pure, Lisp( "math:truncate" )]
         public static object Truncate( object a )
         {
             if ( a is double )
@@ -388,7 +388,7 @@ namespace Kiezel
             }
         }
 
-        [Pure, Lisp( "math.conjugate" )]
+        [Pure, Lisp( "math:conjugate" )]
         public static object Conjugate( object a )
         {
             return Complex.Conjugate( AsComplex( a ) );

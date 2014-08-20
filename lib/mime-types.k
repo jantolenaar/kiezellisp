@@ -1,4 +1,4 @@
-;;;; Copyright (C) 2012-2013 Jan Tolenaar. See the file LICENSE for details.
+;;;; Copyright (c) Jan Tolenaar. See the file LICENSE for details.
 
 ;;;;
 ;;;; mime.type.k
@@ -345,7 +345,7 @@
             (define-mime-type (first item) suffix))))
 
 (defun get-mime-type (path)
-    (var ext (.trim-start (path.get-extension path) "."))
+    (let ext (.trim-start (path:get-extension path) "."))
     (or (elt mime-type-hash ext)
         "text/plain"))
 

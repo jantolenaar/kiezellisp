@@ -1,4 +1,4 @@
-// Copyright (C) 2012-2013 Jan Tolenaar. See the file LICENSE for details.
+// Copyright (C) Jan Tolenaar. See the file LICENSE for details.
 
 using System;
 using System.Collections.Generic;
@@ -138,6 +138,32 @@ namespace Kiezel
             return allTypes;
         }
 
+        internal static MemberInfo ResolveGenericMethod( MemberInfo member )
+        {
+            if ( member is MethodInfo )
+            {
+                var method = ( MethodInfo ) member;
+                if ( method.ContainsGenericParameters )
+                {
+                    var parameters = method.GetGenericArguments();
+                    var types = new Type[ parameters.Length ];
+                    for ( var i = 0; i < types.Length; ++i )
+                    {
+                        types[ i ] = typeof( object );
+                    }
+                    try
+                    {
+                        member = method.MakeGenericMethod( types );
+                    }
+                    catch ( Exception )
+                    {
+                    }
+                }
+            }
+
+            return member;
+        }
+
         internal static Assembly LastUsedAssembly = null;
 
         internal static Type GetTypeForImport( string typeName, Type[] typeParameters )
@@ -196,12 +222,13 @@ namespace Kiezel
         [Lisp( "import" )]
         public static Package Import( string typeName, params object[] args )
         {
-            var kwargs = ParseKwargs( args, new string[] { "package-name", "extends-package-name", "export", "type-parameters" }, null, null, true, null );
-            var typeParameters = ToIter( ( Cons ) kwargs[ 3 ] ).Cast<Symbol>().Select( GetType ).Cast<Type>().ToArray();
+            var kwargs = ParseKwargs( args, new string[] { "package-name", "package-name-prefix", "extends-package-name", "export", "type-parameters" }, null, null, null, true, null );
+            var typeParameters = ToIter( ( Cons ) kwargs[ 4 ] ).Cast<Symbol>().Select( GetType ).Cast<Type>().ToArray();
             var type = GetTypeForImport( typeName, typeParameters );
-            var packageName = GetDesignatedString( kwargs[ 0 ] ?? type.Name.LispName() );
-            var packageName2 = GetDesignatedString( kwargs[ 1 ] );
-            var export = ToBool( kwargs[ 2 ] );
+            var prefix = GetDesignatedString( kwargs[ 1 ] ?? GetDynamic( Symbols.PackageNamePrefix ) );
+            var packageName = GetDesignatedString( kwargs[ 0 ] ?? prefix + type.Name.LispName() );
+            var packageName2 = GetDesignatedString( kwargs[ 2 ] );
+            var export = ToBool( kwargs[ 3 ] );
 
             return Import( type, packageName, packageName2, export );
         }
@@ -290,9 +317,9 @@ namespace Kiezel
             foreach ( var name in names )
             {
                 var methods = type.GetMember( name, ImportBindingFlags )
-                                  .Where( x => x is MethodInfo )                                 
-                                  .Select( x => ( MethodInfo ) x )
-                                  .Where( x => ExtendsType( x, extendedType))
+                                  .Where( x => x is MethodInfo )
+                                  .Select( x => ( MethodInfo ) ResolveGenericMethod( ( MethodInfo ) x ) )
+                                  .Where( x => ExtendsType( x, extendedType ) )
                                   .ToList();
 
                 if ( methods.Count == 0 )
@@ -308,26 +335,27 @@ namespace Kiezel
                 }
 
                 Symbol sym = package.InternNoInherit( name.LispName(), useMissing: true );
+                var builtin = sym.Value as ImportedFunction;
 
-                if ( sym.Value is ImportedFunction )
+                if ( builtin == null )
                 {
-                    if ( isbuiltin )
-                    {
-                        // Designed to go before other methods.
-                        methods.AddRange( ( ( ImportedFunction ) sym.Value ).Members );
-                        methods = methods.Distinct().ToList();
-                    }
-                    else
-                    {
-                        // todo: change order
-                        // Goes after other methods as in c#.
-                        methods.AddRange( ( ( ImportedFunction ) sym.Value ).Members );
-                        methods = methods.Distinct().ToList();
-                    }
+                    sym.FunctionValue = builtin = new ImportedFunction( name, type );
                 }
 
-                var builtin = new ImportedFunction( methods.ToArray(), false );
-                sym.FunctionValue = builtin;
+                if ( isbuiltin )
+                {
+                    // Designed to go before other methods.
+                    methods.AddRange( builtin.BuiltinExtensionMembers );
+                    builtin.BuiltinExtensionMembers = methods.Distinct().ToArray();
+                }
+                else
+                {
+                    // todo: change order
+                    // Goes after other methods as in c#.
+                    methods.AddRange( builtin.ExternalExtensionMembers );
+                    builtin.ExternalExtensionMembers = methods.Distinct().ToArray();
+                }
+
                 sym.Package.Export( sym.Name );
             }
         }
@@ -345,7 +373,7 @@ namespace Kiezel
                 name = ".ctor";
             }
 
-            var members = package.ImportedType.GetMember( name, ImportBindingFlags ).ToArray();
+            var members = package.ImportedType.GetMember( name, ImportBindingFlags ).Select( x => ResolveGenericMethod( x ) ).ToArray();
 
             if ( members.Length == 0 )
             {
@@ -395,7 +423,7 @@ namespace Kiezel
                 if ( !name.StartsWith( "get_" ) && !name.StartsWith( "set_" ) )
                 {
                     var sym = package.InternNoInherit( members[ 0 ].Name.LispName() );
-                    var builtin = new ImportedFunction( members.Cast<MethodInfo>().ToArray(), false );
+                    var builtin = new ImportedFunction( members[ 0 ].Name, members[0].DeclaringType, members.Cast<MethodInfo>().ToArray(), false );
                     sym.FunctionValue = builtin;
                     sym.Package.Export( sym.Name );
                 }
@@ -412,7 +440,7 @@ namespace Kiezel
                 if ( getters.Length != 0 )
                 {
                     Symbol sym = package.InternNoInherit( members[ 0 ].Name.LispName() );
-                    var builtin = new ImportedFunction( getters, false );
+                    var builtin = new ImportedFunction( members[ 0 ].Name, members[ 0 ].DeclaringType, getters, false );
                     sym.FunctionValue = builtin;
                     sym.Package.Export( sym.Name );
                 }
@@ -421,7 +449,7 @@ namespace Kiezel
                 {
                     // use set-xxx
                     Symbol sym = package.InternNoInherit( "set-" + members[ 0 ].Name.LispName() );
-                    var builtin = new ImportedFunction( setters, false );
+                    var builtin = new ImportedFunction( members[ 0 ].Name, members[ 0 ].DeclaringType, setters, false );
                     sym.FunctionValue = builtin;
                     sym.Package.Export( sym.Name );
                 }
@@ -433,6 +461,8 @@ namespace Kiezel
 
         internal static void ImportIntoPackage( Package package, Type type )
         {
+            AddPackageByType( type, package );
+
             var isbuiltin = type.Assembly == Assembly.GetExecutingAssembly();
             var restrictedImport = type.GetCustomAttributes( typeof( RestrictedImportAttribute ), true ).Length != 0;
 
@@ -443,9 +473,18 @@ namespace Kiezel
             sym.Package.Export( sym.Name );
             sym.Documentation = MakeList( String.Format( "The .NET type <{0}> imported in this package.", type ) );
 
-            if ( !ToBool( Symbols.QuickImport.Value ) )
+            if ( !ToBool( Symbols.LazyImport.Value ) )
             {
-                var names = type.GetMembers( ImportBindingFlags ).Select( x => x.Name ).Distinct().ToArray();
+                VerifyNoMissingSymbols( package );
+            }
+        }
+
+        internal static void VerifyNoMissingSymbols( Package package )
+        {
+            if ( package.ImportedType != null && !package.ImportMissingDone )
+            {
+                package.ImportMissingDone = true;
+                var names = package.ImportedType.GetMembers( ImportBindingFlags ).Select( x => x.Name ).Distinct().ToArray();
                 foreach ( var name in names )
                 {
                     ImportMissingSymbol( name, package );
@@ -458,15 +497,6 @@ namespace Kiezel
             var binder = GetInvokeMemberBinder( new InvokeMemberBinderKey( name, args.Length ) );
             var exprs = new List<Expression>();
             exprs.Add( Expression.Constant( target ) );
-            exprs.AddRange( args.Select( x => Expression.Constant( x ) ) );
-            var proc = CompileToFunction( CompileDynamicExpression( binder, typeof( object ), exprs ) );
-            return proc();
-        }
-
-        internal static object InvokeMember( string name, params object[] args )
-        {
-            var binder = GetInvokeMemberBinder( new InvokeMemberBinderKey( name, args.Length ) );
-            var exprs = new List<Expression>();
             exprs.AddRange( args.Select( x => Expression.Constant( x ) ) );
             var proc = CompileToFunction( CompileDynamicExpression( binder, typeof( object ), exprs ) );
             return proc();

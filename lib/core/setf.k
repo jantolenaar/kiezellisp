@@ -1,4 +1,4 @@
-;;;; Copyright (C) 2012-2013 Jan Tolenaar. See the file LICENSE for details.
+;;;; Copyright (c) Jan Tolenaar. See the file LICENSE for details.
 
 
 ;;;;
@@ -29,11 +29,11 @@
                 ((symbol? (first place))
                     (if-let (update-fn (elt expanders (first place)))
                           `(,update-fn ,@(cdr place) ,value)
-                        (throw (lisp-exception.new "Undefined handler for: {0}" (first place)))))
+                        (throw (lisp-exception:new "Undefined handler for: {0}" (first place)))))
                 ((and (list? (first place))
                       (= '. (first (first place))))
                     `(set-attr ,(second place) ,(second (first place)) ,value))
-                (true (throw (lisp-exception.new "Undefined handler for: {0}" (first place))))))))
+                (true (throw (lisp-exception:new "Undefined handler for: {0}" (first place))))))))
 
 (defmacro defsetf (name func)
     `(set-elt expanders ',name ',func))
@@ -75,9 +75,9 @@
 ;;;
 
 (defmacro pop (place)
-    (var temp (gentemp))
+    (let temp (gentemp))
     `(do
-        (var ,temp (car ,place))
+        (let ,temp (car ,place))
         (setf ,place (cdr ,place))
         ,temp))
 
@@ -85,11 +85,11 @@
     `(setf ,place (cons ,item ,place)))
 
 (defmacro pushnew (item place)
-    (var temp-item (gentemp))
-    (var temp-place (gentemp))
+    (let temp-item (gentemp))
+    (let temp-place (gentemp))
     `(do
-        (var ,temp-item ,item)
-        (var ,temp-place ,place)
+        (let ,temp-item ,item)
+        (let ,temp-place ,place)
         (if (find ,temp-item ,temp-place)
               ,temp-place
             (setf ,place (cons ,temp-item ,temp-place)))))

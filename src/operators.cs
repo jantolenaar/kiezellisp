@@ -1,4 +1,4 @@
-// Copyright (C) 2012-2013 Jan Tolenaar. See the file LICENSE for details.
+// Copyright (C) Jan Tolenaar. See the file LICENSE for details.
 
 using System;
 using System.Linq;
@@ -15,7 +15,18 @@ namespace Kiezel
 
     public partial class Runtime
     {
-        
+        [Pure, Lisp( "test" )]
+        public static object Test( params object[] args )
+        {
+            return 2;
+        }
+
+        [Pure, Lisp( "test" )]
+        public static object Test()
+        {
+            return 1;
+        }
+
         [Pure, Lisp( "typeof" )]
         public static object TypeOf( object a )
         {
@@ -127,6 +138,13 @@ namespace Kiezel
 
             return false;
         }
+
+        [Pure, Lisp( "=", "equal" )]
+        public static bool Equal( params object[] args )
+        {
+            return IterateBinaryTestOperator( Equal, args );
+        }
+
 
         [Pure, Lisp( "structurally-equal" )]
         public static bool StructurallyEqual( object a, object b )
@@ -393,12 +411,6 @@ namespace Kiezel
                 return ascending * 1;
             }
    
-        }
-
-        [Pure, Lisp( "=" )]
-        public static bool Equal( object a, object b, params object[] c )
-        {
-            return false;
         }
 
         internal static bool IterateBinaryTestOperator( TestFunc test, object[] args)

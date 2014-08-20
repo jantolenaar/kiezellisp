@@ -1,4 +1,4 @@
-// Copyright (C) 2012-2014 Jan Tolenaar. See the file LICENSE for details.
+// Copyright (C) Jan Tolenaar. See the file LICENSE for details.
 
 
 using System;
@@ -19,7 +19,7 @@ using ActionFunc = System.Action<object>;
 using ReduceFunc = System.Func<object[], object>;
 using ThreadFunc = System.Func<object>;
 using ReduceTransformFunc = System.Func<System.Func<object[], object>, System.Func<object[], object>>;
-
+using JustFunc = System.Func<object>;
 
 namespace Kiezel
 {
@@ -335,7 +335,7 @@ namespace Kiezel
         [Lisp( "any?" )]
         public static bool Any( object pred, IEnumerable seq )
         {
-            return Every( GetPredicateFunc( pred, null ), seq );
+            return Any( GetPredicateFunc( pred, null ), seq );
         }
 
         public static bool Any( PredicateFunc pred, IEnumerable seq )
@@ -378,7 +378,7 @@ namespace Kiezel
             return false;
         }
 
-        [Lisp("system.get-safe-enumerator")]
+        [Lisp( "system:get-safe-enumerator")]
         public static IEnumerator GetSafeEnumerator( object list )
         {
             // Some enumerables use a struct enumerator instead of class.
@@ -1016,6 +1016,30 @@ namespace Kiezel
             return result == DefaultValue.Value ? null : result;
         }
 
+        [Lisp( "repeatedly" )]
+        public static Cons Repeatedly( object func )
+        {
+            return AsLazyList( Enum.Repeatedly( -1, func ) );
+        }
+
+        [Lisp( "repeatedly" )]
+        public static Cons Repeatedly( int count, object func )
+        {
+            return AsLazyList( Enum.Repeatedly( count, func ) );
+        }
+
+        [Lisp( "iterate" )]
+        public static Cons Iterate( object func, object value )
+        {
+            return AsLazyList( Enum.Iterate( -1, func, value ) );
+        }
+
+        [Lisp( "cycle" )]
+        public static Cons Cycle( IEnumerable seq )
+        {
+            return AsLazyList( Enum.Cycle( seq ) );
+        }
+
         [Lisp( "repeat" )]
         public static Cons Repeat( int count, object value )
         {
@@ -1263,6 +1287,34 @@ namespace Kiezel
             return Enum.Range( start, end, step );
         }
 
+        [Lisp( "series-enumerator" )]
+        public static IEnumerable SeriesEnumerator( int start, int end, int step )
+        {
+            return Enum.Range( start, end + step, step );
+        }
+
+        [Lisp( "in-list-enumerator" )]
+        public static IEnumerable InListEnumerator( Cons seq, object step )
+        {
+            var func = GetKeyFunc( step );
+            while ( seq != null )
+            {
+                yield return First( seq );
+                seq = ( Cons ) func( seq );
+            }
+        }
+
+        [Lisp( "on-list-enumerator" )]
+        public static IEnumerable OnListEnumerator( Cons seq, object step )
+        {
+            var func = GetKeyFunc( step );
+            while ( seq != null )
+            {
+                yield return seq;
+                seq = ( Cons ) func( seq );
+            }
+        }
+
         [Lisp( "shuffle" )]
         public static Cons Shuffle( IEnumerable seq )
         {
@@ -1406,16 +1458,16 @@ namespace Kiezel
 
             public static IEnumerable Range( int start, int end, int step )
             {
-                if ( start < end )
+                if ( step > 0 )
                 {
                     for ( int i = start; i < end; i += step )
                     {
                         yield return i;
                     }
                 }
-                else if ( start > end )
+                else if ( step < 0 )
                 {
-                    for ( int i = start; i > end; i -= step )
+                    for ( int i = start; i > end; i += step )
                     {
                         yield return i;
                     }
@@ -1781,6 +1833,17 @@ namespace Kiezel
 
             }
 
+            public static IEnumerable Cycle( IEnumerable seq )
+            {
+                while ( seq != null )
+                {
+                    foreach ( var item in seq )
+                    {
+                        yield return item;
+                    }
+                }
+            }
+
             public static IEnumerable Repeat( int count, object value )
             {
                 if ( count < 0 )
@@ -1795,6 +1858,46 @@ namespace Kiezel
                     while ( count-- > 0 )
                     {
                         yield return value;
+                    }
+                }
+            }
+
+            public static IEnumerable Repeatedly( int count, object func )
+            {
+                JustFunc f = GetJustFunc( func );
+                if ( count < 0 )
+                {
+                    while ( true )
+                    {
+                        yield return f();
+                    }
+                }
+                else
+                {
+                    while ( count-- > 0 )
+                    {
+                        yield return f();
+                    }
+                }
+            }
+
+            public static IEnumerable Iterate( int count, object func, object val )
+            {
+                KeyFunc f = GetKeyFunc( func );
+                if ( count < 0 )
+                {
+                    while ( true )
+                    {
+                        yield return val;
+                        val = f( val );
+                    }
+                }
+                else
+                {
+                    while ( count-- > 0 )
+                    {
+                        yield return val;
+                        val = f( val );
                     }
                 }
             }

@@ -1,4 +1,4 @@
-// Copyright (C) 2012-2013 Jan Tolenaar. See the file LICENSE for details.
+// Copyright (C) Jan Tolenaar. See the file LICENSE for details.
 
 using System;
 using System.Collections;
@@ -91,7 +91,7 @@ namespace Kiezel
     {
         internal LambdaSignature Signature;
         internal int RequiredArgsCount;
-        internal List<Lambda> Lambdas = new List<Lambda>();
+        internal List<LambdaClosure> Lambdas = new List<LambdaClosure>();
 
         public MultiMethod( LambdaSignature signature )
         {
@@ -104,7 +104,7 @@ namespace Kiezel
             return Runtime.AsList( Lambdas.Select( Runtime.GetSyntax ).Distinct() );
         }
 
-        public void Add( Lambda method )
+        public void Add( LambdaClosure method )
         {
             method.Generic = this;
 
@@ -112,7 +112,7 @@ namespace Kiezel
 
             for ( int i = 0; i < Lambdas.Count; ++i )
             {
-                int result = comparer.Compare( method.Signature, Lambdas[ i ].Signature );
+                int result = comparer.Compare( method.Definition.Signature, Lambdas[ i ].Definition.Signature );
 
                 if ( result == -1 )
                 {
@@ -131,7 +131,7 @@ namespace Kiezel
 
         public Cons Match( object[] args )
         {
-            return Runtime.AsList( Lambdas.Where( x => x.Signature.ParametersMatchArguments( args ) ) );
+            return Runtime.AsList( Lambdas.Where( x => x.Definition.Signature.ParametersMatchArguments( args ) ) );
         }
 
         object IApply.Apply( object[] args )
@@ -141,12 +141,12 @@ namespace Kiezel
             {
                 throw new LispException( "No matching multi-method found" );
             }
-            var method = ( Lambda ) methods.Car;
-            var newargs = method.MakeArgumentFrame( args );
+            var method = ( LambdaClosure ) methods.Car;
+            var newargs = method.MakeArgumentFrame( args, null );
             return Runtime.CallNextMethod( methods, newargs );
         }
 
-        internal object ApplyNext( Lambda current, object[] args )
+        internal object ApplyNext( LambdaClosure current, object[] args )
         {
             foreach ( var lambda in Lambdas )
             {
@@ -157,7 +157,7 @@ namespace Kiezel
                         current = null;
                     }
                 }
-                else if ( lambda.Signature.ParametersMatchArguments( args ) )
+                else if ( lambda.Definition.Signature.ParametersMatchArguments( args ) )
                 {
                     return ( ( IApply ) lambda ).Apply( args );
                 }
@@ -191,7 +191,7 @@ namespace Kiezel
 
         public Cons Match( DynamicMetaObject[] args )
         {
-            return Runtime.AsList( Generic.Lambdas.Where( x => x.Signature.ParametersMatchArguments( args ) ) );
+            return Runtime.AsList( Generic.Lambdas.Where( x => x.Definition.Signature.ParametersMatchArguments( args ) ) );
         }
 
   
@@ -203,13 +203,13 @@ namespace Kiezel
             {
                 throw new LispException( "No matching multi-method found" );
             }
-            var lambda = ( Lambda ) methods.Car;
+            var lambda = ( LambdaClosure ) methods.Car;
             if ( lambda.GenericRestrictions == null )
             {
                 lambda.GenericRestrictions = LambdaHelpers.GetGenericRestrictions( lambda, args );
             }
             var restrictions = lambda.GenericRestrictions;
-            var callArgs = LambdaHelpers.FillDataFrame( lambda.Signature, args, ref restrictions );
+            var callArgs = LambdaHelpers.FillDataFrame( lambda.Definition.Signature, args, ref restrictions );
             MethodInfo method = Runtime.RuntimeMethod( "CallNextMethod" );
             var expr = Expression.Call( method, Expression.Constant( methods ), callArgs );
             restrictions = BindingRestrictions.GetInstanceRestriction( this.Expression, this.Value ).Merge( restrictions );
@@ -229,15 +229,15 @@ namespace Kiezel
             return func;
         }
 
-        internal static Lambda DefineMethod( Symbol sym, Lambda lambda )
+        internal static LambdaClosure DefineMethod( Symbol sym, LambdaClosure lambda )
         {
             var container = sym.Value as MultiMethod;
 
             if ( container == null )
             {
-                container = DefineMultiMethod( sym, lambda.Signature, null );
+                container = DefineMultiMethod( sym, lambda.Definition.Signature, null );
             }
-            else if ( container.RequiredArgsCount != 0 && lambda.Signature.RequiredArgsCount != container.RequiredArgsCount )
+            else if ( container.RequiredArgsCount != 0 && lambda.Definition.Signature.RequiredArgsCount != container.RequiredArgsCount )
             {
                 throw new LispException( "Number of parameters of {0} and its multimethod are not the same", ToPrintString( lambda ) );
             }
@@ -245,15 +245,15 @@ namespace Kiezel
             return lambda;
         }
 
-        [Lisp( "system.call-next-method" )]
+        [Lisp( "system:call-next-method" )]
         public static object CallNextMethod( Cons nextLambdas, object[] args )
         {
             if ( nextLambdas == null )
             {
                 return null;
             }
-            var lambda = ( Lambda ) nextLambdas.Car;
-            return lambda.ApplyLambdaBind( nextLambdas.Cdr, args, true );
+            var lambda = ( LambdaClosure ) nextLambdas.Car;
+            return lambda.ApplyLambdaBind( nextLambdas.Cdr, args, true, null );
         }
 
         internal static CompareClassResult CompareClass( object left, object right )

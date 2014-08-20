@@ -1,4 +1,4 @@
-// Copyright (C) 2012-2014 Jan Tolenaar. See the file LICENSE for details.
+// Copyright (C) Jan Tolenaar. See the file LICENSE for details.
 
 
 using System;
@@ -37,30 +37,38 @@ namespace Kiezel
     public partial class Runtime
     {
 
-        internal static bool IsReadSuppress()
-        {
-            return ToBool( GetDynamic( Symbols.ReadSuppress ) );
-        }
-
-        [Lisp( "make-reader" )]
-        public static Parser MakeReader( string text )
-        {
-            return new Parser( text, false );
-        }
-
         [Lisp( "read" )]
         public static object Read( params object[] kwargs )
         {
-            var args = ParseKwargs( kwargs, new string[] { "stream", "eof-value" }, GetDynamic(Symbols.StdIn), null );
+            var args = ParseKwargs( kwargs, new string[] { "stream", "eof-value", "eof-error?" }, GetDynamic( Symbols.StdIn ), null, true );
             var stdin = args[ 0 ];
             var eofValue = args[ 1 ];
-            if ( stdin as Parser == null )
+            var eofError = ToBool( args[ 2 ] );
+
+            if ( stdin as LispReader == null )
             {
                 return null;
             }
-            var parser = ( Parser ) stdin;
-            var value = parser.Read();
-            return value == SyntacticToken.EOF ? eofValue : value;
+            var parser = ( LispReader ) stdin;
+            var value = parser.Read( eofValue );
+            return value;
+        }
+
+        [Lisp( "read-delimited-list" )]
+        public static object ReadDelimitedList( string terminator, params object[] kwargs )
+        {
+            var args = ParseKwargs( kwargs, new string[] { "stream", "eof-value", "eof-error?" }, GetDynamic( Symbols.StdIn ), null, true );
+            var stdin = args[ 0 ];
+            var eofValue = args[ 1 ];
+            var eofError = ToBool( args[ 2 ] );
+
+            if ( stdin as LispReader == null )
+            {
+                return null;
+            }
+            var parser = ( LispReader ) stdin;
+            var value = parser.ReadDelimitedList( terminator );
+            return value;
         }
 
         [Lisp( "read-all" )]
@@ -68,11 +76,11 @@ namespace Kiezel
         {
             var args = ParseKwargs( kwargs, new string[] { "stream" }, GetDynamic( Symbols.StdIn ) );
             var stdin = args[ 0 ];
-            if ( stdin as Parser == null )
+            if ( stdin as LispReader == null )
             {
                 return null;
             }
-            var parser = ( Parser ) stdin;
+            var parser = ( LispReader ) stdin;
             return AsList( parser.ReadAll() );
         }
 
@@ -81,14 +89,14 @@ namespace Kiezel
         {
             var args = ParseKwargs( kwargs, new string[] { "eof-value" }, null );
             var eofValue = args[ 0 ];
-            var parser = new Parser( text, false );
+            var parser = new LispReader( text );
             return Read( Symbols.Stream, parser, Symbols.EofValue, eofValue );
         }
 
         [Lisp( "read-all-from-string" )]
         public static Cons ReadAllFromString( string text, params object[] kwargs )
         {
-            var parser = new Parser( text, false );
+            var parser = new LispReader( text );
             return AsList( parser.ReadAll() );
         }
 
@@ -240,15 +248,8 @@ namespace Kiezel
                 var buf = new StringWriter();
                 buf.Write( "[" );
                 var space = "";
-                int maxCount = (int) GetDynamic( Symbols.PrintMaxElements );
                 foreach ( object item in ( IList ) obj )
                 {
-                    if ( maxCount-- <= 0 )
-                    {
-                        buf.Write( space );
-                        buf.Write( "..." );
-                        break;
-                    }
                     buf.Write( space );
                     buf.Write( ToPrintString( item, escape, radix ) );
                     space = " ";
@@ -481,10 +482,10 @@ namespace Kiezel
             return TryLoad( file, false, verbose, print );
         }
 
-        [Lisp("strict")]
-        public static void Strict()
+        [Lisp("return-from-load")]
+        public static void ReturnFromLoad()
         {
-            SetDynamic( Symbols.Strict, true );
+            throw new ReturnFromLoadException();
         }
 
         internal static bool TryLoad( string file, bool loadDebug, bool loadVerbose, bool loadPrint )
@@ -502,22 +503,21 @@ namespace Kiezel
             }
 
             var content = File.ReadAllText( path );
-            var reader = new Parser( path, content, true );
+            var reader = new LispReader( content, true );
             var newDir = NormalizePath( Path.GetDirectoryName( path ) );
             var scriptName = Path.GetFileName( path );
 
-            var scope = new AnalysisScope( null, null );
-            scope.IsFileScope = true;
-            scope.IsLambda = true;
-            scope.ReturnLabel = Expression.Label( typeof( object ), "return-label" );
-
             var saved = SaveStackAndFrame();
+
+            var env = MakeExtendedEnvironment();
+            var scope = env.Scope;
+            CurrentThreadContext.Frame = env.Frame;
 
             DefDynamic( Symbols.ScriptDirectory, newDir );
             DefDynamic( Symbols.ScriptName, scriptName );
             DefDynamic( Symbols.CommandLineArguments, null );
             DefDynamic( Symbols.Package, GetDynamic( Symbols.Package ) );
-            DefDynamic( Symbols.Strict, false );
+            DefDynamic( Symbols.PackageNamePrefix, null );
 
             if ( loadDebug )
             {
@@ -531,7 +531,7 @@ namespace Kiezel
             {
                 foreach ( object statement in reader )
                 {
-                    var code = CompileTopLevelExpressionFromLoadFile( statement, scope );
+                    var code = Compile( statement, scope );
                     if ( code == null )
                     {
                         // compile-time expression, e.g. (module xyz)
@@ -539,16 +539,15 @@ namespace Kiezel
                     else
                     {
                         var result = Execute( code );
-                        if ( result is ReturnFromLoadException )
-                        {
-                            break;
-                        }
                         if ( loadPrint )
                         {
                             PrintLog( ToPrintString( result ) );
                         }
                     }
                 }
+            }
+            catch ( ReturnFromLoadException )
+            {
             }
             finally
             {
@@ -624,7 +623,7 @@ namespace Kiezel
             WriteLine( obj, Symbols.Stream, stream, Symbols.Left, currentOffset, Symbols.Escape, true, Symbols.Pretty, true, Symbols.kwForce, false );
         }
 
-        [Lisp("system.dispose")]
+        [Lisp("system:dispose")]
         public static void Dispose( object resource )
         {
             if ( resource is IDisposable )

@@ -127,7 +127,8 @@
     <Compile Include="profiler.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="prototype.cs" />
-    <Compile Include="reader-parser.cs" />
+    <Compile Include="read-table.cs" />
+    <Compile Include="reader-handlers.cs" />
     <Compile Include="reader-scanner.cs" />
     <Compile Include="seq-reducers.cs" />
     <Compile Include="seq.cs" />
@@ -176,7 +177,7 @@
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <ProjectExtensions>
     <VisualStudio>
-      <UserProperties BuildVersion_BuildVersioningStyle="None.None.Increment.None" BuildVersion_AssemblyInfoFilename="Properties\AssemblyInfo.cs" BuildVersion_UpdateFileVersion="True" />
+      <UserProperties BuildVersion_UpdateFileVersion="True" BuildVersion_AssemblyInfoFilename="Properties\AssemblyInfo.cs" BuildVersion_BuildVersioningStyle="None.None.Increment.None" />
     </VisualStudio>
   </ProjectExtensions>
   <PropertyGroup>

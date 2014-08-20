@@ -1,4 +1,4 @@
-;;;; Copyright (C) 2012-2013 Jan Tolenaar. See the file LICENSE for details.
+;;;; Copyright (c) Jan Tolenaar. See the file LICENSE for details.
 
 ;;;;
 ;;;; www.k
@@ -18,17 +18,18 @@
 
 (defun get (url)
     (using (response (get-response url))
-        (var type (.content-type response))
-        (var result (as-prototype response))
+        (let type (.content-type response))
+        (let result (as-prototype response))
+        (declare (ignore type))
         (using (stream (.get-response-stream response))
-            (var encoding (encoding.get-encoding (.character-set response)))
-            (using (reader (stream-reader.new stream encoding))
+            (let encoding (encoding:get-encoding (.character-set response)))
+            (using (reader (stream-reader:new stream encoding))
                 (setf (.content result) (.read-to-end reader))))
         result))
 
         
 (defun get-response (url)
-    (var request (web-request.create (url-with-format url)))
+    (let request (web-request:create (url-with-format url)))
     (.get-response request))
 
 (defun url-with-format (url)
@@ -38,9 +39,9 @@
        url))
 
 (defun ddg (query)
-    (var url (string "http://api.duckduckgo.com/?q=" (string.url-encode query) "&format=json"))
-    (var result (get url))
-    (var data (.json-decode (.content result)))
+    (let url (string "http://api.duckduckgo.com/?q=" (string:url-encode query) "&format=json"))
+    (let result (get url))
+    (let data (.json-decode (.content result)))
     data)
             
     

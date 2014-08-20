@@ -1,4 +1,4 @@
-﻿// Copyright (C) 2012-2013 Jan Tolenaar. See the file LICENSE for details.
+﻿// Copyright (C) Jan Tolenaar. See the file LICENSE for details.
 
 using System;
 using System.Collections.Generic;
@@ -7,17 +7,14 @@ using System.Text;
 
 namespace Kiezel
 {
-    public partial class Runtime
-    {
-        //[Lisp("infix")]
-        public static object ParseInfixExpression( string infix )
-        {
-            return Force( new Infix().CompileString( infix ) );
-        }
-    }
-
     class Infix
     {
+        internal Infix( string str )
+        {
+            InfixStr = str;
+            Tokens = Scanner( str ); 
+        }
+
         internal Vector Tokens;
         internal int Index;
         internal string InfixStr;
@@ -99,11 +96,10 @@ namespace Kiezel
             ++Index;
         }
 
-        public object CompileString( string str )
+        public static object CompileString( string str )
         {
-            InfixStr = str;
-            Tokens = Scanner( str ); 
-            return Compile();
+            var compiler = new Infix( str );
+            return compiler.Compile();
         }
 
         object Compile()
@@ -236,19 +232,19 @@ namespace Kiezel
                     {
                         Accept();
                         var node = CompileUnary();
-                        return Runtime.MakeList( Runtime.FindSymbol( "-", false ), node );
+                        return Runtime.MakeList( Runtime.FindSymbol( "-" ), node );
                     }
                     case "~":
                     {
                         Accept();
                         var node = CompileUnary();
-                        return Runtime.MakeList( Runtime.FindSymbol( "bit-not", false ), node );
+                        return Runtime.MakeList( Runtime.FindSymbol( "bit-not" ), node );
                     }
                     case "!":
                     {
                         Accept();
                         var node = CompileUnary();
-                        return Runtime.MakeList( Runtime.FindSymbol( "not", false ), node );
+                        return Runtime.MakeList( Runtime.FindSymbol( "not" ), node );
                     }
                     default:
                     {
@@ -410,7 +406,7 @@ namespace Kiezel
                 
                 default:
                 {
-                    return Runtime.FindSymbol( ( string ) oper, false );
+                    return Runtime.FindSymbol( ( string ) oper );
                 }
             }
         }
@@ -582,7 +578,7 @@ namespace Kiezel
 					}
 
 					var ident = infix.Substring( pos, index-pos );
-                    v.Add( Runtime.FindSymbol( ident, false ));
+                    v.Add( Runtime.FindSymbol( ident ));
 				}
                 else if ( index +1 < infix.Length )
                 {

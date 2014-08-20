@@ -1,4 +1,4 @@
-// Copyright (C) 2012-2013 Jan Tolenaar. See the file LICENSE for details.
+// Copyright (C) Jan Tolenaar. See the file LICENSE for details.
 
 
 using System;
@@ -27,7 +27,6 @@ namespace Kiezel
         internal object /*Cons*/ Documentation;
         internal object /*Cons*/ FunctionSyntax;
         internal SymbolUsage Usage;
-        internal bool IsTemp;
 
         internal Symbol( string name, Package package = null )
         {
@@ -165,7 +164,7 @@ namespace Kiezel
             {
                 if ( IsUndefined )
                 {
-                    throw new LispException( "Undefined variable: {0}", ContextualName );
+                    throw new LispException( "Undefined variable: {0}", LongName );
                 }
                 
                 return _value;
@@ -175,12 +174,12 @@ namespace Kiezel
             {
                 if ( IsUndefined )
                 {
-                    throw new LispException( "Undefined variable: {0}", ContextualName );
+                    throw new LispException( "Undefined variable: {0}", LongName );
                 }
 
                 if ( !IsVariable )
                 {
-                    throw new LispException( "Cannot assign to constant or function: {0}", ContextualName );
+                    throw new LispException( "Cannot assign to constant or function: {0}", LongName );
                 }
 
                 _value = value;
@@ -222,7 +221,7 @@ namespace Kiezel
                 var buf = new StringBuilder();
                 foreach ( var ch in s )
                 {
-                    if ( Scanner.IsTerminator(ch) || Scanner.IsWhiteSpace(ch) )
+                    if ( Runtime.MustEscapeChar(ch) )
                     {
                         buf.Append( "\\" );
                     }
@@ -287,11 +286,11 @@ namespace Kiezel
                 }
                 else if ( Package.FindExternal( Name ) != null )
                 {
-                    return Package.Name + "." + Name;
+                    return Package.Name + ":" + Name;
                 }
                 else
                 {
-                    return Package.Name + "!" + Name;
+                    return Package.Name + "::" + Name;
                 }
             }
         }
@@ -307,171 +306,184 @@ namespace Kiezel
 
         internal static void Create()
         {
-            Package = Runtime.MakeSymbol( "$package", Runtime.LispPackage );
-
-            OptionalKeyword = Runtime.MakeSymbol( "optional", Runtime.KeywordPackage );
-            MacroKeyword = Runtime.MakeSymbol( "macro", Runtime.KeywordPackage );
-            FunctionKeyword = Runtime.MakeSymbol( "function", Runtime.KeywordPackage );
-            MethodKeyword = Runtime.MakeSymbol( "method", Runtime.KeywordPackage );
-            Escape = Runtime.MakeSymbol( "escape", Runtime.KeywordPackage );
-            Pretty = Runtime.MakeSymbol( "pretty", Runtime.KeywordPackage );
-            Stream = Runtime.MakeSymbol( "stream", Runtime.KeywordPackage );
-            Left = Runtime.MakeSymbol( "left", Runtime.KeywordPackage );
-            Right = Runtime.MakeSymbol( "right", Runtime.KeywordPackage );
-            Width = Runtime.MakeSymbol( "width", Runtime.KeywordPackage );
-            Padding = Runtime.MakeSymbol( "padding", Runtime.KeywordPackage );
-            Base = Runtime.MakeSymbol( "base", Runtime.KeywordPackage );
-            MaxElements = Runtime.MakeSymbol( "max-elements", Runtime.KeywordPackage );
-            kwForce = Runtime.MakeSymbol( "force", Runtime.KeywordPackage );
-            EofValue = Runtime.MakeSymbol( "eof-value", Runtime.KeywordPackage );
-            Color = Runtime.MakeSymbol( "color", Runtime.KeywordPackage );
-            InitialValue = Runtime.MakeSymbol( "initxxxial-value", Runtime.KeywordPackage );
+            And = MakeSymbol( "and" );
+            Append = MakeSymbol( "append" );
+            Apply = MakeSymbol( "apply" );
+            Args = MakeSymbol( "__args__" );
+            AsLazyList = MakeSymbol( "as-lazy-list" );
+            AsTuple = MakeSymbol( "as-tuple" );
+            AsVector = MakeSymbol( "as-vector" );
             BackgroundColor = Runtime.MakeSymbol( "background-color", Runtime.KeywordPackage );
-
-            Main = Runtime.MakeSymbol( "main", Runtime.UserPackage );
-
-            I = Runtime.MakeSymbol( "I", Runtime.MathPackage );
-            PI = Runtime.MakeSymbol( "PI", Runtime.MathPackage );
-            E = Runtime.MakeSymbol( "E", Runtime.MathPackage );
-
-            Declare = MakeSymbol( "declare" );
-            Ignore = MakeSymbol( "ignore" );
-            Strict = MakeSymbol( "$strict" );
-            Underscore = MakeSymbol( "_" );
-            Force = MakeSymbol( "force" );
-            GetArgumentOrDefault = MakeSymbol( "get-argument-or-default" );
-            TailCall = MakeSymbol( "tailcall" );
-            Args = MakeSymbol( @"__args__" );
-            LambdaList = MakeSymbol( @"__lambdas__" );
-            Undefined = MakeSymbol( "undefined" );
-            ReadEval = MakeSymbol( "$read-eval" );
-            ReadSuppress = MakeSymbol( "$read-suppress" );
-            Tilde = MakeSymbol( "~" );
-            PrintCompact = MakeSymbol( "$print-compact" );
-            PrintColor = MakeSymbol( "$print-color" );
-            PrintBackgroundColor = MakeSymbol( "$print-background-color" );
-            PrintForce = MakeSymbol( "$print-force" );
-            PrintEscape = MakeSymbol( "$print-escape" );
-            PrintBase = MakeSymbol( "$print-base" );
-            PrintMaxElements = MakeSymbol( "$print-max-elements" );
-            PrintShortSymbolNames = MakeSymbol( "$print-short-symbol-names" );
-            It = MakeSymbol( "it" );
+            Base = Runtime.MakeSymbol( "base", Runtime.KeywordPackage );
+            BitAnd = MakeSymbol( "bit-and" );
+            BitNot = MakeSymbol( "bit-not" );
+            BitOr = MakeSymbol( "bit-or" );
+            BitShiftLeft = MakeSymbol( "bit-shift-left" );
+            BitShiftRight = MakeSymbol( "bit-shift-right" );
+            BitXor = MakeSymbol( "bit-xor" );
+            Body = MakeSymbol( "&body" );
+            Bool = MakeSymbol( "bool" );
+            BuiltinConstructor = MakeSymbol( "builtin-constructor" );
+            BuiltinFunction = MakeSymbol( "builtin-function" );
+            Case = MakeSymbol( "case" );
+            Catch = MakeSymbol( "catch" );
+            Color = Runtime.MakeSymbol( "color", Runtime.KeywordPackage );
+            Comma = MakeSymbol( "comma" );
+            CommaAt = MakeSymbol( "comma-at" );
+            CommaDot = MakeSymbol( "comma-dot" );
+            CommandLineArguments = MakeSymbol( "$command-line-arguments" );
             Compiling = MakeSymbol( "compiling" );
+            Constant = MakeSymbol( "constant" );
+            CreateTask = Runtime.MakeSymbol( "create-task", Runtime.SystemPackage );
+            DebugMode = MakeSymbol( "$debug-mode" );
+            Declare = MakeSymbol( "declare" );
             Def = MakeSymbol( "def" );
             DefConstant = MakeSymbol( "defconstant" );
             DefMacro = MakeSymbol( "defmacro" );
             DefMethod = MakeSymbol( "defmethod" );
             DefMulti = MakeSymbol( "defmulti" );
+            DefSpecialForm = MakeSymbol( "define-special-form" );
+            Default = MakeSymbol( "default" );
             Defun = MakeSymbol( "defun" );
             Do = MakeSymbol( "do" );
-            MergeWithOuterDo = MakeSymbol( "merge-with-outer-do" );
-            HiddenVar = MakeSymbol( "hidden-var" );
+            Documentation = MakeSymbol( "documentation" );
+            Dot = MakeSymbol( "." );
+            E = Runtime.MakeSymbol( "E", Runtime.MathPackage );
+            EnableExternalDocumentation = MakeSymbol( "$enable-external-documentation" );
+            EnableWarnings = MakeSymbol( "$enable-warnings" );
+            Environment = MakeSymbol( "&environment" );
+            EofValue = Runtime.MakeSymbol( "eof-value", Runtime.KeywordPackage );
+            Equality = MakeSymbol( "=" );
+            Escape = Runtime.MakeSymbol( "escape", Runtime.KeywordPackage );
             Eval = MakeSymbol( "eval" );
+            Exception = MakeSymbol( "$exception" );
+            False = MakeSymbol( "false" );
+            Features = MakeSymbol( "$features" );
+            Finally = MakeSymbol( "finally" );
+            Force = MakeSymbol( "force" );
+            Function = MakeSymbol( "function" );
+            FunctionExitLabel = MakeSymbol( "function-exit" );
+            FunctionKeyword = Runtime.MakeSymbol( "function", Runtime.KeywordPackage );
+            FutureVar = MakeSymbol( "future" );
+            GenericFunction = MakeSymbol( "generic-function" );
+            GetArgumentOrDefault = MakeSymbol( "get-argument-or-default" );
+            GetAttr = MakeSymbol( "attr" );
+            GetAttrFunc = MakeSymbol( "%attr" );
+            GetElt = MakeSymbol( "elt" );
+            Goto = MakeSymbol( "goto" );
+            GreekLambda = MakeSymbol( "\u03bb" );
+            HelpHook = MakeSymbol( "$help-hook" );
+            HiddenVar = MakeSymbol( "hidden-var" );
+            I = Runtime.MakeSymbol( "I", Runtime.MathPackage );
             If = MakeSymbol( "if" );
+            IfLet = MakeSymbol( "if-let" );
+            Ignore = MakeSymbol( "ignore" );
+            ImportedConstructor = MakeSymbol( "imported-constructor" );
+            ImportedFunction = MakeSymbol( "imported-function" );
+            InitialValue = Runtime.MakeSymbol( "initxxxial-value", Runtime.KeywordPackage );
+            InteractiveMode = MakeSymbol( "$interactive-mode" );
+            It = MakeSymbol( "it" );
+            Key = MakeSymbol( "&key" );
+            Label = MakeSymbol( "label" );
+            Lambda = MakeSymbol( "lambda" );
+            LambdaList = MakeSymbol( @"__lambdas__" );
+            LazyImport = MakeSymbol( "$lazy-import" );
+            LazyVar = MakeSymbol( "lazy" );
+            Left = Runtime.MakeSymbol( "left", Runtime.KeywordPackage );
+            Let = MakeSymbol( "let" );
+            LetFun = MakeSymbol( "letfun" );
+            List = MakeSymbol( "list" );
+            ListStar = MakeSymbol( "list*" );
+            LoadPath = MakeSymbol( "$load-path" );
+            LoadPrint = MakeSymbol( "$load-print" );
+            LoadVerbose = MakeSymbol( "$load-verbose" );
+            Macro = MakeSymbol( "macro" );
+            Macroexpand1 = MakeSymbol( "macroexpand-1" );
+            MacroKeyword = Runtime.MakeSymbol( "macro", Runtime.KeywordPackage );
+            Main = Runtime.MakeSymbol( "main", Runtime.UserPackage );
+            MakeLambdaParameterBinder = Runtime.MakeSymbol( "make-lambda-parameter-binder", Runtime.SystemPackage );
+            Math = MakeSymbol( "math" );
+            MaxElements = Runtime.MakeSymbol( "max-elements", Runtime.KeywordPackage );
+            MergingDo = MakeSymbol( "merging-do" );
+            Method = MakeSymbol( "method" );
+            MethodKeyword = Runtime.MakeSymbol( "method", Runtime.KeywordPackage );
+            Modules = MakeSymbol( "$modules" );
+            New = MakeSymbol( "new" );
+            Not = MakeSymbol( "not" );
+            Nth = MakeSymbol( "nth" );
+            Null = MakeSymbol( "null" );
+            NullableDot = MakeSymbol( "?" );
+            Optional = MakeSymbol( "&optional" );
+            OptionalKeyword = Runtime.MakeSymbol( "optional", Runtime.KeywordPackage );
+            Or = MakeSymbol( "or" );
+            PI = Runtime.MakeSymbol( "PI", Runtime.MathPackage );
+            Package = MakeSymbol( "$package" );
+            PackageNamePrefix = MakeSymbol( "$package-name-prefix" );
+            Padding = Runtime.MakeSymbol( "padding", Runtime.KeywordPackage );
+            Params = MakeSymbol( "&params" );
+            Pow = Runtime.MakeSymbol( "pow", Runtime.MathPackage, true  );
+            Pretty = Runtime.MakeSymbol( "pretty", Runtime.KeywordPackage );
+            PrettyPrintHook = MakeSymbol( "$pprint-hook" );
+            PrintBackgroundColor = MakeSymbol( "$print-background-color" );
+            PrintBase = MakeSymbol( "$print-base" );
+            PrintColor = MakeSymbol( "$print-color" );
+            PrintCompact = MakeSymbol( "$print-compact" );
+            PrintEscape = MakeSymbol( "$print-escape" );
+            PrintForce = MakeSymbol( "$print-force" );
+            PrintShortSymbolNames = MakeSymbol( "$print-short-symbol-names" );
+            Quote = MakeSymbol( "quote" );
+            ReadEval = MakeSymbol( "$read-eval" );
+            ReadonlyVariable = MakeSymbol( "readonly-variable" );
+            Readtable = MakeSymbol( "$readtable" );
+            Recur = MakeSymbol( "recur" );
+            ReplListenerPort = MakeSymbol( "$repl-listener-port" );
+            Rest = MakeSymbol( "&rest" );
             Return = MakeSymbol( "return" );
+            ReturnFrom = MakeSymbol( "return-from" );
+            ReturnFromLoad = MakeSymbol( "return-from-load" );
+            Returns = MakeSymbol( "&returns" );
+            Right = Runtime.MakeSymbol( "right", Runtime.KeywordPackage );
+            ScriptDirectory = MakeSymbol( "$script-directory" );
+            ScriptName = MakeSymbol( "$script-name" );
             Set = MakeSymbol( "set" );
             SetAttr = MakeSymbol( "set-attr" );
             SetAttrFunc = MakeSymbol( "%set-attr" );
             SetElt = MakeSymbol( "set-elt" );
-            Throw = MakeSymbol( "throw" );
-            Var = MakeSymbol( "var" );
-            New = MakeSymbol( "new" );
-            Optional = MakeSymbol( "&optional" );
-            Returns = MakeSymbol( "&returns" );
-            Key = MakeSymbol( "&key" );
-            Rest = MakeSymbol( "&rest" );
-            Body = MakeSymbol( "&body" );
-            Vector = MakeSymbol( "&vector" );
-            Params = MakeSymbol( "&params" );
-            Whole = MakeSymbol( "&whole" );
-            Tracing = MakeSymbol( "$tracing" );
-            Verbose = MakeSymbol( "$verbose" );
-            Features = MakeSymbol( "$features" );
-            StdIn = MakeSymbol( "$stdin" );
-            StdOut = MakeSymbol( "$stdout" );
-            StdErr = MakeSymbol( "$stderr" );
-            StdLog = MakeSymbol( "$stdlog" );
-            Quote = MakeSymbol( "quote" );
-            Comma = MakeSymbol( "," );
-            CommaAt = MakeSymbol( ",@" );
-            CommaDot = MakeSymbol( ",." );
-            Lambda = MakeSymbol( "lambda" );
-            GreekLambda = MakeSymbol( "\u03bb" );
-            MakeLambdaParameterBinder = Runtime.MakeSymbol( "make-lambda-parameter-binder", Runtime.SystemPackage );
-            Setq = MakeSymbol( "setq" );
-            GetAttr = MakeSymbol( "attr" );
-            GetAttrFunc = MakeSymbol( "%attr" );
-            GetElt = MakeSymbol( "elt" );
-            Block = MakeSymbol( "do" );
-            TagBody = MakeSymbol( "tagbody" );
-            Goto = MakeSymbol( "go" );
-            Values = MakeSymbol( "values" );
-            List = MakeSymbol( "list" );
-            ListStar = MakeSymbol( "list*" );
-            Append = MakeSymbol( "append" );
-            Str = MakeSymbol( "string" );
-            Bool = MakeSymbol( "bool" );
-            Case = MakeSymbol( "case" );
-            Default = MakeSymbol( "default" );
-            Recur = MakeSymbol( "recur" );
-            And = MakeSymbol( "and" );
-            Not = MakeSymbol( "not" );
-            Or = MakeSymbol( "or" );
-            Exception = MakeSymbol( "$exception" );
-            LoadPath = MakeSymbol( "$load-path" );
-            ScriptDirectory = MakeSymbol( "$script-directory" );
-            ScriptName = MakeSymbol( "$script-name" );
-            CommandLineArguments = MakeSymbol( "$command-line-arguments" );
-            Documentation = MakeSymbol( "documentation" );
-            TryAndCatch = MakeSymbol( "try-and-catch" );
-            TryFinally = MakeSymbol( "try-finally" );
-            Accessor = MakeSymbol( "." );
-            Math = MakeSymbol( "math" );
-            PrettyPrintHook = MakeSymbol( "$pprint-hook" );
-            WriteHook = MakeSymbol( "$write-hook" );
-            Temp = MakeSymbol( @"__temp__" );
-            AsLazyList = MakeSymbol( "as-lazy-list" );
-            AsVector = MakeSymbol( "as-vector" );
-            AsTuple = MakeSymbol( "as-tuple" );
-            Nth = MakeSymbol( "nth" );
-            Function = MakeSymbol( "function" );
-            BuiltinFunction = MakeSymbol( "builtin-function" );
-            ImportedFunction = MakeSymbol( "imported-function" );
-            GenericFunction = MakeSymbol( "generic-function" );
-            BuiltinConstructor = MakeSymbol( "builtin-constructor" );
-            ImportedConstructor = MakeSymbol( "imported-constructor" );
-            Macro = MakeSymbol( "macro" );
-            Method = MakeSymbol( "method" );
-            SpecialForm = MakeSymbol( "special-form" );
-            DefSpecialForm = MakeSymbol( "define-special-form" );
-            Variable = MakeSymbol( "variable" );
-            ReadonlyVariable = MakeSymbol( "readonly-variable" );
-            Constant = MakeSymbol( "constant" );
-            SpecialVariable = MakeSymbol( "special-variable" );
-            SpecialReadonlyVariable = MakeSymbol( "special-readonly-variable" );
-            SpecialConstant = MakeSymbol( "special-constant" );
-            EnableExternalDocumentation = MakeSymbol( "$enable-external-documentation" );
-            HelpHook = MakeSymbol( "$help-hook" );
-            ReplListenerPort = MakeSymbol( "$repl-listener-port" );
-            Modules = MakeSymbol( "$modules" );
-            LoadVerbose = MakeSymbol( "$load-verbose" );
-            LoadPrint = MakeSymbol( "$load-print" );
-            DebugMode = MakeSymbol( "$debug-mode" );
-            BitAnd = MakeSymbol( "bit-and" );
-            BitOr = MakeSymbol( "bit-or" );
-            BitNot = MakeSymbol( "bit-not" );
-            BitXor = MakeSymbol( "bit-xor" );
-            BitShiftLeft = MakeSymbol( "bit-shift-left" );
-            BitShiftRight = MakeSymbol( "bit-shift-right" );
-            Pow = Runtime.MakeSymbol( "pow", Runtime.MathPackage, true  );
             Setf = MakeSymbol( "setf" );
-            Equality = MakeSymbol( "=" );
-            StructurallyEqual = MakeSymbol( "structurally-equal" );
-            InteractiveMode = MakeSymbol( "$interactive-mode" );
-            EnableWarnings = MakeSymbol( "$enable-warnings" );
-            StandoutColor = MakeSymbol( "$standout-color" );
+            Setq = MakeSymbol( "setq" );
+            SpecialConstant = MakeSymbol( "special-constant" );
+            SpecialForm = MakeSymbol( "special-form" );
+            SpecialReadonlyVariable = MakeSymbol( "special-readonly-variable" );
+            SpecialVariable = MakeSymbol( "special-variable" );
             StandoutBackgroundColor = MakeSymbol( "$standout-background-color" );
-            QuickImport = MakeSymbol( "$quick-import" );
+            StandoutColor = MakeSymbol( "$standout-color" );
+            StdErr = MakeSymbol( "$stderr" );
+            StdIn = MakeSymbol( "$stdin" );
+            StdLog = MakeSymbol( "$stdlog" );
+            StdOut = MakeSymbol( "$stdout" );
+            Str = MakeSymbol( "string" );
+            Stream = Runtime.MakeSymbol( "stream", Runtime.KeywordPackage );
+            StructurallyEqual = MakeSymbol( "structurally-equal" );
+            TagBody = MakeSymbol( "tagbody" );
+            TailCall = MakeSymbol( "tailcall" );
+            Target = MakeSymbol( "__target__" );
+            Temp = MakeSymbol( @"__temp__" );
+            Throw = MakeSymbol( "throw" );
+            Tilde = MakeSymbol( "~" );
+            Tracing = MakeSymbol( "$tracing" );
+            True = MakeSymbol( "true" );
+            Try = MakeSymbol( "try" );
+            Undefined = MakeSymbol( "undefined" );
+            Underscore = MakeSymbol( "_" );
+            Values = MakeSymbol( "values" );
+            Var = MakeSymbol( "var" );
+            Variable = MakeSymbol( "variable" );
+            Vector = MakeSymbol( "&vector" );
+            Verbose = MakeSymbol( "$verbose" );
+            Whole = MakeSymbol( "&whole" );
+            Width = Runtime.MakeSymbol( "width", Runtime.KeywordPackage );
+            WriteHook = MakeSymbol( "$write-hook" );
+            kwForce = Runtime.MakeSymbol( "force", Runtime.KeywordPackage );
 
             // Add bq- prefix when writing an optimizer
             bqAppend = MakeSymbol( "force-append" );
@@ -522,196 +534,229 @@ namespace Kiezel
                 MakeSymbol( "{9}" )
             };
 
+            ShortLambdaVariables = new Symbol[]
+            {
+			    MakeSymbol( "%" ),
+			    MakeSymbol( "%1" ),
+			    MakeSymbol( "%2" ),
+			    MakeSymbol( "%3" ),
+			    MakeSymbol( "%4" ),
+			    MakeSymbol( "%5" ),
+			    MakeSymbol( "%6" ),
+			    MakeSymbol( "%7" ),
+			    MakeSymbol( "%8" ),
+			    MakeSymbol( "%9" )
+            };
+
+
         }
 
-        internal static Symbol Declare;
-        internal static Symbol Ignore;
-        internal static Symbol I;
-        internal static Symbol PI;
-        internal static Symbol E;
-        internal static Symbol Strict;
-        internal static Symbol GetArgumentOrDefault;
-        internal static Symbol TailCall;
+        internal static Symbol And;
+        internal static Symbol Append;
+        internal static Symbol Apply;
         internal static Symbol Args;
-        internal static Symbol LambdaList;
-        internal static Symbol ReadEval;
-        internal static Symbol ReadSuppress;
-        internal static Symbol Underscore;
-        internal static Symbol Tilde;
-        internal static Symbol Package;
-        internal static Symbol It;
-        internal static Symbol EnableWarnings;
-        internal static Symbol Color;
+        internal static Symbol AsLazyList;
+        internal static Symbol AsTuple;
+        internal static Symbol AsVector;
         internal static Symbol BackgroundColor;
-        internal static Symbol PrintCompact;
-        internal static Symbol PrintColor;
-        internal static Symbol PrintBackgroundColor;
-        internal static Symbol PrintForce;
-        internal static Symbol PrintEscape;
-        internal static Symbol PrintBase;
-        internal static Symbol PrintMaxElements;
-        internal static Symbol PrintShortSymbolNames;
-        internal static Symbol Escape;
-        internal static Symbol Stream;
-        internal static Symbol EofValue;
-        internal static Symbol Force;
-        internal static Symbol kwForce;
-        internal static Symbol Pretty;
-        internal static Symbol Right;
-        internal static Symbol Left;
-        internal static Symbol Width;
-        internal static Symbol Padding;
         internal static Symbol Base;
-        internal static Symbol MaxElements;
-        internal static Symbol Def;
-        internal static Symbol DefConstant;
-        internal static Symbol Defun;
-        internal static Symbol DefMethod;
-        internal static Symbol Return;
-        internal static Symbol DefMacro;
-        internal static Symbol DefMulti;
-        internal static Symbol MakeLambdaParameterBinder;
-        internal static Symbol If;
-        internal static Symbol Do;
-        internal static Symbol MergeWithOuterDo;
-        internal static Symbol HiddenVar;
-        internal static Symbol SetAttr;
-        internal static Symbol SetAttrFunc;
-        internal static Symbol SetElt;
-        internal static Symbol Eval;
-        internal static Symbol Set;
-        internal static Symbol Var;
-        internal static Symbol Throw;
-        internal static Symbol Compiling;
-        internal static Symbol Optional;
-        internal static Symbol Returns;
-        internal static Symbol Key;
-        internal static Symbol Rest;
+        internal static Symbol BitAnd;
+        internal static Symbol BitNot;
+        internal static Symbol BitOr;
+        internal static Symbol BitShiftLeft;
+        internal static Symbol BitShiftRight;
+        internal static Symbol BitXor;
         internal static Symbol Body;
-        internal static Symbol Params;
-        internal static Symbol Whole;
-        internal static Symbol Tracing;
-        internal static Symbol Verbose;
-        internal static Symbol Features;
-        internal static Symbol StdIn;
-        internal static Symbol StdOut;
-        internal static Symbol StdErr;
-        internal static Symbol StdLog;
-        internal static Symbol Quote;
+        internal static Symbol Bool;
+        internal static Symbol BuiltinConstructor;
+        internal static Symbol BuiltinFunction;
+        internal static Symbol Case;
+        internal static Symbol Catch;
+        internal static Symbol Color;
         internal static Symbol Comma;
         internal static Symbol CommaAt;
         internal static Symbol CommaDot;
-        internal static Symbol Lambda;
-        internal static Symbol GreekLambda;
-        internal static Symbol Setq;
+        internal static Symbol CommandLineArguments;
+        internal static Symbol Compiling;
+        internal static Symbol Constant;
+        internal static Symbol CreateTask;
+        internal static Symbol DebugMode;
+        internal static Symbol Declare;
+        internal static Symbol Def;
+        internal static Symbol DefConstant;
+        internal static Symbol DefMacro;
+        internal static Symbol DefMethod;
+        internal static Symbol DefMulti;
+        internal static Symbol DefSpecialForm;
+        internal static Symbol Default;
+        internal static Symbol Defun;
+        internal static Symbol Do;
+        internal static Symbol Documentation;
+        internal static Symbol Dot;
+        internal static Symbol E;
+        internal static Symbol EnableExternalDocumentation;
+        internal static Symbol EnableWarnings;
+        internal static Symbol Environment;
+        internal static Symbol EofValue;
+        internal static Symbol Equality;
+        internal static Symbol Escape;
+        internal static Symbol Eval;
+        internal static Symbol Exception;
+        internal static Symbol False;
+        internal static Symbol Features;
+        internal static Symbol Finally;
+        internal static Symbol Force;
+        internal static Symbol Function;
+        internal static Symbol FunctionExitLabel;
+        internal static Symbol FunctionKeyword;
+        internal static Symbol FutureVar;
+        internal static Symbol GenericFunction;
+        internal static Symbol GetArgumentOrDefault;
         internal static Symbol GetAttr;
         internal static Symbol GetAttrFunc;
         internal static Symbol GetElt;
-        internal static Symbol TagBody;
         internal static Symbol Goto;
-        internal static Symbol Block;
-        internal static Symbol Values;
+        internal static Symbol GreekLambda;
+        internal static Symbol HelpHook;
+        internal static Symbol HiddenVar;
+        internal static Symbol I;
+        internal static Symbol If;
+        internal static Symbol IfLet;
+        internal static Symbol Ignore;
+        internal static Symbol ImportedConstructor;
+        internal static Symbol ImportedFunction;
+        internal static Symbol InitialValue;
+        internal static Symbol InteractiveMode;
+        internal static Symbol It;
+        internal static Symbol Key;
+        internal static Symbol Label;
+        internal static Symbol Lambda;
+        internal static Symbol LambdaList;
+        internal static Symbol LazyImport;
+        internal static Symbol LazyVar;
+        internal static Symbol Left;
+        internal static Symbol Let;
+        internal static Symbol LetFun;
         internal static Symbol List;
         internal static Symbol ListStar;
-        internal static Symbol Vector;
-        internal static Symbol Append;
-        internal static Symbol Str;
-        internal static Symbol Bool;
-        internal static Symbol Case;
-        internal static Symbol Default;
-        internal static Symbol Recur;
-        internal static Symbol And;
-        internal static Symbol Not;
-        internal static Symbol Or;
-        internal static Symbol Exception;
         internal static Symbol LoadPath;
+        internal static Symbol LoadPrint;
+        internal static Symbol LoadVerbose;
+        internal static Symbol Macro;
+        internal static Symbol Macroexpand1;
+        internal static Symbol MacroKeyword;
+        internal static Symbol Main;
+        internal static Symbol MakeLambdaParameterBinder;
+        internal static Symbol Math;
+        internal static Symbol MaxElements;
+        internal static Symbol MergingDo;
+        internal static Symbol Method;
+        internal static Symbol MethodKeyword;
+        internal static Symbol Modules;
+        internal static Symbol New;
+        internal static Symbol Not;
+        internal static Symbol Nth;
+        internal static Symbol Null;
+        internal static Symbol NullableDot;
+        internal static Symbol Optional;
+        internal static Symbol OptionalKeyword;
+        internal static Symbol Or;
+        internal static Symbol PI;
+        internal static Symbol Package;
+        internal static Symbol PackageNamePrefix;
+        internal static Symbol Padding;
+        internal static Symbol Params;
+        internal static Symbol Pow;
+        internal static Symbol Pretty;
+        internal static Symbol PrettyPrintHook;
+        internal static Symbol PrintBackgroundColor;
+        internal static Symbol PrintBase;
+        internal static Symbol PrintColor;
+        internal static Symbol PrintCompact;
+        internal static Symbol PrintEscape;
+        internal static Symbol PrintForce;
+        internal static Symbol PrintShortSymbolNames;
+        internal static Symbol Quote;
+        internal static Symbol ReadEval;
+        internal static Symbol ReadonlyVariable;
+        internal static Symbol Readtable;
+        internal static Symbol Recur;
+        internal static Symbol ReplListenerPort;
+        internal static Symbol Rest;
+        internal static Symbol Return;
+        internal static Symbol ReturnFrom;
+        internal static Symbol ReturnFromLoad;
+        internal static Symbol Returns;
+        internal static Symbol Right;
         internal static Symbol ScriptDirectory;
         internal static Symbol ScriptName;
-        internal static Symbol CommandLineArguments;
-        internal static Symbol Documentation;
-        internal static Symbol New;
-        internal static Symbol TryAndCatch;
-        internal static Symbol TryFinally;
+        internal static Symbol Set;
+        internal static Symbol SetAttr;
+        internal static Symbol SetAttrFunc;
+        internal static Symbol SetElt;
+        internal static Symbol Setf;
+        internal static Symbol Setq;
+        internal static Symbol SpecialConstant;
+        internal static Symbol SpecialForm;
+        internal static Symbol SpecialReadonlyVariable;
+        internal static Symbol SpecialVariable;
+        internal static Symbol StandoutBackgroundColor;
+        internal static Symbol StandoutColor;
+        internal static Symbol StdErr;
+        internal static Symbol StdIn;
+        internal static Symbol StdLog;
+        internal static Symbol StdOut;
+        internal static Symbol Str;
+        internal static Symbol Stream;
+        internal static Symbol StructurallyEqual;
+        internal static Symbol TagBody;
+        internal static Symbol TailCall;
+        internal static Symbol Target;
+        internal static Symbol Temp;
+        internal static Symbol Throw;
+        internal static Symbol Tilde;
+        internal static Symbol Tracing;
+        internal static Symbol True;
+        internal static Symbol Try;
+        internal static Symbol Undefined;
+        internal static Symbol Underscore;
+        internal static Symbol Values;
+        internal static Symbol Var;
+        internal static Symbol Variable;
+        internal static Symbol Vector;
+        internal static Symbol Verbose;
+        internal static Symbol Whole;
+        internal static Symbol Width;
+        internal static Symbol WriteHook;
+        internal static Symbol bqAppend;
+        internal static Symbol bqClobberable;
+        internal static Symbol bqList;
+        internal static Symbol bqListStar;
+        internal static Symbol bqQuote;
+        internal static Symbol kwForce;
         internal static Symbol[] DynamicVariables;
         internal static Symbol[] NumberedVariables;
         internal static Symbol[] ReservedVariables;
-        internal static Symbol Accessor;
-        internal static Symbol Math;
-        internal static Symbol PrettyPrintHook;
-        internal static Symbol WriteHook;
-        internal static Symbol Temp;
-        internal static Symbol AsLazyList;
-        internal static Symbol AsVector;
-        internal static Symbol AsTuple;
-        internal static Symbol Nth;
-        internal static Symbol MacroKeyword;
-        internal static Symbol FunctionKeyword;
-        internal static Symbol MethodKeyword;
-        internal static Symbol OptionalKeyword;
-        internal static Symbol Function;
-        internal static Symbol BuiltinFunction;
-        internal static Symbol ImportedFunction;
-        internal static Symbol GenericFunction;
-        internal static Symbol BuiltinConstructor;
-        internal static Symbol ImportedConstructor;
-        internal static Symbol Method;
-        internal static Symbol Macro;
-        internal static Symbol SpecialForm;
-        internal static Symbol DefSpecialForm;
-        internal static Symbol Variable;
-        internal static Symbol ReadonlyVariable;
-        internal static Symbol Constant;
-        internal static Symbol SpecialVariable;
-        internal static Symbol SpecialReadonlyVariable;
-        internal static Symbol SpecialConstant;
-        internal static Symbol EnableExternalDocumentation;
-        internal static Symbol HelpHook;
-        internal static Symbol ReplListenerPort;
-        internal static Symbol Modules;
-        internal static Symbol LoadPrint;
-        internal static Symbol LoadVerbose;
-        internal static Symbol DebugMode;
-        internal static Symbol bqList;
-        internal static Symbol bqListStar;
-        internal static Symbol bqAppend;
-        internal static Symbol bqClobberable;
-        internal static Symbol bqQuote;
-        internal static Symbol BitAnd;
-        internal static Symbol BitOr;
-        internal static Symbol BitXor;
-        internal static Symbol BitNot;
-        internal static Symbol BitShiftLeft;
-        internal static Symbol BitShiftRight;
-        internal static Symbol Pow;
-        internal static Symbol Setf;
-        internal static Symbol Equality;
-        internal static Symbol StructurallyEqual;
-        internal static Symbol InteractiveMode;
-        internal static Symbol Main;
-        internal static Symbol Undefined;
-        internal static Symbol StandoutColor;
-        internal static Symbol StandoutBackgroundColor;
-        internal static Symbol QuickImport;
-        internal static Symbol InitialValue;
+        internal static Symbol[] ShortLambdaVariables;
     }
 
     public partial class Runtime
     {
-        internal static Symbol DefineFunction(Symbol sym, object value, string doc )
+        internal static object DefineFunction(Symbol sym, object value, string doc )
         {
             sym.FunctionValue = value;
             sym.Documentation = String.IsNullOrWhiteSpace( doc ) ? null : MakeList( doc );
             return sym;
         }
 
-        internal static Symbol DefineVariable( Symbol sym, object value, string doc )
+        internal static object DefineVariable( Symbol sym, object value, string doc )
         {
             sym.VariableValue = value;
             sym.Documentation = String.IsNullOrWhiteSpace( doc ) ? null : MakeList( doc );
             return sym;
         }
 
-        internal static Symbol DefineConstant( Symbol sym, object value, string doc )
+        internal static object DefineConstant( Symbol sym, object value, string doc )
         {
             sym.ConstantValue = value;
             sym.Documentation = String.IsNullOrWhiteSpace( doc ) ? null : MakeList( doc );

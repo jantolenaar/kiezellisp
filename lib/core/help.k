@@ -1,11 +1,12 @@
 
-;;;; Copyright (C) 2012-2014 Jan Tolenaar. See the file LICENSE for details.
+;;;; Copyright (c) Jan Tolenaar. See the file LICENSE for details.
 
 (defpackage "lisp"
     (:export 
+        "export-documentation"
         "help"
         "import-documentation"
-        "export-documentation"))
+    ))
 
 (in-package "lisp")
 
@@ -13,15 +14,15 @@
 """
 Prints information attached to the global symbol `topic`.
 """    
-    (try
-        (var $package (get-package "example"))
+    (ignore-errors
+        (let $package (get-package "example"))
         (if topic
             (do
-                (var descr (get-description topic))
-                (var syntax-list (.function-syntax descr))
+                (let descr (get-description topic))
+                (let syntax-list (.function-syntax descr))
                 ;; make clusters of text and examples so that examples can be eval-ed in a DO block.
-                (var doc-list (partition-by string? (.documentation descr)))
-                (var type (.usage descr))
+                (let doc-list (partition-by string? (.documentation descr)))
+                (let type (.usage descr))
                 (print-line (.to-upper (string type)))
                 (print-line)
                 (when (find type '(variable readonly-variable constant special-variable special-readonly-variable special-constant))
@@ -54,12 +55,12 @@ Prints information attached to the global symbol `topic`.
 
 (defun show-string (item)
     ; rewrite markdown html links []() and [][]
-    (var item1 item)
-    (var item2 (.regex-replace item1 #"\[(.*?)\]\(.*?\)" @"`\1`"))
-    (var item3 (.regex-replace item2 #"\[(.*?)\]\[.*?\]" @"`\1`"))
+    (let item1 item)
+    (let item2 (.regex-replace item1 #"\[(.*?)\]\(.*?\)" @"`\1`"))
+    (let item3 (.regex-replace item2 #"\[(.*?)\]\[.*?\]" @"`\1`"))
     (loop 
         (for part :in (.split item3 "`"))
-        (for standout :initially false :then (not standout))
+        (with standout :initially false :then (not standout))
         (write part :escape false 
                     :color (if standout $standout-color)
                     :background-color (if standout $standout-background-color)))
@@ -74,25 +75,25 @@ Prints information attached to the global symbol `topic`.
         (print " > ")))
 
 (defun show-examples (examples &key add-terminating-prompt)
-    (var content (print-examples-to-string examples add-terminating-prompt))
+    (let content (print-examples-to-string examples add-terminating-prompt))
     (print-line (.indent content "    ")))
 
 (defun print-examples-to-string (examples add-terminating-prompt)
-    (var $package $package)
-    (var env (make-environment))
+    (let $package $package)
+    (let env (make-extended-environment))
     (var prompt-nr 1)
     (var dbglevel 0)
     (with-output-to-string ($stdout)
         (loop
-            (for example in examples)
-            (var prompt (make-prompt prompt-nr dbglevel))
+            (for example :in examples)
+            (let prompt (make-prompt prompt-nr dbglevel))
             (print prompt)
             (var example-code null)
             (cond 
                 ((and (cons? example)
                       (= (string (first example)) "EXAMPLE"))
-                    (var code (apply string (rest example)))
-                    (var $print-escape false)
+                    (let code (apply string (rest example)))
+                    (let $print-escape false)
                     (pprint code :left (length prompt))
                     (setf example-code (read-from-string code)))
                 (true
@@ -110,9 +111,9 @@ Prints information attached to the global symbol `topic`.
                     (describe it))
                 (true
                     (incf prompt-nr)
-                    (var result (do
-                                    (var $enable-warnings false)
-                                    (var $stdlog $stdout)
+                    (let result (do
+                                    (let $enable-warnings false)
+                                    (let $stdlog $stdout)
                                     (try-and-catch (force (eval example-code env)))))
                     (cond
                         ((exception? result)
@@ -131,12 +132,12 @@ Prints information attached to the global symbol `topic`.
     (each import-symbol-documentation topics))
 
 (defun import-symbol-documentation (topic)
-    (var name (first topic))
-    (var syntax-list (vector))
+    (let name (first topic))
+    (let syntax-list (vector))
     (var doc-list null)
     (loop 
         (for parts :on-list (rest topic))
-        (var part (first parts))
+        (let part (first parts))
         (cond
             ((string? part)
                 (setf doc-list parts)
@@ -169,8 +170,8 @@ Prints information attached to the global symbol `topic`.
         (find (.symbol descr) exportable-symbol-list)))
 
 (defun export-documentation (file-name &rest package-names)
-    ;(var $print-short-symbol-names true)
-    (var data (with-output-to-string ($stdout)
+    ;(let $print-short-symbol-names true)
+    (let data (with-output-to-string ($stdout)
         (print-line)
         (print-line "(in-package \"lisp\")")
         (print-line)
@@ -184,7 +185,7 @@ Prints information attached to the global symbol `topic`.
         (each export-symbol-documentation ~)
         (print-line "))")
         (print-line)))
-    (file.write-all-text file-name data))
+    (file:write-all-text file-name data))
 
 (defun readable-list (x)
     (if x
@@ -192,13 +193,13 @@ Prints information attached to the global symbol `topic`.
         "()"))
 
 (defun export-symbol-documentation (description)
-    ;(var name (.name description))
-    ;(var type (.usage description))
-    (var sym (.symbol description))
-    (var doc (or (.documentation description)
+    ;(let name (.name description))
+    ;(let type (.usage description))
+    (let sym (.symbol description))
+    (let doc (or (.documentation description)
                  (list "\nTO DO\n")))
-    (var syntax (.function-syntax description))
-    (var leading (string "(" sym " "))
+    (let syntax (.function-syntax description))
+    (let leading (string "(" sym " "))
     (print leading)
     (when syntax
         (print (readable-list (rest (car syntax))))
@@ -210,7 +211,7 @@ Prints information attached to the global symbol `topic`.
     (foreach (item doc)
         (if (string? item)
             (do
-                (var str (.trim item))
+                (let str (.trim item))
                 (print-line "\"\"\"")
                 (print-line str)
                 (print-line "\"\"\""))
@@ -231,6 +232,8 @@ Command line options:
 -d --debug              Slower code and better debugging.
 -n --nodebug            Faster code and worse debugging.
 -o --optimize           Optimize expressions with constants.
+-l --listener           Starts a listener to receive commands from an editor 
+                        See also `$repl-listener-port`.
 
 REPL input:
 
@@ -253,8 +256,9 @@ General top-level commands:
 
 Debugger top-level commands:
 
-:abort                  Abort to previous level.
+:abort                  Abort to previous level or abort after a breakpoint.
 :backtrace              Show evaluation stack.
+:continue               Continue the program after a breakpoint.
 :exception              Print latest exception without DLR stuff.
 :Exception              Print latest exception.
 :variables [n]          Print lexical variables at depth n of the evaluation stack.

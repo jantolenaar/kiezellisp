@@ -1,4 +1,4 @@
-// Copyright (C) 2012-2013 Jan Tolenaar. See the file LICENSE for details.
+// Copyright (C) Jan Tolenaar. See the file LICENSE for details.
 
 using System;
 
@@ -35,6 +35,12 @@ namespace Kiezel
 
     public partial class Runtime
     {
+        [Lisp( "system:get-delayed-expression-result" )]
+        public static object GetDelayedExpressionResult( DelayedExpression expr )
+        {
+            return expr.GetValue();
+        }
+
         [Lisp( "force" )]
         public static object Force( object expr )
         {
@@ -73,7 +79,7 @@ namespace Kiezel
             }
         }
 
-        [Lisp("system.create-delayed-expression")]
+        [Lisp( "system:create-delayed-expression")]
         public static DelayedExpression CreateDelayedExpression( object func )
         {
             var f = GetThreadFunc( func );

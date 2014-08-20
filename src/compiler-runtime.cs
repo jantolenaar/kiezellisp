@@ -1,4 +1,4 @@
-// Copyright (C) 2012-2013 Jan Tolenaar. See the file LICENSE for details.
+// Copyright (C) Jan Tolenaar. See the file LICENSE for details.
 
 using System;
 using System.Collections;
@@ -96,7 +96,14 @@ namespace Kiezel
         internal static object DefDynamic( Symbol sym, object value )
         {
             // used by compiler generated code
-            CurrentThreadContext.SpecialStack = new SpecialVariables( sym, value, CurrentThreadContext.SpecialStack );
+            CurrentThreadContext.SpecialStack = new SpecialVariables( sym, false, value, CurrentThreadContext.SpecialStack );
+            return null;
+        }
+
+        internal static object DefDynamicConst( Symbol sym, object value )
+        {
+            // used by compiler generated code
+            CurrentThreadContext.SpecialStack = new SpecialVariables( sym, true, value, CurrentThreadContext.SpecialStack );
             return null;
         }
 
@@ -107,7 +114,7 @@ namespace Kiezel
             {
                 if ( entry.Sym == sym )
                 {
-                    entry.Value = value;
+                    entry.CheckedValue = value;
                     return value;
                 }
             }

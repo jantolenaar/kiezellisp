@@ -1,4 +1,4 @@
-// Copyright (C) 2012-2014 Jan Tolenaar. See the file LICENSE for details.
+// Copyright (C) Jan Tolenaar. See the file LICENSE for details.
 
 using System;
 using System.Collections;
@@ -28,12 +28,27 @@ namespace Kiezel
         internal Symbol Sym;
         internal object _value;
         internal SpecialVariables Link;
+        internal bool Constant;
 
-        internal SpecialVariables( Symbol sym, object value, SpecialVariables link )
+        internal SpecialVariables( Symbol sym, bool constant, object value, SpecialVariables link )
         {
             Sym = sym;
+            Constant = constant;
             Value = value;
             Link = link;
+        }
+
+        internal object CheckedValue
+        {
+            set
+            {
+                if ( Constant )
+                {
+                    throw new LispException( "Cannot assign to constant: {0}", Sym );
+                }
+
+                _value = value;
+            }
         }
 
         internal object Value
@@ -56,7 +71,7 @@ namespace Kiezel
             }
             else
             {
-                return new SpecialVariables( var.Sym, var.Value, Clone( var.Link ) );
+                return new SpecialVariables( var.Sym, var.Constant, var.Value, Clone( var.Link ) );
             }
         }
     }
@@ -92,12 +107,24 @@ namespace Kiezel
 
         internal Task<object> Task;
 
-        public object Result
+        public void Start()
         {
-            get
+            if ( Task.Status == TaskStatus.Created )
             {
-                return Task.Result;
+                try
+                {
+                    Task.Start();
+                }
+                catch
+                {
+                }
             }
+        }
+
+        public object GetResult()
+        {
+            Start();
+            return Task.Result;
         }
 
         public bool IsCompleted
@@ -194,20 +221,32 @@ namespace Kiezel
             System.Threading.Thread.Sleep( msec );
         }
 
-        [Lisp( "system.get-current-thread" )]
+        [Lisp( "system:get-current-thread" )]
         public static ThreadContext GetCurrentThread()
         {
             return CurrentThreadContext;
         }
 
-        [Lisp( "system.create-task" )]
+        [Lisp( "system:create-task" )]
         public static object CreateTask( ThreadFunc code )
         {
-            var specials = GetCurrentThread().SpecialStack;
-            return CreateTaskWithContext( code, new ThreadContext( specials ) );
+            return CreateTask( code, true );
         }
 
-        [Lisp( "system.create-generator" )]
+        [Lisp( "system:create-task" )]
+        public static object CreateTask( ThreadFunc code, bool start )
+        {
+            var specials = GetCurrentThread().SpecialStack;
+            return CreateTaskWithContext( code, new ThreadContext( specials ), start );
+        }
+
+        [Lisp( "system:get-task-result")]
+        public static object GetTaskResult( ThreadContext task )
+        {
+            return task.GetResult();
+        }
+
+        [Lisp( "system:create-generator" )]
         public static object CreateGenerator( ThreadFunc code, params object[] kwargs )
         {
             object[] args = ParseKwargs( kwargs, new string[] { "capacity" }, 1 );
@@ -221,10 +260,10 @@ namespace Kiezel
                 return val;
             };
 
-            return CreateTaskWithContext( wrapper, context );
+            return CreateTaskWithContext( wrapper, context, true );
         }
 
-        internal static object CreateTaskWithContext( ThreadFunc code, ThreadContext context )
+        internal static object CreateTaskWithContext( ThreadFunc code, ThreadContext context, bool start )
         {
             Func<object> wrapper = () =>
             {
@@ -245,10 +284,15 @@ namespace Kiezel
 
             var task = new Task<object>( wrapper );
             context.Task = task;
-            task.Start();
+            if ( start )
+            {
+                context.Start();
+            }
 
             return context;
         }
+
+
 
         internal static GeneratorThreadContext CheckGeneratorThreadContext( ThreadContext ctx )
         {
@@ -276,7 +320,7 @@ namespace Kiezel
             context.Yield( item );
         }
 
-        [Lisp( "system.enable-benchmark" )]
+        [Lisp( "system:enable-benchmark" )]
         public static void EnableBenchmark( bool flag )
         {
             if ( flag )

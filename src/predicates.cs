@@ -1,4 +1,4 @@
-// Copyright (C) 2012-2013 Jan Tolenaar. See the file LICENSE for details.
+// Copyright (C) Jan Tolenaar. See the file LICENSE for details.
 
 
 using System;
@@ -176,7 +176,7 @@ namespace Kiezel
                 {
                     return Enumerablep( target );
                 }
-                else if ( t == typeof( Keyword ) )
+                else if ( t == typeof( KeywordClass ) )
                 {
                     return Keywordp( target );
                 }
@@ -245,6 +245,12 @@ namespace Kiezel
             return expr is int || expr is Int64 || expr is BigInteger;
         }
 
+        [Pure, Lisp( "ratio?" )]
+        public static bool Ratiop( object expr )
+        {
+            return expr is BigRational;
+        }
+
         [Pure, Lisp( "rational?" )]
         public static bool Rationalp( object expr )
         {
@@ -279,6 +285,11 @@ namespace Kiezel
         public static bool Literalp( object expr )
         {
             return expr == null || expr is ValueType || Numberp( expr ) || Stringp( expr );
+        }
+
+        internal static bool Quotedp( object expr )
+        {
+            return expr is Cons && First( expr ) == Symbols.Quote;
         }
 
         [Pure, Lisp( "vector?" )]
@@ -338,17 +349,23 @@ namespace Kiezel
             return expr == null;
         }
 
+        [Pure, Lisp( "void?" )]
+        public static bool Voidp( object expr )
+        {
+            return expr is VOID;
+        }
+
         [Pure, Lisp( "lambda?" )]
         public static bool Lambdap( object expr )
         {
-            var func = expr as Lambda;
+            var func = expr as LambdaClosure;
             return func != null && func.Kind == LambdaKind.Function;
         }
 
         [Pure, Lisp( "macro?" )]
         public static bool Macrop( object expr )
         {
-            var func = expr as Lambda;
+            var func = expr as LambdaClosure;
             return func != null && func.Kind == LambdaKind.Macro;
         }
 
@@ -378,6 +395,26 @@ namespace Kiezel
                 throw new LispException( "Not a number" );
             }
             return Equal( a1, 0 );
+        }
+
+        [Pure, Lisp( "plus?" )]
+        public static bool Plusp( object a1 )
+        {
+            if ( !Numberp( a1 ) )
+            {
+                throw new LispException( "Not a number" );
+            }
+            return Greater( a1, 0 );
+        }
+
+        [Pure, Lisp( "minus?" )]
+        public static bool Minusp( object a1 )
+        {
+            if ( !Numberp( a1 ) )
+            {
+                throw new LispException( "Not a number" );
+            }
+            return Less( a1, 0 );
         }
 
         [Pure, Lisp( "even?" )]
@@ -422,6 +459,10 @@ namespace Kiezel
             else if ( a1 is IEnumerable )
             {
                 return AsLazyList( ( IEnumerable ) a1 ) != null;
+            }
+            else if ( a1 is VOID )
+            {
+                return false;
             }
             else
             {

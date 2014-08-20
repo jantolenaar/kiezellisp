@@ -1,5 +1,5 @@
 
-;;; Copyright (C) 2013 Jan Tolenaar. See the file LICENSE for details.
+;;; Copyright (C) Jan Tolenaar. See the file LICENSE for details.
 
 ;;;
 ;;; kiezellispw-init.k

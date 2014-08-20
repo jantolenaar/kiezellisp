@@ -1,4 +1,4 @@
-// Copyright (C) 2012-2013 Jan Tolenaar. See the file LICENSE for details.
+// Copyright (C) Jan Tolenaar. See the file LICENSE for details.
 
 using System;
 using System.Collections;
@@ -289,11 +289,15 @@ namespace Kiezel
                     var second = Runtime.Second(this);
                     var third = Runtime.Third(this);
 
-                    if ( first == Symbols.Accessor && second is string && third == null )
+                    if ( first == Symbols.Dot && second is string && third == null )
                     {
                         return System.String.Format( ".{0}", second );
                     }
-                    else if ( first == Symbols.Quote )
+                    else if ( first == Symbols.NullableDot && second is string && third == null )
+                    {
+                        return System.String.Format( "?{0}", second );
+                    }
+                    else if ( first == Symbols.Quote && third == null )
                     {
                         return System.String.Format( "'{0}", second );
                     }
@@ -305,7 +309,6 @@ namespace Kiezel
             buf.Write( "(" );
             Cons list = this;
             bool needcomma = false;
-            int maxCount = ( int ) Runtime.GetDynamic( Symbols.PrintMaxElements );
 
             while ( list != null )
             {
@@ -314,12 +317,6 @@ namespace Kiezel
                     buf.Write( " " );
                 }
 
-                if ( maxCount-- <= 0 )
-                {
-                    buf.Write( "..." );
-                    break;
-                }
-                
                 buf.Write( Runtime.ToPrintString( list.Car, escape, radix ) );
 
                 if ( list.cdr is IEnumerator || list.cdr is DelayedExpression )
@@ -417,6 +414,18 @@ namespace Kiezel
             return AsList( items );
         }
 
-
+        [Lisp( "copy-tree" )]
+        public static object CopyTree( object a )
+        {
+            if ( Consp(a) )
+            {
+                var tree = (Cons)a;
+                return Runtime.MakeCons( CopyTree( tree.Car ), (Cons) CopyTree( tree.Cdr ) );
+            }
+            else
+            {
+                return a;
+            }
+        }
     }
 }

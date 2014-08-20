@@ -1,4 +1,4 @@
-;;;; Copyright (C) 2012-2013 Jan Tolenaar. See the file LICENSE for details.
+;;;; Copyright (c) Jan Tolenaar. See the file LICENSE for details.
 
 ;;;;
 ;;;; functions.k
@@ -27,4 +27,6 @@
     (if funcs
             (list func1 (compose-functions (first funcs) (rest funcs)))
         (list 'apply func1 'args)))
+
+
 

@@ -1,4 +1,4 @@
-// Copyright (C) 2012-2013 Jan Tolenaar. See the file LICENSE for details.
+// Copyright (C) Jan Tolenaar. See the file LICENSE for details.
 
 using System;
 using System.Collections;
@@ -20,6 +20,8 @@ namespace Kiezel
         internal List<ParameterDef> Parameters = new List<ParameterDef>();
         internal List<Symbol> Names = new List<Symbol>();
         internal List<ParameterDef> flattenedParameters = null;
+        internal Symbol WholeArg = null;
+        internal Symbol EnvArg = null;
 
         internal LambdaSignature( LambdaKind kind )
         {
@@ -29,23 +31,6 @@ namespace Kiezel
         internal bool IsGetter()
         {
             return Kind == LambdaKind.Function && Parameters.Count == 1 && RequiredArgsCount == 1 && Parameters[ 0 ].Sym.Name == "this";
-        }
-
-        internal LambdaSignature EvalSpecializers()
-        {
-            if ( Kind == LambdaKind.Function || Kind == LambdaKind.Method )
-            {
-                var result = new LambdaSignature( Kind );
-                result.ArgModifier = ArgModifier;
-                result.RequiredArgsCount = RequiredArgsCount;
-                result.Parameters = Parameters.Select( x => x.EvalSpecializer() ).ToList();
-                result.Names = Names;
-                return result;
-            }
-            else
-            {
-                return this;
-            }
         }
 
         internal List<ParameterDef> FlattenedParameters
@@ -88,7 +73,7 @@ namespace Kiezel
                     return true;
                 }
 
-                if ( param.EqlSpecializer != null )
+                if ( param.HasEqlSpecializer )
                 {
                     bool result = Runtime.Eql( args[ i ], param.EqlSpecializer );
                     if ( !result )
@@ -96,7 +81,7 @@ namespace Kiezel
                         return false;
                     }
                 }
-                else if ( param.TypeSpecializer != null )
+                else if ( param.HasTypeSpecializer )
                 {
                     bool result = Runtime.ToBool( Runtime.IsInstanceOf( args[ i ], param.TypeSpecializer ) );
                     if ( !result )
@@ -122,7 +107,7 @@ namespace Kiezel
                     return true;
                 }
 
-                if ( param.EqlSpecializer != null )
+                if ( param.HasEqlSpecializer )
                 {
                     bool result = Runtime.Eql( args[ i ].Value, param.EqlSpecializer );
                     if ( !result )
@@ -130,7 +115,7 @@ namespace Kiezel
                         return false;
                     }
                 }
-                else if ( param.TypeSpecializer != null )
+                else if ( param.HasTypeSpecializer )
                 {
                     bool result = Runtime.ToBool( Runtime.IsInstanceOf( args[ i ].Value, param.TypeSpecializer ) );
                     if ( !result )
@@ -167,15 +152,15 @@ namespace Kiezel
 
         internal ParameterDef( Symbol sym,  object specializer = null, 
                                             Expression initForm = null, 
-                                            Func<object> initFormProc = null, 
+                                            Func<object> initFormProc = null,
                                             LambdaSignature nestedParameters = null,
-                                            bool hidden = false )
+                                            bool hidden = false     )
         {
             Sym = sym;
             Specializer = specializer;
             NestedParameters = nestedParameters;
             InitForm = initForm;
-            InitFormProc=initFormProc;
+            InitFormProc = initFormProc;
             Hidden = hidden;
 
             if ( InitForm != null && InitFormProc == null )
@@ -184,11 +169,19 @@ namespace Kiezel
             }
         }
 
+        internal bool HasEqlSpecializer
+        {
+            get
+            {
+                return Specializer != null && Specializer is EqlSpecializer;
+            }
+        }
+
         internal object EqlSpecializer
         {
             get
             {
-                if ( Specializer != null && Specializer is EqlSpecializer )
+                if ( HasEqlSpecializer )
                 {
                     return ( ( EqlSpecializer ) Specializer ).Value;
                 }
@@ -199,11 +192,19 @@ namespace Kiezel
             }
         }
 
+        internal bool HasTypeSpecializer
+        {
+            get
+            {
+                return Specializer != null && !( Specializer is EqlSpecializer );
+            }
+        }
+
         internal object TypeSpecializer
         {
             get
             {
-                if ( Specializer != null && !(Specializer is EqlSpecializer ))
+                if ( HasTypeSpecializer )
                 {
                     return Specializer;
                 }
@@ -217,25 +218,6 @@ namespace Kiezel
         public override string ToString()
         {
             return System.String.Format( "{0}", Sym );
-        }
-
-        internal ParameterDef EvalSpecializer()
-        {
-            if ( EqlSpecializer != null )
-            {
-                Func<object> proc = Runtime.CompileToFunction( ( Expression ) EqlSpecializer );
-                var value = proc();
-                return new ParameterDef( Sym, specializer: new EqlSpecializer( value ), hidden: Hidden );
-            }
-            else if ( TypeSpecializer != null )
-            {
-                var type = Runtime.GetType( ( Symbol ) TypeSpecializer );
-                return new ParameterDef( Sym, specializer: type, hidden: Hidden );
-            }
-            else
-            {
-                return this;
-            }
         }
 
     }
