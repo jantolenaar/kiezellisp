@@ -1,30 +1,11 @@
 // Copyright (C) Jan Tolenaar. See the file LICENSE for details.
 
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Linq.Expressions;
-using System.Text;
 
 namespace Kiezel
 {
     public partial class Runtime
     {
-
-        // Handled by compiler if used as function in function call; otherwise
-        // accessor creates a lambda.
-        [Lisp( "." )]
-        public static object MemberAccessor( string members )
-        {
-            return new AccessorLambda( false, members );
-        }
-
-        [Lisp( "?" )]
-        public static object NullableMemberAccessor( string members )
-        {
-            return new AccessorLambda( true, members );
-        }
-
         [Lisp( "%attr" )]
         public static object Attr( object target, object attr )
         {
@@ -44,6 +25,19 @@ namespace Kiezel
             }
         }
 
+        // Handled by compiler if used as function in function call; otherwise
+        // accessor creates a lambda.
+        [Lisp( "." )]
+        public static object MemberAccessor( string members )
+        {
+            return new AccessorLambda( false, members );
+        }
+
+        [Lisp( "?" )]
+        public static object NullableMemberAccessor( string members )
+        {
+            return new AccessorLambda( true, members );
+        }
         [Lisp( "%set-attr" )]
         public static object SetAttr( object target, object attr, object value )
         {
@@ -61,6 +55,5 @@ namespace Kiezel
                 return result;
             }
         }
-
     }
 }

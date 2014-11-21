@@ -1,9 +1,6 @@
 // Copyright (C) Jan Tolenaar. See the file LICENSE for details.
 
-using System;
 using System.Collections;
-using System.Linq;
-using System.Text;
 
 using KeyFunc = System.Func<object, object>;
 
@@ -11,8 +8,6 @@ namespace Kiezel
 {
     public partial class Runtime
     {
-
-
         public static object QuasiQuoteExpand( object expr )
         {
             Cons list = expr as Cons;
@@ -203,7 +198,6 @@ namespace Kiezel
             return result;
         }
 
-
         internal static bool NullOrQuoted( object x )
         {
             if ( x == null )
@@ -282,6 +276,5 @@ namespace Kiezel
         }
 
 #endif
-
     }
 }

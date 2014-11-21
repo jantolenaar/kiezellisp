@@ -1,165 +1,93 @@
 // Copyright (C) Jan Tolenaar. See the file LICENSE for details.
 
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
-using System.Dynamic;
-using System.Text;
 using System.Reflection;
 
 namespace Kiezel
 {
-    internal delegate Expression CompilerHelper(Cons form, AnalysisScope scope);
-
-    internal class SpecialForm
-    {
-        internal CompilerHelper Helper;
-
-        internal SpecialForm( CompilerHelper helper )
-        {
-            Helper = helper;
-        }
-
-        public override string ToString()
-        {
-            return String.Format( "SpecialForm Name=\"{0}.{1}\"", Helper.Method.DeclaringType, Helper.Method.Name );
-        }
-    }
-
+    internal delegate Expression CompilerHelper( Cons form, AnalysisScope scope );
 
     public partial class Runtime
     {
-        internal static void RestartCompiler()
-        {
-            Symbols.And.FunctionValue = new SpecialForm( CompileAnd );
-            Symbols.Declare.FunctionValue = new SpecialForm( CompileDeclare );
-            Symbols.Def.FunctionValue = new SpecialForm( CompileDef );
-            Symbols.DefConstant.FunctionValue = new SpecialForm( CompileDefConstant );
-            Symbols.DefMacro.FunctionValue = new SpecialForm( CompileDefMacro );
-            Symbols.DefMethod.FunctionValue = new SpecialForm( CompileDefMethod );
-            Symbols.DefMulti.FunctionValue = new SpecialForm( CompileDefMulti );
-            Symbols.Defun.FunctionValue = new SpecialForm( CompileDefun );
-            Symbols.Do.FunctionValue = new SpecialForm( CompileDo );
-            Symbols.FutureVar.FunctionValue = new SpecialForm( CompileFutureVar );
-            Symbols.GetAttr.FunctionValue = new SpecialForm( CompileGetMember );
-            Symbols.GetElt.FunctionValue = new SpecialForm( CompileGetElt );
-            Symbols.Goto.FunctionValue = new SpecialForm( CompileGoto );
-            Symbols.GreekLambda.FunctionValue = new SpecialForm( CompileLambda );
-            Symbols.HiddenVar.FunctionValue = new SpecialForm( CompileHiddenVar );
-            Symbols.If.FunctionValue = new SpecialForm( CompileIf );
-            Symbols.Label.FunctionValue = new SpecialForm( CompileLabel );
-            Symbols.Lambda.FunctionValue = new SpecialForm( CompileLambda );
-            Symbols.LazyVar.FunctionValue = new SpecialForm( CompileLazyVar );
-            Symbols.Let.FunctionValue = new SpecialForm( CompileLet );
-            Symbols.LetFun.FunctionValue = new SpecialForm( CompileLetFun );
-            Symbols.MergingDo.FunctionValue = new SpecialForm( CompileMergingDo );
-            Symbols.Or.FunctionValue = new SpecialForm( CompileOr );
-            Symbols.Quote.FunctionValue = new SpecialForm( CompileQuote );
-            Symbols.Return.FunctionValue = new SpecialForm( CompileReturn );
-            Symbols.SetAttr.FunctionValue = new SpecialForm( CompileSetMember );
-            Symbols.SetElt.FunctionValue = new SpecialForm( CompileSetElt );
-            Symbols.Setq.FunctionValue = new SpecialForm( CompileSetqVariable );
-            Symbols.Throw.FunctionValue = new SpecialForm( CompileThrow );
-            Symbols.Try.FunctionValue = new SpecialForm( CompileTry );
-            Symbols.Var.FunctionValue = new SpecialForm( CompileVar );
-            Symbols.bqQuote.FunctionValue = new SpecialForm( CompileQuote );
-        }
+        internal static MethodInfo AddEventHandlerMethod = RuntimeMethod( "AddEventHandler" );
 
-        internal static void CheckLength( Cons form, int length )
-        {
-            if ( Length( form ) != length )
-            {
-                throw new LispException( "{0}: expected list with length equal to {1}", form, length );
-            }
-        }
+        internal static MethodInfo ApplyMethod = RuntimeMethod( "Apply" );
 
-        internal static void CheckMinLength( Cons form, int length )
-        {
-            if ( Length( form ) < length )
-            {
-                throw new LispException( "{0}: expected list with length greater than {1}", form, length );
-            }
-        }
+        internal static MethodInfo AsListMethod = RuntimeMethod( "AsList" );
 
-        internal static void CheckMaxLength( Cons form, int length )
-        {
-            if ( Length( form ) > length )
-            {
-                throw new LispException( "{0}: expected list with length less than {1}", form, length );
-            }
-        }
+        internal static MethodInfo AsVectorMethod = RuntimeMethod( "AsVector" );
 
-        internal static Delegate CompileToDelegate( Expression expr )
-        {
-            var lambda = expr as LambdaExpression;
+        internal static MethodInfo CastMethod = typeof( System.Linq.Enumerable ).GetMethod( "Cast" );
 
-            if ( lambda == null )
-            {
-                lambda = Expression.Lambda( expr );
-            }
+        internal static MethodInfo ChangeTypeMethod = RuntimeMethod( "ChangeType" );
 
-            if ( AdaptiveCompilation )
-            {
-                return Microsoft.Scripting.Generation.CompilerHelpers.LightCompile( lambda, CompilationThreshold );
-            }
-            else
-            {
-                return lambda.Compile();
-            }
-        }
+        internal static MethodInfo ConvertToEnumTypeMethod = RuntimeMethod( "ConvertToEnumType" );
 
-        internal static Func<object> CompileToFunction( Expression expr )
-        {
-            return ( Func<object> ) CompileToDelegate( expr );
-        }
+        internal static MethodInfo DefDynamicConstMethod = RuntimeMethod( "DefDynamicConst" );
 
-        internal static Func<object, object[],object> CompileToFunction2( Expression expr, params ParameterExpression[] parameters )
-        {
-            return ( Func<object, object[],object> ) CompileToDelegate( expr, parameters );
-        }
+        internal static MethodInfo DefDynamicMethod = RuntimeMethod( "DefDynamic" );
 
-        internal static Delegate CompileToDelegate( Expression expr, ParameterExpression[] parameters )
-        {
-            var lambda = expr as LambdaExpression;
+        internal static MethodInfo DefineConstantMethod = RuntimeMethod( "DefineConstant" );
 
-            if ( lambda == null )
-            {
-                lambda = Expression.Lambda( expr, parameters );
-            }
+        internal static MethodInfo DefineFunctionMethod = RuntimeMethod( "DefineFunction" );
 
-            if ( AdaptiveCompilation )
-            {
-                return Microsoft.Scripting.Generation.CompilerHelpers.LightCompile( lambda, CompilationThreshold );
-            }
-            else
-            {
-                return lambda.Compile();
-            }
-        }
+        internal static MethodInfo DefineMethodMethod = RuntimeMethod( "DefineMethod" );
 
-        internal static Func<Cons, object, object[], object> CompileToFunction3( Expression expr, params ParameterExpression[] parameters )
-        {
-            return ( Func<Cons, object, object[], object> ) CompileToDelegate( expr, parameters );
-        }
+        internal static MethodInfo DefineMultiMethodMethod = RuntimeMethod( "DefineMultiMethod" );
 
-        internal static bool TryOptimize( ref object expr )
-        {
-            var expr2 = Optimizer( expr );
-            var optimized = expr2 != expr;
-            expr = expr2;
-            return optimized;
-        }
+        internal static MethodInfo DefineVariableMethod = RuntimeMethod( "DefineVariable" );
 
-        [Lisp("system:optimizer")]
+        internal static MethodInfo EqualMethod = RuntimeMethod( "Equal" );
+
+        internal static Type GenericListType = GetTypeForImport( "System.Collections.Generic.List`1", null );
+
+        internal static MethodInfo GetDelayedExpressionResultMethod = RuntimeMethod( "GetDelayedExpressionResult" );
+
+        internal static MethodInfo GetDynamicMethod = RuntimeMethod( "GetDynamic" );
+
+        internal static MethodInfo GetLexicalMethod = RuntimeMethod( "GetLexical" );
+
+        internal static MethodInfo GetTaskResultMethod = RuntimeMethod( "GetTaskResult" );
+
+        internal static MethodInfo IsInstanceOfMethod = RuntimeMethod( "IsInstanceOf" );
+
+        internal static MethodInfo LogBeginCallMethod = RuntimeMethod( "LogBeginCall" );
+
+        internal static MethodInfo LogEndCallMethod = RuntimeMethod( "LogEndCall" );
+
+        internal static MethodInfo MakeLambdaClosureMethod = RuntimeMethod( typeof( LambdaDefinition ), "MakeLambdaClosure" );
+
+        internal static MethodInfo NotMethod = RuntimeMethod( "Not" );
+
+        internal static MethodInfo NullOperationMethod = RuntimeMethod( "NullOperation" );
+
+        internal static MethodInfo RestoreFrameMethod = RuntimeMethod( "RestoreFrame" );
+
+        internal static MethodInfo RestoreStackAndFrameMethod = RuntimeMethod( "RestoreStackAndFrame" );
+
+        internal static MethodInfo SaveStackAndFrameMethod = RuntimeMethod( "SaveStackAndFrame" );
+
+        internal static MethodInfo SaveStackAndFrameWithMethod = RuntimeMethod( "SaveStackAndFrameWith" );
+
+        internal static MethodInfo SetDynamicMethod = RuntimeMethod( "SetDynamic" );
+
+        internal static MethodInfo SetLexicalMethod = RuntimeMethod( "SetLexical" );
+
+        internal static MethodInfo ToBoolMethod = RuntimeMethod( "ToBool" );
+
+        internal static MethodInfo UnwindExceptionIntoNewExceptionMethod = RuntimeMethod( "UnwindExceptionIntoNewException" );
+
+        [Lisp( "system:optimizer" )]
         public static object Optimizer( object expr )
         {
-            if ( !(expr is Cons) )
+            if ( !( expr is Cons ) )
             {
                 return expr;
             }
-            var forms = (Cons)expr;
+            var forms = ( Cons ) expr;
             var head = First( expr ) as Symbol;
             if ( head != null && head.Package == LispPackage )
             {
@@ -173,15 +101,44 @@ namespace Kiezel
                     else
                     {
                         var tail = Map( Optimizer, Cdr( forms ) );
-                        bool simple = Every( Literalp, tail );
+                        bool simple = SeqBase.Every( Literalp, tail );
                         if ( simple )
                         {
-                            expr = Apply( proc, tail );
+                            expr = ApplyStar( proc, tail );
                         }
                     }
                 }
             }
             return expr;
+        }
+
+        internal static Expression CallRuntime( MethodInfo method, params Expression[] exprs )
+        {
+            return Expression.Call( method, exprs );
+        }
+
+        internal static void CheckLength( Cons form, int length )
+        {
+            if ( Length( form ) != length )
+            {
+                throw new LispException( "{0}: expected list with length equal to {1}", form, length );
+            }
+        }
+
+        internal static void CheckMaxLength( Cons form, int length )
+        {
+            if ( Length( form ) > length )
+            {
+                throw new LispException( "{0}: expected list with length less than {1}", form, length );
+            }
+        }
+
+        internal static void CheckMinLength( Cons form, int length )
+        {
+            if ( Length( form ) < length )
+            {
+                throw new LispException( "{0}: expected list with length greater than {1}", form, length );
+            }
         }
 
         internal static Expression Compile( object expr, AnalysisScope scope )
@@ -201,187 +158,349 @@ namespace Kiezel
             }
         }
 
-        internal static Expression CompileWrapped( object expr, AnalysisScope scope )
+        internal static Expression CompileAnd( Cons form, AnalysisScope scope )
         {
-            //expr = MacroExpand( expr, scope );
+            // AND forms
+            return CompileAndExpression( Cdr( form ), scope );
+        }
 
-            if ( expr is Symbol )
+        internal static Expression CompileAndExpression( Cons forms, AnalysisScope scope )
+        {
+            if ( forms == null )
             {
-                var sym = ( Symbol ) expr;
-                // This optimization does not help much, I think.
-                //if ( sym.IsDynamic || scope.HasLocalVariable( sym, int.MaxValue ) )
-                //{
-                //    return CompileGetVariable( sym, scope );
-                //}
-                //else if ( sym.IsFunction && ( sym.Value is ImportedFunction || sym.Value is ImportedConstructor ) )
-                //{
-                //    return Expression.Constant( sym.Value, typeof( object ) );
-                //}
-                //else
-                {
-                    return CompileGetVariable( sym, scope );
-                }
+                return CompileLiteral( true );
             }
-            else if ( expr is Cons )
+            else if ( Cdr( forms ) == null )
             {
-                var form = ( Cons ) expr;
-                var head = First( form ) as Symbol;
-
-                if ( head != null && !FindNameInEnvironment( head, scope ) )
-                {
-                    if ( OptimizerEnabled && TryOptimize( ref expr ) )
-                    {
-                        return Expression.Constant( expr, typeof( object ) );
-                    }
-
-                    if ( head.SpecialFormValue != null )
-                    {
-                        return head.SpecialFormValue.Helper( form, scope );
-                    }
-
-                    if ( Macrop( head.Value ) )
-                    {
-                        var expansion = MacroExpand( form, scope );
-                        return Compile( expansion, scope );
-                    }
-                }
-
-                return CompileFunctionCall( form, scope );
+                return Compile( First( forms ), scope );
             }
             else
             {
-                // anything else is a literal
-                return CompileLiteral( expr );
+                return Expression.Condition( WrapBooleanTest( Compile( First( forms ), scope ) ),
+                                             CompileAndExpression( Cdr( forms ), scope ),
+                                             CompileLiteral( null ) );
             }
         }
 
-        internal static Expression CompileLiteral( object expr )
+        internal static Expression CompileBody( Cons forms, AnalysisScope scope )
         {
-            return Expression.Constant( expr, typeof( object ) );
-        }
-
-        internal static object Execute( Expression expr )
-        {
-            var proc = CompileToFunction( expr );
-            return proc();
-        }
-
-        internal static Cons RewriteAsBinaryExpression( object oper, Cons args )
-        {
-            var result = First( args );
-
-            while ( true )
+            if ( forms == null )
             {
-                args = Cdr( args );
+                return CompileLiteral( null );
+            }
 
-                if ( args == null )
+            var bodyScope = new AnalysisScope( scope, "body" );
+            bodyScope.IsBlockScope = true;
+            bodyScope.Tilde = bodyScope.DefineNativeLocal( Symbols.Tilde, ScopeFlags.All );
+
+            if ( !DebugMode )
+            {
+                bodyScope.FreeVariables = new HashSet<Symbol>();
+            }
+            else
+            {
+                bodyScope.Names = new List<Symbol>();
+            }
+
+            foreach ( var stmt in forms )
+            {
+                var name = ExtractLabelName( stmt );
+
+                if ( name != null )
                 {
-                    break;
+                    //Console.WriteLine( "label: {0}", name );
+                    var label = Expression.Label( typeof( object ), name );
+                    bodyScope.Tags.Add( label );
+                }
+            }
+
+            var bodyExprs = CompileBodyExpressions( forms, bodyScope );
+
+            if ( bodyScope.Variables.Count == 0 && !bodyScope.UsesTilde && !bodyScope.UsesLabels )
+            {
+                if ( bodyExprs.Count == 0 )
+                {
+                    return CompileLiteral( null );
                 }
 
-                result = MakeList( oper, result, First( args ) );
-
+                if ( bodyExprs.Count == 1 )
+                {
+                    return Compile( First( forms ), scope );
+                }
             }
 
-            return (Cons) result;
+            bool recompile = false;
+
+            if ( !DebugMode && bodyScope.FreeVariables.Count != 0 )
+            {
+                recompile = true;
+            }
+
+            if ( recompile )
+            {
+                bodyScope.Variables = new List<ScopeEntry>();
+                bodyScope.Tilde = bodyScope.DefineNativeLocal( Symbols.Tilde, ScopeFlags.All );
+
+                if ( !DebugMode )
+                {
+                    if ( bodyScope.FreeVariables.Count != 0 )
+                    {
+                        // Recompile with the free variables moved from native to frame
+                        bodyScope.Names = new List<Symbol>();
+                    }
+                }
+                else
+                {
+                    bodyScope.Names = new List<Symbol>();
+                }
+
+                bodyExprs = CompileBodyExpressions( forms, bodyScope );
+            }
+
+            var parameters = bodyScope.Parameters;
+
+            if ( bodyScope.TagBodySaved != null )
+            {
+                parameters.Add( bodyScope.TagBodySaved );
+                bodyExprs.Insert( 0, Expression.Assign( bodyScope.TagBodySaved, CallRuntime( SaveStackAndFrameMethod ) ) );
+            }
+
+            Expression block = Expression.Block( typeof( object ), parameters, bodyExprs );
+
+            if ( bodyScope.Names != null || bodyScope.UsesFramedVariables )
+            {
+                var lambda = FindFirstLambda( bodyScope );
+                if ( lambda != null )
+                {
+                    lambda.UsesFramedVariables = true;
+                }
+                block = WrapEvaluationStack( block, new Frame( bodyScope.Names ) );
+            }
+            else if ( bodyScope.UsesDynamicVariables )
+            {
+                var lambda = FindFirstLambda( bodyScope );
+                if ( lambda != null )
+                {
+                    lambda.UsesDynamicVariables = true;
+                }
+                block = WrapEvaluationStack( block, null );
+            }
+
+            if ( DebugMode )
+            {
+                bodyScope.CheckVariables();
+            }
+
+            return block;
         }
 
-
-        internal static Expression CompileQuote( Cons form, AnalysisScope scope )
+        internal static List<Expression> CompileBodyExpressions( Cons forms, AnalysisScope bodyScope )
         {
-            CheckMinLength( form, 2 );
-            return CompileLiteral( Second( form ) );
+            var bodyExprs = new List<Expression>();
+            var tilde = bodyScope.Tilde;
+
+            for ( var list = forms; list != null; list = list.Cdr )
+            {
+                var expr = list.Car;
+
+                var name = ExtractLabelName( expr );
+
+                if ( name != null )
+                {
+                    AnalysisScope labelScope;
+                    LabelTarget label;
+                    TryFindTagbodyLabel( bodyScope, name, out labelScope, out label );
+                    Expression code = Expression.Label( label, CompileLiteral( null ) );
+                    bodyExprs.Add( code );
+                }
+                else
+                {
+                    var code = Compile( expr, bodyScope );
+                    if ( !( code is GotoExpression ) )
+                    {
+                        code = Expression.Assign( tilde, code );
+                    }
+                    bodyExprs.Add( code );
+                }
+            }
+
+            if ( bodyExprs[ bodyExprs.Count - 1 ] is LabelExpression )
+            {
+                bodyExprs.Add( tilde );
+            }
+
+            return bodyExprs;
         }
 
-        internal static MethodInfo RuntimeMethod( string name )
+        internal static CatchBlock CompileCatchClause( Cons form, AnalysisScope scope, ParameterExpression saved )
         {
-            return RuntimeMethod( typeof(Runtime), name);
+            // (sym [type]) forms...
+            var sym = ( Symbol ) First( First( form ) );
+            var typeName = ( Symbol ) Second( First( form ) );
+            var type = typeName == null ? typeof( Exception ) : ( Type ) GetType( typeName );
+            var forms = Cdr( form );
+            if ( sym == null )
+            {
+                var code = Expression.Catch( typeof( Exception ),
+                                    Expression.Block( typeof( object ),
+                                                      CallRuntime( RestoreFrameMethod, saved ),
+                                                      CompileBody( forms, scope ) ) );
+                return code;
+            }
+            else
+            {
+                var catchScope = new AnalysisScope( scope, "catch" );
+                var var1 = catchScope.DefineNativeLocal( Symbols.Temp, ScopeFlags.All, type );
+                var var2 = catchScope.DefineNativeLocal( sym, ScopeFlags.All );
+                var code = Expression.Catch( var1,
+                                    Expression.Block( typeof( object ),
+                                                      new ParameterExpression[] { var2 },
+                                                      CallRuntime( RestoreFrameMethod, saved ),
+                                                      Expression.Assign( var2, CallRuntime( UnwindExceptionIntoNewExceptionMethod, var1 ) ),
+                                                      CompileBody( forms, catchScope ) ) );
+                return code;
+            }
         }
 
-        internal static MethodInfo RuntimeMethod( Type type, string name )
+        internal static CatchBlock[] CompileCatchClauses( List<Cons> clauses, AnalysisScope scope, ParameterExpression saved )
         {
-            var methods = type.GetMethods( BindingFlags.Static | BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic );
-            return methods.First( x => x.Name == name );
+            var blocks = new List<CatchBlock>();
+            foreach ( var clause in clauses )
+            {
+                blocks.Add( CompileCatchClause( clause, scope, saved ) );
+            }
+            return blocks.ToArray();
         }
 
-        internal static Expression CallRuntime( MethodInfo method, params Expression[] exprs )
+        internal static Expression CompileDeclare( Cons form, AnalysisScope scope )
         {
-            return Expression.Call( method, exprs );
+            CheckLength( form, 2 );
+            if ( !scope.IsBlockScope )
+            {
+                throw new LispException( "Statement requires block scope: {0}", form );
+            }
+            foreach ( var item in Cdr( form ) )
+            {
+                if ( item is Cons )
+                {
+                    var declaration = ( Cons ) item;
+                    var declare = ( Symbol ) First( declaration );
+                    switch ( declare.Name )
+                    {
+                        case "ignore":
+                        {
+                            foreach ( Symbol sym in Cdr( declaration ) )
+                            {
+                                scope.FindLocal( sym, ScopeFlags.Ignore );
+                            }
+                            break;
+                        }
+                        case "ignorable":
+                        {
+                            foreach ( Symbol sym in Cdr( declaration ) )
+                            {
+                                scope.FindLocal( sym, ScopeFlags.Ignorable );
+                            }
+                            break;
+                        }
+                        default:
+                        {
+                            break;
+                        }
+                    }
+                }
+            }
+            return Expression.Constant( null, typeof( object ) );
         }
 
-        internal static MethodInfo SetLexicalMethod = RuntimeMethod( "SetLexical" );
-        internal static MethodInfo UnwindExceptionIntoNewExceptionMethod = RuntimeMethod( "UnwindExceptionIntoNewException" );
-        internal static MethodInfo SaveStackAndFrameMethod = RuntimeMethod( "SaveStackAndFrame" );
-        internal static MethodInfo SaveStackAndFrameWithMethod = RuntimeMethod( "SaveStackAndFrameWith" );
-        internal static MethodInfo RestoreStackAndFrameMethod = RuntimeMethod( "RestoreStackAndFrame" );
-        internal static MethodInfo RestoreFrameMethod = RuntimeMethod( "RestoreFrame" );
-        internal static MethodInfo ToBoolMethod = RuntimeMethod( "ToBool" );
-        internal static MethodInfo LogBeginCallMethod = RuntimeMethod( "LogBeginCall" );
-        internal static MethodInfo LogEndCallMethod = RuntimeMethod( "LogEndCall" );
-        internal static MethodInfo DefineMethodMethod = RuntimeMethod( "DefineMethod" );
-        internal static MethodInfo DefineMultiMethodMethod = RuntimeMethod( "DefineMultiMethod" );
-        internal static MethodInfo GetDynamicMethod = RuntimeMethod( "GetDynamic" );
-        internal static MethodInfo SetDynamicMethod = RuntimeMethod( "SetDynamic" );
-        internal static MethodInfo GetLexicalMethod = RuntimeMethod( "GetLexical" );
-        internal static MethodInfo DefDynamicMethod = RuntimeMethod( "DefDynamic" );
-        internal static MethodInfo DefDynamicConstMethod = RuntimeMethod( "DefDynamicConst" );
-        internal static MethodInfo DefineVariableMethod = RuntimeMethod( "DefineVariable" );
-        internal static MethodInfo DefineConstantMethod = RuntimeMethod( "DefineConstant" );
-        internal static MethodInfo DefineFunctionMethod = RuntimeMethod( "DefineFunction" );
-        internal static MethodInfo NullOperationMethod = RuntimeMethod( "NullOperation" );
-        internal static MethodInfo CastMethod = typeof( System.Linq.Enumerable ).GetMethod( "Cast" );
-        internal static MethodInfo AddEventHandlerMethod = RuntimeMethod( "AddEventHandler" );
-        internal static MethodInfo ConvertToEnumTypeMethod = RuntimeMethod( "ConvertToEnumType" );
-        internal static MethodInfo AsListMethod = RuntimeMethod( "AsList" );
-        internal static MethodInfo AsVectorMethod = RuntimeMethod( "AsVector" );
-        internal static MethodInfo EqualMethod = RuntimeMethod( "Equal" );
-        internal static MethodInfo IsInstanceOfMethod = RuntimeMethod( "IsInstanceOf" );
-        internal static MethodInfo NotMethod = RuntimeMethod( "Not" );
-        internal static MethodInfo ChangeTypeMethod = RuntimeMethod( "ChangeType" );
-        internal static MethodInfo MakeLambdaClosureMethod = RuntimeMethod( typeof( LambdaDefinition ), "MakeLambdaClosure" );
-        internal static MethodInfo GetTaskResultMethod = RuntimeMethod( "GetTaskResult" );
-        internal static MethodInfo GetDelayedExpressionResultMethod = RuntimeMethod( "GetDelayedExpressionResult" );
-
-        internal static Type GenericListType = GetTypeForImport( "System.Collections.Generic.List`1", null );
-
-        internal static object NullOperation( object a )
+        internal static Expression CompileDef( Cons form, AnalysisScope scope )
         {
-            return null;
+            // def sym expr [doc]
+            CheckMinLength( form, 3 );
+            CheckMaxLength( form, 4 );
+            var sym = CheckSymbol( Second( form ) );
+            var value = Compile( Third( form ), scope );
+            var doc = ( string ) Fourth( form );
+            return Expression.Call( DefineVariableMethod, Expression.Constant( sym ), value, Expression.Constant( doc, typeof( string ) ) );
         }
 
-        internal static Expression WrapEvaluationStack( Expression code, Frame frame = null, Cons form = null )
+        internal static Expression CompileDefConstant( Cons form, AnalysisScope scope )
         {
-            // For function, try and loop: anything that has a non-local exit method.
-            var saved = Expression.Parameter( typeof( ThreadContextState ), "saved" );
-            var result = Expression.Parameter( typeof( object ), "result" );
-            var index = Expression.Parameter( typeof( int ), "index" );
-            var exprs = new List<Expression>();
+            // defconstant sym expr [doc]
+            CheckMinLength( form, 3 );
+            CheckMaxLength( form, 4 );
+            var sym = CheckSymbol( Second( form ) );
+            var value = Compile( Third( form ), scope );
+            var doc = ( string ) Fourth( form );
+            return Expression.Call( DefineConstantMethod, Expression.Constant( sym ), value, Expression.Constant( doc, typeof( string ) ) );
+        }
 
-            exprs.Add( Expression.Assign( saved, CallRuntime( SaveStackAndFrameWithMethod,
-                                                                  Expression.Constant( frame, typeof( Frame ) ),
-                                                                  Expression.Constant( form, typeof( Cons ) ) ) ) );
+        internal static Expression CompileDefMacro( Cons form, AnalysisScope scope )
+        {
+            // defmacro name args body
+            CheckMinLength( form, 3 );
+            var sym = CheckSymbol( Second( form ) );
+            if ( sym.IsDynamic )
+            {
+                throw new LispException( "Invalid macro name: {0}", sym );
+            }
+            string doc;
+            var lambda = CompileLambdaDef( sym, Cddr( form ), scope, LambdaKind.Macro, out doc );
+            return Expression.Call( DefineFunctionMethod, Expression.Constant( sym ), lambda, Expression.Constant( doc, typeof( string ) ) );
+        }
 
-            //if ( form != null )
-            //{
-            //    exprs.Add( Expression.Assign( index, CallRuntime( LogBeginCallMethod, Expression.Constant( form ) ) ) );
-            //}
+        internal static Expression CompileDefMethod( Cons form, AnalysisScope scope )
+        {
+            // defmethod name args body
+            CheckMinLength( form, 3 );
+            var sym = CheckSymbol( Second( form ) );
+            if ( sym.IsDynamic )
+            {
+                throw new LispException( "Invalid method name: {0}", sym );
+            }
+            string doc;
+            var lambda = CompileLambdaDef( sym, Cddr( form ), scope, LambdaKind.Method, out doc );
+            return CallRuntime( DefineMethodMethod, Expression.Constant( sym ), lambda );
+        }
 
-            exprs.Add( Expression.Assign( result, code ) );
+        internal static Expression CompileDefMulti( Cons form, AnalysisScope scope )
+        {
+            // defmulti name args [doc] body
+            CheckMinLength( form, 3 );
+            var sym = CheckSymbol( Second( form ) );
+            if ( sym.IsDynamic )
+            {
+                throw new LispException( "Invalid method name: {0}", sym );
+            }
+            var args = ( Cons ) Third( form );
+            var body = Cdr( Cddr( form ) );
+            var syntax = MakeListStar( sym, args );
+            var lispParams = CompileFormalArgs( args, new AnalysisScope(), LambdaKind.Function );
+            string doc = "";
+            if ( Length( body ) >= 1 && body.Car is string )
+            {
+                doc = ( string ) body.Car;
+            }
+            return CallRuntime( DefineMultiMethodMethod, Expression.Constant( sym ), Expression.Constant( lispParams ), Expression.Constant( doc, typeof( string ) ) );
+        }
 
-            //if ( form != null )
-            //{
-            //    exprs.Add( CallRuntime( LogEndCallMethod, index ) );
-            //}
+        internal static Expression CompileDefun( Cons form, AnalysisScope scope )
+        {
+            // defun name args body
+            CheckMinLength( form, 3 );
+            var sym = CheckSymbol( Second( form ) );
+            if ( sym.IsDynamic )
+            {
+                throw new LispException( "Invalid function name: {0}", sym );
+            }
+            string doc;
+            var lambda = CompileLambdaDef( sym, Cddr( form ), scope, LambdaKind.Function, out doc );
+            return CallRuntime( DefineFunctionMethod, Expression.Constant( sym ), lambda, Expression.Constant( doc, typeof( string ) ) );
+        }
 
-            exprs.Add( CallRuntime( RestoreStackAndFrameMethod, saved ) );
-            exprs.Add( result );
-
-            return Expression.Block
-                    (
-                        typeof( object ),
-                        new[] { saved, result, index },
-                        exprs
-                    );
+        internal static Expression CompileDo( Cons form, AnalysisScope scope )
+        {
+            return CompileBody( Cdr( form ), scope );
         }
 
         internal static Expression CompileDynamicExpression( System.Runtime.CompilerServices.CallSiteBinder binder, Type returnType, IEnumerable<Expression> args )
@@ -396,122 +515,50 @@ namespace Kiezel
             }
         }
 
-        internal static Expression CompileFunctionCall( Cons form, AnalysisScope scope )
+        internal static Expression CompileDynamicVarInScope( Cons form, AnalysisScope scope, bool future, bool lazy, bool constant )
         {
-            CheckMinLength( form, 1 );
-            var formFunc = First( form );
-            var formArgs = Cdr( form );
-            var member = formFunc as Cons;
+            // var sym [expr]
+            var sym = ( Symbol ) Second( form );
+            var initForm = Third( form );
 
-            if ( member != null && First( member ) == Symbols.Dot )
+            if ( !scope.IsBlockScope )
             {
-                var names = (string) Second(member);
-                var args = ToIter( formArgs ).Cast<object>().Select( x => Compile( x, scope ) ).ToArray();
-                return AccessorLambdaMetaObject.MakeExpression( false, names, args );
+                throw new LispException( "Statement requires block or file scope: {0}", form );
             }
-            else if ( member != null && First( member ) == Symbols.NullableDot )
+
+            if ( lazy || future )
             {
-                var names = ( string ) Second( member );
-                var args = ToIter( formArgs ).Cast<object>().Select( x => Compile( x, scope ) ).ToArray();
-                return AccessorLambdaMetaObject.MakeExpression( true, names, args );
+                throw new LispException( "Cannot use a dynamic variable as a future or lazy variable: {0}", form );
+            }
+
+            // Initializer must be compiled before adding the variable
+            // since it may already exist. Works like nested LET forms.
+            var flags = ( ScopeFlags ) 0;
+            var val = CompileLiteral( null );
+
+            if ( Length( form ) == 2 )
+            {
+                if ( constant )
+                {
+                    throw new LispException( "Constant variable must have an initializer: {0}", sym );
+                }
             }
             else
             {
-                var func = Compile( formFunc, scope );
-                List<Expression> args = new List<Expression>();
-                args.Add( func );
-                foreach ( object a in ToIter( formArgs ) )
-                {
-                    args.Add( Compile( a, scope ) );
-                }
-                var binder = GetInvokeBinder( Length( formArgs ) );
-                var code = CompileDynamicExpression( binder, typeof( object ), args );
-                if ( !DebugMode )
-                {
-                    return code;
-                }
-                else
-                {
-                    return WrapEvaluationStack( code, null, form );
-                }
+                flags |= ScopeFlags.Initialized | ( constant ? ScopeFlags.Constant : 0 );
+                val = Compile( Third( form ), scope );
             }
-        }
 
+            scope.UsesDynamicVariables = true;
 
-        internal static Expression CompileGetMember( Cons form, AnalysisScope scope )
-        {
-            // (attr target property)
-            CheckLength( form, 3 );
-            var member = Third( form );
-
-            if ( member is string || Keywordp( member ) )
+            if ( constant )
             {
-                var name = GetDesignatedString( member );
-                var target = Compile( Second( form ), scope );
-                var binder = GetGetMemberBinder( name );
-                return Expression.Dynamic( binder, typeof( object ), new Expression[] { target } );
-            }
-            else if ( member is Cons && First( member ) == Symbols.Quote && Second( member ) is Symbol )
-            {
-                var name = ( ( Symbol ) Second( member ) ).Name;
-                var target = Compile( Second( form ), scope );
-                var binder = GetGetMemberBinder( name );
-                return Expression.Dynamic( binder, typeof( object ), new Expression[] { target } );
+                return CallRuntime( DefDynamicConstMethod, Expression.Constant( sym ), val );
             }
             else
             {
-                // not a constant name
-                var newform = MakeCons( Symbols.GetAttrFunc, Cdr( form ) );
-                return CompileFunctionCall( newform, scope );
+                return CallRuntime( DefDynamicMethod, Expression.Constant( sym ), val );
             }
-        }
-
-
-        internal static Expression CompileSetMember( Cons form,  AnalysisScope scope )
-        {
-            // (set-attr target property value)
-            CheckLength( form, 4 );
-            var member = Third( form );
-
-            if ( member is string || Keywordp( member ) )
-            {
-                var name = GetDesignatedString( member );
-                var target = Compile( Second( form ), scope );
-                var value = Compile( Fourth( form ), scope );
-                var binder = GetSetMemberBinder( name );
-                return CompileDynamicExpression( binder, typeof( object ), new Expression[] { target, value } );
-            }
-            else if ( member is Cons && First( member ) == Symbols.Quote && Second( member ) is Symbol )
-            {
-                var name = ( ( Symbol ) Second( member ) ).Name;
-                var target = Compile( Second( form ), scope );
-                var value = Compile( Fourth( form ), scope );
-                var binder = GetSetMemberBinder( name );
-                return CompileDynamicExpression( binder, typeof( object ), new Expression[] { target, value } );
-            }
-            else
-            {
-                // not a constant name
-                return CompileFunctionCall( MakeCons( Symbols.SetAttrFunc, Cdr( form ) ), scope );
-            }
-        }
-
-        internal static Expression CompileGetElt( Cons form,  AnalysisScope scope )
-        {
-            // (elt target indexes)
-            CheckMinLength( form, 3 );
-            var args = new List<Expression>( ConvertToEnumerableObject( form.Cdr ).Select( x => Compile( x, scope ) ) );
-            var binder = GetGetIndexBinder( args.Count - 1 );
-            return CompileDynamicExpression( binder, typeof( object ), args );
-        }
-
-        internal static Expression CompileSetElt( Cons form,  AnalysisScope scope )
-        {
-            // (set-elt target indexes value)
-            CheckMinLength( form, 4 );
-            var args = new List<Expression>( ConvertToEnumerableObject( form.Cdr ).Select( x => Compile( x, scope ) ) );
-            var binder = GetSetIndexBinder( args.Count - 1  );
-            return CompileDynamicExpression( binder, typeof( object ), args );
         }
 
         internal static LambdaSignature CompileFormalArgs( Cons args, AnalysisScope scope, LambdaKind kind )
@@ -539,13 +586,17 @@ namespace Kiezel
 
                     if ( sym == Symbols.Whole )
                     {
+                        if ( kind != LambdaKind.Macro )
+                        {
+                            throw new LispException( "&whole parameter can only be used for a macro" );
+                        }
                         wantWholeArgName = true;
                     }
                     else if ( sym == Symbols.Environment )
                     {
                         if ( kind != LambdaKind.Macro )
                         {
-                            throw new LispException( "&env parameter can only be used for a macro" );
+                            throw new LispException( "&environment parameter can only be used for a macro" );
                         }
                         wantEnvArgName = true;
                     }
@@ -579,7 +630,7 @@ namespace Kiezel
                             signature.Parameters.Add( new ParameterDef( sym ) );
                             signature.Names.Add( sym );
                         }
-                        else 
+                        else
                         {
                             var initForm2 = Compile( initForm, scope );
                             signature.Parameters.Add( new ParameterDef( sym, initForm: initForm2 ) );
@@ -605,9 +656,9 @@ namespace Kiezel
                         }
                         else if ( type is Cons && First( type ) == MakeSymbol( "eql", LispPackage ) )
                         {
-                            // Compile time constants! 
+                            // Compile time constants!
                             var expr = Eval( Second( type ) );
-                            ParameterDef arg = new ParameterDef( sym, specializer: new EqlSpecializer( expr ));
+                            ParameterDef arg = new ParameterDef( sym, specializer: new EqlSpecializer( expr ) );
                             signature.Parameters.Add( arg );
                             signature.Names.Add( sym );
                         }
@@ -650,93 +701,191 @@ namespace Kiezel
             return signature;
         }
 
-        internal static Expression CompileDefMacro( Cons form,  AnalysisScope scope )
+        internal static Expression CompileFunctionCall( Cons form, AnalysisScope scope )
         {
-            // defmacro name args body
-            CheckMinLength( form, 3 );
-            var sym = CheckSymbol( Second( form ) );
-            if ( sym.IsDynamic )
+            CheckMinLength( form, 1 );
+            var formFunc = First( form );
+            var formArgs = Cdr( form );
+            var member = formFunc as Cons;
+
+            if ( member != null && First( member ) == Symbols.Dot )
             {
-                throw new LispException( "Invalid macro name: {0}", sym );
+                var names = ( string ) Second( member );
+                var args = ToIter( formArgs ).Cast<object>().Select( x => Compile( x, scope ) ).ToArray();
+                return AccessorLambdaMetaObject.MakeExpression( false, names, args );
             }
-            string doc;
-            var lambda = CompileLambdaDef( sym, Cddr( form ), scope, LambdaKind.Macro, out doc );
-            return Expression.Call( DefineFunctionMethod, Expression.Constant( sym ), lambda, Expression.Constant( doc, typeof(string) ) );
-        }
-
-
-        internal static Expression CompileDefun( Cons form, AnalysisScope scope )
-        {
-            // defun name args body
-            CheckMinLength( form, 3 );
-            var sym = CheckSymbol( Second( form ) );
-            if ( sym.IsDynamic )
+            else if ( member != null && First( member ) == Symbols.NullableDot )
             {
-                throw new LispException( "Invalid function name: {0}", sym );
-            }
-            string doc;
-            var lambda = CompileLambdaDef( sym, Cddr( form ), scope, LambdaKind.Function, out doc );
-            return CallRuntime( DefineFunctionMethod, Expression.Constant( sym ), lambda, Expression.Constant( doc, typeof( string ) ) );
-        }
-
-        internal static Expression CompileDefMethod( Cons form, AnalysisScope scope )
-        {
-            // defmethod name args body
-            CheckMinLength( form, 3 );
-            var sym = CheckSymbol( Second( form ) );
-            if ( sym.IsDynamic )
-            {
-                throw new LispException( "Invalid method name: {0}", sym );
-            }
-            string doc;
-            var lambda = CompileLambdaDef( sym, Cddr( form ), scope, LambdaKind.Method, out doc );
-            return CallRuntime( DefineMethodMethod, Expression.Constant(sym), lambda );
-        }
-
-        internal static Expression CompileDefMulti( Cons form, AnalysisScope scope )
-        {
-            // defmulti name args [doc] body
-            CheckMinLength( form, 3 );
-            var sym = CheckSymbol( Second( form ) );
-            if ( sym.IsDynamic )
-            {
-                throw new LispException( "Invalid method name: {0}", sym );
-            }
-            var args = ( Cons ) Third( form );
-            var body = Cdr( Cddr ( form ) );
-            var syntax = MakeListStar( sym, args );
-            var lispParams = CompileFormalArgs( args, new AnalysisScope(), LambdaKind.Function );
-            string doc = "";
-            if ( Length( body ) >= 1 && body.Car is string )
-            {
-                doc = ( string ) body.Car;
-            }
-            return CallRuntime( DefineMultiMethodMethod, Expression.Constant( sym ), Expression.Constant( lispParams ), Expression.Constant( doc, typeof( string ) ) );
-        }
-
-        internal static Expression CompileReturn( Cons form, AnalysisScope scope )
-        {
-            // return [expr]
-            CheckMaxLength( form, 2 );
-
-            var funscope = FindFirstLambda( scope );
-
-            if ( funscope == null )
-            {
-                throw new LispException( "Invalid use of RETURN." );
-            }
-
-            if ( funscope.IsFileScope )
-            {
-                return Compile( MakeList( Symbols.ReturnFromLoad ), scope );
+                var names = ( string ) Second( member );
+                var args = ToIter( formArgs ).Cast<object>().Select( x => Compile( x, scope ) ).ToArray();
+                return AccessorLambdaMetaObject.MakeExpression( true, names, args );
             }
             else
             {
-                var value = Cadr( form );
-                return Compile( MakeList( Symbols.Goto, Symbols.FunctionExitLabel, value ), scope );
+                var func = Compile( formFunc, scope );
+                List<Expression> args = new List<Expression>();
+                args.Add( func );
+                foreach ( object a in ToIter( formArgs ) )
+                {
+                    args.Add( Compile( a, scope ) );
+                }
+                var binder = GetInvokeBinder( Length( formArgs ) );
+                var code = CompileDynamicExpression( binder, typeof( object ), args );
+                if ( !DebugMode )
+                {
+                    return code;
+                }
+                else
+                {
+                    return WrapEvaluationStack( code, null, form );
+                }
             }
         }
 
+        internal static Expression CompileFutureVar( Cons form, AnalysisScope scope )
+        {
+            return CompileVarInScope( form, scope, future: true );
+        }
+
+        internal static Expression CompileGetElt( Cons form, AnalysisScope scope )
+        {
+            // (elt target indexes)
+            CheckMinLength( form, 3 );
+            var args = new List<Expression>( ConvertToEnumerableObject( form.Cdr ).Select( x => Compile( x, scope ) ) );
+            var binder = GetGetIndexBinder( args.Count - 1 );
+            return CompileDynamicExpression( binder, typeof( object ), args );
+        }
+
+        internal static Expression CompileGetMember( Cons form, AnalysisScope scope )
+        {
+            // (attr target property)
+            CheckLength( form, 3 );
+            var member = Third( form );
+
+            if ( member is string || Keywordp( member ) )
+            {
+                var name = GetDesignatedString( member );
+                var target = Compile( Second( form ), scope );
+                var binder = GetGetMemberBinder( name );
+                return Expression.Dynamic( binder, typeof( object ), new Expression[] { target } );
+            }
+            else if ( member is Cons && First( member ) == Symbols.Quote && Second( member ) is Symbol )
+            {
+                var name = ( ( Symbol ) Second( member ) ).Name;
+                var target = Compile( Second( form ), scope );
+                var binder = GetGetMemberBinder( name );
+                return Expression.Dynamic( binder, typeof( object ), new Expression[] { target } );
+            }
+            else
+            {
+                // not a constant name
+                var newform = MakeCons( Symbols.GetAttrFunc, Cdr( form ) );
+                return CompileFunctionCall( newform, scope );
+            }
+        }
+
+        internal static Expression CompileGetVariable( Symbol sym, AnalysisScope scope )
+        {
+            if ( sym.IsDynamic )
+            {
+                return CallRuntime( GetDynamicMethod, Expression.Constant( sym ) );
+            }
+            else
+            {
+                int index;
+                int depth;
+                ParameterExpression parameter;
+                ScopeFlags flags;
+
+                if ( scope.FindLocal( sym, ScopeFlags.Referenced, out depth, out index, out parameter, out flags ) )
+                {
+                    Expression code;
+
+                    if ( parameter != null )
+                    {
+                        code = parameter;
+                    }
+                    else
+                    {
+                        code = CallRuntime( GetLexicalMethod, Expression.Constant( depth ), Expression.Constant( index ) );
+                    }
+
+                    if ( ( flags & ScopeFlags.Future ) != 0 )
+                    {
+                        // This also handles the lazy-future case.
+                        code = CallRuntime( GetTaskResultMethod, Expression.Convert( code, typeof( ThreadContext ) ) );
+                    }
+                    else if ( ( flags & ScopeFlags.Lazy ) != 0 )
+                    {
+                        code = CallRuntime( GetDelayedExpressionResultMethod, Expression.Convert( code, typeof( DelayedExpression ) ) );
+                    }
+
+                    return code;
+                }
+                else
+                {
+                    return Expression.PropertyOrField( Expression.Constant( sym ), "CheckedValue" );
+                }
+            }
+        }
+
+        internal static Expression CompileGoto( Cons form, AnalysisScope scope )
+        {
+            // goto symbol [value]
+            CheckMinLength( form, 2 );
+            CheckMaxLength( form, 3 );
+            var tag = CheckSymbol( Second( form ) );
+            var value = Compile( Third( form ), scope );
+            AnalysisScope labelScope;
+            LabelTarget label;
+            if ( !TryFindTagbodyLabel( scope, tag.LongName, out labelScope, out label ) )
+            {
+                throw new LispException( "Label {0} not found", tag );
+            }
+
+            if ( labelScope == scope )
+            {
+                var code = Expression.Block( typeof( object ),
+                                             Expression.Assign( labelScope.Tilde, value ),
+                                             RuntimeHelpers.EnsureObjectResult( Expression.Goto( label, CompileLiteral( null ) ) ) );
+                return code;
+            }
+            else
+            {
+                if ( labelScope.TagBodySaved == null )
+                {
+                    labelScope.TagBodySaved = Expression.Parameter( typeof( ThreadContextState ), "saved-for-goto" );
+                }
+
+                var code = Expression.Block( typeof( object ),
+                                            Expression.Assign( labelScope.Tilde, value ),
+                                            CallRuntime( RestoreStackAndFrameMethod, labelScope.TagBodySaved ),
+                                            RuntimeHelpers.EnsureObjectResult( Expression.Goto( label, CompileLiteral( null ) ) ) );
+                return code;
+            }
+        }
+
+        internal static Expression CompileHiddenVar( Cons form, AnalysisScope scope )
+        {
+            return CompileVarInScope( form, scope, native: true );
+        }
+
+        internal static Expression CompileIf( Cons form, AnalysisScope scope )
+        {
+            // if expr expr [expr]
+            CheckMinLength( form, 3 );
+            CheckMaxLength( form, 4 );
+            var testExpr = Compile( Second( form ), scope );
+            var thenExpr = Compile( Third( form ), scope );
+            var elseExpr = Compile( Fourth( form ), scope );
+            var test = WrapBooleanTest( testExpr );
+            return Expression.Condition( test, thenExpr, elseExpr );
+        }
+
+        internal static Expression CompileLabel( Cons form, AnalysisScope scope )
+        {
+            throw new LispException( "Labels must be placed at the top level of a implicit or explicit DO block" );
+        }
 
         internal static Expression CompileLambda( Cons form, AnalysisScope scope )
         {
@@ -746,7 +895,7 @@ namespace Kiezel
             if ( Symbolp( Second( form ) ) )
             {
                 CheckMinLength( form, 3 );
-                return CompileLambdaDef( (Symbol) Second( form ), Cddr( form ), scope, LambdaKind.Function, out doc );
+                return CompileLambdaDef( ( Symbol ) Second( form ), Cddr( form ), scope, LambdaKind.Function, out doc );
             }
             else
             {
@@ -764,7 +913,7 @@ namespace Kiezel
                 PrintWarning( "Function body contains no forms." );
             }
 
-            var maybeArgs = First(forms);
+            var maybeArgs = First( forms );
             var args = Listp( maybeArgs ) ? ( Cons ) maybeArgs : MakeList( maybeArgs );
             var body = Cdr( forms );
 
@@ -820,7 +969,7 @@ namespace Kiezel
                             }
                             else
                             {
-                                // Insert place holder 
+                                // Insert place holder
                                 var newpar = new ParameterDef( par.Sym, hidden: true );
                                 template.Signature.Parameters.Add( newpar );
                                 template.Signature.Names.Add( newpar.Sym );
@@ -870,107 +1019,235 @@ namespace Kiezel
 
             template.Proc = CompileToFunction3( code, lambdaListNative, recurNative, argsNative );
 
-            return CallRuntime( MakeLambdaClosureMethod, Expression.Constant( template, typeof( LambdaDefinition ) ) ); 
+            return CallRuntime( MakeLambdaClosureMethod, Expression.Constant( template, typeof( LambdaDefinition ) ) );
         }
 
-
-        internal static void GetLambdaParameterBindingCode( Vector code, LambdaSignature signature )
+        internal static Expression CompileLazyVar( Cons form, AnalysisScope scope )
         {
-            var temp = GenTemp();
-            for ( int i = 0; i < signature.Names.Count; ++i )
+            return CompileVarInScope( form, scope, lazy: true, constant: true );
+        }
+
+        internal static Expression CompileLet( Cons form, AnalysisScope scope )
+        {
+            return CompileVarInScope( form, scope, constant: true );
+        }
+
+        internal static Expression CompileLetFun( Cons form, AnalysisScope scope )
+        {
+            CheckMinLength( form, 3 );
+            var name = CheckSymbol( Second( form ) );
+            var lambdaForm = MakeCons( Symbols.Lambda, Cdr( form ) );
+            var letForm = MakeList( Symbols.Let, name, lambdaForm );
+            return CompileLet( letForm, scope );
+        }
+
+        internal static Expression CompileLexicalVarInScope( Cons form, AnalysisScope scope, bool native, bool future, bool lazy, bool constant )
+        {
+            // var sym [expr]
+            var sym = ( Symbol ) Second( form );
+            var initForm = Third( form );
+
+            if ( !scope.IsBlockScope )
             {
-                if ( signature.Names[ i ] != Symbols.Underscore )
+                throw new LispException( "Statement requires block or file scope: {0}", form );
+            }
+            if ( sym == Symbols.Tilde )
+            {
+                throw new LispException( "\"~\" is a reserved symbol name" );
+            }
+            if ( scope.HasLocalVariable( sym, 0 ) )
+            {
+                throw new LispException( "Duplicate declaration of variable: {0}", sym );
+            }
+
+            constant |= future | lazy;
+
+            // Initializer must be compiled before adding the variable
+            // since it may already exist. Works like nested LET forms.
+            var flags = ( ScopeFlags ) 0;
+            Expression val;
+
+            if ( Length( form ) == 2 )
+            {
+                if ( constant )
                 {
-                    if ( i >= signature.Parameters.Count || !signature.Parameters[ i ].Hidden )
-                    {
-                        code.Add( MakeList( Symbols.Var, signature.Names[ i ], MakeList( Symbols.GetElt, Symbols.Args, i ) ) );
-                    }
+                    throw new LispException( "Constant, future or lazy variable must have an initializer: {0}", form );
                 }
-            }
-            if ( signature.WholeArg != null )
-            {
-                code.Add( MakeList( Symbols.Var, signature.WholeArg, MakeList( Symbols.GetElt, Symbols.Args, signature.Names.Count ) ) );
-            }
-            if ( signature.EnvArg != null )
-            {
-                code.Add( MakeList( Symbols.Var, signature.EnvArg, MakeList( Symbols.GetElt, Symbols.Args, signature.Names.Count + ( signature.WholeArg != null ? 1 : 0 ) ) ) );
-            }
-        }
 
-        internal static Cons GetMultipleVarBindingCode( Symbol varSpecialForm, Vector names, object expr )
-        {
-            var temp = GenTemp();
-            var code = new Vector();
-            code.Add( Symbols.MergingDo );
-            code.Add( MakeList( Symbols.HiddenVar, temp, MakeList( Symbols.AsTuple, expr, names.Count ) ) );
-
-            for ( int i = 0; i < names.Count; ++i )
-            {
-                if ( names[ i ] != Symbols.Underscore )
-                {
-                    code.Add( MakeList( varSpecialForm, names[ i ], MakeList( Symbols.GetElt, temp, i ) ) );
-                }
-            }
-
-            return AsList( code );
-
-        }
-
-        internal static Expression CompileGetVariable( Symbol sym, AnalysisScope scope )
-        {
-            if ( sym.IsDynamic )
-            {
-                return CallRuntime( GetDynamicMethod, Expression.Constant( sym ) );
+                val = CompileLiteral( null );
             }
             else
             {
-                int index;
-                int depth;
-                ParameterExpression parameter;
-                ScopeFlags flags;
-
-                if ( scope.FindLocal( sym, ScopeFlags.Referenced, out depth, out index, out parameter, out flags ) )
+                flags |= ScopeFlags.Initialized | ( constant ? ScopeFlags.Constant : 0 );
+                if ( lazy && future )
                 {
-                    Expression code;
-
-                    if ( parameter != null )
-                    {
-                        code = parameter;
-                    }
-                    else
-                    {
-                        code = CallRuntime( GetLexicalMethod, Expression.Constant( depth ), Expression.Constant( index ) );
-                    }
-
-                    if ( ( flags & ScopeFlags.Future ) != 0 )
-                    {
-                        // This also handles the lazy-future case.
-                        code = CallRuntime( GetTaskResultMethod, Expression.Convert( code, typeof( ThreadContext ) ) );
-                    }
-                    else if ( ( flags & ScopeFlags.Lazy ) != 0 )
-                    {
-                        code = CallRuntime( GetDelayedExpressionResultMethod, Expression.Convert( code, typeof( DelayedExpression ) ) );
-                    }
-
-                    return code;
+                    // Wrap initializer in TASK macro and wrap references to the variable in a
+                    // GetTaskResult call (see CompileGetVariable).
+                    flags |= ScopeFlags.Lazy | ScopeFlags.Future;
+                    val = Compile( MakeList( Symbols.CreateTask, MakeList( Symbols.Lambda, null, initForm ), false ), scope );
+                }
+                else if ( lazy )
+                {
+                    // Wrap initializer in DELAY macro and wrap references to the variable in a
+                    // FORCE call.
+                    flags |= ScopeFlags.Lazy;
+                    val = Compile( MakeList( MakeSymbol( "create-delayed-expression", SystemPackage ), MakeList( Symbols.Lambda, null, initForm ) ), scope );
+                }
+                else if ( future )
+                {
+                    // Wrap initializer in TASK macro and wrap references to the variable in a
+                    // GetTaskResult call (see CompileGetVariable).
+                    flags |= ScopeFlags.Future;
+                    val = Compile( MakeList( Symbols.CreateTask, MakeList( Symbols.Lambda, null, initForm ), true ), scope );
                 }
                 else
                 {
-                    return Expression.PropertyOrField( Expression.Constant( sym ), "CheckedValue" );
+                    val = Compile( initForm, scope );
                 }
+            }
+
+            if ( scope.IsFileScope )
+            {
+                int index = scope.DefineFrameLocal( sym, flags );
+                return CallRuntime( SetLexicalMethod, Expression.Constant( 0 ), Expression.Constant( index ), val );
+            }
+            else if ( native )
+            {
+                var parameter = scope.DefineNativeLocal( sym, flags );
+                return Expression.Assign( parameter, val );
+            }
+            else if ( !DebugMode && scope.FreeVariables != null && !scope.FreeVariables.Contains( sym ) )
+            {
+                var parameter = scope.DefineNativeLocal( sym, flags );
+                return Expression.Assign( parameter, val );
+            }
+            else
+            {
+                int index = scope.DefineFrameLocal( sym, flags );
+                return CallRuntime( SetLexicalMethod, Expression.Constant( 0 ), Expression.Constant( index ), val );
             }
         }
 
-        internal static Expression CompileSetqVariable( Cons form, AnalysisScope scope )
+        internal static Expression CompileLiteral( object expr )
+        {
+            return Expression.Constant( expr, typeof( object ) );
+        }
+
+        internal static Expression CompileMergingDo( Cons forms, AnalysisScope scope )
+        {
+            if ( scope.IsBlockScope )
+            {
+                // merge
+                var expressions = CompileBodyExpressions( forms, scope );
+                Expression block = Expression.Block( typeof( object ), expressions );
+                return block;
+            }
+            else
+            {
+                // compile as do block
+                return CompileBody( Cdr( forms ), scope );
+            }
+        }
+
+        internal static Expression CompileOr( Cons form, AnalysisScope scope )
+        {
+            // OR forms
+            return CompileOrExpression( Cdr( form ), scope );
+        }
+
+        internal static Expression CompileOrExpression( Cons forms, AnalysisScope scope )
+        {
+            if ( forms == null )
+            {
+                return CompileLiteral( false );
+            }
+            else if ( Cdr( forms ) == null )
+            {
+                return Compile( First( forms ), scope );
+            }
+            else
+            {
+                var expr1 = Compile( First( forms ), scope );
+                var expr2 = CompileOrExpression( Cdr( forms ), scope );
+                var temp = Expression.Variable( typeof( object ), "temp" );
+                var tempAssign = Expression.Assign( temp, expr1 );
+                var result = Expression.Condition( WrapBooleanTest( temp ), temp, expr2 );
+
+                return Expression.Block( typeof( object ), new ParameterExpression[] { temp }, tempAssign, result );
+            }
+        }
+
+        internal static Expression CompileQuote( Cons form, AnalysisScope scope )
+        {
+            CheckMinLength( form, 2 );
+            return CompileLiteral( Second( form ) );
+        }
+
+        internal static Expression CompileReturn( Cons form, AnalysisScope scope )
+        {
+            // return [expr]
+            CheckMaxLength( form, 2 );
+
+            var funscope = FindFirstLambda( scope );
+
+            if ( funscope == null )
+            {
+                throw new LispException( "Invalid use of RETURN." );
+            }
+
+            if ( funscope.IsFileScope )
+            {
+                return Compile( MakeList( Symbols.ReturnFromLoad ), scope );
+            }
+            else
+            {
+                var value = Cadr( form );
+                return Compile( MakeList( Symbols.Goto, Symbols.FunctionExitLabel, value ), scope );
+            }
+        }
+
+        internal static Expression CompileSetElt( Cons form, AnalysisScope scope )
+        {
+            // (set-elt target indexes value)
+            CheckMinLength( form, 4 );
+            var args = new List<Expression>( ConvertToEnumerableObject( form.Cdr ).Select( x => Compile( x, scope ) ) );
+            var binder = GetSetIndexBinder( args.Count - 1 );
+            return CompileDynamicExpression( binder, typeof( object ), args );
+        }
+
+        internal static Expression CompileSetMember( Cons form, AnalysisScope scope )
+        {
+            // (set-attr target property value)
+            CheckLength( form, 4 );
+            var member = Third( form );
+
+            if ( member is string || Keywordp( member ) )
+            {
+                var name = GetDesignatedString( member );
+                var target = Compile( Second( form ), scope );
+                var value = Compile( Fourth( form ), scope );
+                var binder = GetSetMemberBinder( name );
+                return CompileDynamicExpression( binder, typeof( object ), new Expression[] { target, value } );
+            }
+            else if ( member is Cons && First( member ) == Symbols.Quote && Second( member ) is Symbol )
+            {
+                var name = ( ( Symbol ) Second( member ) ).Name;
+                var target = Compile( Second( form ), scope );
+                var value = Compile( Fourth( form ), scope );
+                var binder = GetSetMemberBinder( name );
+                return CompileDynamicExpression( binder, typeof( object ), new Expression[] { target, value } );
+            }
+            else
+            {
+                // not a constant name
+                return CompileFunctionCall( MakeCons( Symbols.SetAttrFunc, Cdr( form ) ), scope );
+            }
+        }
+
+        internal static Expression CompileSetq( Cons form, AnalysisScope scope )
         {
             // setq sym expr
-            // setq (sym...) expr
             CheckLength( form, 3 );
-
-            if ( Second( form ) is Cons )
-            {
-                return CompileMultipleSetqVariable( form, scope );
-            }
 
             var sym = CheckSymbol( Second( form ) );
             var value = Compile( Third( form ), scope );
@@ -1024,673 +1301,63 @@ namespace Kiezel
             }
         }
 
-
-        internal static Expression CompileMultipleSetqVariable( Cons form,  AnalysisScope scope )
-        {
-            // multiple-setq (sym...) expr
-            CheckLength( form, 3 );
-            var temp1 = GenTemp();
-            var temp2 = GenTemp();
-            var symbols = AsVector( ( Cons ) Second( form ) );
-            var code = new Vector();
-            code.Add( Symbols.Do );
-            code.Add( MakeList( Symbols.Var, temp1, Third( form ) ) );
-            code.Add( MakeList( Symbols.Var, temp2, MakeList( Symbols.AsTuple, temp1, symbols.Count ) ) );
-            for (int i = 0; i < symbols.Count; ++i)
-            {
-                code.Add( MakeList( Symbols.Setq, symbols[ i ], MakeList( Symbols.GetElt, temp2, i ) ) );
-            }
-            code.Add( temp1 );
-            return Compile( AsList( code ), scope );
-        }
-
-        internal static Expression CompileDef( Cons form,  AnalysisScope scope )
-        {
-            // def sym expr [doc]
-            CheckMinLength( form, 3 );
-            CheckMaxLength( form, 4 );
-            var sym = CheckSymbol( Second( form ) );
-            var value = Compile( Third( form ), scope );
-            var doc = ( string ) Fourth( form );
-            return Expression.Call( DefineVariableMethod, Expression.Constant( sym ), value, Expression.Constant( doc, typeof(string) ) );
-        }
-
-        internal static Expression CompileDefConstant( Cons form, AnalysisScope scope )
-        {
-            // defconstant sym expr [doc]
-            CheckMinLength( form, 3 );
-            CheckMaxLength( form, 4 );
-            var sym = CheckSymbol( Second( form ) );
-            var value = Compile( Third( form ), scope );
-            var doc = ( string ) Fourth( form );
-            return Expression.Call( DefineConstantMethod, Expression.Constant( sym ), value, Expression.Constant( doc, typeof( string ) ) );
-        }
-
-        internal static Expression CompileIf( Cons form,  AnalysisScope scope )
-        {
-            // if expr expr [expr]
-            CheckMinLength( form, 3 );
-            CheckMaxLength( form, 4 );
-            var testExpr = Compile( Second( form ), scope );
-            var thenExpr = Compile( Third( form ), scope );
-            var elseExpr = Compile( Fourth( form ), scope );
-            var test = WrapBooleanTest( testExpr );
-            return Expression.Condition( test, thenExpr, elseExpr );
-        }
-
-        internal static Expression CompileAnd( Cons form, AnalysisScope scope )
-        {
-            // AND forms
-            return CompileAndExpression( Cdr( form ), scope );
-        }
-
-        internal static Expression CompileAndExpression( Cons forms, AnalysisScope scope )
-        {
-            if ( forms == null )
-            {
-                return CompileLiteral( true );
-            }
-            else if ( Cdr( forms ) == null )
-            {
-                return Compile( First( forms ), scope );
-            }
-            else
-            {
-                return Expression.Condition( WrapBooleanTest( Compile( First( forms ), scope ) ),
-                                             CompileAndExpression( Cdr( forms ), scope ),
-                                             CompileLiteral( null ) );
-            }
-        }
-
-        internal static Expression CompileOr( Cons form, AnalysisScope scope )
-        {
-            // OR forms
-            return CompileOrExpression( Cdr( form ), scope );
-        }
-
-        internal static Expression CompileOrExpression( Cons forms, AnalysisScope scope )
-        {
-            if ( forms == null )
-            {
-                return CompileLiteral( false );
-            }
-            else if ( Cdr( forms ) == null )
-            {
-                return Compile( First( forms ), scope );
-            }
-            else
-            {
-                var expr1 = Compile( First( forms ), scope );
-                var expr2 = CompileOrExpression( Cdr( forms ), scope );
-                var temp = Expression.Variable( typeof( object ), "temp" );
-                var tempAssign = Expression.Assign( temp, expr1 );
-                var result = Expression.Condition( WrapBooleanTest( temp ), temp, expr2 );
-
-                return Expression.Block( typeof( object ), new ParameterExpression[] { temp }, tempAssign, result );
-            }
-        }
-
-        internal static Expression CompileDo( Cons form,  AnalysisScope scope )
-        {
-            return CompileBody( Cdr(form), scope );
-        }
-
-        internal static Expression CompileMergingDo( Cons forms, AnalysisScope scope )
-        {
-            if ( scope.IsBlockScope )
-            {
-                // merge 
-                var expressions = CompileBodyExpressions( forms, scope );
-                Expression block = Expression.Block( typeof( object ), expressions );
-                return block;
-            }
-            else
-            {
-                // compile as do block
-                return CompileBody( Cdr( forms ), scope );
-            }
-        }
-
-        internal static string ExtractLabelName( object form )
-        {
-            if ( form is Cons && First( form ) == Symbols.Label && Symbolp( Second( form ) ) )
-            {
-                if ( Keywordp( Second( form ) ) )
-                {
-                    return null;
-                }
-                return ( ( Symbol ) Second( form ) ).LongName;
-            }
-            else
-            {
-                return null;
-            }
-        }
-
-        internal static Expression CompileBody( Cons forms, AnalysisScope scope )
-        {
-            if ( forms == null )
-            {
-                return CompileLiteral( null );
-            }
-
-            var bodyScope = new AnalysisScope( scope, "body" );
-            bodyScope.IsBlockScope = true;
-
-            if ( !DebugMode )
-            {
-                bodyScope.FreeVariables = new HashSet<Symbol>();
-            }
-            else
-            {
-                bodyScope.Names = new List<Symbol>();
-            }
-
-            foreach ( var stmt in forms )
-            {
-                var name = ExtractLabelName( stmt );
-
-                if ( name != null )
-                {
-                    //Console.WriteLine( "label: {0}", name );
-                    var label = Expression.Label( typeof( object ), name );
-                    bodyScope.Tags.Add( label );
-                }
-            }
-
-            if ( bodyScope.UsesLabels )
-            {
-                bodyScope.DefineNativeLocal( Symbols.Temp, ScopeFlags.All );
-            }
-
-            var bodyExprs = CompileBodyExpressions( forms, bodyScope );
-
-            if ( bodyScope.Variables.Count == 0 && !bodyScope.UsesTilde && !bodyScope.UsesLabels )
-            {
-                if ( bodyExprs.Count == 0 )
-                {
-                    return CompileLiteral( null );
-                }
-
-                if ( bodyExprs.Count == 1 )
-                {
-                    return Compile( First( forms ), scope );
-                }
-            }
-
-            bool recompile = false;
-
-            if ( bodyScope.UsesTilde )
-            {
-                recompile = true;
-            }
-
-            if ( !DebugMode && bodyScope.FreeVariables.Count != 0 )
-            {
-                recompile = true;
-            }
-
-            if ( recompile )
-            {
-                bodyScope.Variables = new List<ScopeEntry>();
-
-                if ( bodyScope.UsesLabels )
-                {
-                    bodyScope.DefineNativeLocal( Symbols.Temp, ScopeFlags.All );
-                }
-                
-                if ( !DebugMode )
-                {
-                    if ( bodyScope.FreeVariables.Count != 0 )
-                    {
-                        // Recompile with the free variables moved from native to frame
-                        bodyScope.Names = new List<Symbol>();
-                    }
-
-                    if ( bodyScope.UsesTilde )
-                    {
-                        bodyScope.DefineNativeLocal( Symbols.Tilde, ScopeFlags.All );
-                    }
-                }
-                else
-                {
-                    bodyScope.Names = new List<Symbol>();
-                    bodyScope.DefineFrameLocal( Symbols.Tilde, ScopeFlags.All );
-                }
-
-                bodyExprs = CompileBodyExpressions( forms, bodyScope );
-            }
-
-            var parameters = bodyScope.Parameters; 
-
-            if ( bodyScope.TagBodySaved != null )
-            {
-                parameters.Add( bodyScope.TagBodySaved );
-                bodyExprs.Insert( 0, Expression.Assign( bodyScope.TagBodySaved, CallRuntime( SaveStackAndFrameMethod ) ) );
-            }
-
-            Expression block = Expression.Block( typeof( object ), parameters, bodyExprs );
-
-            if ( bodyScope.Names != null || bodyScope.UsesFramedVariables )
-            {
-                var lambda = FindFirstLambda( bodyScope );
-                if ( lambda != null )
-                {
-                    lambda.UsesFramedVariables = true;
-                }
-                block = WrapEvaluationStack( block, new Frame( bodyScope.Names ) );
-            }
-            else if ( bodyScope.UsesDynamicVariables )
-            {
-                var lambda = FindFirstLambda( bodyScope );
-                if ( lambda != null )
-                {
-                    lambda.UsesDynamicVariables = true;
-                }
-                block = WrapEvaluationStack( block, null );
-            }
-
-            if ( DebugMode )
-            {
-                bodyScope.CheckVariables();
-            }
-
-            return block;
-
-        }
-
-        internal static List<Expression> CompileBodyExpressions( Cons forms, AnalysisScope bodyScope )
-        {
-            var bodyExprs = new List<Expression>();
-            var countTilde = 0;
-
-            for ( var list = forms; list != null; list = list.Cdr )
-            {
-                var expr = list.Car;
-                var name = ExtractLabelName( expr );
-
-                if ( name != null )
-                {
-                    AnalysisScope labelScope;
-                    LabelTarget label;
-                    TryFindTagbodyLabel( bodyScope, name, out labelScope, out label );
-                    if ( bodyExprs.Count == 0 )
-                    {
-                        bodyExprs.Add( Expression.Label( label, CompileLiteral( null ) ) );
-                    }
-                    else
-                    {
-                        // Retrieve the value of the previous step from TEMP. See comment below.
-                        var value = Compile( Symbols.Temp, bodyScope );
-                        bodyExprs.Add( Expression.Label( label, value ) );
-                    }
-                }
-                else
-                {
-                    if ( list.Cdr != null && ExtractLabelName( list.Cdr.Car ) != null )
-                    {
-                        // Keep value of step in TEMP to set the value of the label. See comment above.
-                        expr = MakeList( Symbols.Setq, Symbols.Temp, expr );
-                    }
-
-                    if ( bodyScope.UsesTilde )
-                    {
-                        ++countTilde;
-                        var tilde = MakeSymbol( String.Format( "~{0}", countTilde ), LispPackage );
-                        var value = CompileVar( MakeList( Symbols.Var, tilde, expr ), bodyScope );
-                        bodyExprs.Add( value );
-                    }
-                    else
-                    {
-                        var value = Compile( expr, bodyScope );
-                        bodyExprs.Add( value );
-                    }
-                }
-            }
-
-            return bodyExprs;
-
-        }
-
-
-        internal static Expression CompileLabel( Cons form, AnalysisScope scope )
-        {
-            throw new LispException( "Labels must be placed at the top level of a implicit or explicit DO block" );
-        }
-
-        internal static Expression CompileGoto( Cons form, AnalysisScope scope )
-        {
-            // goto symbol [value]
-            CheckMinLength( form, 2 );
-            CheckMaxLength( form, 3 );
-            var tag = CheckSymbol( Second(form) );
-            var value = Compile( Third( form ), scope );
-            AnalysisScope labelScope;
-            LabelTarget label;
-            if ( !TryFindTagbodyLabel( scope, tag.LongName, out labelScope, out label ) )
-            {
-                throw new LispException( "Label {0} not found", tag );
-            }
-
-            //Console.WriteLine( " goto: {0}", label.Name );
-
-            if ( labelScope == scope )
-            {
-                var code = RuntimeHelpers.EnsureObjectResult( Expression.Goto( label, value ) );
-                return code;
-            }
-            else
-            {
-                var code = RuntimeHelpers.EnsureObjectResult( Expression.Goto( label, value ) );
-                var temp = Expression.Parameter( typeof( object ) );
-
-                if ( labelScope.TagBodySaved == null )
-                {
-                    labelScope.TagBodySaved = Expression.Parameter( typeof( ThreadContextState ), "saved-for-goto" );
-                }
-                code = Expression.Block( typeof( object ),
-                                            new ParameterExpression[] { temp },
-                                            Expression.Assign( temp, value ),
-                                            CallRuntime( RestoreStackAndFrameMethod, labelScope.TagBodySaved ),
-                                            RuntimeHelpers.EnsureObjectResult( Expression.Goto( label, temp ) ) );
-                return code;
-            }
-
-        }
-
-        /*
-        internal static Expression CompileTagBody( Cons form, AnalysisScope scope )
-        {
-            // tagbody (tag|statement)*
-            var saved = Expression.Parameter( typeof( ThreadContextState ), "saved" );
-            var exprs = new List<Expression>();
-            var tagScope = new AnalysisScope( scope, "tagbody" );
-            tagScope.TagBodySaved = saved;
-
-            exprs.Add( Expression.Assign( saved, CallRuntime( SaveStackAndFrameMethod ) ) );
-
-            foreach ( var stmt in Cdr( form ) )
-            {
-                if ( stmt is Symbol )
-                {
-                    var label = Expression.Label( typeof( object ), ( ( Symbol ) stmt ).Name );
-                    tagScope.Tags.Add( label );
-                }
-            }
-
-            foreach ( var stmt in Cdr( form ) )
-            {
-                if ( stmt is Symbol )
-                {
-                    AnalysisScope labelScope;
-                    LabelTarget label;
-                    TryFindTagbodyLabel( tagScope, ( Symbol ) stmt, out labelScope, out label );
-                    exprs.Add( Expression.Label( label, CompileLiteral( null ) ) );
-                }
-                else
-                {
-                    exprs.Add( Compile( stmt, tagScope ) );
-                }
-            }
-
-            return Expression.Block
-                    (
-                        typeof( object ),
-                        new ParameterExpression[] { saved },
-                        exprs
-                    );
-
-        }
-        */
-        internal static Expression CompileVar( Cons form, AnalysisScope scope )
-        {
-            if ( Listp( Second( form ) ) )
-            {
-                var names = AsVector( ( Cons ) Second( form ) );
-                var expr = Third( form );
-                var code = GetMultipleVarBindingCode( Symbols.Var, names, expr );
-                return Compile( code, scope );
-            }
-            else
-            {
-                return CompileVarInScope( form, scope );
-            }
-        }
-
-        internal static Expression CompileFutureVar( Cons form, AnalysisScope scope )
-        {
-            return CompileVarInScope( form, scope, future: true );
-        }
-
-        internal static Expression CompileLet( Cons form, AnalysisScope scope )
-        {
-            if ( Listp( Second( form ) ) )
-            {
-                var names = AsVector( ( Cons ) Second( form ) );
-                var expr = Third( form );
-                var code = GetMultipleVarBindingCode( Symbols.Let, names, expr );
-                return Compile( code, scope );
-            }
-            else
-            {
-                return CompileVarInScope( form, scope, constant: true );
-            }
-        }
-
-        internal static Expression CompileLetFun( Cons form, AnalysisScope scope )
-        {
-            CheckMinLength( form, 3 );
-            var name = CheckSymbol( Second( form ) );
-            var lambdaForm = MakeCons( Symbols.Lambda, Cdr( form ) );
-            var letForm = MakeList( Symbols.Let, name, lambdaForm );
-            return CompileLet( letForm, scope );
-        }
-
-        internal static Expression CompileLazyVar( Cons form, AnalysisScope scope )
-        {
-            return CompileVarInScope( form, scope, lazy: true, constant: true );
-        }
-
-        internal static Expression CompileHiddenVar( Cons form, AnalysisScope scope )
-        {
-            return CompileVarInScope( form, scope, native: true );
-        }
-
-        internal static Expression CompileDeclare( Cons form, AnalysisScope scope )
-        {
-            CheckLength( form, 2 );
-            if ( !scope.IsBlockScope )
-            {
-                throw new LispException( "Statement requires block scope: {0}", form );
-            }
-            foreach ( var item in Cdr( form ) )
-            {
-                if ( item is Cons )
-                {
-                    var declaration = ( Cons ) item;
-                    var declare = ( Symbol ) First( declaration );
-                    switch ( declare.Name )
-                    {
-                        case "ignore":
-                        {
-                            foreach ( Symbol sym in Cdr( declaration ) )
-                            {
-                                scope.FindLocal( sym, ScopeFlags.Ignore );
-                            }
-                            break;
-                        }
-                        case "ignorable":
-                        {
-                            foreach ( Symbol sym in Cdr( declaration ) )
-                            {
-                                scope.FindLocal( sym, ScopeFlags.Ignorable );
-                            }
-                            break;
-                        }
-                        default:
-                        {
-                            break;
-                        }
-                    }
-                }
-            }
-            return Expression.Constant( null, typeof( object ) );
-        }
-
-
-        internal static Expression CompileVarInScope( Cons form, AnalysisScope scope, bool native = false, bool future = false, bool lazy = false, bool constant = false )
-        {
-            // var sym [expr]
-            CheckMinLength( form, 2 );
-            CheckMaxLength( form, 3 );
-            var sym = CheckSymbol( Second( form ) );
-            if ( sym.IsDynamic )
-            {
-                return CompileDynamicVarInScope( form, scope, future, lazy, constant );
-            }
-            else
-            {
-                return CompileLexicalVarInScope( form, scope, native, future, lazy, constant );
-            }
-        }
-
-        internal static Expression CompileLexicalVarInScope( Cons form, AnalysisScope scope, bool native, bool future, bool lazy, bool constant )
-        {
-            // var sym [expr]
-            var sym = (Symbol) Second( form );
-            var initForm = Third( form );
-
-            if ( !scope.IsBlockScope )
-            {
-                throw new LispException( "Statement requires block or file scope: {0}", form );
-            }
-            if ( sym == Symbols.Tilde )
-            {
-                throw new LispException( "\"~\" is a reserved symbol name" );
-            }
-            if ( scope.HasLocalVariable( sym, 0 ) )
-            {
-                throw new LispException( "Duplicate declaration of variable: {0}", sym );
-            }
-
-            constant |= future | lazy;
-
-            // Initializer must be compiled before adding the variable
-            // since it may already exist. Works like nested LET forms.
-            var flags = ( ScopeFlags ) 0;
-            Expression val;
-
-            if ( Length( form ) == 2 )
-            {
-                if ( constant )
-                {
-                    throw new LispException( "Constant, future or lazy variable must have an initializer: {0}", form );
-                }
-
-                val = CompileLiteral( null );
-            }
-            else
-            {
-                flags |= ScopeFlags.Initialized | ( constant ? ScopeFlags.Constant : 0 );
-                if ( lazy && future )
-                {
-                    // Wrap initializer in TASK macro and wrap references to the variable in a 
-                    // GetTaskResult call (see CompileGetVariable).
-                    flags |= ScopeFlags.Lazy | ScopeFlags.Future;
-                    val = Compile( MakeList( Symbols.CreateTask, MakeList( Symbols.Lambda, null, initForm ), false ), scope );
-                }
-                else if ( lazy )
-                {
-                    // Wrap initializer in DELAY macro and wrap references to the variable in a 
-                    // FORCE call.
-                    flags |= ScopeFlags.Lazy;
-                    val = Compile( MakeList( MakeSymbol( "create-delayed-expression", SystemPackage ), MakeList( Symbols.Lambda, null, initForm ) ), scope );
-                }
-                else if ( future )
-                {
-                    // Wrap initializer in TASK macro and wrap references to the variable in a 
-                    // GetTaskResult call (see CompileGetVariable).
-                    flags |= ScopeFlags.Future;
-                    val = Compile( MakeList( Symbols.CreateTask, MakeList( Symbols.Lambda, null, initForm ), true ), scope );
-                }
-                else
-                {
-                    val = Compile( initForm, scope );
-                }
-            }
-
-            if ( scope.IsFileScope )
-            {
-                int index = scope.DefineFrameLocal( sym, flags );
-                return CallRuntime( SetLexicalMethod, Expression.Constant( 0 ), Expression.Constant( index ), val );
-            }
-            else if ( native )
-            {
-                var parameter = scope.DefineNativeLocal( sym, flags );
-                return Expression.Assign( parameter, val );
-            }
-            else if ( !DebugMode && scope.FreeVariables != null && !scope.FreeVariables.Contains( sym ) )
-            {
-                var parameter = scope.DefineNativeLocal( sym, flags );
-                return Expression.Assign( parameter, val );
-            }
-            else
-            {
-                int index = scope.DefineFrameLocal( sym, flags );
-                return CallRuntime( SetLexicalMethod, Expression.Constant( 0 ), Expression.Constant( index ), val );
-            }
-        }
-
-        internal static Expression CompileDynamicVarInScope( Cons form, AnalysisScope scope, bool future, bool lazy, bool constant )
-        {
-            // var sym [expr]
-            var sym = ( Symbol ) Second( form );
-            var initForm = Third( form );
-
-            if ( !scope.IsBlockScope )
-            {
-                throw new LispException( "Statement requires block or file scope: {0}", form );
-            }
-
-            if ( lazy || future )
-            {
-                throw new LispException( "Cannot use a dynamic variable as a future or lazy variable: {0}", form );
-            }
-
-            // Initializer must be compiled before adding the variable
-            // since it may already exist. Works like nested LET forms.
-            var flags = ( ScopeFlags ) 0;
-            var val = CompileLiteral( null );
-
-            if ( Length( form ) == 2 )
-            {
-                if ( constant )
-                {
-                    throw new LispException( "Constant variable must have an initializer: {0}", sym );
-                }
-            }
-            else
-            {
-                flags |= ScopeFlags.Initialized | ( constant ? ScopeFlags.Constant : 0 );
-                val = Compile( Third( form ), scope );
-            }
-
-            scope.UsesDynamicVariables = true;
-
-            if ( constant )
-            {
-                return CallRuntime( DefDynamicConstMethod, Expression.Constant( sym ), val );
-            }
-            else
-            {
-                return CallRuntime( DefDynamicMethod, Expression.Constant( sym ), val );
-            }
-        }
-
         internal static Expression CompileThrow( Cons form, AnalysisScope scope )
         {
             CheckMaxLength( form, 2 );
             return Expression.Block( typeof( object ), Expression.Throw( Compile( Second( form ), scope ) ), CompileLiteral( null ) );
+        }
+
+        internal static Delegate CompileToDelegate( Expression expr )
+        {
+            var lambda = expr as LambdaExpression;
+
+            if ( lambda == null )
+            {
+                lambda = Expression.Lambda( expr );
+            }
+
+            if ( AdaptiveCompilation )
+            {
+                return Microsoft.Scripting.Generation.CompilerHelpers.LightCompile( lambda, CompilationThreshold );
+            }
+            else
+            {
+                return lambda.Compile();
+            }
+        }
+
+        internal static Delegate CompileToDelegate( Expression expr, ParameterExpression[] parameters )
+        {
+            var lambda = expr as LambdaExpression;
+
+            if ( lambda == null )
+            {
+                lambda = Expression.Lambda( expr, parameters );
+            }
+
+            if ( AdaptiveCompilation )
+            {
+                return Microsoft.Scripting.Generation.CompilerHelpers.LightCompile( lambda, CompilationThreshold );
+            }
+            else
+            {
+                return lambda.Compile();
+            }
+        }
+
+        internal static Func<object> CompileToFunction( Expression expr )
+        {
+            return ( Func<object> ) CompileToDelegate( expr );
+        }
+
+        internal static Func<object, object[], object> CompileToFunction2( Expression expr, params ParameterExpression[] parameters )
+        {
+            return ( Func<object, object[], object> ) CompileToDelegate( expr, parameters );
+        }
+
+        internal static Func<Cons, object, object[], object> CompileToFunction3( Expression expr, params ParameterExpression[] parameters )
+        {
+            return ( Func<Cons, object, object[], object> ) CompileToDelegate( expr, parameters );
         }
 
         internal static Expression CompileTry( Cons form, AnalysisScope scope )
@@ -1723,10 +1390,34 @@ namespace Kiezel
             {
                 return CompileTryCatchFinally( AsList( tryForms ), catchForms, AsList( cleanupForms ), scope );
             }
-            else
+            else if ( catchForms.Count != 0 )
             {
                 return CompileTryCatch( AsList( tryForms ), catchForms, scope );
             }
+            else
+            {
+                return CompileBody( AsList( tryForms ), scope );
+            }
+        }
+
+        internal static Expression CompileTryCatch( Cons trying, List<Cons> catching, AnalysisScope scope )
+        {
+            var saved = Expression.Parameter( typeof( ThreadContextState ), "saved" );
+
+            var tryExpr = CompileBody( trying, scope );
+            var catchExprs = CompileCatchClauses( catching, scope, saved );
+
+            return Expression.Block
+                    (
+                        typeof( object ),
+                        new ParameterExpression[] { saved },
+                        Expression.Assign( saved, CallRuntime( SaveStackAndFrameMethod ) ),
+                        Expression.TryCatch
+                        (
+                            tryExpr,
+                            catchExprs
+                        )
+                    );
         }
 
         internal static Expression CompileTryCatchFinally( Cons trying, List<Cons> catching, Cons cleaning, AnalysisScope scope )
@@ -1758,68 +1449,193 @@ namespace Kiezel
                             catchExprs
                         )
                     );
-
         }
 
-        internal static Expression CompileTryCatch( Cons trying, List<Cons> catching, AnalysisScope scope )
+        internal static Expression CompileVar( Cons form, AnalysisScope scope )
         {
-            var saved = Expression.Parameter( typeof( ThreadContextState ), "saved" );
-
-            var tryExpr = CompileBody( trying, scope );
-            var catchExprs = CompileCatchClauses( catching, scope, saved );
-
-            return Expression.Block
-                    (
-                        typeof( object ),
-                        new ParameterExpression[] { saved },
-                        Expression.Assign( saved, CallRuntime( SaveStackAndFrameMethod ) ),
-                        Expression.TryCatch
-                        (
-                            tryExpr,
-                            catchExprs
-                        )
-                    );
-
+            return CompileVarInScope( form, scope );
         }
 
-        internal static CatchBlock[] CompileCatchClauses( List<Cons> clauses, AnalysisScope scope, ParameterExpression saved )
+        internal static Expression CompileVarInScope( Cons form, AnalysisScope scope, bool native = false, bool future = false, bool lazy = false, bool constant = false )
         {
-            var blocks = new List<CatchBlock>();
-            foreach ( var clause in clauses )
+            // var sym [expr]
+            CheckMinLength( form, 2 );
+            CheckMaxLength( form, 3 );
+            var sym = CheckSymbol( Second( form ) );
+            if ( sym.IsDynamic )
             {
-                blocks.Add( CompileCatchClause( clause, scope, saved ) );
+                return CompileDynamicVarInScope( form, scope, future, lazy, constant );
             }
-            return blocks.ToArray();
+            else
+            {
+                return CompileLexicalVarInScope( form, scope, native, future, lazy, constant );
+            }
         }
 
-        internal static CatchBlock CompileCatchClause( Cons form, AnalysisScope scope, ParameterExpression saved  )
+        internal static Expression CompileWrapped( object expr, AnalysisScope scope )
         {
-            // (sym [type]) forms...
-            var sym = (Symbol) First( First( form ) );
-            var typeName = ( Symbol ) Second( First( form ) );
-            var type = typeName == null ? typeof( Exception ) : (Type) GetType( typeName );
-            var forms = Cdr( form );
-            if ( sym == null )
+            if ( expr is Symbol )
             {
-                var code = Expression.Catch( typeof( Exception ), 
-                                    Expression.Block( typeof(object), 
-                                                      CallRuntime( RestoreFrameMethod, saved ), 
-                                                      CompileBody( forms, scope ) ) );
-                return code;
+                var sym = ( Symbol ) expr;
+                // This optimization does not help much, I think.
+                //if ( sym.IsDynamic || scope.HasLocalVariable( sym, int.MaxValue ) )
+                //{
+                //    return CompileGetVariable( sym, scope );
+                //}
+                //else if ( sym.IsFunction && ( sym.Value is ImportedFunction || sym.Value is ImportedConstructor ) )
+                //{
+                //    return Expression.Constant( sym.Value, typeof( object ) );
+                //}
+                //else
+                {
+                    return CompileGetVariable( sym, scope );
+                }
             }
-            else 
+            else if ( expr is Cons )
             {
-                var catchScope = new AnalysisScope( scope, "catch" );
-                var var1 = catchScope.DefineNativeLocal( Symbols.Temp, ScopeFlags.All, type );
-                var var2 = catchScope.DefineNativeLocal( sym, ScopeFlags.All );
-                var code = Expression.Catch( var1, 
-                                    Expression.Block( typeof(object), 
-                                                      new ParameterExpression[] { var2 },
-                                                      CallRuntime( RestoreFrameMethod, saved ),
-                                                      Expression.Assign( var2, CallRuntime( UnwindExceptionIntoNewExceptionMethod, var1 )),
-                                                      CompileBody( forms, catchScope ) ) );
-                return code;
+                var form = ( Cons ) expr;
+                var head = First( form ) as Symbol;
+
+                if ( head != null && !FindNameInEnvironment( head, scope ) )
+                {
+                    if ( OptimizerEnabled && TryOptimize( ref expr ) )
+                    {
+                        return Expression.Constant( expr, typeof( object ) );
+                    }
+
+                    if ( head.SpecialFormValue != null )
+                    {
+                        return head.SpecialFormValue.Helper( form, scope );
+                    }
+
+                    if ( Macrop( head.Value ) )
+                    {
+                        var expansion = MacroExpand( form, scope );
+                        return Compile( expansion, scope );
+                    }
+                }
+
+                return CompileFunctionCall( form, scope );
             }
+            else
+            {
+                // anything else is a literal
+                return CompileLiteral( expr );
+            }
+        }
+
+        internal static object Execute( Expression expr )
+        {
+            var proc = CompileToFunction( expr );
+            return proc();
+        }
+
+        internal static string ExtractLabelName( object form )
+        {
+            if ( form is Cons && First( form ) == Symbols.Label && Symbolp( Second( form ) ) )
+            {
+                if ( Keywordp( Second( form ) ) )
+                {
+                    return null;
+                }
+                return ( ( Symbol ) Second( form ) ).LongName;
+            }
+            else
+            {
+                return null;
+            }
+        }
+
+        internal static AnalysisScope FindFirstLambda( AnalysisScope scope )
+        {
+            var curscope = scope;
+            while ( curscope != null )
+            {
+                if ( curscope.IsLambda )
+                {
+                    return curscope;
+                }
+                else
+                {
+                    curscope = curscope.Parent;
+                }
+            }
+            return null;
+        }
+
+        internal static void GetLambdaParameterBindingCode( Vector code, LambdaSignature signature )
+        {
+            var temp = GenTemp();
+            for ( int i = 0; i < signature.Names.Count; ++i )
+            {
+                if ( signature.Names[ i ] != Symbols.Underscore )
+                {
+                    if ( i >= signature.Parameters.Count || !signature.Parameters[ i ].Hidden )
+                    {
+                        code.Add( MakeList( Symbols.Var, signature.Names[ i ], MakeList( Symbols.GetElt, Symbols.Args, i ) ) );
+                    }
+                }
+            }
+            if ( signature.WholeArg != null )
+            {
+                code.Add( MakeList( Symbols.Var, signature.WholeArg, MakeList( Symbols.GetElt, Symbols.Args, signature.Names.Count ) ) );
+            }
+            if ( signature.EnvArg != null )
+            {
+                code.Add( MakeList( Symbols.Var, signature.EnvArg, MakeList( Symbols.GetElt, Symbols.Args, signature.Names.Count + ( signature.WholeArg != null ? 1 : 0 ) ) ) );
+            }
+        }
+
+        internal static object NullOperation( object a )
+        {
+            return null;
+        }
+
+        internal static void RestartCompiler()
+        {
+            Symbols.And.FunctionValue = new SpecialForm( CompileAnd );
+            Symbols.bqQuote.FunctionValue = new SpecialForm( CompileQuote );
+            Symbols.Declare.FunctionValue = new SpecialForm( CompileDeclare );
+            Symbols.Def.FunctionValue = new SpecialForm( CompileDef );
+            Symbols.DefConstant.FunctionValue = new SpecialForm( CompileDefConstant );
+            Symbols.DefMacro.FunctionValue = new SpecialForm( CompileDefMacro );
+            Symbols.DefMethod.FunctionValue = new SpecialForm( CompileDefMethod );
+            Symbols.DefMulti.FunctionValue = new SpecialForm( CompileDefMulti );
+            Symbols.Defun.FunctionValue = new SpecialForm( CompileDefun );
+            Symbols.Do.FunctionValue = new SpecialForm( CompileDo );
+            Symbols.FutureVar.FunctionValue = new SpecialForm( CompileFutureVar );
+            Symbols.GetAttr.FunctionValue = new SpecialForm( CompileGetMember );
+            Symbols.GetElt.FunctionValue = new SpecialForm( CompileGetElt );
+            Symbols.Goto.FunctionValue = new SpecialForm( CompileGoto );
+            Symbols.GreekLambda.FunctionValue = new SpecialForm( CompileLambda );
+            Symbols.HiddenVar.FunctionValue = new SpecialForm( CompileHiddenVar );
+            Symbols.If.FunctionValue = new SpecialForm( CompileIf );
+            Symbols.Label.FunctionValue = new SpecialForm( CompileLabel );
+            Symbols.Lambda.FunctionValue = new SpecialForm( CompileLambda );
+            Symbols.LazyVar.FunctionValue = new SpecialForm( CompileLazyVar );
+            Symbols.Let.FunctionValue = new SpecialForm( CompileLet );
+            Symbols.LetFun.FunctionValue = new SpecialForm( CompileLetFun );
+            Symbols.MergingDo.FunctionValue = new SpecialForm( CompileMergingDo );
+            Symbols.Or.FunctionValue = new SpecialForm( CompileOr );
+            Symbols.Quote.FunctionValue = new SpecialForm( CompileQuote );
+            Symbols.Return.FunctionValue = new SpecialForm( CompileReturn );
+            Symbols.SetAttr.FunctionValue = new SpecialForm( CompileSetMember );
+            Symbols.SetElt.FunctionValue = new SpecialForm( CompileSetElt );
+            Symbols.Setq.FunctionValue = new SpecialForm( CompileSetq );
+            Symbols.Throw.FunctionValue = new SpecialForm( CompileThrow );
+            Symbols.Try.FunctionValue = new SpecialForm( CompileTry );
+            Symbols.Var.FunctionValue = new SpecialForm( CompileVar );
+        }
+
+        internal static MethodInfo RuntimeMethod( string name )
+        {
+            return RuntimeMethod( typeof( Runtime ), name );
+        }
+
+        internal static MethodInfo RuntimeMethod( Type type, string name )
+        {
+            var methods = type.GetMethods( BindingFlags.Static | BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic );
+            return methods.First( x => x.Name == name );
         }
 
         internal static bool TryFindTagbodyLabel( AnalysisScope scope, string labelName, out AnalysisScope labelScope, out LabelTarget label )
@@ -1854,29 +1670,67 @@ namespace Kiezel
             return false;
         }
 
-
-        internal static AnalysisScope FindFirstLambda( AnalysisScope scope )
+        internal static bool TryOptimize( ref object expr )
         {
-            var curscope = scope;
-            while ( curscope != null )
-            {
-                if ( curscope.IsLambda )
-                {
-                    return curscope;
-                }
-                else
-                {
-                    curscope = curscope.Parent;
-                }
-            }
-            return null;
+            var expr2 = Optimizer( expr );
+            var optimized = expr2 != expr;
+            expr = expr2;
+            return optimized;
         }
 
         internal static Expression WrapBooleanTest( Expression expr )
         {
             return CallRuntime( ToBoolMethod, expr );
         }
+
+        internal static Expression WrapEvaluationStack( Expression code, Frame frame = null, Cons form = null )
+        {
+            // For function, try and loop: anything that has a non-local exit method.
+            var saved = Expression.Parameter( typeof( ThreadContextState ), "saved" );
+            var result = Expression.Parameter( typeof( object ), "result" );
+            var index = Expression.Parameter( typeof( int ), "index" );
+            var exprs = new List<Expression>();
+
+            exprs.Add( Expression.Assign( saved, CallRuntime( SaveStackAndFrameWithMethod,
+                                                                  Expression.Constant( frame, typeof( Frame ) ),
+                                                                  Expression.Constant( form, typeof( Cons ) ) ) ) );
+
+            //if ( form != null )
+            //{
+            //    exprs.Add( Expression.Assign( index, CallRuntime( LogBeginCallMethod, Expression.Constant( form ) ) ) );
+            //}
+
+            exprs.Add( Expression.Assign( result, code ) );
+
+            //if ( form != null )
+            //{
+            //    exprs.Add( CallRuntime( LogEndCallMethod, index ) );
+            //}
+
+            exprs.Add( CallRuntime( RestoreStackAndFrameMethod, saved ) );
+            exprs.Add( result );
+
+            return Expression.Block
+                    (
+                        typeof( object ),
+                        new[] { saved, result, index },
+                        exprs
+                    );
+        }
     }
 
+    internal class SpecialForm
+    {
+        internal CompilerHelper Helper;
 
+        internal SpecialForm( CompilerHelper helper )
+        {
+            Helper = helper;
+        }
+
+        public override string ToString()
+        {
+            return String.Format( "SpecialForm Name=\"{0}.{1}\"", Helper.Method.DeclaringType, Helper.Method.Name );
+        }
+    }
 }

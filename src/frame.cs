@@ -1,30 +1,10 @@
 // Copyright (C) Jan Tolenaar. See the file LICENSE for details.
 
-
-using System;
 using System.Collections;
-using System.Collections.Specialized;
 using System.Collections.Generic;
-
-using System.Text;
 
 namespace Kiezel
 {
-
-    public class FrameAndScope
-    {
-        internal Frame Frame;
-        internal AnalysisScope Scope;
-
-        public FrameAndScope()
-        {
-            Frame = new Frame();
-            Scope = new AnalysisScope();
-            Scope.IsFileScope = true;
-            Scope.IsBlockScope = true;
-        }
-    }
-
     public class Frame : IEnumerable
     {
         internal Frame Link;
@@ -64,6 +44,26 @@ namespace Kiezel
             }
         }
 
+        internal object GetValueAt( int depth, int index )
+        {
+            int d = depth;
+            for ( Frame frame = this; frame != null; frame = frame.Link, --d )
+            {
+                if ( d == 0 )
+                {
+                    if ( frame.Values == null || index >= frame.Values.Count )
+                    {
+                        return null;
+                        //throw new LispException( "Undefined lexical variable: ({0},{1})", depth, index );
+                    }
+
+                    return frame.Values[ index ];
+                }
+            }
+
+            throw new LispException( "No lexical variable at ({0},{1})", depth, index );
+        }
+
         internal object SetValueAt( int depth, int index, object val )
         {
             int d = depth;
@@ -86,29 +86,6 @@ namespace Kiezel
 
             throw new LispException( "No lexical variable at ({0},{1})", depth, index );
         }
-
-        internal object GetValueAt( int depth, int index )
-        {
-            int d = depth;
-            for ( Frame frame = this; frame != null; frame = frame.Link, --d )
-            {
-                if ( d == 0 )
-                {
-                    if ( frame.Values == null || index >= frame.Values.Count )
-                    {
-                        return null;
-                        //throw new LispException( "Undefined lexical variable: ({0},{1})", depth, index );
-                    }
-
-                    return frame.Values[ index ];
-                }
-            }
-
-
-            throw new LispException( "No lexical variable at ({0},{1})", depth, index );
-        }
-
-      
         internal object TryGetValue( Symbol sym )
         {
             for ( Frame frame = this; frame != null; frame = frame.Link )
@@ -125,7 +102,19 @@ namespace Kiezel
 
             return null;
         }
-
     }
 
+    public class FrameAndScope
+    {
+        internal Frame Frame;
+        internal AnalysisScope Scope;
+
+        public FrameAndScope()
+        {
+            Frame = new Frame();
+            Scope = new AnalysisScope();
+            Scope.IsFileScope = true;
+            Scope.IsBlockScope = true;
+        }
+    }
 }

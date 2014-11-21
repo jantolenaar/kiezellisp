@@ -3,40 +3,17 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.Dynamic;
 using System.Linq.Expressions;
 using System.Reflection;
 
 namespace Kiezel
 {
-
-    enum LambdaKind
+    internal enum LambdaKind
     {
         Function,
         Method,
         Macro
-    }
-
-    public class LambdaDefinition
-    {
-        internal Func<Cons, object, object[], object> Proc;
-        internal Symbol Name;
-        internal Cons Syntax;
-        internal Cons Source;
-        internal LambdaSignature Signature;
-
-        internal static LambdaClosure MakeLambdaClosure( LambdaDefinition def )
-        {
-            var closure = new LambdaClosure
-            {
-                Definition = def,
-                Frame = Runtime.CurrentThreadContext.Frame
-            };
-
-            return closure;
-        }
     }
 
     public class LambdaClosure : IDynamicMetaObjectProvider, IApply, ISyntax
@@ -62,6 +39,27 @@ namespace Kiezel
             }
         }
 
+        public object ApplyLambdaFast( object[] args )
+        {
+            // Entrypoint used by compiler after rearranging args.
+            return ApplyLambdaBind( null, args, true, null );
+        }
+
+        object IApply.Apply( object[] args )
+        {
+            // Entrypoint when called via funcall or apply or map etc.
+            if ( Kind == LambdaKind.Macro )
+            {
+                throw new LispException( "Macros must be defined before use." );
+            }
+            return ApplyLambdaBind( null, args, false, null );
+        }
+
+        DynamicMetaObject IDynamicMetaObjectProvider.GetMetaObject( Expression parameter )
+        {
+            return new LambdaApplyMetaObject( parameter, this );
+        }
+
         Cons ISyntax.GetSyntax( Symbol context )
         {
             if ( Definition.Syntax != null )
@@ -73,21 +71,18 @@ namespace Kiezel
                 return null;
             }
         }
-
-        object IApply.Apply( object[] args )
+        public override string ToString()
         {
-            // Entrypoint when called via funcall or apply or map etc.
+            var name = Definition.Name;
+
             if ( Kind == LambdaKind.Macro )
             {
-                throw new LispException( "Macros must be defined before use." );
+                return String.Format( "Macro Name=\"{0}\"", name == null ? "" : name.Name );
             }
-            return ApplyLambdaBind( null, args, false, null  );
-        }
-
-        public object ApplyLambdaFast( object[] args )
-        {
-            // Entrypoint used by compiler after rearranging args.
-            return ApplyLambdaBind( null, args, true, null );
+            else
+            {
+                return String.Format( "Lambda Name=\"{0}\"", name == null ? "" : name.Name );
+            }
         }
 
         internal object ApplyLambdaBind( Cons lambdaList, object[] args, bool bound, object env )
@@ -121,21 +116,6 @@ namespace Kiezel
             }
 
             return result;
-        }
-
-        internal object[] MakeArgumentFrame( object[] input, object env )
-        {
-            var sig = Definition.Signature;
-
-            if ( sig.Kind != LambdaKind.Macro && sig.RequiredArgsCount == input.Length && sig.Names.Count == input.Length && sig.WholeArg == null )
-            {
-                // fast track if all arguments (no nested parameters) are accounted for.
-                return input;
-            }
-
-            var output = new object[ sig.Names.Count + ( sig.WholeArg == null ? 0 : 1 ) + ( sig.EnvArg == null ? 0 : 1 ) ];
-            FillDataFrame( sig, input, output, 0, env );
-            return output;
         }
 
         internal Exception FillDataFrame( LambdaSignature signature, object[] input, object[] output, int offsetOutput, object env )
@@ -212,14 +192,13 @@ namespace Kiezel
 
                     for ( int i = firstKey; i + 1 < input.Length; i += 2 )
                     {
-                        if ( arg.Sym.Name == ((Symbol)input[ i ]).Name )
+                        if ( arg.Sym.Name == ( ( Symbol ) input[ i ] ).Name )
                         {
                             val = input[ i + 1 ];
                             ++usedKeys;
                             break;
                         }
                     }
-
                 }
                 else if ( offset < input.Length )
                 {
@@ -283,47 +262,52 @@ namespace Kiezel
             return null;
         }
 
-        public override string ToString()
+        internal object[] MakeArgumentFrame( object[] input, object env )
         {
-            var name = Definition.Name;
+            var sig = Definition.Signature;
 
-            if ( Kind == LambdaKind.Macro )
+            if ( sig.Kind != LambdaKind.Macro && sig.RequiredArgsCount == input.Length && sig.Names.Count == input.Length && sig.WholeArg == null )
             {
-                return String.Format( "Macro Name=\"{0}\"", name == null ? "" : name.Name );
+                // fast track if all arguments (no nested parameters) are accounted for.
+                return input;
             }
-            else
-            {
-                return String.Format( "Lambda Name=\"{0}\"", name == null ? "" : name.Name );
-            }
-        }
 
-        DynamicMetaObject IDynamicMetaObjectProvider.GetMetaObject( Expression parameter )
-        {
-            return new LambdaApplyMetaObject( parameter, this );
+            var output = new object[ sig.Names.Count + ( sig.WholeArg == null ? 0 : 1 ) + ( sig.EnvArg == null ? 0 : 1 ) ];
+            FillDataFrame( sig, input, output, 0, env );
+            return output;
         }
     }
 
-
-    class TailCall
+    public class LambdaDefinition
     {
-        IApply Proc;
-        object[] Args;
-
-        public TailCall( IApply proc, object[] args )
+        internal Symbol Name;
+        internal Func<Cons, object, object[], object> Proc;
+        internal LambdaSignature Signature;
+        internal Cons Source;
+        internal Cons Syntax;
+        internal static LambdaClosure MakeLambdaClosure( LambdaDefinition def )
         {
-            Proc = proc;
-            Args = args;
+            var closure = new LambdaClosure
+            {
+                Definition = def,
+                Frame = Runtime.CurrentThreadContext.Frame
+            };
+
+            return closure;
         }
-
-        public object Run()
+    }
+    public partial class Runtime
+    {
+        [Lisp( "system:create-tailcall" )]
+        public static object CreateTailCall( IApply proc, params object[] args )
         {
-            return Proc.Apply( Args );
+            return new TailCall( proc, args );
         }
     }
 
-    class ApplyWrapper : IApply, IDynamicMetaObjectProvider
+    internal class ApplyWrapper : IApply, IDynamicMetaObjectProvider
     {
-        IApply Proc;
+        private IApply Proc;
 
         public ApplyWrapper( IApply proc )
         {
@@ -332,17 +316,94 @@ namespace Kiezel
 
         object IApply.Apply( object[] args )
         {
-            return Runtime.Apply( Proc, args[ 0 ] );
+            return Runtime.ApplyStar( Proc, args[ 0 ] );
         }
 
         DynamicMetaObject IDynamicMetaObjectProvider.GetMetaObject( Expression parameter )
         {
             return new GenericApplyMetaObject<ApplyWrapper>( parameter, this );
         }
-
     }
 
-    class LambdaApplyMetaObject : DynamicMetaObject
+    internal class ApplyWrapper2 : IApply, IDynamicMetaObjectProvider
+    {
+        private Func<object[], object> Proc;
+
+        public ApplyWrapper2( Func<object[], object> proc )
+        {
+            Proc = proc;
+        }
+
+        object IApply.Apply( object[] args )
+        {
+            return Proc( args );
+        }
+
+        DynamicMetaObject IDynamicMetaObjectProvider.GetMetaObject( Expression parameter )
+        {
+            return new GenericApplyMetaObject<ApplyWrapper2>( parameter, this );
+        }
+    }
+
+    internal class IdentityApplyWrapper : IApply
+    {
+        object IApply.Apply( object[] args )
+        {
+            return Runtime.Identity( args );
+        }
+    }
+
+    internal class EqualApplyWrapper : IApply
+    {
+        object IApply.Apply( object[] args )
+        {
+            return Runtime.Equal( args );
+        }
+    }
+
+    internal class StructurallyEqualApplyWrapper : IApply
+    {
+        object IApply.Apply( object[] args )
+        {
+            return Runtime.StructurallyEqual( args[0], args[1] );
+        }
+    }
+
+    internal class CompareApplyWrapper : IApply
+    {
+        object IApply.Apply( object[] args )
+        {
+            return Runtime.Compare( args[0], args[1] );
+        }
+    }
+
+    internal class GenericApplyMetaObject<T> : DynamicMetaObject
+    {
+        internal T lambda;
+
+        public GenericApplyMetaObject( Expression objParam, T lambda )
+            : base( objParam, BindingRestrictions.Empty, lambda )
+        {
+            this.lambda = lambda;
+        }
+
+        public override DynamicMetaObject BindInvoke( InvokeBinder binder, DynamicMetaObject[] args )
+        {
+            // TODO: optimize lambda calls
+            MethodInfo method = typeof( IApply ).GetMethod( "Apply" );
+            var list = new List<Expression>();
+            foreach ( var arg in args )
+            {
+                list.Add( RuntimeHelpers.ConvertArgument( arg, typeof( object ) ) );
+            }
+            var callArg = Expression.NewArrayInit( typeof( object ), list );
+            var expr = Expression.Call( Expression.Convert( this.Expression, typeof( T ) ), method, callArg );
+            var restrictions = BindingRestrictions.GetTypeRestriction( this.Expression, typeof( T ) );
+            return new DynamicMetaObject( RuntimeHelpers.EnsureObjectResult( expr ), restrictions );
+        }
+    }
+
+    internal class LambdaApplyMetaObject : DynamicMetaObject
     {
         internal LambdaClosure lambda;
 
@@ -361,93 +422,10 @@ namespace Kiezel
             restrictions = BindingRestrictions.GetInstanceRestriction( this.Expression, this.Value ).Merge( restrictions );
             return new DynamicMetaObject( RuntimeHelpers.EnsureObjectResult( expr ), restrictions );
         }
-
     }
 
-    class LambdaHelpers
+    internal class LambdaHelpers
     {
-
-        internal static BindingRestrictions GetGenericRestrictions( LambdaClosure method, DynamicMetaObject[] args )
-        {
-            var methodList = method.Generic.Lambdas;
-            var restrictions = BindingRestrictions.Empty;
-
-            //
-            // Restrictions for this method
-            //
-
-            for ( int i = 0; i < method.Definition.Signature.RequiredArgsCount; ++i )
-            {
-                var par = method.Definition.Signature.Parameters[ i ];
-                if ( par.Specializer != null )
-                {
-                    var restr = BindingRestrictions.GetExpressionRestriction( Expression.Call( Runtime.IsInstanceOfMethod, args[ i ].Expression, Expression.Constant( par.Specializer ) ) );
-                    restrictions = restrictions.Merge( restr );
-                }
-            }
-
-            //
-            // Additional NOT restrictions for lambdas that come before the method and fully subtype the method.
-            //
-
-            foreach ( LambdaClosure lambda in methodList )
-            {
-                if ( lambda == method )
-                {
-                    break;
-                }
-
-                bool lambdaSubtypesMethod = true;
-
-                for ( int i = 0; i < method.Definition.Signature.RequiredArgsCount; ++i )
-                {
-                    var par = method.Definition.Signature.Parameters[ i ];
-                    var par2 = lambda.Definition.Signature.Parameters[ i ];
-
-                    if ( !Runtime.IsSubtype( par2.Specializer, par.Specializer, false ) )
-                    {
-                        lambdaSubtypesMethod = false;
-                        break;
-                    }
-                }
-
-                if ( !lambdaSubtypesMethod )
-                {
-                    continue;
-                }
-
-                Expression tests = null;
-
-                for ( int i = 0; i < method.Definition.Signature.RequiredArgsCount; ++i )
-                {
-                    var par = method.Definition.Signature.Parameters[ i ];
-                    var par2 = lambda.Definition.Signature.Parameters[ i ];
-
-                    if ( Runtime.IsSubtype( par2.Specializer, par.Specializer, true ) )
-                    {
-                        var test = Expression.Not( Expression.Call( Runtime.IsInstanceOfMethod, args[ i ].Expression,
-                                                        Expression.Constant( par2.Specializer ) ) );
-                        if ( tests == null)
-                        {
-                            tests = test;
-                        }
-                        else
-                        {
-                            tests = Expression.Or(tests,test);
-                        }
-                    }
-                }
-
-                if ( tests != null )
-                {
-                    var restr = BindingRestrictions.GetExpressionRestriction( tests );
-                    restrictions = restrictions.Merge( restr );
-                }
-            }
-
-            return restrictions;
-        }
-
         internal static Expression FillDataFrame( LambdaSignature signature, DynamicMetaObject[] input, ref BindingRestrictions restrictions )
         {
             var elementType = typeof( object );
@@ -562,45 +540,101 @@ namespace Kiezel
             return Expression.NewArrayInit( elementType, output );
         }
 
-   
-    }
-
-    class GenericApplyMetaObject<T> : DynamicMetaObject
-    {
-        internal T lambda;
-
-        public GenericApplyMetaObject( Expression objParam, T lambda )
-            : base( objParam, BindingRestrictions.Empty, lambda )
+        internal static BindingRestrictions GetGenericRestrictions( LambdaClosure method, DynamicMetaObject[] args )
         {
-            this.lambda = lambda;
-        }
+            var methodList = method.Generic.Lambdas;
+            var restrictions = BindingRestrictions.Empty;
 
-        public override DynamicMetaObject BindInvoke( InvokeBinder binder, DynamicMetaObject[] args )
-        {
-            // TODO: optimize lambda calls
-            MethodInfo method = typeof( IApply ).GetMethod( "Apply" );
-            var list = new List<Expression>();
-            foreach ( var arg in args )
+            //
+            // Restrictions for this method
+            //
+
+            for ( int i = 0; i < method.Definition.Signature.RequiredArgsCount; ++i )
             {
-                list.Add( RuntimeHelpers.ConvertArgument( arg, typeof( object ) ) );
+                var par = method.Definition.Signature.Parameters[ i ];
+                if ( par.Specializer != null )
+                {
+                    var restr = BindingRestrictions.GetExpressionRestriction( Expression.Call( Runtime.IsInstanceOfMethod, args[ i ].Expression, Expression.Constant( par.Specializer ) ) );
+                    restrictions = restrictions.Merge( restr );
+                }
             }
-            var callArg = Expression.NewArrayInit( typeof( object ), list );
-            var expr = Expression.Call( Expression.Convert( this.Expression, typeof( T ) ), method, callArg );
-            var restrictions = BindingRestrictions.GetTypeRestriction( this.Expression, typeof( T ) );
-            return new DynamicMetaObject( RuntimeHelpers.EnsureObjectResult( expr ), restrictions );
-        }
 
+            //
+            // Additional NOT restrictions for lambdas that come before the method and fully subtype the method.
+            //
+
+            foreach ( LambdaClosure lambda in methodList )
+            {
+                if ( lambda == method )
+                {
+                    break;
+                }
+
+                bool lambdaSubtypesMethod = true;
+
+                for ( int i = 0; i < method.Definition.Signature.RequiredArgsCount; ++i )
+                {
+                    var par = method.Definition.Signature.Parameters[ i ];
+                    var par2 = lambda.Definition.Signature.Parameters[ i ];
+
+                    if ( !Runtime.IsSubtype( par2.Specializer, par.Specializer, false ) )
+                    {
+                        lambdaSubtypesMethod = false;
+                        break;
+                    }
+                }
+
+                if ( !lambdaSubtypesMethod )
+                {
+                    continue;
+                }
+
+                Expression tests = null;
+
+                for ( int i = 0; i < method.Definition.Signature.RequiredArgsCount; ++i )
+                {
+                    var par = method.Definition.Signature.Parameters[ i ];
+                    var par2 = lambda.Definition.Signature.Parameters[ i ];
+
+                    if ( Runtime.IsSubtype( par2.Specializer, par.Specializer, true ) )
+                    {
+                        var test = Expression.Not( Expression.Call( Runtime.IsInstanceOfMethod, args[ i ].Expression,
+                                                        Expression.Constant( par2.Specializer ) ) );
+                        if ( tests == null )
+                        {
+                            tests = test;
+                        }
+                        else
+                        {
+                            tests = Expression.Or( tests, test );
+                        }
+                    }
+                }
+
+                if ( tests != null )
+                {
+                    var restr = BindingRestrictions.GetExpressionRestriction( tests );
+                    restrictions = restrictions.Merge( restr );
+                }
+            }
+
+            return restrictions;
+        }
     }
 
-    public partial class Runtime
+    internal class TailCall
     {
-        [Lisp( "system:create-tailcall" )]
-        public static object CreateTailCall( IApply proc, params object[] args )
+        private object[] Args;
+        private IApply Proc;
+        public TailCall( IApply proc, object[] args )
         {
-            return new TailCall( proc, args );
+            Proc = proc;
+            Args = args;
+        }
+
+        public object Run()
+        {
+            return Proc.Apply( Args );
         }
     }
 }
-
-
-  

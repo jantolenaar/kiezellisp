@@ -4,8 +4,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
-using System.Text;
-using System.Reflection;
 
 namespace Kiezel
 {
@@ -23,102 +21,46 @@ namespace Kiezel
         All = 31
     }
 
-    public class ScopeEntry
-    {
-        public int Index;
-        public ParameterExpression Parameter;
-        public ScopeFlags Flags;
-        public Symbol Key;
-
-        public ScopeEntry( Symbol key, int index, ScopeFlags flags )
-        {
-            Key = key;
-            Index = index;
-            Parameter = null;
-            Flags = flags;
-        }
-
-        public ScopeEntry( Symbol key, ParameterExpression parameter, ScopeFlags flags )
-        {
-            Key = key;
-            Index = -1;
-            Parameter = parameter;
-            Flags = flags;
-        }
-
-        public bool Initialized
-        {
-            get
-            {
-                return ( Flags & ScopeFlags.Initialized ) != 0;
-            }
-        }
-
-        public bool Referenced
-        {
-            get
-            {
-                return ( Flags & ScopeFlags.Referenced ) != 0;
-            }
-        }
-
-        public bool Assigned
-        {
-            get
-            {
-                return ( Flags & ScopeFlags.Assigned ) != 0;
-            }
-        }
-
-        public bool Ignore
-        {
-            get
-            {
-                return ( Flags & ScopeFlags.Ignore ) != 0;
-            }
-        }
-
-        public bool Ignorable
-        {
-            get
-            {
-                return ( Flags & ScopeFlags.Ignorable ) != 0;
-            }
-        }
-
-    }
-
     public class AnalysisScope
     {
+        public HashSet<Symbol> FreeVariables;
+
+        public bool IsBlockScope;
+
+        public bool IsFileScope;
+
+        public bool IsLambda;
+
+        public string Name;
+
+        public List<Symbol> Names = null;
+
+        public AnalysisScope Parent;
+
+        public ParameterExpression TagBodySaved;
+
+        public List<LabelTarget> Tags = new List<LabelTarget>();
+
+        public ParameterExpression Tilde;
+
+        public bool UsesDynamicVariables = false;
+
+        public bool UsesFramedVariables = false;
+
+        public bool UsesTilde = false;
+
+        public List<ScopeEntry> Variables = new List<ScopeEntry>();
+
         public AnalysisScope()
         {
         }
 
         public AnalysisScope( AnalysisScope parent, string name )
-            :this()
+            : this()
         {
             Parent = parent;
             Name = name;
         }
-
-        public bool IsFileScope;
-        public bool IsBlockScope;
-        public string Name;
-        public AnalysisScope Parent;
-        public bool IsLambda;
-        public bool UsesTilde;
-        public ParameterExpression TagBodySaved;
-        public List<LabelTarget> Tags = new List<LabelTarget>();
-        public List<ScopeEntry> Variables = new List<ScopeEntry>();
-
-        public bool UsesLabels
-        {
-            get
-            {
-                return Tags.Count != 0;
-            }
-        }
-
         public List<ParameterExpression> Parameters
         {
             get
@@ -127,17 +69,43 @@ namespace Kiezel
             }
         }
 
-        public List<Symbol> Names = null;
-        public bool UsesDynamicVariables = false;
-        public bool UsesFramedVariables = false;
-        public HashSet<Symbol> FreeVariables;
-
-        public ParameterExpression DefineNativeLocal( Symbol sym, ScopeFlags flags, Type type = null )
+        public bool UsesLabels
         {
-            var parameter = Expression.Parameter( type ?? typeof( object ), sym.Name );
-            Variables.Add( new ScopeEntry( sym, parameter, flags ) );
+            get
+            {
+                return Tags.Count != 0;
+            }
+        }
+        public void CheckVariables()
+        {
+            string context = null;
 
-            return parameter;
+            for ( AnalysisScope sc = this; sc != null; sc = sc.Parent )
+            {
+                if ( sc.IsLambda && sc.Name != null )
+                {
+                    context = sc.Name;
+                    break;
+                }
+            }
+
+            foreach ( var v in Variables )
+            {
+                if ( v.Ignorable )
+                {
+                }
+                else if ( !v.Referenced )
+                {
+                    if ( !v.Key.Name.StartsWith( "__" ) && !v.Key.Name.StartsWith( "~" ) && !v.Key.Name.StartsWith( "%" ) && !v.Ignore )
+                    {
+                        PrintWarning( context, "unreferenced variable", v.Key );
+                    }
+                }
+                else if ( !v.Initialized && !v.Assigned )
+                {
+                    PrintWarning( context, "uninitialized variable", v.Key );
+                }
+            }
         }
 
         public int DefineFrameLocal( Symbol sym, ScopeFlags flags )
@@ -154,6 +122,13 @@ namespace Kiezel
             return Names.Count - 1;
         }
 
+        public ParameterExpression DefineNativeLocal( Symbol sym, ScopeFlags flags, Type type = null )
+        {
+            var parameter = Expression.Parameter( type ?? typeof( object ), sym.Name );
+            Variables.Add( new ScopeEntry( sym, parameter, flags ) );
+
+            return parameter;
+        }
         public bool FindLocal( Symbol sym, ScopeFlags reason )
         {
             int depth;
@@ -184,26 +159,24 @@ namespace Kiezel
             {
                 ScopeEntry item;
 
-                if ( sc.IsBlockScope && sym.Name[0] == '~' )
-                {
-                    // If a block uses ~ we must recompile because the tilde variable is
-                    // not defined in the first compile pass.
-                    UsesTilde = true;
-                }
-
                 for ( int i = sc.Variables.Count - 1; i >= 0; --i )
                 {
                     item = sc.Variables[ i ];
 
-                    // Looking for exact match or the most recent tilde
-                    if ( item.Key == sym || ( sym == Symbols.Tilde && item.Key.Name[ 0 ] == '~' ) )
+                    // Looking for exact match
+                    if ( item.Key == sym )
                     {
+                        if ( sym == Symbols.Tilde )
+                        {
+                            UsesTilde = true;
+                        }
+
                         if ( item.Index != -1 )
                         {
                             index = item.Index;
                             item.Flags |= reason;
                         }
-                        else if ( reason != 0 && noCapturedNativeParametersBeyondThisPoint && sym.Name[ 0 ] != '~' )
+                        else if ( reason != 0 && noCapturedNativeParametersBeyondThisPoint && sym != Symbols.Tilde )
                         {
                             // Linq.Expression closures do not support native variables defined
                             // outside the LambdaExpression. Whenever we encounter such a variable
@@ -226,7 +199,7 @@ namespace Kiezel
                     }
                 }
 
-                if ( sc.IsBlockScope && sym.Name[0] == '~' )
+                if ( sc.IsBlockScope && sym == Symbols.Tilde )
                 {
                     // boundary for ~ variable which is tightly coupled to its DO block.
                     break;
@@ -261,40 +234,6 @@ namespace Kiezel
             ScopeFlags flags;
             return FindLocal( name, 0, out realDepth, out depth, out index, out parameter, out flags ) && realDepth <= maxDepth;
         }
-
-        public void CheckVariables()
-        {
-            string context = null;
-
-            for ( AnalysisScope sc = this; sc != null; sc = sc.Parent )
-            {
-                if ( sc.IsLambda && sc.Name != null )
-                {
-                    context = sc.Name;
-                    break;
-                }
-            }
-
-            foreach ( var v in Variables )
-            {
-                if ( v.Ignorable )
-                {
-
-                }
-                else if ( !v.Referenced )
-                {
-                    if ( !v.Key.Name.StartsWith( "__" ) && !v.Key.Name.StartsWith( "~" ) && !v.Key.Name.StartsWith( "%" ) && !v.Ignore )
-                    {
-                        PrintWarning( context, "unreferenced variable", v.Key );
-                    }
-                }
-                else if ( !v.Initialized && !v.Assigned )
-                {
-                    PrintWarning( context, "uninitialized variable", v.Key );
-                }
-            }
-        }
-
         internal void PrintWarning( string context, string error, Symbol sym )
         {
             if ( context == null )
@@ -306,7 +245,68 @@ namespace Kiezel
                 Runtime.PrintWarning( error, " ", sym.Name, " in ", context );
             }
         }
-
     }
 
+    public class ScopeEntry
+    {
+        public ScopeFlags Flags;
+        public int Index;
+        public Symbol Key;
+        public ParameterExpression Parameter;
+        public ScopeEntry( Symbol key, int index, ScopeFlags flags )
+        {
+            Key = key;
+            Index = index;
+            Parameter = null;
+            Flags = flags;
+        }
+
+        public ScopeEntry( Symbol key, ParameterExpression parameter, ScopeFlags flags )
+        {
+            Key = key;
+            Index = -1;
+            Parameter = parameter;
+            Flags = flags;
+        }
+
+        public bool Assigned
+        {
+            get
+            {
+                return ( Flags & ScopeFlags.Assigned ) != 0;
+            }
+        }
+
+        public bool Ignorable
+        {
+            get
+            {
+                return ( Flags & ScopeFlags.Ignorable ) != 0;
+            }
+        }
+
+        public bool Ignore
+        {
+            get
+            {
+                return ( Flags & ScopeFlags.Ignore ) != 0;
+            }
+        }
+
+        public bool Initialized
+        {
+            get
+            {
+                return ( Flags & ScopeFlags.Initialized ) != 0;
+            }
+        }
+
+        public bool Referenced
+        {
+            get
+            {
+                return ( Flags & ScopeFlags.Referenced ) != 0;
+            }
+        }
+    }
 }

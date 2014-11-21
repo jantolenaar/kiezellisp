@@ -1,8 +1,5 @@
 // Copyright (C) Jan Tolenaar. See the file LICENSE for details.
 
-
-using System;
-
 namespace Kiezel
 {
     internal class DefaultValue : IPrintsValue
@@ -14,5 +11,4 @@ namespace Kiezel
             return "#default-value";
         }
     }
-
 }

@@ -14,10 +14,12 @@
 
 (import "System.Net.WebRequest")
 (import "System.Net.HttpStatusCode")
+(import "System.Net.CookieContainer")
+(import "System.Uri")
 
 
-(defun get (url)
-    (using (response (get-response url))
+(defun get (url &key cookie-container headers)
+    (using (response (get-response url cookie-container headers))
         (let type (.content-type response))
         (let result (as-prototype response))
         (declare (ignore type))
@@ -28,8 +30,13 @@
         result))
 
         
-(defun get-response (url)
+(defun get-response (url cookie-container headers)
     (let request (web-request:create (url-with-format url)))
+    (loop
+        (for item on-list headers by cddr)
+        (.add (.headers request) (first item) (second item)))
+    (describe (.headers request))
+    (setf (.cookie-container request) cookie-container)
     (.get-response request))
 
 (defun url-with-format (url)

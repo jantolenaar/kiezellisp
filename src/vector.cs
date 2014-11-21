@@ -1,61 +1,10 @@
 // Copyright (C) Jan Tolenaar. See the file LICENSE for details.
 
-
-using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.IO;
 
 namespace Kiezel
 {
-
-    public class Vector : List<object> //ArrayList
-    {
-        internal Vector()
-            : base( 20 )
-        {
-        }
-
-        internal Vector( int size )
-            : base( size )
-        {
-        }
-
-        internal Vector( params object[] items )
-        {
-            if ( items != null  )
-            {
-                var j = items.Length;
-                for ( var i = 0; i < j; ++i )
-                {
-                    Add( items[i] );
-                }
-            }
-        }
-
-        public void AddRange( IEnumerable items )
-        {
-            if ( items != null )
-            {
-                foreach ( var item in items )
-                {
-                    Add( item );
-                }
-            }
-        }
-
-        public new Vector GetRange( int index, int count )
-        {
-            Vector z = new Vector();
-            for ( int i = 0; i < count; ++i )
-            {
-                z.Add( this[ i + index ] );
-            }
-            return z;
-        }
-
-    }
-
     public partial class Runtime
     {
         [Lisp( "vector" )]
@@ -79,6 +28,52 @@ namespace Kiezel
             }
             v.AddRange( ( IEnumerable ) items[ n - 1 ] );
             return v;
+        }
+    }
+
+    public class Vector : List<object> //ArrayList
+    {
+        internal Vector()
+            : base( 20 )
+        {
+        }
+
+        internal Vector( int size )
+            : base( size )
+        {
+        }
+
+        internal Vector( params object[] items )
+        {
+            if ( items != null )
+            {
+                var j = items.Length;
+                for ( var i = 0; i < j; ++i )
+                {
+                    Add( items[ i ] );
+                }
+            }
+        }
+
+        public void AddRange( IEnumerable items )
+        {
+            if ( items != null )
+            {
+                foreach ( var item in items )
+                {
+                    Add( item );
+                }
+            }
+        }
+
+        public new Vector GetRange( int index, int count )
+        {
+            Vector z = new Vector();
+            for ( int i = 0; i < count; ++i )
+            {
+                z.Add( this[ i + index ] );
+            }
+            return z;
         }
     }
 }

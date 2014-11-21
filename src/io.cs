@@ -1,41 +1,114 @@
 // Copyright (C) Jan Tolenaar. See the file LICENSE for details.
 
-
 using System;
 using System.Collections;
-using System.Collections.Generic;
-using System.Linq;
-using System.Linq.Expressions;
-using System.Text;
-using System.Numerics;
-using Numerics;
-using System.Reflection;
-using System.Dynamic;
-using System.Runtime.CompilerServices;
-using System.Diagnostics;
 using System.IO;
-using System.Threading;
+using System.Linq;
+using System.Numerics;
 using System.Text.RegularExpressions;
-using System.Globalization;
 
 namespace Kiezel
 {
-    class CharacterRepresentation
-    {
-        internal char Code;
-        internal string EscapeString;
-        internal string Name;
-
-        internal CharacterRepresentation( char code, string escape, string name )
-        {
-            Code = code;
-            EscapeString = escape;
-            Name = name;
-        }
-    };
-
     public partial class Runtime
     {
+        internal static CharacterRepresentation[] CharacterTable = new CharacterRepresentation[]
+        {
+            new CharacterRepresentation( '\0', @"\0", "null" ),
+            new CharacterRepresentation( '\a', @"\a", "alert" ),
+            new CharacterRepresentation( '\b', @"\b", "backspace" ),
+            new CharacterRepresentation( ' ', null, "space" ),
+            new CharacterRepresentation( ';', null, "semicolon" ),
+            new CharacterRepresentation( '"', null, "double-quote" ),
+            new CharacterRepresentation( '\f', @"\f", "page" ),
+            new CharacterRepresentation( '\n', @"\n", "newline" ),
+            new CharacterRepresentation( '\r', @"\r", "return" ),
+            new CharacterRepresentation( '\t', @"\t", "tab" ),
+            new CharacterRepresentation( '\v', @"\v", "vtab" ),
+            new CharacterRepresentation( '\"', @"\""", null ),
+            new CharacterRepresentation( '\\', @"\\", null )
+        };
+
+        internal static long prevReadKeyTime = -1;
+
+        [Lisp( "break-on-ctrl-d" )]
+        public static void BreakOnCtrlD()
+        {
+            if ( prevReadKeyTime == -1 || StopWatch.ElapsedMilliseconds >= prevReadKeyTime + 1000 )
+            {
+                prevReadKeyTime = StopWatch.ElapsedMilliseconds;
+
+                if ( Console.KeyAvailable )
+                {
+                    var info = Console.ReadKey( true );
+                    if ( info.Modifiers == ConsoleModifiers.Control && info.Key == ConsoleKey.D )
+                    {
+                        throw new InterruptException();
+                    }
+                }
+            }
+        }
+
+        [Lisp( "system:dispose" )]
+        public static void Dispose( object resource )
+        {
+            if ( resource is IDisposable )
+            {
+                ( ( IDisposable ) resource ).Dispose();
+            }
+        }
+
+        [Lisp( "find-source-file" )]
+        public static string FindSourceFile( object filespec )
+        {
+            string file = NormalizePath( GetDesignatedString( filespec ) );
+            string[] candidates;
+
+            if ( String.IsNullOrWhiteSpace( Path.GetExtension( file ) ) )
+            {
+                var basename = Path.GetFileNameWithoutExtension( file );
+                candidates = new string[] { file + ".k",
+                                            file + ".kiezel",
+                                            file + "/" + basename + ".k",
+                                            file + "/" + basename + ".kiezel",
+                                            file + "/main.k",
+                                            file + "/main.kiezel" };
+            }
+            else
+            {
+                candidates = new string[] { file };
+            }
+
+            string path = FindSourceFile( candidates );
+
+            return path;
+        }
+
+        [Lisp( "load" )]
+        public static void Load( object filespec, params object[] args )
+        {
+            var file = GetDesignatedString( filespec );
+
+            if ( !TryLoad( file, args ) )
+            {
+                throw new LispException( "File not loaded: {0}", file );
+            }
+        }
+
+        [Lisp( "print" )]
+        public static void Print( params object[] items )
+        {
+            foreach ( object item in items )
+            {
+                Write( item, Symbols.Escape, false );
+            }
+        }
+
+        [Lisp( "print-line" )]
+        public static void PrintLine( params object[] items )
+        {
+            Print( items );
+            Print( "\n" );
+        }
 
         [Lisp( "read" )]
         public static object Read( params object[] kwargs )
@@ -54,6 +127,26 @@ namespace Kiezel
             return value;
         }
 
+        [Lisp( "read-all" )]
+        public static object ReadAll( params object[] kwargs )
+        {
+            var args = ParseKwargs( kwargs, new string[] { "stream" }, GetDynamic( Symbols.StdIn ) );
+            var stdin = args[ 0 ];
+            if ( stdin as LispReader == null )
+            {
+                return null;
+            }
+            var parser = ( LispReader ) stdin;
+            return AsList( parser.ReadAll() );
+        }
+
+        [Lisp( "read-all-from-string" )]
+        public static Cons ReadAllFromString( string text, params object[] kwargs )
+        {
+            var parser = new LispReader( text );
+            return AsList( parser.ReadAll() );
+        }
+
         [Lisp( "read-delimited-list" )]
         public static object ReadDelimitedList( string terminator, params object[] kwargs )
         {
@@ -70,20 +163,6 @@ namespace Kiezel
             var value = parser.ReadDelimitedList( terminator );
             return value;
         }
-
-        [Lisp( "read-all" )]
-        public static object ReadAll( params object[] kwargs )
-        {
-            var args = ParseKwargs( kwargs, new string[] { "stream" }, GetDynamic( Symbols.StdIn ) );
-            var stdin = args[ 0 ];
-            if ( stdin as LispReader == null )
-            {
-                return null;
-            }
-            var parser = ( LispReader ) stdin;
-            return AsList( parser.ReadAll() );
-        }
-
         [Lisp( "read-from-string" )]
         public static object ReadFromString( string text, params object[] kwargs )
         {
@@ -92,32 +171,259 @@ namespace Kiezel
             var parser = new LispReader( text );
             return Read( Symbols.Stream, parser, Symbols.EofValue, eofValue );
         }
-
-        [Lisp( "read-all-from-string" )]
-        public static Cons ReadAllFromString( string text, params object[] kwargs )
+        [Lisp( "require" )]
+        public static void Require( object filespec, params object[] args )
         {
-            var parser = new LispReader( text );
-            return AsList( parser.ReadAll() );
+            var file = GetDesignatedString( filespec );
+            //if ( GetDynamic( Symbols.ScriptName ) == null )
+            //{
+            //    throw new LispException( "Require can only be called from another load/require." );
+            //}
+            var modules = ( Cons ) Symbols.Modules.Value;
+            var found = Find( file, modules );
+            if ( found == null )
+            {
+                Symbols.Modules.Value = MakeCons( file, modules );
+                if ( !TryLoad( file, args ) )
+                {
+                    Symbols.Modules.Value = Cdr( modules );
+                    throw new LispException( "File not loaded: {0}", file );
+                }
+            }
         }
 
-        internal static long prevReadKeyTime = -1;
-
-        [Lisp("break-on-ctrl-d")]
-        public static void BreakOnCtrlD()
+        [Lisp( "return-from-load" )]
+        public static void ReturnFromLoad()
         {
-            if ( prevReadKeyTime == -1 || StopWatch.ElapsedMilliseconds >= prevReadKeyTime + 1000 )
-            {
-                prevReadKeyTime = StopWatch.ElapsedMilliseconds;
+            throw new ReturnFromLoadException();
+        }
 
-                if ( Console.KeyAvailable )
+        [Lisp( "run" )]
+        public static void Run( object filespec, params object[] args )
+        {
+            Load( filespec, args );
+            var main = Symbols.Main.Value as IApply;
+            if ( main != null )
+            {
+                Funcall( main );
+            }
+        }
+
+        [Lisp( "set-load-path" )]
+        public static Cons SetLoadPath( params string[] folders )
+        {
+            var paths = AsList( folders.Select( x => PathExtensions.GetUnixName( Path.GetFullPath( x ) ) ) );
+            Symbols.LoadPath.Value = paths;
+            return paths;
+        }
+
+        [Lisp( "write" )]
+        public static void Write( object item, params object[] kwargs )
+        {
+            Write( item, false, kwargs );
+        }
+
+        [Lisp( "write-line" )]
+        public static void WriteLine( object item, params object[] kwargs )
+        {
+            Write( item, true, kwargs );
+        }
+
+        [Lisp( "write-to-string" )]
+        public static string WriteToString( object item, params object[] kwargs )
+        {
+            using ( var stream = new StringWriter() )
+            {
+                var kwargs2 = new Vector( kwargs );
+                kwargs2.Add( Symbols.Stream );
+                kwargs2.Add( stream );
+                Write( item, kwargs2.ToArray() );
+                return stream.ToString();
+            }
+        }
+
+        internal static TextWriter ConvertToTextWriter( object stream )
+        {
+            if ( stream == DefaultValue.Value )
+            {
+                stream = GetDynamic( Symbols.StdOut );
+            }
+
+            if ( stream == null )
+            {
+                return null;
+            }
+            else if ( stream is bool )
+            {
+                if ( ( bool ) stream )
                 {
-                    var info = Console.ReadKey( true );
-                    if ( info.Modifiers == ConsoleModifiers.Control && info.Key == ConsoleKey.D )
+                    return Console.Out;
+                }
+                else
+                {
+                    return null;
+                }
+            }
+            else if ( stream is string )
+            {
+                return OpenLogTextWriter( ( string ) stream );
+            }
+            else
+            {
+                return ( TextWriter ) stream;
+            }
+        }
+
+        internal static char DecodeCharacterName( string token )
+        {
+            if ( token.Length == 0 )
+            {
+                return Convert.ToChar( 0 );
+            }
+            else if ( token.Length == 1 )
+            {
+                return token[ 0 ];
+            }
+            else
+            {
+                foreach ( var rep in CharacterTable )
+                {
+                    if ( rep.Name == token )
                     {
-                        throw new InterruptException();
+                        return rep.Code;
+                    }
+                }
+
+                throw new LispException( "Invalid character name: {0}", token );
+            }
+        }
+
+        internal static string EncodeCharacterName( char ch )
+        {
+            foreach ( var rep in CharacterTable )
+            {
+                if ( rep.Code == ch && rep.Name != null )
+                {
+                    return rep.Name;
+                }
+            }
+
+            return new string( ch, 1 );
+        }
+
+        internal static string EscapeCharacterString( string str )
+        {
+            var buf = new StringWriter();
+            foreach ( char ch in str )
+            {
+                WriteEscapeCharacter( buf, ch );
+            }
+            return buf.ToString();
+        }
+
+        internal static string FindSourceFile( string[] names )
+        {
+            if ( Path.IsPathRooted( names[ 0 ] ) )
+            {
+                foreach ( var file in names )
+                {
+                    if ( File.Exists( file ) )
+                    {
+                        return NormalizePath( file );
                     }
                 }
             }
+            else
+            {
+                if ( true )
+                {
+                    var dir = Environment.CurrentDirectory;
+                    if ( !String.IsNullOrEmpty( dir ) )
+                    {
+                        foreach ( string file in names )
+                        {
+                            var path = NormalizePath( PathExtensions.Combine( dir, file ) );
+                            if ( File.Exists( path ) )
+                            {
+                                return path;
+                            }
+                        }
+                    }
+                }
+
+                foreach ( string dir in ToIter( ( Cons ) GetDynamic( Symbols.LoadPath ) ) )
+                {
+                    foreach ( string file in names )
+                    {
+                        var path = NormalizePath( PathExtensions.Combine( dir, file ) );
+                        if ( File.Exists( path ) )
+                        {
+                            return path;
+                        }
+                    }
+                }
+            }
+
+            return null;
+        }
+
+        internal static string NormalizePath( string path )
+        {
+            return path == null ? "" : path.Replace( "\\", "/" );
+        }
+
+        internal static TextWriter OpenLogTextWriter( string name )
+        {
+            // .NET filestreams cannot really be shared by processes for logging, because
+            // each process has its own idea of the end of the file when appending. So they
+            // overwrite each others data.
+            // This function opens/writes/closes the file for each writelog call.
+            // It relies on a IOException in the case of file sharing problems.
+
+            if ( String.IsNullOrWhiteSpace( name ) )
+            {
+                return null;
+            }
+
+            for ( int i = 0; i < 100; ++i )
+            {
+                DateTime date = DateTime.Now.Date;
+                string file = name + date.ToString( "-yyyy-MM-dd" ) + ".log";
+                string dir = Path.GetDirectoryName( file );
+                Directory.CreateDirectory( dir );
+
+                try
+                {
+                    var fs = new FileStream( file, FileMode.Append, FileAccess.Write, FileShare.Read );
+                    try
+                    {
+                        var stream = new StreamWriter( fs );
+                        return stream;
+                    }
+                    catch
+                    {
+                        fs.Close();
+                        throw;
+                    }
+                }
+                catch ( Exception ex )
+                {
+                    if ( ex.Message.IndexOf( "used by another" ) == -1 )
+                    {
+                        throw;
+                    }
+
+                    // Give other process a chance to finish writing
+                    System.Threading.Thread.Sleep( 10 );
+                }
+            }
+
+            return null;
+        }
+
+        internal static void PrettyPrint( object stream, int currentOffset, object obj )
+        {
+            WriteLine( obj, Symbols.Stream, stream, Symbols.Left, currentOffset, Symbols.Escape, true, Symbols.Pretty, true, Symbols.kwForce, false );
         }
 
         internal static string ToPrintString( object obj, bool escape = true, int radix = -1 )
@@ -169,13 +475,11 @@ namespace Kiezel
                                  + ( ( rx.Options & RegexOptions.IgnoreCase ) != 0 ? "i" : "" )
                                  + ( ( rx.Options & RegexOptions.Multiline ) != 0 ? "m" : "" )
                                  + ( ( rx.Options & RegexOptions.Singleline ) != 0 ? "s" : "" );
-
                 }
                 else
                 {
                     return rx.ToString();
                 }
-
             }
             else if ( obj is DateTime )
             {
@@ -287,205 +591,12 @@ namespace Kiezel
                 return "#<" + obj.ToString() + ">";
             }
         }
-
-
-        internal static CharacterRepresentation[] CharacterTable = new CharacterRepresentation[] 
-        {
-            new CharacterRepresentation( '\0', @"\0", "null" ),
-            new CharacterRepresentation( '\a', @"\a", "alert" ),
-            new CharacterRepresentation( '\b', @"\b", "backspace" ),
-            new CharacterRepresentation( ' ', null, "space" ),
-            new CharacterRepresentation( ';', null, "semicolon" ),
-            new CharacterRepresentation( '"', null, "double-quote" ),
-            new CharacterRepresentation( '\f', @"\f", "page" ),
-            new CharacterRepresentation( '\n', @"\n", "newline" ),
-            new CharacterRepresentation( '\r', @"\r", "return" ),
-            new CharacterRepresentation( '\t', @"\t", "tab" ),
-            new CharacterRepresentation( '\v', @"\v", "vtab" ),
-            new CharacterRepresentation( '\"', @"\""", null ),
-            new CharacterRepresentation( '\\', @"\\", null )
-        };
-
-        internal static char UnescapeCharacter( char ch )
-        {
-            foreach ( var rep in CharacterTable )
-            {
-                if ( rep.EscapeString != null && rep.EscapeString[1] == ch )
-                {
-                    return rep.Code;
-                }
-            }
-
-            return ch;
-        }
-
-        internal static void WriteEscapeCharacter( TextWriter stream, char ch )
-        {
-            foreach ( var rep in CharacterTable )
-            {
-                if ( rep.Code == ch && rep.EscapeString != null )
-                {
-                    stream.Write( rep.EscapeString );
-                    return;
-                }
-            }
-
-            if ( ch < ' ' )
-            {
-                stream.Write( @"\x{0:x2}", ( int ) ch );
-            }
-            else
-            {
-                stream.Write( ch );
-            }
-        }
-
-        internal static string EscapeCharacterString( string str )
-        {
-            var buf = new StringWriter();
-            foreach ( char ch in str )
-            {
-                WriteEscapeCharacter( buf, ch );
-            }
-            return buf.ToString();
-        }
-
-
-        internal static char DecodeCharacterName( string token )
-        {
-            if ( token.Length == 0 )
-            {
-                return Convert.ToChar( 0 );
-            }
-            else if ( token.Length == 1 )
-            {
-                return token[ 0 ];
-            }
-            else
-            {
-                foreach ( var rep in CharacterTable )
-                {
-                    if ( rep.Name == token )
-                    {
-                        return rep.Code;
-                    }
-                }
-
-                throw new LispException( "Invalid character name: {0}", token );
-            }
-        }
-
-        internal static string EncodeCharacterName( char ch )
-        {
-            foreach ( var rep in CharacterTable )
-            {
-                if ( rep.Code == ch && rep.Name != null )
-                {
-                    return rep.Name;
-                }
-            }
-
-            return new string( ch, 1 );
-        }
-
-        internal static string NormalizePath( string path )
-        {
-            return path == null ? "" : path.Replace( "\\", "/" );
-        }
-
-        [Lisp("set-load-path")]
-        public static Cons SetLoadPath( params string[] folders )
-        {
-            var paths = AsList( folders.Select( x => PathExtensions.GetUnixName( Path.GetFullPath( x ) ) ) );
-            Symbols.LoadPath.Value = paths;
-            return paths;
-        }
-
-        internal static string FindSourceFile( string[] names )
-        {
-            if ( Path.IsPathRooted( names[ 0 ] ) )
-            {
-                foreach ( var file in names )
-                {
-                    if ( File.Exists( file ) )
-                    {
-                        return NormalizePath( file );
-                    }
-                }
-            }
-            else
-            {
-
-                if ( true )
-                {
-                    var dir = Environment.CurrentDirectory;
-                    if ( !String.IsNullOrEmpty( dir ) )
-                    {
-                        foreach ( string file in names )
-                        {
-                            var path = NormalizePath( PathExtensions.Combine( dir, file ) );
-                            if ( File.Exists( path ) )
-                            {
-                                return path;
-                            }
-                        }
-                    }
-                }
-
-                foreach ( string dir in ToIter( ( Cons ) GetDynamic( Symbols.LoadPath ) ) )
-                {
-                    foreach ( string file in names )
-                    {
-                        var path = NormalizePath( PathExtensions.Combine( dir, file ) );
-                        if ( File.Exists( path ) )
-                        {
-                            return path;
-                        }
-                    }
-                }
-            }
-
-            return null;
-        }
-
-        [Lisp( "find-source-file" )]
-        public static string FindSourceFile( object filespec )
-        {
-            string file = NormalizePath( GetDesignatedString( filespec ) );
-            string[] candidates;
-
-            if ( String.IsNullOrWhiteSpace( Path.GetExtension( file ) ) )
-            {
-                var basename = Path.GetFileNameWithoutExtension( file );
-                candidates = new string[] { file + ".k", 
-                                            file + ".kiezel", 
-                                            file + "/" + basename + ".k",
-                                            file + "/" + basename + ".kiezel",
-                                            file + "/main.k", 
-                                            file + "/main.kiezel" };
-            }
-            else
-            {
-                candidates = new string[] { file };
-            }
-
-            string path = FindSourceFile( candidates );
-
-            return path;
-        }
-
         internal static bool TryLoad( string file, params object[] args )
         {
             object[] kwargs = ParseKwargs( args, new string[] { "verbose", "print" }, DefaultValue.Value, DefaultValue.Value );
             var verbose = ToBool( kwargs[ 0 ] == DefaultValue.Value ? GetDynamic( Symbols.LoadVerbose ) : kwargs[ 0 ] );
             var print = ToBool( kwargs[ 1 ] == DefaultValue.Value ? GetDynamic( Symbols.LoadPrint ) : kwargs[ 1 ] );
             return TryLoad( file, false, verbose, print );
-        }
-
-        [Lisp("return-from-load")]
-        public static void ReturnFromLoad()
-        {
-            throw new ReturnFromLoadException();
         }
 
         internal static bool TryLoad( string file, bool loadDebug, bool loadVerbose, bool loadPrint )
@@ -559,184 +670,17 @@ namespace Kiezel
             return true;
         }
 
-        [Lisp( "run" )]
-        public static void Run( object filespec, params object[] args )
+        internal static char UnescapeCharacter( char ch )
         {
-            Load( filespec, args );
-            var main = Symbols.Main.Value as IApply;
-            if ( main != null )
+            foreach ( var rep in CharacterTable )
             {
-                Funcall( main );
-            }
-        }
-
-        [Lisp( "load" )]
-        public static void Load( object filespec, params object[] args )
-        {
-            var file = GetDesignatedString( filespec );
-
-            if ( !TryLoad( file, args ) )
-            {
-                throw new LispException( "File not loaded: {0}", file );
-            }
-        }
-
-        [Lisp( "require" )]
-        public static void Require( object filespec, params object[] args )
-        {
-            var file = GetDesignatedString( filespec );
-            if ( GetDynamic( Symbols.ScriptName ) == null )
-            {
-                throw new LispException( "Require can only be called from another load/require." );
-            }
-            var modules = ( Cons ) Symbols.Modules.Value;
-            var found = Find( file, modules );
-            if ( found == null )
-            {
-                Symbols.Modules.Value = MakeCons( file, modules );
-                if ( !TryLoad( file, args ) )
+                if ( rep.EscapeString != null && rep.EscapeString[ 1 ] == ch )
                 {
-                    Symbols.Modules.Value = Cdr( modules );
-                    throw new LispException( "File not loaded: {0}", file );
-                }
-            }
-        }
-
-        [Lisp("print-line")]
-        public static void PrintLine( params object[] items )
-        {
-            Print( items );
-            Print( "\n" );
-        }
-
-        [Lisp( "print" )]
-        public static void Print( params object[] items )
-        {
-            foreach ( object item in items )
-            {
-                Write( item, Symbols.Escape, false );
-            }
-        }
-
-        internal static void PrettyPrint( object stream, int currentOffset, object obj )
-        {
-            WriteLine( obj, Symbols.Stream, stream, Symbols.Left, currentOffset, Symbols.Escape, true, Symbols.Pretty, true, Symbols.kwForce, false );
-        }
-
-        [Lisp("system:dispose")]
-        public static void Dispose( object resource )
-        {
-            if ( resource is IDisposable )
-            {
-                ( ( IDisposable ) resource ).Dispose();
-            }
-        }
-
-        internal static TextWriter ConvertToTextWriter( object stream )
-        {
-            if ( stream == DefaultValue.Value )
-            {
-                stream = GetDynamic( Symbols.StdOut );
-            }
-
-            if ( stream == null )
-            {
-                return null;
-            }
-            else if ( stream is bool )
-            {
-                if ( ( bool ) stream )
-                {
-                    return Console.Out;
-                }
-                else
-                {
-                    return null;
-                }
-            }
-            else if ( stream is string )
-            {
-                return OpenLogTextWriter( ( string ) stream );
-            }
-            else
-            {
-                return ( TextWriter ) stream;
-            }
-        }
-
-        internal static TextWriter OpenLogTextWriter( string name )
-        {
-
-            // .NET filestreams cannot really be shared by processes for logging, because
-            // each process has its own idea of the end of the file when appending. So they
-            // overwrite each others data.
-            // This function opens/writes/closes the file for each writelog call.
-            // It relies on a IOException in the case of file sharing problems.
-            
-            if ( String.IsNullOrWhiteSpace( name ) )
-			{
-                return null;
-			}
-
-            for (int i = 0; i < 100; ++i )
-            {
-                DateTime date = DateTime.Now.Date;
-                string file = name + date.ToString( "-yyyy-MM-dd" ) + ".log";
-                string dir = Path.GetDirectoryName( file );
-                Directory.CreateDirectory( dir );
-
-                try
-                {
-                    var fs = new FileStream( file, FileMode.Append, FileAccess.Write, FileShare.Read );
-                    try
-                    {
-                        var stream = new StreamWriter( fs );
-                        return stream;
-                    }
-                    catch
-                    {
-                        fs.Close();
-                        throw;
-                    }
-                }
-                catch ( Exception ex )
-                {
-                    if ( ex.Message.IndexOf( "used by another" ) == -1 )
-                    {
-                        throw;
-                    }
-
-                    // Give other process a chance to finish writing
-                    System.Threading.Thread.Sleep( 10 );
+                    return rep.Code;
                 }
             }
 
-            return null;
-        }
-
-        [Lisp( "write-to-string" )]
-        public static string WriteToString( object item, params object[] kwargs )
-        {
-            using ( var stream = new StringWriter() )
-            {
-                var kwargs2 = new Vector( kwargs );
-                kwargs2.Add( Symbols.Stream );
-                kwargs2.Add( stream );
-                Write( item, kwargs2.ToArray() );
-                return stream.ToString();
-            }
-        }
-
-        [Lisp( "write-line" )]
-        public static void WriteLine( object item, params object[] kwargs )
-        {
-            Write( item, true, kwargs );
-        }
-
-        [Lisp( "write" )]
-        public static void Write( object item, params object[] kwargs )
-        {
-            Write( item, false, kwargs );
+            return ch;
         }
 
         internal static void Write( object item, bool crlf, params object[] kwargs )
@@ -764,7 +708,7 @@ namespace Kiezel
             var force = ToBool( args[ 8 ] );
             var color = args[ 9 ];
             var bkcolor = args[ 10 ];
-            var format = (string) args[ 11 ];
+            var format = ( string ) args[ 11 ];
 
             try
             {
@@ -793,7 +737,7 @@ namespace Kiezel
                     kwargs2.Add( Symbols.Right );
                     kwargs2.Add( right );
 
-                    Apply( Symbols.PrettyPrintHook.Value, kwargs2 );
+                    ApplyStar( ( IApply ) Symbols.PrettyPrintHook.Value, kwargs2 );
 
                     if ( crlf )
                     {
@@ -811,14 +755,34 @@ namespace Kiezel
             {
                 if ( outputstream is string )
                 {
-                    // Appending to log file. 
+                    // Appending to log file.
                     stream.Close();
                 }
             }
         }
 
-        internal static void WriteImp( object item, TextWriter stream, bool escape = true, int width = 0, 
-                        string padding = " ", int radix = -1, bool crlf = false, 
+        internal static void WriteEscapeCharacter( TextWriter stream, char ch )
+        {
+            foreach ( var rep in CharacterTable )
+            {
+                if ( rep.Code == ch && rep.EscapeString != null )
+                {
+                    stream.Write( rep.EscapeString );
+                    return;
+                }
+            }
+
+            if ( ch < ' ' )
+            {
+                stream.Write( @"\x{0:x2}", ( int ) ch );
+            }
+            else
+            {
+                stream.Write( ch );
+            }
+        }
+        internal static void WriteImp( object item, TextWriter stream, bool escape = true, int width = 0,
+                        string padding = " ", int radix = -1, bool crlf = false,
                         object color = null, object bkcolor = null,
                         string format = null )
         {
@@ -829,7 +793,7 @@ namespace Kiezel
                 s = ToPrintString( item, escape: escape, radix: radix );
             }
             else
-            {               
+            {
                 s = String.Format( "{0:" + format + "}", item );
             }
 
@@ -879,7 +843,19 @@ namespace Kiezel
 #endif
             }
         }
-
     }
 
- }
+    internal class CharacterRepresentation
+    {
+        internal char Code;
+        internal string EscapeString;
+        internal string Name;
+
+        internal CharacterRepresentation( char code, string escape, string name )
+        {
+            Code = code;
+            EscapeString = escape;
+            Name = name;
+        }
+    };
+}

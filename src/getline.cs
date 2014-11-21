@@ -31,173 +31,15 @@
 //
 
 using System;
-using System.Text;
-using System.IO;
-using System.Collections;
 using System.Collections.Generic;
+using System.IO;
+using System.Text;
 using System.Threading;
-using System.Reflection;
-using System.Runtime.InteropServices;
 
 namespace Kiezel
 {
-
     public class LineEditor
     {
-        public class Completion
-        {
-            public string[] Result;
-            public string Prefix;
-            public int Index;
-            public bool IsShown;
-
-            public Completion( string prefix, string[] result )
-            {
-                Index = -1;
-                IsShown = false;
-                Prefix = prefix;
-                Result = result;
-            }
-        }
-
-        public delegate Completion AutoCompleteHandler( string text, int pos );
-        public delegate bool AcceptReturnAsCommandHandler( string text );
-        public delegate bool CanAddToHistoryHandler( string text );
-
-        public bool ReadingFromREPL
-        {
-            get;
-            set;
-        }
-
-        public AcceptReturnAsCommandHandler AcceptReturnAsCommand
-        {
-            get;
-            set;
-        }
-
-        public CanAddToHistoryHandler CanAddToHistory
-        {
-            get;
-            set;
-        }
-
-        string externalInput = "";
-        bool externalInputInserted = false;
-        
-        public void SetExternalInput(string str)
-        {
-            externalInput = str;
-        }
-
-
-        // The text being edited.
-        StringBuilder text;
-
-        // The text as it is rendered (replaces (char)1 with ^A on display for example).
-        StringBuilder rendered_text;
-
-        // The prompt specified, and the prompt shown to the user.
-        string prompt;
-        string shown_prompt;
-
-        // The current cursor position, indexes into "text", for an index
-        // into rendered_text, use TextToRenderPos
-        int cursor;
-
-        // The row where we started displaying data.
-        int home_row;
-        int home_col;
-
-        // The maximum length that has been displayed on the screen
-        int max_rendered;
-
-        // If we are done editing, this breaks the interactive loop
-        bool done = false;
-
-        // Our object that tracks history
-        CHistory history;
-
-        public CHistory History
-        {
-            get
-            {
-                return history;
-            }
-        }
-
-        KeyHandler last_handler;
-
-        delegate void KeyHandler();
-
-        struct Handler
-        {
-            public ConsoleKeyInfo CKI;
-            public KeyHandler KeyHandler;
-
-            public Handler( ConsoleKey key, ConsoleModifiers mod, KeyHandler h )
-            {
-                var control = ( mod & ConsoleModifiers.Control ) != 0;
-                var alt = ( mod & ConsoleModifiers.Alt ) != 0;
-                var shift = ( mod & ConsoleModifiers.Shift ) != 0;
-
-                CKI = new ConsoleKeyInfo( ( char ) 0, key, shift, alt, control );
-                KeyHandler = h;
-            }
-
-            public Handler( ConsoleKey key, KeyHandler h )
-                : this( key, 0, h )
-            {
-            }
-
-            public Handler( char c, KeyHandler h )
-            {
-                KeyHandler = h;
-                // Use the "Zoom" as a flag that we only have a character.
-                CKI = new ConsoleKeyInfo( c, ConsoleKey.Zoom, false, false, false );
-            }
-
-            public Handler( ConsoleKeyInfo cki, KeyHandler h )
-            {
-                CKI = cki;
-                KeyHandler = h;
-            }
-
-            public static Handler Control( char c, KeyHandler h )
-            {
-                return new Handler( ( char ) ( c - 'A' + 1 ), h );
-            }
-
-            public static Handler Control( ConsoleKey k, KeyHandler h )
-            {
-                ConsoleKeyInfo cki = new ConsoleKeyInfo( ( char ) 0, k, false, false, true );
-                return new Handler( cki, h );
-            }
-
-            public static Handler Alt( char c, ConsoleKey k, KeyHandler h )
-            {
-                ConsoleKeyInfo cki = new ConsoleKeyInfo( ( char ) c, k, false, true, false );
-                return new Handler( cki, h );
-            }
-        }
-
-        struct CustomHandler
-        {
-            public ConsoleKeyInfo CKI;
-            public Func<object,object> KeyHandler;
-
-            public CustomHandler( ConsoleKey key, ConsoleModifiers mod, Func<object,object> h )
-            {
-                var control = ( mod & ConsoleModifiers.Control ) != 0;
-                var alt = ( mod & ConsoleModifiers.Alt ) != 0;
-                var shift = ( mod & ConsoleModifiers.Shift ) != 0;
-
-                CKI = new ConsoleKeyInfo( ( char ) 0, key, shift, alt, control );
-                KeyHandler = h;
-            }
-
-        }
-
         /// <summary>
         ///   Invoked when the user requests auto-completion using the tab character
         /// </summary>
@@ -211,11 +53,49 @@ namespace Kiezel
         ///    text
         /// </remarks>
         public AutoCompleteHandler AutoCompleteEvent;
-        Completion lastCompletion;
-        Completion lastCompletionSaved;
 
-        static Handler[] handlers;
-        static List<CustomHandler> customHandlers = new List<CustomHandler>();
+        private static List<CustomHandler> customHandlers = new List<CustomHandler>();
+
+        private static Handler[] handlers;
+
+        // The current cursor position, indexes into "text", for an index
+        // into rendered_text, use TextToRenderPos
+        private int cursor;
+
+        // If we are done editing, this breaks the interactive loop
+        private bool done = false;
+
+        private string externalInput = "";
+
+        private bool externalInputInserted = false;
+
+        // Our object that tracks history
+        private CHistory history;
+
+        private int home_col;
+
+        // The row where we started displaying data.
+        private int home_row;
+
+        private KeyHandler last_handler;
+
+        private Completion lastCompletion;
+
+        private Completion lastCompletionSaved;
+
+        // The maximum length that has been displayed on the screen
+        private int max_rendered;
+
+        // The prompt specified, and the prompt shown to the user.
+        private string prompt;
+
+        // The text as it is rendered (replaces (char)1 with ^A on display for example).
+        private StringBuilder rendered_text;
+
+        private string shown_prompt;
+
+        // The text being edited.
+        private StringBuilder text;
 
         public LineEditor( string name )
         {
@@ -279,7 +159,128 @@ namespace Kiezel
             text = new StringBuilder();
 
             history = new CHistory( name );
+        }
 
+        public delegate bool AcceptReturnAsCommandHandler( string text );
+
+        public delegate Completion AutoCompleteHandler( string text, int pos );
+
+        public delegate bool CanAddToHistoryHandler( string text );
+
+        private delegate void KeyHandler();
+
+        public AcceptReturnAsCommandHandler AcceptReturnAsCommand
+        {
+            get;
+            set;
+        }
+
+        public CanAddToHistoryHandler CanAddToHistory
+        {
+            get;
+            set;
+        }
+
+        public CHistory History
+        {
+            get
+            {
+                return history;
+            }
+        }
+
+        public bool ReadingFromREPL
+        {
+            get;
+            set;
+        }
+
+        private int LineCount
+        {
+            get
+            {
+                return ( home_col + shown_prompt.Length + rendered_text.Length ) / Console.WindowWidth;
+            }
+        }
+
+        private string Prompt
+        {
+            get
+            {
+                return prompt;
+            }
+            set
+            {
+                prompt = value;
+            }
+        }
+
+        public void ClearHistory()
+        {
+            history.Clear();
+        }
+
+        public string Edit( string prompt, string initial, out bool isExternalInput )
+        {
+            done = false;
+            history.CursorToEnd();
+            max_rendered = 0;
+            home_col = Console.CursorLeft;
+            Prompt = prompt;
+            shown_prompt = prompt;
+            InitText( initial );
+            history.Append( initial );
+
+            isExternalInput = false;
+
+            do
+            {
+                try
+                {
+                    EditLoop();
+                }
+                catch ( ThreadAbortException )
+                {
+                    Thread.ResetAbort();
+                    Console.WriteLine();
+                    SetPrompt( prompt );
+                    SetText( "" );
+                }
+            } while ( !done );
+
+            isExternalInput = externalInputInserted;
+
+            Console.WriteLine();
+
+            if ( text == null )
+            {
+                history.RemoveLast();
+                history.Close();
+                return null;
+            }
+
+            string result = text.ToString();
+
+            if ( !ReadingFromREPL || CanAddToHistory == null || CanAddToHistory( result ) )
+            {
+                history.Accept( result );
+            }
+            else
+            {
+                history.RemoveLast();
+            }
+
+            return result;
+        }
+
+        public void SaveHistory()
+        {
+            history.Close();
+        }
+
+        public void SetExternalInput( string str )
+        {
+            externalInput = str;
         }
 
         public void SetKeyBinding( Symbol key, Cons modifierList, object func )
@@ -296,13 +297,13 @@ namespace Kiezel
                             "f9", ConsoleKey.F9,
                             "f10", ConsoleKey.F10,
                             "f11", ConsoleKey.F11,
-                            "f12", ConsoleKey.F12 
+                            "f12", ConsoleKey.F12
                             );
-            var modifierTable = new Prototype( "alt", ConsoleModifiers.Alt, 
-                                           "shift", ConsoleModifiers.Shift, 
+            var modifierTable = new Prototype( "alt", ConsoleModifiers.Alt,
+                                           "shift", ConsoleModifiers.Shift,
                                            "ctrl", ConsoleModifiers.Control );
 
-            var key2 = (ConsoleKey) ( keyTable.GetValue( key ) ?? 0);
+            var key2 = ( ConsoleKey ) ( keyTable.GetValue( key ) ?? 0 );
 
             ConsoleModifiers modifiers = 0;
             foreach ( var m in Runtime.ToIter( modifierList ) )
@@ -310,13 +311,13 @@ namespace Kiezel
                 var a = ( ConsoleModifiers ) modifierTable.GetValue( m );
                 modifiers |= a;
             }
-            
-            var handler = Runtime.GetKeyFunc( func );
+
+            var handler = Runtime.GetClosure( func );
 
             for ( var i = 0; i < customHandlers.Count; ++i )
             {
-                var item = customHandlers[i];
-            
+                var item = customHandlers[ i ];
+
                 if ( item.CKI.Key == key2 && item.CKI.Modifiers == modifiers )
                 {
                     item.KeyHandler = handler;
@@ -327,300 +328,33 @@ namespace Kiezel
             customHandlers.Add( new CustomHandler( key2, modifiers, handler ) );
         }
 
-        public void SaveHistory()
+        private void CmdBackspace()
         {
-            history.Close();
-        }
-
-        public void ClearHistory()
-        {
-            history.Clear();
-        }
-
-        void CmdDebug()
-        {
-            //history.Dump();
-            Console.WriteLine();
-            Render();
-        }
-
-        void Render()
-        {
-            Console.Write( shown_prompt );
-            Console.Write( rendered_text );
-
-            int max = System.Math.Max( rendered_text.Length + home_col + shown_prompt.Length, max_rendered );
-
-            for ( int i = rendered_text.Length + shown_prompt.Length + home_col; i < max_rendered; i++ )
+            if ( !EraseCompletion() )
             {
-                Console.Write( ' ' );
-            }
-
-            max_rendered = home_col + shown_prompt.Length + rendered_text.Length;
-
-            // Write one more to ensure that we always wrap around properly if we are at the
-            // end of a line.
-            Console.Write( ' ' );
-
-            UpdateHomeRow( max );
-        }
-
-        void UpdateHomeRow( int screenpos )
-        {
-            // May change due to scrolling
-            int lines = screenpos / Console.WindowWidth;
-
-            home_row = Console.CursorTop - lines;
-
-            if ( home_row < 0 )
-            {
-                home_row = 0;
-            }
-
-        }
-
-
-        void RenderFrom( int pos )
-        {
-            int rpos = TextToRenderPos( pos );
-            int i;
-
-            for ( i = rpos; i < rendered_text.Length; i++ )
-            {
-                Console.Write( rendered_text[ i ] );
-            }
-
-            if ( ( home_col + shown_prompt.Length + rendered_text.Length ) > max_rendered )
-            {
-                max_rendered = home_col + shown_prompt.Length + rendered_text.Length;
-            }
-            else
-            {
-                int max_extra = max_rendered - home_col - shown_prompt.Length;
-                for ( ; i < max_extra; i++ )
+                if ( cursor == 0 )
                 {
-                    Console.Write( ' ' );
+                    return;
                 }
+
+                text.Remove( --cursor, 1 );
+                ComputeRendered();
+                RenderAfter( cursor );
             }
         }
 
-        void ComputeRendered()
+        private void CmdBackwardWord()
         {
-            rendered_text.Length = 0;
-
-            for ( int i = 0; i < text.Length; i++ )
+            int p = WordBackward( cursor );
+            if ( p == -1 )
             {
-                int c = ( int ) text[i];
-                if ( c < ' ' )
-                {
-                    if ( c == '\t' )
-                    {
-                        rendered_text.Append( "    " );
-                    }
-                    else if ( c == '\n' )
-                    {
-                        int p = ( home_col + shown_prompt.Length + rendered_text.Length ) % Console.WindowWidth;
-                        if ( p != 0 )
-                        {
-                            while ( p < Console.WindowWidth )
-                            {
-                                rendered_text.Append( " " );
-                                ++p;
-                            }
-                        }
-                    }
-                    else if ( c == '\r' )
-                    {
-                        // ignore
-                    }
-                    else
-                    {
-                        rendered_text.Append( '^' );
-                        rendered_text.Append( ( char ) ( c + ( int ) 'A' - 1 ) );
-                    }
-                }
-                else
-                {
-                    rendered_text.Append( ( char ) c );
-                }
-            }
-        }
-
-        int TextToRenderPos( int pos )
-        {
-            int p = home_col + shown_prompt.Length;
-
-            for ( int i = 0; i < pos; i++ )
-            {
-                int c;
-
-                c = ( int ) text[i];
-
-                if ( c < ' ' )
-                {
-                    if ( c == '\t' )
-                    {
-                        p += 4;
-                    }
-                    else if ( c == '\n' )
-                    {
-                        if ( p % Console.WindowWidth == 0 )
-                        {
-                        }
-                        else
-                        {
-                            p += Console.WindowWidth - ( p % Console.WindowWidth );
-                        }
-                    }
-                    else if ( c == '\r' )
-                    {
-                        // ignore
-                    }
-                    else
-                    {
-                        p += 2;
-                    }
-                }
-                else
-                {
-                    p++;
-                }
-            }
-
-            return p - home_col - shown_prompt.Length;
-        }
-
-        int TextToScreenPos( int pos )
-        {
-            return home_col + shown_prompt.Length + TextToRenderPos( pos );
-        }
-
-        string Prompt
-        {
-            get
-            {
-                return prompt;
-            }
-            set
-            {
-                prompt = value;
-            }
-        }
-
-        int LineCount
-        {
-            get
-            {
-                return ( home_col + shown_prompt.Length + rendered_text.Length ) / Console.WindowWidth;
-            }
-        }
-
-        void ForceCursor( int newpos )
-        {
-            cursor = newpos;
-
-            int actual_pos = home_col + shown_prompt.Length + TextToRenderPos( cursor );
-            int row = home_row + ( actual_pos / Console.WindowWidth );
-            int col = actual_pos % Console.WindowWidth;
-
-            if ( row >= Console.BufferHeight )
-            {
-                row = Console.BufferHeight - 1;
-            }
-            Console.SetCursorPosition( col, row );
-
-            //log.WriteLine ("Going to cursor={0} row={1} col={2} actual={3} prompt={4} ttr={5} old={6}", newpos, row, col, actual_pos, prompt.Length, TextToRenderPos (cursor), cursor);
-            //log.Flush ();
-        }
-
-        void UpdateCursor( int newpos )
-        {
-            if ( cursor == newpos )
                 return;
-
-            ForceCursor( newpos );
-        }
-
-        void InsertChar( char c )
-        {
-            int prev_lines = LineCount;
-            text = text.Insert( cursor, c );
-            ComputeRendered();
-            if ( prev_lines != LineCount )
-            {
-
-                Console.SetCursorPosition( home_col, home_row );
-                Render();
-                ForceCursor( ++cursor );
             }
-            else
-            {
-                RenderFrom( cursor );
-                ForceCursor( ++cursor );
-                UpdateHomeRow( TextToScreenPos( cursor ) );
-            }
+
+            UpdateCursor( p );
         }
 
-        //
-        // Commands
-        //
-
-        void ScrollTo( int pos )
-        {
-            pos = Math.Max( 0, Math.Min( Console.BufferHeight - Console.WindowHeight, pos ) );
-            Console.SetWindowPosition( Console.WindowLeft, pos );
-        }
-
-        void CmdPageUp()
-        {
-            ScrollTo( Console.WindowTop - Console.WindowHeight );
-        }
-
-        void CmdPageDown()
-        {
-            ScrollTo( Console.WindowTop + Console.WindowHeight );
-        }
-
-        void CmdScrollUp()
-        {
-            ScrollTo( Console.WindowTop - 1 );
-        }
-
-        void CmdScrollDown()
-        {
-            ScrollTo( Console.WindowTop + 1 );
-        }
-
-        void CmdHomeBuffer()
-        {
-            ScrollTo( 0 );
-        }
-
-        void CmdEndBuffer()
-        {
-            ScrollTo( Console.BufferHeight );
-        }
-
-        bool HaveLispExpression()
-        {
-            var s = text.ToString();
-
-            return !s.StartsWith("?") && !s.StartsWith(":") && AcceptReturnAsCommand != null && AcceptReturnAsCommand( s );
-        }
-
-        void CmdDone()
-        {
-            if ( !ReadingFromREPL || AcceptReturnAsCommand == null || AcceptReturnAsCommand( text.ToString() ) )
-            {
-                done = true;
-            }
-            else
-            {
-                InsertChar( '\n' );
-            }
-        }
-
-        void CmdCloseParens()
+        private void CmdCloseParens()
         {
             var parens = 0;
             var errors = 0;
@@ -649,7 +383,7 @@ namespace Kiezel
                 Console.Beep();
                 return;
             }
-            
+
             if ( parens > 0 )
             {
                 while ( parens-- > 0 )
@@ -669,7 +403,224 @@ namespace Kiezel
             done = true;
         }
 
-        void CmdTab()
+        private void CmdCopy()
+        {
+            SetClipboardData( text.ToString() );
+        }
+
+        private void CmdCopyIt()
+        {
+            var it = Symbols.It.Value ?? "";
+            var str = Runtime.WriteToString( it, Symbols.Pretty, true );
+            SetClipboardData( str );
+        }
+
+        private void CmdCut()
+        {
+            CmdCopy();
+            EraseLine();
+        }
+
+        private void CmdDebug()
+        {
+            //history.Dump();
+            Console.WriteLine();
+            Render();
+        }
+
+        private void CmdDeleteBackword()
+        {
+            int pos = WordBackward( cursor );
+            if ( pos == -1 )
+            {
+                return;
+            }
+
+            string k = text.ToString( pos, cursor - pos );
+
+            if ( last_handler == CmdDeleteBackword )
+            {
+                SetClipboardData( k + GetClipboardData() );
+            }
+            else
+            {
+                SetClipboardData( k );
+            }
+
+            text.Remove( pos, cursor - pos );
+            ComputeRendered();
+            RenderAfter( pos );
+        }
+
+        private void CmdDeleteChar()
+        {
+            if ( !EraseCompletion() )
+            {
+                if ( cursor == text.Length )
+                {
+                    return;
+                }
+
+                text.Remove( cursor, 1 );
+                ComputeRendered();
+                RenderAfter( cursor );
+            }
+        }
+
+        private void CmdDeleteWord()
+        {
+            int pos = WordForward( cursor );
+
+            if ( pos == -1 )
+            {
+                return;
+            }
+
+            string k = text.ToString( cursor, pos - cursor );
+
+            if ( last_handler == CmdDeleteWord )
+            {
+                SetClipboardData( GetClipboardData() + k );
+            }
+            else
+            {
+                SetClipboardData( k );
+            }
+
+            text.Remove( cursor, pos - cursor );
+            ComputeRendered();
+            RenderAfter( cursor );
+        }
+
+        private void CmdDone()
+        {
+            if ( !ReadingFromREPL || AcceptReturnAsCommand == null || AcceptReturnAsCommand( text.ToString() ) )
+            {
+                done = true;
+            }
+            else
+            {
+                InsertChar( '\n' );
+            }
+        }
+
+        private void CmdEnd()
+        {
+            UpdateCursor( text.Length );
+        }
+
+        private void CmdEndBuffer()
+        {
+            ScrollTo( Console.BufferHeight );
+        }
+
+        private void CmdEof()
+        {
+            done = true;
+            text = null;
+            Console.WriteLine();
+        }
+
+        private void CmdForwardWord()
+        {
+            int p = WordForward( cursor );
+            if ( p == -1 )
+            {
+                return;
+            }
+
+            UpdateCursor( p );
+        }
+
+        private void CmdHistoryNext()
+        {
+            if ( history.NextAvailable() )
+            {
+                history.Update( text.ToString() );
+                SetText( history.Next() );
+            }
+        }
+
+        private void CmdHistoryPrev()
+        {
+            if ( history.PreviousAvailable() )
+            {
+                history.Update( text.ToString() );
+                SetText( history.Previous() );
+            }
+        }
+
+        private void CmdHome()
+        {
+            UpdateCursor( 0 );
+        }
+
+        private void CmdHomeBuffer()
+        {
+            ScrollTo( 0 );
+        }
+
+        private void CmdKillToEOF()
+        {
+            SetClipboardData( text.ToString( cursor, text.Length - cursor ) );
+            text.Length = cursor;
+            ComputeRendered();
+            RenderAfter( cursor );
+        }
+
+        private void CmdLeft()
+        {
+            if ( cursor == 0 )
+                return;
+
+            UpdateCursor( cursor - 1 );
+        }
+
+        private void CmdPageDown()
+        {
+            ScrollTo( Console.WindowTop + Console.WindowHeight );
+        }
+
+        private void CmdPageUp()
+        {
+            ScrollTo( Console.WindowTop - Console.WindowHeight );
+        }
+
+        private void CmdPaste()
+        {
+            string str = GetClipboardData();
+            InsertTextAtCursor( str );
+        }
+
+        private void CmdRefresh()
+        {
+            Console.Clear();
+            max_rendered = 0;
+            Render();
+            ForceCursor( cursor );
+        }
+
+        private void CmdRight()
+        {
+            if ( cursor == text.Length )
+            {
+                return;
+            }
+
+            UpdateCursor( cursor + 1 );
+        }
+
+        private void CmdScrollDown()
+        {
+            ScrollTo( Console.WindowTop + 1 );
+        }
+
+        private void CmdScrollUp()
+        {
+            ScrollTo( Console.WindowTop - 1 );
+        }
+
+        private void CmdTab()
         {
             if ( !ReadingFromREPL || AutoCompleteEvent == null )
             {
@@ -731,7 +682,6 @@ namespace Kiezel
 
                 // Remember for next time
                 lastCompletion = completion;
-                
             }
             else
             {
@@ -743,363 +693,61 @@ namespace Kiezel
                 text.Remove( cursor, count );
                 ComputeRendered();
                 RenderAfter( cursor );
-                
+
                 // Show next option
                 completion.Index = ( completion.Index + 1 ) % completion.Result.Length;
                 InsertTextAtCursor( completion.Result[ completion.Index ] );
-
             }
         }
 
-        void CmdHome()
-        {
-            UpdateCursor( 0 );
-        }
-
-        void CmdEnd()
-        {
-            UpdateCursor( text.Length );
-        }
-
-        void CmdLeft()
-        {
-            if ( cursor == 0 )
-                return;
-
-            UpdateCursor( cursor - 1 );
-        }
-
-        void CmdBackwardWord()
-        {
-            int p = WordBackward( cursor );
-            if ( p == -1 )
-            {
-                return;
-            }
-
-            UpdateCursor( p );
-        }
-
-        void CmdForwardWord()
-        {
-            int p = WordForward( cursor );
-            if ( p == -1 )
-            {
-                return;
-            }
-
-            UpdateCursor( p );
-        }
-
-        void CmdRight()
-        {
-            if ( cursor == text.Length )
-            {
-                return;
-            }
-
-            UpdateCursor( cursor + 1 );
-        }
-
-        void RenderAfter( int p )
-        {
-            ForceCursor( p );
-            RenderFrom( p );
-            ForceCursor( cursor );
-        }
-
-        void CmdBackspace()
-        {
-            if ( !EraseCompletion() )
-            {
-                if ( cursor == 0 )
-                {
-                    return;
-                }
-
-                text.Remove( --cursor, 1 );
-                ComputeRendered();
-                RenderAfter( cursor );
-            }
-        }
-
-        void CmdEof()
-        {
-            done = true;
-            text = null;
-            Console.WriteLine();
-        }
-
-        void CmdDeleteChar()
-        {
-            if ( !EraseCompletion() )
-            {
-                if ( cursor == text.Length )
-                {
-                    return;
-                }
-
-                text.Remove( cursor, 1 );
-                ComputeRendered();
-                RenderAfter( cursor );
-            }
-        }
-
-        bool IsWhiteChar( char ch )
-        {
-            return Char.IsWhiteSpace( ch );
-        }
-
-        int WordForward( int p )
-        {
-            if ( p >= text.Length )
-            {
-                return -1;
-            }
-
-            int i = p;
-
-            while  ( i < text.Length && Runtime.IsWordChar( text[i] ))
-            {
-                ++i;
-            }
-
-            while ( i < text.Length && !Runtime.IsWordChar( text[i] ) )
-            {
-                ++i;
-            }
-
-            return ( i == p ) ? -1 : i;
-        }
-
-        int WordBackward( int p )
-        {
-            if ( p == 0 )
-            {
-                return -1;
-            }
-
-            int i = p - 1;
-
-            if ( i == 0 )
-            {
-                return 0;
-            }
-
-            while ( i >= 0 && !Runtime.IsWordChar( text[i] ) )
-            {
-                --i;
-            }
-
-            while ( i >= 0 && Runtime.IsWordChar( text[i] ) )
-            {
-                --i;
-            }
-
-            ++i;
-
-            return ( i == p ) ? -1 : i;
-        }
-
-        void CmdDeleteWord()
-        {
-            int pos = WordForward( cursor );
-
-            if ( pos == -1 )
-            {
-                return;
-            }
-
-            string k = text.ToString( cursor, pos - cursor );
-
-            if ( last_handler == CmdDeleteWord )
-            {
-                SetClipboardData( GetClipboardData() + k );
-            }
-            else
-            {
-                SetClipboardData( k );
-            }
-
-            text.Remove( cursor, pos - cursor );
-            ComputeRendered();
-            RenderAfter( cursor );
-        }
-
-        void CmdDeleteBackword()
-        {
-            int pos = WordBackward( cursor );
-            if ( pos == -1 )
-            {
-                return;
-            }
-
-            string k = text.ToString( pos, cursor - pos );
-
-            if ( last_handler == CmdDeleteBackword )
-            {
-                SetClipboardData( k + GetClipboardData() );
-            }
-            else
-            {
-                SetClipboardData( k );
-            }
-
-            text.Remove( pos, cursor - pos );
-            ComputeRendered();
-            RenderAfter( pos );
-        }
-
-        void CmdHistoryPrev()
-        {
-            if ( history.PreviousAvailable() )
-            {
-                history.Update( text.ToString() );
-                SetText( history.Previous() );
-            }
-        }
-
-        void CmdHistoryNext()
-        {
-            if ( history.NextAvailable() )
-            {
-                history.Update( text.ToString() );
-                SetText( history.Next() );
-            }
-        }
-
-        void CmdKillToEOF()
-        {
-            SetClipboardData( text.ToString( cursor, text.Length - cursor ) );
-            text.Length = cursor;
-            ComputeRendered();
-            RenderAfter( cursor );
-        }
-
-        bool EraseCompletion()
-        {
-            if ( lastCompletionSaved != null )
-            {
-                var completion = lastCompletionSaved;
-
-                // Undo current option
-                int count = completion.Result[ completion.Index ].Length;
-                cursor -= count;
-                text.Remove( cursor, count );
-                ComputeRendered();
-                RenderAfter( cursor );
-
-                // No next option
-                lastCompletion = lastCompletionSaved = null;
-
-                return true;
-            }
-            else
-            {
-                return false;
-            }
-        }
-
-
-        void CmdPaste()
-        {
-            string str = GetClipboardData();
-            InsertTextAtCursor( str );
-        }
-
-        string GetClipboardData()
-        {
-            string str = System.Windows.Forms.Clipboard.GetText();
-            return str;
-        }
-
-        void SetClipboardData( string str )
-        {
-            if ( String.IsNullOrEmpty( str ) )
-            {
-                System.Windows.Forms.Clipboard.Clear();
-            }
-            else
-            {
-                System.Windows.Forms.Clipboard.SetText( str );
-            }
-        }
-
-        void CmdCopy()
-        {
-            SetClipboardData( text.ToString() );
-        }
-
-        void CmdCopyIt()
-        {
-            var it = Symbols.It.Value ?? "";
-            var str = Runtime.WriteToString( it, Symbols.Pretty, true );
-            SetClipboardData( str );
-        }
-
-        void CmdCut()
-        {
-            CmdCopy();
-            EraseLine();
-        }
-
-        void EraseLine()
-        {
-            SetClipboardData( text.ToString() );
-            text.Length = 0;
-            Console.WriteLine();
-            Console.WriteLine();
-            SetPrompt( prompt );
-            Console.Write( prompt );
-            SetText( "" );
-        }
-
-        void CmdYank()
+        private void CmdYank()
         {
             InsertTextAtCursor( GetClipboardData() );
         }
 
-        void InsertTextAtCursor( string str )
+        private void ComputeRendered()
         {
-            int prev_lines = LineCount;
-            text.Insert( cursor, str );
-            ComputeRendered();
-            if ( prev_lines != LineCount )
+            rendered_text.Length = 0;
+
+            for ( int i = 0; i < text.Length; i++ )
             {
-                Console.SetCursorPosition( home_col, home_row );
-                Render();
-                cursor += str.Length;
-                ForceCursor( cursor );
+                int c = ( int ) text[ i ];
+                if ( c < ' ' )
+                {
+                    if ( c == '\t' )
+                    {
+                        rendered_text.Append( "    " );
+                    }
+                    else if ( c == '\n' )
+                    {
+                        int p = ( home_col + shown_prompt.Length + rendered_text.Length ) % Console.WindowWidth;
+                        if ( p != 0 )
+                        {
+                            while ( p < Console.WindowWidth )
+                            {
+                                rendered_text.Append( " " );
+                                ++p;
+                            }
+                        }
+                    }
+                    else if ( c == '\r' )
+                    {
+                        // ignore
+                    }
+                    else
+                    {
+                        rendered_text.Append( '^' );
+                        rendered_text.Append( ( char ) ( c + ( int ) 'A' - 1 ) );
+                    }
+                }
+                else
+                {
+                    rendered_text.Append( ( char ) c );
+                }
             }
-            else
-            {
-                RenderFrom( cursor );
-                cursor += str.Length;
-                ForceCursor( cursor );
-                UpdateHomeRow( TextToScreenPos( cursor ) );
-            }
         }
 
-        void SetSearchPrompt( string s )
-        {
-            SetPrompt( "(reverse-i-search)`" + s + "': " );
-        }
-
-        void CmdRefresh()
-        {
-            Console.Clear();
-            max_rendered = 0;
-            Render();
-            ForceCursor( cursor );
-        }
-
-
-        void HandleChar( char c )
-        {
-            InsertChar( c );
-        }
-
-        void EditLoop()
+        private void EditLoop()
         {
             externalInputInserted = false;
 
@@ -1109,7 +757,7 @@ namespace Kiezel
 
                 while ( !Console.KeyAvailable )
                 {
-                    if ( !String.IsNullOrWhiteSpace(externalInput) )
+                    if ( !String.IsNullOrWhiteSpace( externalInput ) )
                     {
                         InsertTextAtCursor( externalInput );
                         externalInput = "";
@@ -1138,7 +786,7 @@ namespace Kiezel
                 }
 
                 bool handled = false;
-                
+
                 lastCompletionSaved = lastCompletion;
                 lastCompletion = null;
 
@@ -1161,7 +809,7 @@ namespace Kiezel
                             --start;
                         }
                         input = input.Substring( start, cursor - start );
-                        var output = Runtime.ToPrintString( handler.KeyHandler( input ), false );
+                        var output = Runtime.ToPrintString( Runtime.Funcall( handler.KeyHandler, input ), false );
                         if ( output.EndsWith( "\n" ) )
                         {
                             InsertTextAtCursor( output.TrimEnd() );
@@ -1210,7 +858,78 @@ namespace Kiezel
             }
         }
 
-        void InitText( string initial )
+        private bool EraseCompletion()
+        {
+            if ( lastCompletionSaved != null )
+            {
+                var completion = lastCompletionSaved;
+
+                // Undo current option
+                int count = completion.Result[ completion.Index ].Length;
+                cursor -= count;
+                text.Remove( cursor, count );
+                ComputeRendered();
+                RenderAfter( cursor );
+
+                // No next option
+                lastCompletion = lastCompletionSaved = null;
+
+                return true;
+            }
+            else
+            {
+                return false;
+            }
+        }
+
+        private void EraseLine()
+        {
+            SetClipboardData( text.ToString() );
+            text.Length = 0;
+            Console.WriteLine();
+            Console.WriteLine();
+            SetPrompt( prompt );
+            Console.Write( prompt );
+            SetText( "" );
+        }
+
+        private void ForceCursor( int newpos )
+        {
+            cursor = newpos;
+
+            int actual_pos = home_col + shown_prompt.Length + TextToRenderPos( cursor );
+            int row = home_row + ( actual_pos / Console.WindowWidth );
+            int col = actual_pos % Console.WindowWidth;
+
+            if ( row >= Console.BufferHeight )
+            {
+                row = Console.BufferHeight - 1;
+            }
+            Console.SetCursorPosition( col, row );
+
+            //log.WriteLine ("Going to cursor={0} row={1} col={2} actual={3} prompt={4} ttr={5} old={6}", newpos, row, col, actual_pos, prompt.Length, TextToRenderPos (cursor), cursor);
+            //log.Flush ();
+        }
+
+        private string GetClipboardData()
+        {
+            string str = System.Windows.Forms.Clipboard.GetText();
+            return str;
+        }
+
+        private void HandleChar( char c )
+        {
+            InsertChar( c );
+        }
+
+        private bool HaveLispExpression()
+        {
+            var s = text.ToString();
+
+            return !s.StartsWith( "?" ) && !s.StartsWith( ":" ) && AcceptReturnAsCommand != null && AcceptReturnAsCommand( s );
+        }
+
+        private void InitText( string initial )
         {
             text = new StringBuilder( initial );
             ComputeRendered();
@@ -1219,13 +938,122 @@ namespace Kiezel
             ForceCursor( cursor );
         }
 
-        void SetText( string newtext )
+        private void InsertChar( char c )
         {
-            Console.SetCursorPosition( home_col, home_row );
-            InitText( newtext );
+            int prev_lines = LineCount;
+            text = text.Insert( cursor, c );
+            ComputeRendered();
+            if ( prev_lines != LineCount )
+            {
+                Console.SetCursorPosition( home_col, home_row );
+                Render();
+                ForceCursor( ++cursor );
+            }
+            else
+            {
+                RenderFrom( cursor );
+                ForceCursor( ++cursor );
+                UpdateHomeRow( TextToScreenPos( cursor ) );
+            }
         }
 
-        void SetPrompt( string newprompt )
+        private void InsertTextAtCursor( string str )
+        {
+            int prev_lines = LineCount;
+            text.Insert( cursor, str );
+            ComputeRendered();
+            if ( prev_lines != LineCount )
+            {
+                Console.SetCursorPosition( home_col, home_row );
+                Render();
+                cursor += str.Length;
+                ForceCursor( cursor );
+            }
+            else
+            {
+                RenderFrom( cursor );
+                cursor += str.Length;
+                ForceCursor( cursor );
+                UpdateHomeRow( TextToScreenPos( cursor ) );
+            }
+        }
+
+        private bool IsWhiteChar( char ch )
+        {
+            return Char.IsWhiteSpace( ch );
+        }
+
+        private void Render()
+        {
+            Console.Write( shown_prompt );
+            Console.Write( rendered_text );
+
+            int max = System.Math.Max( rendered_text.Length + home_col + shown_prompt.Length, max_rendered );
+
+            for ( int i = rendered_text.Length + shown_prompt.Length + home_col; i < max_rendered; i++ )
+            {
+                Console.Write( ' ' );
+            }
+
+            max_rendered = home_col + shown_prompt.Length + rendered_text.Length;
+
+            // Write one more to ensure that we always wrap around properly if we are at the
+            // end of a line.
+            Console.Write( ' ' );
+
+            UpdateHomeRow( max );
+        }
+
+        private void RenderAfter( int p )
+        {
+            ForceCursor( p );
+            RenderFrom( p );
+            ForceCursor( cursor );
+        }
+
+        private void RenderFrom( int pos )
+        {
+            int rpos = TextToRenderPos( pos );
+            int i;
+
+            for ( i = rpos; i < rendered_text.Length; i++ )
+            {
+                Console.Write( rendered_text[ i ] );
+            }
+
+            if ( ( home_col + shown_prompt.Length + rendered_text.Length ) > max_rendered )
+            {
+                max_rendered = home_col + shown_prompt.Length + rendered_text.Length;
+            }
+            else
+            {
+                int max_extra = max_rendered - home_col - shown_prompt.Length;
+                for ( ; i < max_extra; i++ )
+                {
+                    Console.Write( ' ' );
+                }
+            }
+        }
+
+        private void ScrollTo( int pos )
+        {
+            pos = Math.Max( 0, Math.Min( Console.BufferHeight - Console.WindowHeight, pos ) );
+            Console.SetWindowPosition( Console.WindowLeft, pos );
+        }
+
+        private void SetClipboardData( string str )
+        {
+            if ( String.IsNullOrEmpty( str ) )
+            {
+                System.Windows.Forms.Clipboard.Clear();
+            }
+            else
+            {
+                System.Windows.Forms.Clipboard.SetText( str );
+            }
+        }
+
+        private void SetPrompt( string newprompt )
         {
             shown_prompt = newprompt;
             Console.SetCursorPosition( home_col, home_row );
@@ -1233,57 +1061,206 @@ namespace Kiezel
             ForceCursor( cursor );
         }
 
-        public string Edit( string prompt, string initial, out bool isExternalInput )
+        private void SetSearchPrompt( string s )
         {
-            done = false;
-            history.CursorToEnd();
-            max_rendered = 0;
-            home_col = Console.CursorLeft;
-            Prompt = prompt;
-            shown_prompt = prompt;
-            InitText( initial );
-            history.Append( initial );
+            SetPrompt( "(reverse-i-search)`" + s + "': " );
+        }
 
-            isExternalInput = false;
+        private void SetText( string newtext )
+        {
+            Console.SetCursorPosition( home_col, home_row );
+            InitText( newtext );
+        }
 
-            do
+        private int TextToRenderPos( int pos )
+        {
+            int p = home_col + shown_prompt.Length;
+
+            for ( int i = 0; i < pos; i++ )
             {
-                try
+                int c;
+
+                c = ( int ) text[ i ];
+
+                if ( c < ' ' )
                 {
-                    EditLoop();
+                    if ( c == '\t' )
+                    {
+                        p += 4;
+                    }
+                    else if ( c == '\n' )
+                    {
+                        if ( p % Console.WindowWidth == 0 )
+                        {
+                        }
+                        else
+                        {
+                            p += Console.WindowWidth - ( p % Console.WindowWidth );
+                        }
+                    }
+                    else if ( c == '\r' )
+                    {
+                        // ignore
+                    }
+                    else
+                    {
+                        p += 2;
+                    }
                 }
-                catch ( ThreadAbortException )
+                else
                 {
-                    Thread.ResetAbort();
-                    Console.WriteLine();
-                    SetPrompt( prompt );
-                    SetText( "" );
+                    p++;
                 }
-            } while ( !done );
-
-            isExternalInput = externalInputInserted;
-
-            Console.WriteLine();
-
-            if ( text == null )
-            {
-                history.RemoveLast();
-                history.Close();
-                return null;
             }
 
-            string result = text.ToString();
+            return p - home_col - shown_prompt.Length;
+        }
 
-            if ( !ReadingFromREPL || CanAddToHistory == null || CanAddToHistory( result ) )
+        private int TextToScreenPos( int pos )
+        {
+            return home_col + shown_prompt.Length + TextToRenderPos( pos );
+        }
+
+        private void UpdateCursor( int newpos )
+        {
+            if ( cursor == newpos )
+                return;
+
+            ForceCursor( newpos );
+        }
+
+        private void UpdateHomeRow( int screenpos )
+        {
+            // May change due to scrolling
+            int lines = screenpos / Console.WindowWidth;
+
+            home_row = Console.CursorTop - lines;
+
+            if ( home_row < 0 )
             {
-                history.Accept( result );
+                home_row = 0;
             }
-            else
+        }
+
+        private int WordBackward( int p )
+        {
+            if ( p == 0 )
             {
-                history.RemoveLast();
+                return -1;
             }
 
-            return result;
+            int i = p - 1;
+
+            if ( i == 0 )
+            {
+                return 0;
+            }
+
+            while ( i >= 0 && !Runtime.IsWordChar( text[ i ] ) )
+            {
+                --i;
+            }
+
+            while ( i >= 0 && Runtime.IsWordChar( text[ i ] ) )
+            {
+                --i;
+            }
+
+            ++i;
+
+            return ( i == p ) ? -1 : i;
+        }
+
+        //
+        // Commands
+        //
+        private int WordForward( int p )
+        {
+            if ( p >= text.Length )
+            {
+                return -1;
+            }
+
+            int i = p;
+
+            while ( i < text.Length && Runtime.IsWordChar( text[ i ] ) )
+            {
+                ++i;
+            }
+
+            while ( i < text.Length && !Runtime.IsWordChar( text[ i ] ) )
+            {
+                ++i;
+            }
+
+            return ( i == p ) ? -1 : i;
+        }
+
+        private struct CustomHandler
+        {
+            public ConsoleKeyInfo CKI;
+            public IApply KeyHandler;
+
+            public CustomHandler( ConsoleKey key, ConsoleModifiers mod, IApply h )
+            {
+                var control = ( mod & ConsoleModifiers.Control ) != 0;
+                var alt = ( mod & ConsoleModifiers.Alt ) != 0;
+                var shift = ( mod & ConsoleModifiers.Shift ) != 0;
+
+                CKI = new ConsoleKeyInfo( ( char ) 0, key, shift, alt, control );
+                KeyHandler = h;
+            }
+        }
+
+        private struct Handler
+        {
+            public ConsoleKeyInfo CKI;
+            public KeyHandler KeyHandler;
+
+            public Handler( ConsoleKey key, ConsoleModifiers mod, KeyHandler h )
+            {
+                var control = ( mod & ConsoleModifiers.Control ) != 0;
+                var alt = ( mod & ConsoleModifiers.Alt ) != 0;
+                var shift = ( mod & ConsoleModifiers.Shift ) != 0;
+
+                CKI = new ConsoleKeyInfo( ( char ) 0, key, shift, alt, control );
+                KeyHandler = h;
+            }
+
+            public Handler( ConsoleKey key, KeyHandler h )
+                : this( key, 0, h )
+            {
+            }
+
+            public Handler( char c, KeyHandler h )
+            {
+                KeyHandler = h;
+                // Use the "Zoom" as a flag that we only have a character.
+                CKI = new ConsoleKeyInfo( c, ConsoleKey.Zoom, false, false, false );
+            }
+
+            public Handler( ConsoleKeyInfo cki, KeyHandler h )
+            {
+                CKI = cki;
+                KeyHandler = h;
+            }
+
+            public static Handler Alt( char c, ConsoleKey k, KeyHandler h )
+            {
+                ConsoleKeyInfo cki = new ConsoleKeyInfo( ( char ) c, k, false, true, false );
+                return new Handler( cki, h );
+            }
+
+            public static Handler Control( char c, KeyHandler h )
+            {
+                return new Handler( ( char ) ( c - 'A' + 1 ), h );
+            }
+
+            public static Handler Control( ConsoleKey k, KeyHandler h )
+            {
+                ConsoleKeyInfo cki = new ConsoleKeyInfo( ( char ) 0, k, false, false, true );
+                return new Handler( cki, h );
+            }
         }
 
         //
@@ -1292,10 +1269,9 @@ namespace Kiezel
         //
         public class CHistory
         {
-            Vector lines;
-            int cursor;
-            string histfile;
-
+            private int cursor;
+            private string histfile;
+            private Vector lines;
             public CHistory( string app )
             {
                 if ( app != null )
@@ -1333,7 +1309,7 @@ namespace Kiezel
                         {
                             if ( line != "" )
                             {
-                                if ( line[0] == '\x1F' )
+                                if ( line[ 0 ] == '\x1F' )
                                 {
                                     Append( buf.ToString() );
                                     buf.Length = 0;
@@ -1352,30 +1328,33 @@ namespace Kiezel
                 }
             }
 
-            public void Clear()
-            {
-                lines.Clear();
-                cursor = 0;
-            }
-
-            public string Line( int index )
-            {
-                if ( 0 <= index && index < lines.Count )
-                {
-                    return (string)lines[index];
-                }
-                else
-                {
-                    return "";
-                }
-            }
-
             public int Count
             {
                 get
                 {
                     return lines.Count;
                 }
+            }
+
+            public void Accept( string s )
+            {
+                lines[ lines.Count - 1 ] = s;
+                if ( lines.Count >= 2 && ( string ) lines[ lines.Count - 2 ] == ( string ) lines[ lines.Count - 1 ] )
+                {
+                    RemoveLast();
+                }
+            }
+
+            public void Append( string s )
+            {
+                lines.Add( s );
+                cursor = lines.Count - 1;
+            }
+
+            public void Clear()
+            {
+                lines.Clear();
+                cursor = 0;
             }
 
             public void Close()
@@ -1402,50 +1381,36 @@ namespace Kiezel
                 }
             }
 
-
-            public void Append( string s )
+            public void CursorToEnd()
             {
-                lines.Add( s );
                 cursor = lines.Count - 1;
             }
 
-            //
-            // Updates the current cursor location with the string,
-            // to support editing of history items.   For the current
-            // line to participate, an Append must be done before.
-            //
-            public void Update( string s )
+            public string Line( int index )
             {
-                lines[cursor] = s;
-            }
-
-            public void RemoveLast()
-            {
-                if ( lines.Count > 0 )
+                if ( 0 <= index && index < lines.Count )
                 {
-                    lines.RemoveAt( lines.Count-1 );
+                    return ( string ) lines[ index ];
+                }
+                else
+                {
+                    return "";
                 }
             }
-
-            public void Accept( string s )
+            public string Next()
             {
-                lines[lines.Count-1] = s;
-                if ( lines.Count >= 2 && (string)lines[ lines.Count - 2 ] == (string)lines[ lines.Count - 1 ] )
+                if ( !NextAvailable() )
                 {
-                    RemoveLast();
+                    return null;
                 }
-            }
 
-            public bool PreviousAvailable()
-            {
-                return cursor > 0;
+                return ( string ) lines[ ++cursor ];
             }
 
             public bool NextAvailable()
             {
                 return cursor + 1 < lines.Count;
             }
-
 
             //
             // Returns: a string with the previous line contents, or
@@ -1458,25 +1423,46 @@ namespace Kiezel
                     return null;
                 }
 
-                return (string)lines[--cursor];
+                return ( string ) lines[ --cursor ];
             }
 
-            public string Next()
+            public bool PreviousAvailable()
             {
-                if ( !NextAvailable() )
+                return cursor > 0;
+            }
+
+            public void RemoveLast()
+            {
+                if ( lines.Count > 0 )
                 {
-                    return null;
+                    lines.RemoveAt( lines.Count - 1 );
                 }
-
-                return (string)lines[++cursor];
             }
 
-            public void CursorToEnd()
+            //
+            // Updates the current cursor location with the string,
+            // to support editing of history items.   For the current
+            // line to participate, an Append must be done before.
+            //
+            public void Update( string s )
             {
-                cursor = lines.Count - 1;
+                lines[ cursor ] = s;
             }
+        }
 
+        public class Completion
+        {
+            public int Index;
+            public bool IsShown;
+            public string Prefix;
+            public string[] Result;
+            public Completion( string prefix, string[] result )
+            {
+                Index = -1;
+                IsShown = false;
+                Prefix = prefix;
+                Result = result;
+            }
         }
     }
-
 }

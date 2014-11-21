@@ -7,15 +7,42 @@ using Numerics;
 
 namespace Kiezel
 {
-    abstract class Number
+    internal abstract class Number
     {
+        private static int a = ( int ) 'a';
+        private static int A = ( int ) 'A';
+        private static int nine = ( int ) '9';
+        private static int z = ( int ) 'z';
+        private static int Z = ( int ) 'Z';
+        private static int zero = ( int ) '0';
+        static internal bool CanShrink( BigRational d )
+        {
+            return ( d.Denominator == 1 );
+        }
 
-        static int zero = ( int ) '0';
-        static int nine = ( int ) '9';
-        static int a = ( int ) 'a';
-        static int z = ( int ) 'z';
-        static int A = ( int ) 'A';
-        static int Z = ( int ) 'Z';
+        static internal bool CanShrink( Int64 d )
+        {
+            if ( Int32.MinValue <= d && d <= Int32.MaxValue )
+            {
+                return true;
+            }
+            else
+            {
+                return false;
+            }
+        }
+
+        static internal bool CanShrink( BigInteger d )
+        {
+            if ( Int64.MinValue <= d && d <= Int64.MaxValue )
+            {
+                return true;
+            }
+            else
+            {
+                return false;
+            }
+        }
 
         internal static string ConvertToString( BigInteger n, bool escape, int radix )
         {
@@ -94,62 +121,41 @@ namespace Kiezel
             return ( int ) value;
         }
 
-        internal static bool TryParseNumberBase( string token, bool negAllowed, int numberBase, out BigInteger result )
+        internal static object Shrink( BigRational d )
         {
-            bool negative = false;
-            int digits = 0;
-            result = 0;
-
-            foreach ( char ch in token )
+            if ( CanShrink( d ) )
             {
-                if ( ch == '_' || ch == ',' )
-                {
-                    continue;
-                }
-
-                int digitCode = ( int ) ch;
-                int digitValue = numberBase;
-
-                if ( digits == 0 && negAllowed && ch == '-' )
-                {
-                    negative = !negative;
-                    continue;
-                }
-                else if ( zero <= digitCode && digitCode <= nine )
-                {
-                    digitValue = digitCode - zero;
-                }
-                else if ( a <= digitCode && digitCode <= z )
-                {
-                    digitValue = digitCode - a + 10;
-                }
-                else if ( A <= digitCode && digitCode <= Z )
-                {
-                    digitValue = digitCode - A + 10;
-                }
-
-                if ( digitValue >= numberBase )
-                {
-                    return false;
-                }
-
-                result = numberBase * result + digitValue;
-                ++digits;
+                return Shrink( d.Numerator );
             }
-
-            if ( digits == 0 )
+            else
             {
-                return false;
+                return d;
             }
-
-            if ( negative )
-            {
-                result = -result;
-            }
-
-            return true;
         }
 
+        internal static object Shrink( Int64 d )
+        {
+            if ( CanShrink( d ) )
+            {
+                return ( int ) d;
+            }
+            else
+            {
+                return d;
+            }
+        }
+
+        internal static object Shrink( BigInteger d )
+        {
+            if ( CanShrink( d ) )
+            {
+                return Shrink( ( Int64 ) d );
+            }
+            else
+            {
+                return d;
+            }
+        }
 
         internal static object TryParse( string str, CultureInfo culture, int numberBase )
         {
@@ -230,6 +236,8 @@ namespace Kiezel
                 decimal result2;
                 double result3;
 
+                s = s.Replace( "_", "" );
+
                 if ( Runtime.ReadDecimalNumbers && decimal.TryParse( s, NumberStyles.Any, culture ?? CultureInfo.InvariantCulture, out result2 ) )
                 {
                     return result2;
@@ -243,101 +251,60 @@ namespace Kiezel
             return null;
         }
 
-        static internal bool CanShrink( BigRational d )
+        internal static bool TryParseNumberBase( string token, bool negAllowed, int numberBase, out BigInteger result )
         {
-            return ( d.Denominator == 1 );
-        }
+            bool negative = false;
+            int digits = 0;
+            result = 0;
 
-        internal static object Shrink( BigRational d )
-        {
-            if ( CanShrink( d ) )
+            foreach ( char ch in token )
             {
-                return Shrink( d.Numerator );
-            }
-            else
-            {
-                return d;
-            }
-        }
+                if ( ch == '_' )
+                {
+                    continue;
+                }
 
-        static internal bool CanShrink( Int64 d )
-        {
-            if ( Int32.MinValue <= d && d <= Int32.MaxValue )
-            {
-                return true;
+                int digitCode = ( int ) ch;
+                int digitValue = numberBase;
+
+                if ( digits == 0 && negAllowed && ch == '-' )
+                {
+                    negative = !negative;
+                    continue;
+                }
+                else if ( zero <= digitCode && digitCode <= nine )
+                {
+                    digitValue = digitCode - zero;
+                }
+                else if ( a <= digitCode && digitCode <= z )
+                {
+                    digitValue = digitCode - a + 10;
+                }
+                else if ( A <= digitCode && digitCode <= Z )
+                {
+                    digitValue = digitCode - A + 10;
+                }
+
+                if ( digitValue >= numberBase )
+                {
+                    return false;
+                }
+
+                result = numberBase * result + digitValue;
+                ++digits;
             }
-            else
+
+            if ( digits == 0 )
             {
                 return false;
             }
+
+            if ( negative )
+            {
+                result = -result;
+            }
+
+            return true;
         }
-
-
-        internal static object Shrink( Int64 d )
-        {
-            if ( CanShrink( d ) )
-            {
-                return ( int ) d;
-            }
-            else
-            {
-                return d;
-            }
-        }
-
-        static internal bool CanShrink( BigInteger d )
-        {
-            if ( Int64.MinValue <= d && d <= Int64.MaxValue )
-            {
-                return true;
-            }
-            else
-            {
-                return false;
-            }
-        }
-
-        internal static object Shrink( BigInteger d )
-        {
-            if ( CanShrink( d ) )
-            {
-                return Shrink( ( Int64 ) d );
-            }
-            else
-            {
-                return d;
-            }
-        }
-
-
-    }
-
-    abstract class Rational : Number
-    {
-
-    }
-
-    abstract class Integer : Number
-    {
-
-    }
-
-    abstract class Atom
-    {
-
-    }
-
-    abstract class List
-    {
-
-    }
-
-    abstract class Enumerable
-    {
-    }
-
-    abstract class KeywordClass
-    {
-
     }
 }

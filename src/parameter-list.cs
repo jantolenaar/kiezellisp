@@ -1,36 +1,32 @@
 // Copyright (C) Jan Tolenaar. See the file LICENSE for details.
 
 using System;
-using System.Collections;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.Dynamic;
 using System.Linq.Expressions;
-using System.Reflection;
 
 namespace Kiezel
 {
+    internal enum Modifier
+    {
+        None = 0,
+        EqlSpecializer = 1,
+        TypeSpecializer = 2
+    }
 
     public class LambdaSignature
     {
-        internal LambdaKind Kind;
-        internal int RequiredArgsCount = 0;
         internal Symbol ArgModifier;
-        internal List<ParameterDef> Parameters = new List<ParameterDef>();
-        internal List<Symbol> Names = new List<Symbol>();
-        internal List<ParameterDef> flattenedParameters = null;
-        internal Symbol WholeArg = null;
         internal Symbol EnvArg = null;
-
+        internal List<ParameterDef> flattenedParameters = null;
+        internal LambdaKind Kind;
+        internal List<Symbol> Names = new List<Symbol>();
+        internal List<ParameterDef> Parameters = new List<ParameterDef>();
+        internal int RequiredArgsCount = 0;
+        internal Symbol WholeArg = null;
         internal LambdaSignature( LambdaKind kind )
         {
             Kind = kind;
-        }
-
-        internal bool IsGetter()
-        {
-            return Kind == LambdaKind.Function && Parameters.Count == 1 && RequiredArgsCount == 1 && Parameters[ 0 ].Sym.Name == "this";
         }
 
         internal List<ParameterDef> FlattenedParameters
@@ -62,6 +58,10 @@ namespace Kiezel
             }
         }
 
+        internal bool IsGetter()
+        {
+            return Kind == LambdaKind.Function && Parameters.Count == 1 && RequiredArgsCount == 1 && Parameters[ 0 ].Sym.Name == "this";
+        }
         internal bool ParametersMatchArguments( object[] args )
         {
             int i = 0;
@@ -129,32 +129,20 @@ namespace Kiezel
 
             return true;
         }
-
-  
     }
-
-
-    internal enum Modifier
-    {
-        None = 0,
-        EqlSpecializer = 1,
-        TypeSpecializer = 2
-    }
-
     internal class ParameterDef
     {
-        internal Symbol Sym;
-        internal object Specializer;
-        internal LambdaSignature NestedParameters;
+        internal bool Hidden;
         internal Expression InitForm;
         internal Func<object> InitFormProc;
-        internal bool Hidden;
-
-        internal ParameterDef( Symbol sym,  object specializer = null, 
-                                            Expression initForm = null, 
+        internal LambdaSignature NestedParameters;
+        internal object Specializer;
+        internal Symbol Sym;
+        internal ParameterDef( Symbol sym, object specializer = null,
+                                            Expression initForm = null,
                                             Func<object> initFormProc = null,
                                             LambdaSignature nestedParameters = null,
-                                            bool hidden = false     )
+                                            bool hidden = false )
         {
             Sym = sym;
             Specializer = specializer;
@@ -166,14 +154,6 @@ namespace Kiezel
             if ( InitForm != null && InitFormProc == null )
             {
                 InitFormProc = Runtime.CompileToFunction( initForm );
-            }
-        }
-
-        internal bool HasEqlSpecializer
-        {
-            get
-            {
-                return Specializer != null && Specializer is EqlSpecializer;
             }
         }
 
@@ -192,6 +172,13 @@ namespace Kiezel
             }
         }
 
+        internal bool HasEqlSpecializer
+        {
+            get
+            {
+                return Specializer != null && Specializer is EqlSpecializer;
+            }
+        }
         internal bool HasTypeSpecializer
         {
             get
@@ -219,8 +206,5 @@ namespace Kiezel
         {
             return System.String.Format( "{0}", Sym );
         }
-
     }
-
- }
-
+}

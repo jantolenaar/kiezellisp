@@ -55,15 +55,16 @@ Prints information attached to the global symbol `topic`.
 
 (defun show-string (item)
     ; rewrite markdown html links []() and [][]
-    (let item1 item)
+    (let item1 (.trim item "\r\n"))
     (let item2 (.regex-replace item1 #"\[(.*?)\]\(.*?\)" @"`\1`"))
     (let item3 (.regex-replace item2 #"\[(.*?)\]\[.*?\]" @"`\1`"))
-    (loop 
+    #;(loop 
         (for part :in (.split item3 "`"))
         (with standout :initially false :then (not standout))
         (write part :escape false 
                     :color (if standout $standout-color)
                     :background-color (if standout $standout-background-color)))
+    (write item3 :escape false)
     (print-line)
     (print-line))
 
@@ -79,7 +80,7 @@ Prints information attached to the global symbol `topic`.
     (print-line (.indent content "    ")))
 
 (defun print-examples-to-string (examples add-terminating-prompt)
-    (let $package $package)
+    (var $package $package)
     (let env (make-extended-environment))
     (var prompt-nr 1)
     (var dbglevel 0)
@@ -89,12 +90,20 @@ Prints information attached to the global symbol `topic`.
             (let prompt (make-prompt prompt-nr dbglevel))
             (print prompt)
             (var example-code null)
+            (var throws-exception false)
             (cond 
                 ((and (cons? example)
                       (= (string (first example)) "EXAMPLE"))
                     (let code (apply string (rest example)))
                     (let $print-escape false)
                     (pprint code :left (length prompt))
+                    (setf example-code (read-from-string code)))
+                ((and (cons? example)
+                      (= (string (first example)) "EXCEPTION-EXAMPLE"))
+                    (let code (apply string (rest example)))
+                    (let $print-escape false)
+                    (pprint code :left (length prompt))
+                    (setf throws-exception true)
                     (setf example-code (read-from-string code)))
                 (true
                     (pprint example :left (length prompt))
@@ -114,7 +123,11 @@ Prints information attached to the global symbol `topic`.
                     (let result (do
                                     (let $enable-warnings false)
                                     (let $stdlog $stdout)
-                                    (try-and-catch (force (eval example-code env)))))
+                                    (if throws-exception
+                                          (try-and-catch
+                                              (force (eval example-code env)))
+                                        (force (eval example-code env)))
+                                    ))
                     (cond
                         ((exception? result)
                             (print-line (.message (.inner-exception result)))

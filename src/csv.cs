@@ -2,17 +2,15 @@
 
 using System;
 using System.Collections;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.IO;
 using System.Globalization;
+using System.IO;
+using System.Text;
 
 namespace Kiezel
 {
-   ////////////////////////////////////////////////////////////////////////////////////////////////////
-   /// Functions to handle comma or tab separated files.
-   ////////////////////////////////////////////////////////////////////////////////////////////////////
+    ////////////////////////////////////////////////////////////////////////////////////////////////////
+    /// Functions to handle comma or tab separated files.
+    ////////////////////////////////////////////////////////////////////////////////////////////////////
 
     public partial class Runtime
     {
@@ -26,7 +24,7 @@ namespace Kiezel
         public static Vector CsvReadStringToGrid( string str, Prototype options )
         {
             options = options ?? new Prototype( null );
-            string fieldSeparator = (string) options.GetValue("field-separator") ?? ",";
+            string fieldSeparator = ( string ) options.GetValue( "field-separator" ) ?? ",";
             string quoteCharacter = ( string ) options.GetValue( "quote-character" ) ?? "\"";
             bool trimSpaces = ToBool( options.GetValue( "trim-spaces?" ) ?? true );
             char fieldChar = fieldSeparator[ 0 ];
@@ -74,11 +72,11 @@ namespace Kiezel
                     if ( current == '\n' )
                     {
                         fields.Add( trimSpaces ? field.ToString().Trim() : field.ToString() );
-                        lines.Add(fields);
+                        lines.Add( fields );
                         fields = null;
                         field = null;
                     }
-                    else if ( current == fieldChar)
+                    else if ( current == fieldChar )
                     {
                         fields.Add( trimSpaces ? field.ToString().Trim() : field.ToString() );
                         field = new StringBuilder();
@@ -111,35 +109,6 @@ namespace Kiezel
             return lines;
         }
 
-        [Lisp("csv:write-value-to-string")]
-        public static string CsvWriteValueToString( object value, CultureInfo culture )
-        {
-
-            if ( value == null )
-            {
-                return "";
-            }
-            else if ( value is string )
-            {
-                return ( string ) value;
-            }
-            else if ( value is DateTime )
-            {
-                culture = culture ?? CultureInfo.InvariantCulture;
-                var fmt = "{0:" + culture.DateTimeFormat.ShortDatePattern + "}";
-                return String.Format( fmt, value );
-            }
-            else if ( Numberp( value ) )
-            {
-                culture = culture ?? CultureInfo.InvariantCulture;
-                return ( string ) InvokeMember( value, "ToString", culture );
-            }
-            else
-            {
-                return value.ToString();
-            }
-        }
-
         [Lisp( "csv:write-grid-to-string" )]
         public static string CsvWriteGridToString( IEnumerable lines, Prototype options )
         {
@@ -149,10 +118,10 @@ namespace Kiezel
             bool quoteAll = ToBool( options.GetValue( "quote-all?" ) ?? false );
             char fieldChar = fieldSeparator[ 0 ];
             char quoteChar = quoteCharacter[ 0 ];
-            var culture = (CultureInfo) options.GetValue( "culture" ) ?? CultureInfo.InvariantCulture;
+            var culture = ( CultureInfo ) options.GetValue( "culture" ) ?? CultureInfo.InvariantCulture;
             var singleQuote = quoteCharacter;
             var doubleQuote = quoteCharacter + quoteCharacter;
-            var forbidden = new char[] { fieldSeparator[0], quoteCharacter[0], '\n', '\r' };
+            var forbidden = new char[] { fieldSeparator[ 0 ], quoteCharacter[ 0 ], '\n', '\r' };
 
             using ( var stream = new StringWriter() )
             {
@@ -181,7 +150,7 @@ namespace Kiezel
                             stream.Write( field );
                         }
 
-                        separator = fieldSeparator[0];
+                        separator = fieldSeparator[ 0 ];
                     }
 
                     stream.Write( "\n" );
@@ -190,6 +159,33 @@ namespace Kiezel
                 return stream.ToString();
             }
         }
+
+        [Lisp( "csv:write-value-to-string" )]
+        public static string CsvWriteValueToString( object value, CultureInfo culture )
+        {
+            if ( value == null )
+            {
+                return "";
+            }
+            else if ( value is string )
+            {
+                return ( string ) value;
+            }
+            else if ( value is DateTime )
+            {
+                culture = culture ?? CultureInfo.InvariantCulture;
+                var fmt = "{0:" + culture.DateTimeFormat.ShortDatePattern + "}";
+                return String.Format( fmt, value );
+            }
+            else if ( Numberp( value ) )
+            {
+                culture = culture ?? CultureInfo.InvariantCulture;
+                return ( string ) InvokeMember( value, "ToString", culture );
+            }
+            else
+            {
+                return value.ToString();
+            }
+        }
     }
 }
-

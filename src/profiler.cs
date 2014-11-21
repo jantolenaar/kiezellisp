@@ -1,73 +1,21 @@
 // Copyright (C) Jan Tolenaar. See the file LICENSE for details.
 
-
-using System;
-using System.Collections;
 using System.Collections.Generic;
-using System.Linq;
-using System.Linq.Expressions;
-using System.Text;
-using System.Numerics;
-using System.Reflection;
-using System.Dynamic;
-using System.Runtime.CompilerServices;
 using System.Diagnostics;
 using System.IO;
-using System.Threading;
 
 namespace Kiezel
 {
     public partial class Runtime
     {
-
         internal static List<ProfilingEntry> ProfilingEntries = null;
         internal static Stopwatch ProfilingTimer = Stopwatch.StartNew();
 
-        [Lisp("profiler.restart-timer")]
-        public static void RestartTimer()
+        [Lisp( "profiler.close-session" )]
+        public static void CloseProfilingSession()
         {
-            ProfilingTimer.Restart();
-        }
-
-        [Lisp( "profiler.reset-timer" )]
-        public static void ResetTimer()
-        {
-            ProfilingTimer.Reset();
-        }
-
-        [Lisp( "profiler.start-timer" )]
-        public static void StartTimer()
-        {
-            ProfilingTimer.Start();
-        }
-
-        [Lisp( "profiler.stop-timer" )]
-        public static void StopTimer()
-        {
-            ProfilingTimer.Stop();
-        }
-
-        [Lisp( "profiler.read-timer" )]
-        public static long ReadTimer()
-        {
-            return ProfilingTimer.ElapsedMilliseconds;
-        }
-
-        internal class ProfilingEntry
-        {
-            internal long SeqNr;
-            internal long Start;
-            internal long End;
-            internal Cons Form;
-
-            internal ProfilingEntry( int seqnr, long time, Cons form )
-            {
-                SeqNr = seqnr;
-                Start = time;
-                End = -1;
-                Form = form;
-            }
-
+            StopTimer();
+            ProfilingEntries = null;
         }
 
         [Lisp( "profiler.open-session" )]
@@ -77,13 +25,23 @@ namespace Kiezel
             RestartTimer();
         }
 
-        [Lisp( "profiler.close-session" )]
-        public static void CloseProfilingSession()
+        [Lisp( "profiler.read-timer" )]
+        public static long ReadTimer()
         {
-            StopTimer();
-            ProfilingEntries = null;
+            return ProfilingTimer.ElapsedMilliseconds;
         }
 
+        [Lisp( "profiler.reset-timer" )]
+        public static void ResetTimer()
+        {
+            ProfilingTimer.Reset();
+        }
+
+        [Lisp( "profiler.restart-timer" )]
+        public static void RestartTimer()
+        {
+            ProfilingTimer.Restart();
+        }
         [Lisp( "profiler.save-session" )]
         public static void SaveProfilingSession( string path )
         {
@@ -112,13 +70,24 @@ namespace Kiezel
             CloseProfilingSession();
         }
 
+        [Lisp( "profiler.start-timer" )]
+        public static void StartTimer()
+        {
+            ProfilingTimer.Start();
+        }
+
+        [Lisp( "profiler.stop-timer" )]
+        public static void StopTimer()
+        {
+            ProfilingTimer.Stop();
+        }
         internal static int LogBeginCall( Cons form )
         {
             if ( ProfilingEntries != null )
             {
                 long time = ReadTimer();
                 int index = ProfilingEntries.Count;
-                ProfilingEntries.Add( new ProfilingEntry( index+1, time, form ) );
+                ProfilingEntries.Add( new ProfilingEntry( index + 1, time, form ) );
                 return index;
             }
             else
@@ -135,6 +104,20 @@ namespace Kiezel
                 ProfilingEntries[ index ].End = time;
             }
         }
-	}
-}
 
+        internal class ProfilingEntry
+        {
+            internal long End;
+            internal Cons Form;
+            internal long SeqNr;
+            internal long Start;
+            internal ProfilingEntry( int seqnr, long time, Cons form )
+            {
+                SeqNr = seqnr;
+                Start = time;
+                End = -1;
+                Form = form;
+            }
+        }
+    }
+}

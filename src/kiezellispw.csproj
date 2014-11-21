@@ -122,10 +122,14 @@
     <Compile Include="profiler.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="prototype.cs" />
+    <Compile Include="pseudo-classes.cs" />
     <Compile Include="read-table.cs" />
     <Compile Include="reader-handlers.cs" />
     <Compile Include="reader-scanner.cs" />
-    <Compile Include="seq-reducers.cs" />
+    <Compile Include="seq-access.cs" />
+    <Compile Include="seq-convert.cs" />
+    <Compile Include="seq-enum.cs" />
+    <Compile Include="seq-helpers.cs" />
     <Compile Include="seq.cs" />
     <Compile Include="setup.cs" />
     <Compile Include="string-extensions.cs" />

@@ -1,8 +1,16 @@
-;;;; Copyright (c) Jan Tolenaar. See the file LICENSE for details.
 
 (in-package "lisp")
 
 (import-documentation '(
+
+($command-line-arguments 
+"""
+A list of strings. The command line arguments to Kiezellisp that follow
+the option `--`.
+"""
+)
+
+;------------------------------------------------------------------------------
 
 ($debug-mode 
 """
@@ -53,9 +61,9 @@ Returns true if Kiezellisp is running with a REPL.
 
 ;------------------------------------------------------------------------------
 
-($pprint-left-margin
+($lazy-import 
 """
-The column number of the current left margin used by `pprint`.
+TO DO
 """
 )
 
@@ -108,6 +116,14 @@ $package
 
 ;------------------------------------------------------------------------------
 
+($package-name-prefix 
+"""
+TO DO
+"""
+)
+
+;------------------------------------------------------------------------------
+
 ($pprint-hook 
 """
 A function. Some REPL output functions use this hook to create prettier output.
@@ -118,12 +134,30 @@ $pprint-hook
 
 ;------------------------------------------------------------------------------
 
+($pprint-left-margin 
+"""
+The column number of the current left margin used by `pprint`.
+"""
+)
+
+;------------------------------------------------------------------------------
+
+($pprint-right-margin 
+"""
+The column number of the current right margin used by `pprint`.
+"""
+)
+
+;------------------------------------------------------------------------------
+
 ($print-background-color 
 """
 The default value of the parameter `background-color` of the function `write`. Initially `null`.
 """
 $print-background-color
-(do (let $print-background-color :red) (print-line 13))
+(do
+    (let $print-background-color :red)
+    (print-line 13))
 )
 
 ;------------------------------------------------------------------------------
@@ -133,7 +167,9 @@ $print-background-color
 The default value of the parameter `base` of the function `write`. Initially `10`.
 """
 $print-base
-(do (let $print-base 7) (print-line 13))
+(do
+    (let $print-base 7)
+    (print-line 13))
 )
 
 ;------------------------------------------------------------------------------
@@ -143,7 +179,9 @@ $print-base
 The default value of the parameter `color` of the function `write`. Initially `null`.
 """
 $print-color
-(do (let $print-color :red) (print-line 13))
+(do
+    (let $print-color :red)
+    (print-line 13))
 )
 
 ;------------------------------------------------------------------------------
@@ -195,38 +233,20 @@ reader allows `#.` syntax only if it is `load`ing or `requiring` a file.
 
 ;------------------------------------------------------------------------------
 
+($readtable 
+"""
+TO DO
+"""
+)
+
+;------------------------------------------------------------------------------
+
 ($repl-listener-port 
 """
 The TCP port number used by the REPL listener. Defaults to 8080. See also 
-the `--listener` command line option. 
+the `--listener` command line option.
 """
 $repl-listener-port
-)
-
-;------------------------------------------------------------------------------
-
-($pprint-right-margin
-"""
-The column number of the current right margin used by `pprint`.
-"""
-)
-
-;------------------------------------------------------------------------------
-
-($quick-import
-"""
-When true, the function `import` does not create class member symbols until
-they are referenced. Has an effect on tab completion. By default: true.
-"""
-)
-
-;------------------------------------------------------------------------------
-
-($command-line-arguments 
-"""
-A list of strings. The command line arguments to Kiezellisp that follow
-the option `--`.
-"""
 )
 
 ;------------------------------------------------------------------------------
@@ -409,27 +429,12 @@ Returns a function to access a member of an arbitrary object,
 e.g. `(. "to-upper")`. This is usually written as `.to-upper` and 
 expanded by the lisp reader to the former expression.
 """
-(EXAMPLE #q{((. "to-upper") "hello")})
+(EXAMPLE "((. \"to-upper\") \"hello\")")
 (.to-upper "hello")
-(let obj (new :name "piet"))
+(let obj (new :name
+              "piet"))
 (.name.to-upper obj)
-(.city.to-upper obj)
-)
-
-;------------------------------------------------------------------------------
-
-(? (members)
-"""
-Returns a function to access a member of an arbitrary object allowing for
-null reference, e.g. `(? "to-upper")`. This is usually written as `?to-upper` 
-and expanded by the lisp reader to the former expression.
-"""
-(EXAMPLE #q{((? "to-upper") "hello")})
-(?to-upper "hello")
-(let obj (new :name "piet"))
-(?name.to-upper obj)
-(?city.to-upper obj)
-(.city.to-upper obj)
+(EXCEPTION-EXAMPLE #q{(.city.to-upper obj)})
 )
 
 ;------------------------------------------------------------------------------
@@ -494,9 +499,34 @@ Returns true if `args` is in monotonic increasing order. See `compare`.
 
 ;------------------------------------------------------------------------------
 
+(? (members)
+"""
+Returns a function to access a member of an arbitrary object allowing for
+null reference, e.g. `(? "to-upper")`. This is usually written as `?to-upper` 
+and expanded by the lisp reader to the former expression.
+"""
+(EXAMPLE "((? \"to-upper\") \"hello\")")
+(?to-upper "hello")
+(let obj (new :name
+              "piet"))
+(?name.to-upper obj)
+(?city.to-upper obj)
+(EXCEPTION-EXAMPLE #q{(.city.to-upper obj)})
+)
+
+;------------------------------------------------------------------------------
+
+(add-event-handler (eventinfo target func)
+"""
+TO DO
+"""
+)
+
+;------------------------------------------------------------------------------
+
 (adjoin (item seq)
 """
-Return `seq` if `seq` contains `item`, otherwise returns a new lazy sequence 
+Returns `seq` if `seq` contains `item`, otherwise returns a new lazy sequence 
 with `item` as the first item.
 """
 (adjoin 2 (list 1 2 3))
@@ -512,12 +542,13 @@ Returns the value of the first argument that evaluates as false. Otherwise
 returns the value of the last argument.
 """
 (let n 12)
-(and (number? n) (< n 13))
+(and (number? n)
+     (< n 13))
 )
 
 ;------------------------------------------------------------------------------
 
-(any? (predicate seq)
+(any? (predicate seq &key (key identity))
 """
 Returns true if some element of `seq` satisfies the function `predicate`.
 """
@@ -622,6 +653,15 @@ Converts a number to Double.
 
 ;------------------------------------------------------------------------------
 
+(as-enumerable (seq)
+               (seq type)
+"""
+TO DO
+"""
+)
+
+;------------------------------------------------------------------------------
+
 (as-int (a)
 """
 Converts a number to Int32.
@@ -679,6 +719,15 @@ Converts a number to Int64.
 
 ;------------------------------------------------------------------------------
 
+(as-multiple-elements (seq size)
+                      (seq)
+"""
+TO DO
+"""
+)
+
+;------------------------------------------------------------------------------
+
 (as-prototype (obj)
 """
 Adds the contents of a hashtable, the values of static properties of a type
@@ -692,7 +741,7 @@ or the instance properties of an object to a prototype hashtable.
 
 ;------------------------------------------------------------------------------
 
-(as-prototype-ignore-case (obj)
+(as-prototype-ci (obj)
 """
 Adds the contents of a hashtable, the values of static properties of a type
 or the instance properties of an object to a case-insensitive prototype hashtable.
@@ -716,7 +765,7 @@ Converts a sequence to a vector.
 Throws an AssertFailedException if `expr` evaluates to false. Generates no code 
 when `$debug-mode` is false.
 """
-(assert (= 1 2))
+(EXCEPTION-EXAMPLE #q{(assert (= 1 2))})
 )
 
 ;------------------------------------------------------------------------------
@@ -726,7 +775,7 @@ when `$debug-mode` is false.
 Throws an AssertFailedException if `expr` does not throw an exception. Generates no code 
 when `$debug-mode` is false.
 """
-(assert-throws-exception (= 1 2))
+(EXCEPTION-EXAMPLE #q{(assert-throws-exception (= 1 2))})
 )
 
 ;------------------------------------------------------------------------------
@@ -736,7 +785,7 @@ when `$debug-mode` is false.
 Throws an AssertFailedException if `expr` throws an exception. Generates no code 
 when `$debug-mode` is false.
 """
-(assert-throws-no-exception (= xxxxxxxx 1))
+(EXCEPTION-EXAMPLE #q{(assert-throws-no-exception (= xxxxxxxx 1))})
 )
 
 ;------------------------------------------------------------------------------
@@ -837,7 +886,7 @@ A named block is a `do` block that one can `return-from` with or without a value
 """
 (block abc
     (let x 1)
-    (return-from abc 2)   
+    (return-from abc 2)
     x)
 )
 
@@ -864,18 +913,11 @@ Breaks out of the current `loop`, `while` or `foreach` loop skipping the
 `finally` clause and returning the value of `val` instead of any accumulated
 values.
 """
-(loop (break))
-(loop (break 123))
+(loop
+    (break null))
+(loop
+    (break 123))
 )
-
-;------------------------------------------------------------------------------
-
-(breakpoint ()
-"""
-Inserts a breakpoint in the code. Use the command `:continue` to continue
-from the breakpoint. Use `:abort` to stop the program.
-"""
-)    
 
 ;------------------------------------------------------------------------------
 
@@ -892,6 +934,15 @@ returning the value of `val`.
 """
 Place a call to this function in a loop if you want the ability to stop it
 by entering CTRL-D.
+"""
+)
+
+;------------------------------------------------------------------------------
+
+(breakpoint ()
+"""
+Inserts a breakpoint in the code. Use the command `:continue` to continue
+from the breakpoint. Use `:abort` to stop the program.
 """
 )
 
@@ -935,7 +986,7 @@ Returns the first element of a list.
 
 (case (key-form clause*)
 """
-    clause := '(' test-form form* ')'
+clause := '(' test-form form* ')'
     test-form := form | '(' form* ')'
 
 Each `test-form` is a list that starts with an unevaluated non-list item or a list of 
@@ -953,28 +1004,12 @@ and `otherwise` indicate that the `clause` matches anything.
 
 ;------------------------------------------------------------------------------
 
-(ecase (key-form clause*)
-"""
-Like `case`, but throws an exception if no case matches.
-"""
-)
-
-;------------------------------------------------------------------------------
-
 (case-match (key-form clause*)
 """
-    clause := '(' test-form form* ')'
+clause := '(' test-form form* ')'
     test-form := true | otherwise | pattern
 
 Patterns are described in [pattern-matching](pattern-matching.html).
-"""
-)
-
-;------------------------------------------------------------------------------
-
-(ecase-match (key-form clause*)
-"""
-Like `case-match`, but throws an exception if no case matches.
 """
 )
 
@@ -1016,22 +1051,20 @@ Returns true if `expr` is a character.
 
 ;------------------------------------------------------------------------------
 
-(collect (&rest items)
+(code-walk (form transform)
+           (form transform env)
 """
-When used inside a `loop`, `while` or `foreach`, adds each item of `items` to the 
-list value returned by the loop.
+TO DO
 """
-(loop (for i in (series 1 5)) (collect i (* i i)))
 )
 
 ;------------------------------------------------------------------------------
 
-(collect-each (items)
+(code-walk-list (forms transform)
+                (forms transform env)
 """
-When used inside a `loop`, `while` or `foreach`, adds each item of `items` to the 
-list value returned by the loop.
+TO DO
 """
-(loop (for i in (series 1 5)) (collect-each (series 1 i)))
 )
 
 ;------------------------------------------------------------------------------
@@ -1041,21 +1074,30 @@ list value returned by the loop.
 Compares two numbers, characters, strings, symbols, dates and timespans.
 """
 (compare 3 5)
-(compare 3 null)
+(EXCEPTION-EXAMPLE #q{(compare 3 null)})
 (compare "een" "twee")
-(compare #\a "a")
+(EXCEPTION-EXAMPLE #q{(compare #\a "a")})
 (compare (date-time:today) (.add-years (date-time:today) 1))
 )
 
 ;------------------------------------------------------------------------------
 
-(compare-no-case (a1 a2)
+(compare-ci (a1 a2)
 """
 Like `compare`, but compares strings and characters case-insensitively.
 """
 (compare "aap" "Aap")
-(compare-no-case "aap" "Aap")
+(compare-ci "aap" "Aap")
 )
+
+;------------------------------------------------------------------------------
+(complement (func)
+"""
+Returns a function that applies `not` to the result of `func`.
+"""
+(mapv odd? (series 5))
+(mapv (complement odd?) (series 5))
+)    
 
 ;------------------------------------------------------------------------------
 
@@ -1099,15 +1141,31 @@ Creates a new function that applies the given functions from the right to the le
 
 ;------------------------------------------------------------------------------
 
+(concat (&rest seqs)
+"""
+TO DO
+"""
+)
+
+;------------------------------------------------------------------------------
+
 (cond (clause*)
 """
-    clause := '( test-expr form* ')'
+clause := '( test-expr form* ')'
 """
 (let a 137)
-(cond 
+(cond
     ((< a 100) (print-line 'smaller-than-100))
     ((< a 200) (print-line 'smaller-than-200))
     (true (print-line 'large)))
+)
+
+;------------------------------------------------------------------------------
+
+(conj (seq item)
+"""
+TO DO
+"""
 )
 
 ;------------------------------------------------------------------------------
@@ -1117,8 +1175,19 @@ Creates a new function that applies the given functions from the right to the le
 """
 Returns a new list with specified first and rest elements.
 """
-(defun fibo (a b) (cons a (delay (fibo b (+ a b)))))
+(defun fibo (a b)
+    (cons a (delay (fibo b (+ a b)))))
 (take 15 (fibo 1 1))
+)
+
+;------------------------------------------------------------------------------
+
+(constantly (value)
+"""
+Returns a function accepting arbitrary arguments that always returns `value`.
+"""    
+(def f12 (constantly 12))
+(f12 3 4 5)
 )
 
 ;------------------------------------------------------------------------------
@@ -1150,7 +1219,8 @@ Starts the next iteration of the current `loop`, `while` or `foreach` loop if
 (loop
     (for i in (series 5))
     (print-line i)
-    (continue-if (odd? i))
+    (continue-if
+        (odd? i))
     (print-line i))
 (macroexpand-1 '(continue-if (odd? i)))
 )
@@ -1159,7 +1229,7 @@ Starts the next iteration of the current `loop`, `while` or `foreach` loop if
 
 (copy-readtable (&key (readtable $readtable))
 """
-Returns a copy of 'readtable'. If `null` returns the standard readtable.
+Returns a copy of `readtable`. If `null` returns the standard readtable.
 """
 )
 
@@ -1181,22 +1251,12 @@ Returns a recursive copy of `list`.
 
 ;------------------------------------------------------------------------------
 
-(count (item seq &key (test =) (key identity))
-"""
-Counts the number of elements in `seq` that match `item`.
-"""
-(count 4 '(1 2 3 4 5))
-(count 4 '("aap" "noot" "mies") :key .length)
-)
-
-;------------------------------------------------------------------------------
-
-(count-if (predicate seq &key (key identity))
+(count-if (predicate seq)
 """
 Counts the number of elements in `seq` that match the `predicate` function.
 """
 (count-if odd? '(1 2 3 4 5))
-(count-if odd? '("aap" "noot" "mies") :key .length)
+(EXAMPLE """(count-if #(odd? (.length %)) '("aap" "noot" "mies"))""")
 )
 
 ;------------------------------------------------------------------------------
@@ -1238,12 +1298,11 @@ TO DO
 
 (cycle (seq)
 """
-Returns a lazy sequence of the elements of `seq` fllowed by the elements of
+Returns a lazy sequence of the elements of `seq` followed by the elements of
 `seq` and so on. Returns `null` if `seq` is empty.
 """
 (take 8 (cycle '(1 2 3)))
-)    
-
+)
 
 ;------------------------------------------------------------------------------
 
@@ -1279,8 +1338,8 @@ b
 )
 
 ;------------------------------------------------------------------------------
-(declare (&rest args)
 
+(declare (&rest args)
 """
 Gives compiling instructions to the compiler.
 
@@ -1302,31 +1361,11 @@ Defines a global variable `name` in the current package with initial value `valu
 
 ;------------------------------------------------------------------------------
 
-(deftype (name type)
-"""
-Gives the name `name` to the prototype or System.Type `type`. The symbol `name`
-may now be used by the function `type?` and by the special form `defmethod`.
-See also: `set-find-type`.
-"""
-(deftype a (new :name "mies"))
-)
-
-;------------------------------------------------------------------------------
-
 (defconstant (name value \[doc-string\])
 """
 Defines a global constant `name` in the current package with initial value `value`.
 """
 (defconstant a 123)
-)
-
-;------------------------------------------------------------------------------
-
-(defonce (name value &optional doc-string)
-"""
-Defines the global variable `name` in the current package with value `value` if 
-currently undefined. Does nothing if the variable already exists.
-"""
 )
 
 ;------------------------------------------------------------------------------
@@ -1371,6 +1410,15 @@ See also: [Methods](methods.html)
 
 ;------------------------------------------------------------------------------
 
+(defonce (name value &optional doc-string)
+"""
+Defines the global variable `name` in the current package with value `value` if 
+currently undefined. Does nothing if the variable already exists.
+"""
+)
+
+;------------------------------------------------------------------------------
+
 (defpackage (name &rest options)
 """
 Defines a package. See also the file `package.k`.
@@ -1387,6 +1435,17 @@ Defines `func` as a setter for an expression of the form: `(setf (name ...) valu
 `func` takes parameters corresponding to `...` and `value`. 
 See also the file `setf.k`.
 """
+)
+
+;------------------------------------------------------------------------------
+
+(deftype (name type)
+"""
+Gives the name `name` to the prototype or System.Type `type`. The symbol `name`
+may now be used by the function `type?` and by the special form `defmethod`.
+See also: `set-find-type`.
+"""
+(deftype a (new :name "mies"))
 )
 
 ;------------------------------------------------------------------------------
@@ -1429,11 +1488,11 @@ Shows some information about `obj`. Called by the REPL command `:d`.
 
 ;------------------------------------------------------------------------------
 
-(distinct (seq &key test key)
+(distinct (seq &key (test equal))
 """
 Returns a lazy sequence of distinct elements in `seq`.
 """
-(distinct '(1 2 3 4 5) :key odd?)
+(distinct '(1 2 2 3 3 4 5))
 )
 
 ;------------------------------------------------------------------------------
@@ -1459,18 +1518,39 @@ generate `do` blocks.
 """
 The `let` and `var` special forms declare lexical or dynamic variables.
 """
-(do (let x 3) (let y 2) (+ x y))
+(do
+    (let x 3)
+    (let y 2)
+    (+ x y))
 """
 Use `do` to perform method chaining. The compiler creates the variable `~` 
 automatically.
 """
-(do "een twee   drie vier vijf zes zeven" (.split ~) (map .length ~) (sum ~))
+(do
+    "een twee   drie vier vijf zes zeven"
+    (.split ~)
+    (map .length ~)
+    (sum ~))
 (sum (map .length (.split "een twee   drie vier vijf zes zeven")))
+)
+
+;------------------------------------------------------------------------------
+
+(drop (count seq)
 """
-Every expression in a `do` block get its own numbered `~` variable. `~` refers
-to the previous expression. `~2` refers to the second expression, etc.
+Skips `count` elements of `seq` and returns the remainder, which may be empty.
 """
-(do 'a 'b (list ~1 ~2))
+(drop 3 '(a b c d e f))
+(drop 33 '(a b c d e f))
+)
+
+;------------------------------------------------------------------------------
+
+(drop-while (predicate seq)
+"""
+Skips elements of `seq` while they satisfy the `predicate`.
+"""
+(drop-while odd? '(1 1 2 3 4 5))
 )
 
 ;------------------------------------------------------------------------------
@@ -1480,6 +1560,22 @@ to the previous expression. `~2` refers to the second expression, etc.
 Applies the function `action` to each element of `seq`.
 """
 (each print-line "abc")
+)
+
+;------------------------------------------------------------------------------
+
+(ecase (key-form clause*)
+"""
+Like `case`, but throws an exception if no case matches.
+"""
+)
+
+;------------------------------------------------------------------------------
+
+(ecase-match (key-form clause*)
+"""
+Like `case-match`, but throws an exception if no case matches.
+"""
 )
 
 ;------------------------------------------------------------------------------
@@ -1558,14 +1654,23 @@ Like `equal` but compares strings and characters case-insensitively.
 
 ;------------------------------------------------------------------------------
 
+(etypecase (keyform normal-clause* \[otherwise-clause\])
+"""
+Like `typecase`, but throws an exception if no case matches.
+"""
+)
+
+;------------------------------------------------------------------------------
+
 (eval (expr env)
       (expr)
 """
 Evaluates a lisp expression.
 """
-(let n 3)
 (eval '(+ 3 4))
-(eval '(+ 3 n))
+(let n 3)
+(+ 3 n)
+(EXCEPTION-EXAMPLE #q{(eval '(+ 3 n))})
 )
 
 ;------------------------------------------------------------------------------
@@ -1579,7 +1684,7 @@ Returns true if `number` is even.
 
 ;------------------------------------------------------------------------------
 
-(every? (predicate seq)
+(every? (predicate seq &key (key identity))
 """
 Returns true if every element in `seq` satisfies the function `predicate`.
 """
@@ -1644,24 +1749,6 @@ Returns the fifth element in a `seq`; or `null` if there is no fifth element.
 
 ;------------------------------------------------------------------------------
 
-(file:read-all-text (path)
-                    (path encoding)
-"""
-As the original, but (on Windows) with CRLF to LF conversion.
-"""
-)
-
-;------------------------------------------------------------------------------
-
-(file:write-all-text (path contents)
-                     (path contents encoding)
-"""
-As the original, but (on Windows) with LF to CRLF conversion.
-"""
-)
-
-;------------------------------------------------------------------------------
-
 (filter (predicate seq &key (key identity))
 """
 Returns a lazy list containing the elements of `seq` that satisfy the function
@@ -1686,29 +1773,12 @@ Returns the first element in `seq` matching the conditions.
 
 ;------------------------------------------------------------------------------
 
-(find-type (name)
-"""
-Returns the prototype or System.Type associated with the symbol `name`.
-"""
-(find-type 'string)
-)
-
-;------------------------------------------------------------------------------
-
 (find-if (predicate seq &key (key identity))
 """
 Returns the first element in `seq` matching the conditions.
 """
 (find-if even? '(1 2 3 4 5))
 (find-if even? '("aap" "noot" "mies") :key .length)
-)
-
-;------------------------------------------------------------------------------
-
-(find-name-in-environment (name env)
-"""
-Returns true if the symbol `name` is in the lexical environment `env`.
-"""
 )
 
 ;------------------------------------------------------------------------------
@@ -1720,6 +1790,14 @@ Retrieves the value of a property `item` on a property list `seq`. Otherwise lik
 (find-in-property-list 'noot '(aap 1 noot 2 mies 3))
 (find-in-property-list 'teun (vector 'aap 1 'noot 2 'mies 3))
 (find-in-property-list 'teun (vector 'aap 1 'noot 2 'mies 3) :default -1)
+)
+
+;------------------------------------------------------------------------------
+
+(find-name-in-environment (name env)
+"""
+Returns true if the symbol `name` is in the lexical environment `env`.
+"""
 )
 
 ;------------------------------------------------------------------------------
@@ -1764,15 +1842,26 @@ Returns the first occurrence of `subseq` within `seq`.
 
 ;------------------------------------------------------------------------------
 
+(find-type (name)
+"""
+Returns the prototype or System.Type associated with the symbol `name`.
+"""
+(find-type 'string)
+)
+
+;------------------------------------------------------------------------------
+
 (finish ()
 """
 When used within the main body of a `loop`, transfers control to the `finally` 
-clause of that `loop`. 
+clause of that `loop`.
 """
-(loop (for i in '(1 2 3 a 5 6))
-      (when (symbol? i) (finish))
-      (collect i)
-      (finally (collect 999)))
+(loop
+    (for i in '(1 2 3 a 5 6))
+    (when (symbol? i)
+        (finish))
+    (collect i)
+    (finally (collect 999)))
 )
 
 ;------------------------------------------------------------------------------
@@ -1782,10 +1871,11 @@ clause of that `loop`.
 When used within the main body of a `loop`, transfers control to the `finally` 
 clause of that `loop` if `test` is true.
 """
-(loop (for i in '(1 2 3 a 5 6))
-      (finish-if (symbol? i))
-      (collect i)
-      (finally (collect 999)))
+(loop
+    (for i in '(1 2 3 a 5 6))
+    (finish-if (symbol? i))
+    (collect i)
+    (finally (collect 999)))
 )
 
 ;------------------------------------------------------------------------------
@@ -1856,12 +1946,10 @@ Returns the fourth element in a `seq`; or `null` if there is no fourth element.
 
 (funcall (func &rest args)
 """
-Returns the value of calling `func` with arguments `args`. If `func` is a symbol,
-the global value of the symbol is used as the function.
+Returns the value of calling `func` with arguments `args`.
 """
 (+ 3 4)
 (funcall + 3 4)
-(funcall '+ 3 4)
 )
 
 ;------------------------------------------------------------------------------
@@ -1902,20 +1990,12 @@ implemented as native threads.
 ;------------------------------------------------------------------------------
 
 (gentemp (prefix)
-        ()
+         ()
 """
 Returns a new symbol in the "temp" package. For use by macro writers.
 """
 (gentemp "xyz")
 (gentemp)
-)
-
-;------------------------------------------------------------------------------
-
-(get-type (name)
-"""
-Like `find-type`. Throws exception if not found.
-"""
 )
 
 ;------------------------------------------------------------------------------
@@ -1938,7 +2018,7 @@ Returns the string representation of a keyword name, a symbol name or a value ty
 (get-designated-string 'aap)
 (get-designated-string :aap)
 (get-designated-string "aap")
-(get-designated-string 123)
+(EXCEPTION-EXAMPLE #q{(get-designated-string 123)})
 )
 
 ;------------------------------------------------------------------------------
@@ -1964,8 +2044,16 @@ Returns a list with all globally defined symbols.
 """
 Returns the package corresponding to `name`. Throws an exception if not found.
 """
-(get-package "bla-bla")
+(EXCEPTION-EXAMPLE #q{(get-package "bla-bla")})
 (get-package :lisp)
+)
+
+;------------------------------------------------------------------------------
+
+(get-type (name)
+"""
+Like `find-type`. Throws exception if not found.
+"""
 )
 
 ;------------------------------------------------------------------------------
@@ -1979,7 +2067,7 @@ Returns Kiezellisp's version string.
 
 ;------------------------------------------------------------------------------
 
-(goto (tag-symbol)
+(goto (tag-symbol \[value\])
 """
 Jumps around in a `do`. Internal use.
 """
@@ -2008,7 +2096,7 @@ Prints help on a `topic`. Same the REPL command `?`. Works best if `topic` is a 
 
 (hidden-var (sym \[value\])
 """
-Same as `var`, but the variable will not be visible in the REPL debugger. Internal use.
+Same as `var` but faster, but the variable will not be visible in the REPL debugger. Internal use.
 The command line option `--nodebug` changes most `var`s to `hidden-var`s.
 """
 )
@@ -2031,9 +2119,14 @@ Returns its single argument or a list of its multiple arguments.
 If `test` is true, returns the result of `then-form`, else returns the result of 
 `else-form` or `null`. Truth is defined by the function `boolean`.
 """
-(if (zero? 0) 1 2)
-(if (zero? 1) 1 2)
-(if (zero? 1) 1)
+(if (zero? 0)
+    1
+    2)
+(if (zero? 1)
+    1
+    2)
+(if (zero? 1)
+    1)
 )
 
 ;------------------------------------------------------------------------------
@@ -2053,6 +2146,24 @@ thing. `then-form` and `else-form` may refer to `sym`.
 If `expr` matches `pattern`, returns  the result of `then-form`, else returns 
 the result of `else-form` or `null`.
 See also [pattern-matching](pattern-matching.html).
+"""
+)
+
+;------------------------------------------------------------------------------
+
+(ignore-errors (&body forms)
+"""
+Executes `forms`. Returns `null` if an exception is thrown.
+"""
+(ignore-errors
+    (+ 3 hello))
+)
+
+;------------------------------------------------------------------------------
+
+(ilist? (expr)
+"""
+TO DO
 """
 )
 
@@ -2090,6 +2201,14 @@ See file `documentation.k`.
 Adds the symbol referenced by the string `name` to the current package. 
 `name` must specify a package name and a symbol name,
 e.g. `(import-symbol "csv.read-grid-from-string")`
+"""
+)
+
+;------------------------------------------------------------------------------
+
+(in-list-enumerator (seq step)
+"""
+TO DO
 """
 )
 
@@ -2183,6 +2302,25 @@ element is the result of calling `func` with the previous element as the argumen
 
 ;------------------------------------------------------------------------------
 
+(keep (func seq &key (key identity))
+"""
+Returns a lazy list containing the values of `func` applied to elements of `seq` 
+that are not `null`.
+"""
+(keep #(if (string? %) (length %)) '("aap" "noot" 3 4 5 "mies"))
+)
+
+;------------------------------------------------------------------------------
+
+(keep-indexed (func seq &key (key identity))
+"""
+Is to `keep` what `map-indexed` is to `map`.
+"""
+)
+
+
+;------------------------------------------------------------------------------
+
 (keyword? (expr)
 """
 Returns true if `expr` is a keyword.
@@ -2214,7 +2352,8 @@ See also: [Functions](functions.html).
 """
 Returns true if `expr` is a lambda.
 """
-(defun f (x) (not x))
+(defun f (x)
+    (not x))
 (lambda? f)
 (lambda? 'f)
 (EXAMPLE "(lambda? (λx (not x)))")
@@ -2269,86 +2408,6 @@ Declares a readonly variable whose value is a function.
 """
 )
 
-
-;------------------------------------------------------------------------------
-
-(lisp-reader:new (source-code)
-"""
-Creates a lisp reader stream for the string `source-code`. The value of `$stdin`
-is a reader stream. See also `read` and `read-all`.
-"""
-)
-
-;------------------------------------------------------------------------------
-
-(lisp-reader:insert-form (form)
-"""
-"""
-)
-
-;------------------------------------------------------------------------------
-
-(lisp-reader:peek-char (offset)
-"""
-"""
-)
-
-;------------------------------------------------------------------------------
-
-(lisp-reader:read ()
-"""
-"""
-)
-
-;------------------------------------------------------------------------------
-
-(lisp-reader:read-all ()
-"""
-"""
-)
-
-;------------------------------------------------------------------------------
-
-(lisp-reader:read-delimited-list (terminator)
-"""
-"""
-)
-
-;------------------------------------------------------------------------------
-
-(lisp-reader:read-line (offset)
-"""
-"""
-)
-
-;------------------------------------------------------------------------------
-
-(lisp-reader:read-token ()
-"""
-"""
-)
-
-;------------------------------------------------------------------------------
-
-(lisp-reader:read-whitespace ()
-"""
-"""
-)
-
-;------------------------------------------------------------------------------
-
-(lisp-reader:skip-chars ()
-"""
-"""
-)
-
-;------------------------------------------------------------------------------
-
-(lisp-reader:try-take-chars (str)
-"""
-"""
-)
-
 ;------------------------------------------------------------------------------
 
 (list (&rest items)
@@ -2373,20 +2432,19 @@ the tail of the new list.
 
 ;------------------------------------------------------------------------------
 
-(list-all-classes ()
-"""
-Returns a list with the names of all classes.
-"""
-(list-all-classes)
-)
-
-;------------------------------------------------------------------------------
-
 (list-all-packages ()
 """
 Returns a list with the names of all packages.
 """
 (list-all-packages)
+)
+
+;------------------------------------------------------------------------------
+
+(list-all-types ()
+"""
+TO DO
+"""
 )
 
 ;------------------------------------------------------------------------------
@@ -2476,6 +2534,15 @@ expansion actually occurred.
 
 ;------------------------------------------------------------------------------
 
+(macroexpand-all (form)
+                 (form env)
+"""
+TO DO
+"""
+)
+
+;------------------------------------------------------------------------------
+
 (make-environment ()
 """
 Returns an object representing an empty lexical scope. Non empty lexical
@@ -2517,32 +2584,44 @@ Returns an existing symbol or creates a new one. For use by macros.
 
 ;------------------------------------------------------------------------------
 
-(map (func seq)
+(map (func &rest seqs)
 """
-Returns a lazy sequence where each element of `seq` is transformed by the
-function `func`.
+Returns a lazy sequence where the elements of `seq` are transformed by the
+function `func`. The first sequence supplies the first argument of `func`, 
+the second sequence supplies the second argument of `func`, etc. The operation
+stops when one of the sequences runs out.
 """
 (map length (vector "aap" "noot" "mies"))
-(EXAMPLE #q{(map (λx (odd? (length x))) (vector "aap" "noot" "mies"))})
+(map + '(1 2 3) '(4 5))
+(EXAMPLE "(map (λx (odd? (length x))) (vector \"aap\" \"noot\" \"mies\"))")
 )
 
 ;------------------------------------------------------------------------------
 
-(mapcat (func seq)
+(map-indexed (func &rest seqs)
 """
-Returns a lazy sequence where each element of `seq` is transformed by the
-function `func` and all `func` outputs are concatenated.
+Equivalent to `(apply map func (range) seqs)`.
+"""
+(map-indexed vector '(a b c))
+)
+
+;------------------------------------------------------------------------------
+
+(mapcat (func &rest seqs)
+"""
+Equivalent to `(apply concat (map func seqs))`.
 """
 (mapcat series (series 5))
 )
 
 ;------------------------------------------------------------------------------
 
-(math:conjugate (a)
+(mapv (func &rest seqs)
 """
-Returns the conjugate of a number.
+As `map` but returns a vector instead of a lazy list. Equivalent to 
+`(as-vector (apply map func seqs))`.
 """
-(math:conjugate #c(3 4))
+(mapv + '(1 2 3) '(3 4 5))
 )
 
 ;------------------------------------------------------------------------------
@@ -2557,7 +2636,7 @@ Returns the largest number in a sequence.
 
 ;------------------------------------------------------------------------------
 
-(merge (seq1 seq2 &key (test <) (key identity))
+(merge (seq1 seq2 &key (test compare) (key identity))
 """
 Merges two ordered sequences into one. Used by the function `sort`.
 """
@@ -2571,16 +2650,13 @@ Merges two ordered sequences into one. Used by the function `sort`.
 If possible, inserts forms as part of the directly enclosing `do` block; 
 otherwise the same as `do`.
 """
-(EXAMPLE #q{(defmacro some-variables ()
-    `(merging-do
-        (var a)
-        (var b)
-        (var c)))})
+(EXAMPLE
+ "(defmacro some-variables ()\r\n    `(merging-do\r\n        (var a)\r\n        (var b)\r\n        (var c)))")
 )
 
 ;------------------------------------------------------------------------------
 
-(min (seq &key key)
+(min (seq &key (key identity))
 """
 Returns the smallest number in a sequence.
 """
@@ -2619,6 +2695,51 @@ Returns true if `expr` is a multi-method.
 
 ;------------------------------------------------------------------------------
 
+(multiple-let ((var*) value)
+"""
+Declares and initializes readonly variables with the elements of a sequence 
+or tuple.
+"""
+(do
+    (multiple-let (a b c) (series 1 2))
+    (vector a b c))
+(do
+    (multiple-let (a b c) "hello")
+    (vector a b c))
+)
+
+;------------------------------------------------------------------------------
+
+(multiple-setf ((place*) value)
+"""
+Assigns places with the elements of a sequence or tuple.
+"""
+(do
+    (var a '(1 2))
+    (var b null)
+    (var c (new :city
+                "leiden"))
+    (multiple-setf ((car a) b (.city c)) '(one two three))
+    (vector a b c))
+)
+
+;------------------------------------------------------------------------------
+
+(multiple-var ((var*) value)
+"""
+Declares and initializes variables with the elements of a sequence 
+or tuple.
+"""
+(do
+    (multiple-var (a b c) (series 1 2))
+    (vector a b c))
+(do
+    (multiple-var (a b c) "hello")
+    (vector a b c))
+)
+
+;------------------------------------------------------------------------------
+
 (natural-compare (x y &key ignore-white-space compact-whitespace punctuation-is-whitespace culture)
 """
 Compares the strings representations of objects. Defaults are: false, true, true,
@@ -2626,15 +2747,6 @@ InvariantCulture.
 """
 (compare "abc11" "abc2")
 (natural-compare "abc11" "abc2")
-)
-
-;------------------------------------------------------------------------------
-
-(natural-less (x y)
-"""
-Compares the string representations of objects.
-"""
-(natural-less "abc11" "abc2")
 )
 
 ;------------------------------------------------------------------------------
@@ -2647,8 +2759,13 @@ Creates a new prototype object. A single argument can be a parent prototype. Two
 consecutive arguments can be a name/value pair used to initialize
 the new object. Names can be given as strings, symbols and keywords.
 """
-(def thing (new :color "black" :model "0"))
-(new thing :model "12")
+(def thing (new :color
+                "black"
+                :model
+                "0"))
+(new thing
+     :model
+     "12")
 )
 
 ;------------------------------------------------------------------------------
@@ -2663,7 +2780,7 @@ Returns the logical complement of `expr`. See also `boolean`.
 
 ;------------------------------------------------------------------------------
 
-(not-any? (predicate seq)
+(not-any? (predicate seq &key (key identity))
 """
 Returns true if no elements of `seq` satisfy the function `predicate`.
 """
@@ -2673,7 +2790,7 @@ Returns true if no elements of `seq` satisfy the function `predicate`.
 
 ;------------------------------------------------------------------------------
 
-(not-every? (predicate seq)
+(not-every? (predicate seq &key (key identity))
 """
 Returns true if at least one element of `seq` fails the function `predicate`.
 """
@@ -2724,7 +2841,15 @@ Returns true if `number` is odd. `number` must be an integer.
 """
 (odd? 3)
 (odd? 4)
-(odd? 3.4)
+(EXCEPTION-EXAMPLE #q{(odd? 3.4)})
+)
+
+;------------------------------------------------------------------------------
+
+(on-list-enumerator (seq step)
+"""
+TO DO
+"""
 )
 
 ;------------------------------------------------------------------------------
@@ -2734,8 +2859,10 @@ Returns true if `number` is odd. `number` must be an integer.
 Returns the value of the first argument that evaluates as true. Otherwise 
 returns the value of the last argument.
 """
-(or "" "default")
-(or "abc" "default")
+(or ""
+    "default")
+(or "abc"
+    "default")
 )
 
 ;------------------------------------------------------------------------------
@@ -2776,7 +2903,16 @@ Returns a lazy sequence where each element of `seq` is transformed by the
 function `func`. Uses the Task Parallel Library.
 """
 (parallel-map length (vector "aap" "noot" "mies"))
-(EXAMPLE "(parallel-map (λx (odd? (length x))) (vector \"aap\" \"noot\" \"mies\"))")
+(EXAMPLE
+ "(parallel-map (λx (odd? (length x))) (vector \"aap\" \"noot\" \"mies\"))")
+)
+
+;------------------------------------------------------------------------------
+
+(parse-symbol (name)
+"""
+TO DO
+"""
 )
 
 ;------------------------------------------------------------------------------
@@ -2831,41 +2967,6 @@ the function `key` has a different value for two adjacent elements of `seq`.
 
 ;------------------------------------------------------------------------------
 
-(path:combine (path1 path2)
-              (path1 path2 path3)
-              (path1 path2 path3 path4)
-              (&rest paths)
-"""
-Like the original but with forward slashes.
-"""
-)
-
-;------------------------------------------------------------------------------
-
-(path:get-directory-name (path)
-"""
-Like the original but with forward slashes.
-"""
-)
-
-;------------------------------------------------------------------------------
-
-(path:get-unix-name (name)
-"""
-Converts backward slashes to forward slashes.
-"""
-)
-
-;------------------------------------------------------------------------------
-
-(path:get-windows-name (name)
-"""
-Converts forward slashes to backward slashes.
-"""
-)
-
-;------------------------------------------------------------------------------
-
 (plus? (number)
 """
 Return true is `number` is a positive number.
@@ -2910,18 +3011,6 @@ Returns the position of the first item in `seq` that satisfies the function
 
 ;------------------------------------------------------------------------------
 
-(math:pow (number1 number2)
-"""
-Raises `number1` to the power of `number2`.
-"""
-(math:pow 2 3)
-(math:pow -1 1)
-(math:pow -1 (/ 1 2))
-(* it it)
-)
-
-;------------------------------------------------------------------------------
-
 (pprint (expr &key (left $left) (right $right))
 """
 Called by `write` when its argument `pretty` is true. See also `$pprint-hook`.
@@ -2961,12 +3050,81 @@ Prints a warning message to `$stdlog`. Warning messages are prefixed by `;; warn
 
 ;------------------------------------------------------------------------------
 
+(profiler.close-session ()
+"""
+TO DO
+"""
+)
+
+;------------------------------------------------------------------------------
+
+(profiler.open-session ()
+"""
+TO DO
+"""
+)
+
+;------------------------------------------------------------------------------
+
+(profiler.read-timer ()
+"""
+TO DO
+"""
+)
+
+;------------------------------------------------------------------------------
+
+(profiler.reset-timer ()
+"""
+TO DO
+"""
+)
+
+;------------------------------------------------------------------------------
+
+(profiler.restart-timer ()
+"""
+TO DO
+"""
+)
+
+;------------------------------------------------------------------------------
+
+(profiler.save-session (path)
+"""
+TO DO
+"""
+)
+
+;------------------------------------------------------------------------------
+
+(profiler.start-timer ()
+"""
+TO DO
+"""
+)
+
+;------------------------------------------------------------------------------
+
+(profiler.stop-timer ()
+"""
+TO DO
+"""
+)
+
+;------------------------------------------------------------------------------
+
 (prototype:get-parents (object &key (inherited false))
 """
 Returns the list of parent objects of the prototype object `object`.
 """
-(let a (new :color "black" :model "0"))
-(let b (new a :model "12"))
+(let a (new :color
+            "black"
+            :model
+            "0"))
+(let b (new a
+            :model
+            "12"))
 (.get-parents b)
 )
 
@@ -2978,7 +3136,9 @@ Returns a list of the superclasses of the prototype object `obj`.
 """
 (deftype a1 (new :city "leiden"))
 (deftype a2 (new :country "netherlands"))
-(def b (new '(a1 a2) :name "mies"))
+(def b (new '(a1 a2)
+            :name
+            "mies"))
 b
 (.get-superclasses b)
 )
@@ -2989,7 +3149,8 @@ b
 """
 Returns the value of property `name` of prototype object `object`.
 """
-(let z (new "name" "Piet"))
+(let z (new "name"
+            "Piet"))
 (prototype:get-value z "name")
 (prototype:get-value z :name)
 (.get-value z :name)
@@ -3004,7 +3165,8 @@ Returns the value of property `name` of prototype object `object`.
 """
 
 """
-(let z (new "name" "Piet"))
+(let z (new "name"
+            "Piet"))
 (.has-property z :name)
 (.has-property z :address)
 )
@@ -3015,7 +3177,10 @@ Returns the value of property `name` of prototype object `object`.
 """
 Returns a list of strings.
 """
-(let z (new "name" "Piet" :city "Amsterdam"))
+(let z (new "name"
+            "Piet"
+            :city
+            "Amsterdam"))
 (.keys z)
 )
 
@@ -3028,8 +3193,13 @@ Creates a new prototype object. A single argument can be a parent prototype. Two
 consecutive arguments can be a name/value pair used to initialize
 the new object. Names can be given as strings, symbols and keywords.
 """
-(let a (new :color "black" :model "0"))
-(new a :model "12")
+(let a (new :color
+            "black"
+            :model
+            "0"))
+(new a
+     :model
+     "12")
 )
 
 ;------------------------------------------------------------------------------
@@ -3046,7 +3216,8 @@ Sets the list of the direct parents of `object` to `parents`.
 """
 Sets the value of property `name` of prototype object `object` to `value`.
 """
-(let z (new "name" "Piet"))
+(let z (new "name"
+            "Piet"))
 (prototype:set-value z :name "Jan")
 z
 (setf (.name z) "Mies")
@@ -3092,59 +3263,10 @@ the `setf`able `place` to the new list.
 Returns `expr` as literal data instead of evaluation `expr` as code. Usually 
 written as `'expr` instead of `(quote expr)`.
 """
-(EXAMPLE "(quote a)") 
+(EXAMPLE "(quote a)")
 'a
 (EXAMPLE "(quote (+ 3 4))")
 '(+ 3 4)
-)
-
-
-;------------------------------------------------------------------------------
-
-(r/filter (predicate seq)
-"""
-Returns a `reducible` where each element of `seq` is filtered by the
-function `predicate`. 
-"""    
-(reduce + (r/filter even? (r/map length (vector "aap" "noot" "mies"))))
-)
-
-;------------------------------------------------------------------------------
-
-(r/map (func seq)
-"""
-Returns a `reducible` where each element of `seq` is transformed by the
-function `func`. 
-"""
-(reduce + (r/map length (vector "aap" "noot" "mies")))
-)
-
-;------------------------------------------------------------------------------
-
-(r/mapcat (func seq)
-"""
-Returns a `reducible` where each element of `seq` is transformed by the
-function `func` and all `func` outputs are concatenated.
-"""
-(reduce + (r/mapcat series (series 5)))
-)
-
-;------------------------------------------------------------------------------
-
-(r/take (count seq)
-"""
-Returns the first `count` items in `seq`.
-"""
-(reduce + (r/take 3 (series 10)))
-)
-
-;------------------------------------------------------------------------------
-
-(r/take-while (predicate seq)
-"""
-Returns items from `seq` while they satisfy the function `predicate`.
-"""
-(reduce + (r/take-while (λx (< x 3)) (series 10)))
 )
 
 ;------------------------------------------------------------------------------
@@ -3154,13 +3276,21 @@ Returns items from `seq` while they satisfy the function `predicate`.
        (end)
        ()
 """
-Returns an enumerator of integer numbers. By default, a range starts at 0 and
+Returns a lazy list of integer numbers. By default, a range starts at 0 and
 excludes its upper bound.
 """
 (range 3 10 2)
 (range 3 10)
 (range 10)
 (range 10 3 -1)
+)
+
+;------------------------------------------------------------------------------
+
+(range-enumerator (start end step)
+"""
+Like `range` but returns an IEnumerable. Used by the `loop` macro.
+"""
 )
 
 ;------------------------------------------------------------------------------
@@ -3210,6 +3340,14 @@ Reads a list of expressions from the string `text`.
 
 ;------------------------------------------------------------------------------
 
+(read-delimited-list (terminator &rest kwargs)
+"""
+TO DO
+"""
+)
+
+;------------------------------------------------------------------------------
+
 (read-from-string (text &key eof-value)
 """
 Reads an expression from the string `text`.
@@ -3231,20 +3369,31 @@ the string.
 
 (recur 
 """
-A lexical read-only variable bound to the lambda that contains it.
+A lexical read-only variable bound to the lambda that contains it. Enables 
+recursion of anonymous functions.
 """
 )
 
 ;------------------------------------------------------------------------------
 
-(reduce (adder seq &key initial-value (key identity))
+(reduce (reducer seq &key initial-value (key identity))
 """
 Returns the accumulated result of repeatly calling the function `adder` 
-on each element of `seq`. `adder` is a function with two arguments. 
+on each element of `seq`. `reducer` is a function with two parameters. 
 The first argument is the result so far, the second argument is the current 
 element of `seq`.
 """
-(reduce + (range 1 101))
+(reduce + (series 10))
+)
+
+;------------------------------------------------------------------------------
+
+(reductions (reducer seq &key initial-value (key identity))
+"""
+Returns a lazy list of every intermediate value produced by the function `reduce` 
+called with the same arguments.
+"""
+(reductions + (series 10))
 )
 
 ;------------------------------------------------------------------------------
@@ -3254,6 +3403,17 @@ element of `seq`.
 Loads an assembly.
 """
 (reference "ICSharpCode.SharpZipLib")
+)
+
+;------------------------------------------------------------------------------
+
+(remove (predicate seq &key (key identity))
+"""
+Returns a lazy list containing the elements of `seq` that do not satisfy the function
+`predicate`.
+"""
+(remove odd? (series 10))
+(filter odd? (series 10))
 )
 
 ;------------------------------------------------------------------------------
@@ -3275,9 +3435,8 @@ infinite number of times.
 Returns a lazy sequence of the values returned by repeated calls to `func`. 
 The second form yields an infinite sequence.
 """
-(repeatedly 10 (lambda () "a"))
+(repeatedly 10 (lambda null "a"))
 )
-
 
 ;------------------------------------------------------------------------------
 
@@ -3320,6 +3479,14 @@ Returns `value` or `null` from a function.
 (return-from (name &optional value)
 """
 Returns `value` or `null` from a named block.
+"""
+)
+
+;------------------------------------------------------------------------------
+
+(return-from-load ()
+"""
+TO DO
 """
 )
 
@@ -3385,7 +3552,7 @@ Returns true if `expr` is a sequence, i.e. `null` or IEnumerable.
         (start end)
         (end)
 """
-Returns an enumerator of integer numbers. By default, a series starts at 1 and
+Returns a lazy list of integer numbers. By default, a series starts at 1 and
 includes its upper bound.
 """
 (series 3 10 2)
@@ -3396,13 +3563,21 @@ includes its upper bound.
 
 ;------------------------------------------------------------------------------
 
+(series-enumerator (start end step)
+"""
+Like `series` but returns an IEnumerable. Used by the `loop` macro.
+"""
+)
+
+;------------------------------------------------------------------------------
+
 (set (sym value)
 """
 Assigns `value` to the global or dynamic variable named by the value of `sym`. 
 Does not work for lexical variables.
 """
 (setq x 'a137)
-(set x 1)
+(EXCEPTION-EXAMPLE #q{(set x 1)})
 (def a137 2)
 (set x 1)
 a137
@@ -3414,7 +3589,7 @@ a137
 """
 Assigns `value` to `property` of `object`.
 """
-(let obj (new))
+(let obj (new null))
 (set-attr obj 'name "mies")
 (attr obj 'name)
 (.name obj)
@@ -3464,20 +3639,12 @@ TO DO
 
 ;------------------------------------------------------------------------------
 
-(set-macro-character (char handler &key (non-terminating? false) (readtable $readtable))
-"""
-TO DO
-"""
-)
-
-;------------------------------------------------------------------------------
-
 (set-elt (obj "index..." value)
 """
 Assigns `value` to the place `index...` of `obj`. A multi-dimensional array uses
 more than one index.
 """
-(let obj (new))
+(let obj (new null))
 (set-elt obj "name" "mies")
 (elt obj "name")
 (attr obj 'name)
@@ -3533,12 +3700,18 @@ See also: `kiezellisp-init.k`.
 
 ;------------------------------------------------------------------------------
 
-(use-package-alias (package-name nick-name)
+(set-macro-character (char handler &key (non-terminating? false) (readtable $readtable))
 """
-Gives the package with the long offical name `package-name` a short `nick-name`
-but only within the current package.
+TO DO
 """
-(use-package-alias "lisp" "l")
+)
+
+;------------------------------------------------------------------------------
+
+(set-read-decimal-numbers (flag)
+"""
+TO DO
+"""
 )
 
 ;------------------------------------------------------------------------------
@@ -3591,7 +3764,7 @@ Sets the third element of `seq` to `item.
 """
 Assigns `value` to `place`. See the file core/setf.
 """
-(let a '(1 two 3))
+(var a '(1 2 3))
 (setf (second a) 'two)
 a
 (macroexpand '(setf (second a) 'two))
@@ -3600,16 +3773,17 @@ a
 ;------------------------------------------------------------------------------
 
 (setq (sym value)
-      (sym-list seq)
 """
-Sets the value of the lexical, dynamic or global variables.
+Sets the value of a lexical, dynamic or global variable.
 """
-(let x 1)
-(setq x 3)
-(let y)
-(setq (x y) '(1 2))
-x
-y
+(do
+    (var x 1)
+    (setq x 3)
+    x)
+(EXCEPTION-EXAMPLE #q{(do 
+    (let x 1)
+    (setq x 3)
+    x)})
 )
 
 ;------------------------------------------------------------------------------
@@ -3634,25 +3808,6 @@ Returns a random reordering of `seq`.
 
 ;------------------------------------------------------------------------------
 
-(skip (count seq)
-"""
-Skips `count` elements of `seq` and returns the remainder, which may be empty.
-"""
-(skip 3 '(a b c d e f))
-(skip 33 '(a b c d e f))
-)
-
-;------------------------------------------------------------------------------
-
-(skip-while (predicate seq)
-"""
-Skips elements of `seq` while they satisfy the `predicate`.
-"""
-(skip-while odd? '(1 1 2 3 4 5))
-)
-
-;------------------------------------------------------------------------------
-
 (sleep (millisec)
 """
 Lets the current thread sleep for `millisec` milliseconds. -1 means forever.
@@ -3661,13 +3816,13 @@ Lets the current thread sleep for `millisec` milliseconds. -1 means forever.
 
 ;------------------------------------------------------------------------------
 
-(sort (seq &key (test <) (key identity))
+(sort (seq &key (test compare) (key identity))
 """
-Sorts `seq`. The function `test` returns true when the first argument is less
-than the second argument. Do not use `<=`.
+Sorts `seq`. The default comparer is the inbuilt function `compare`.
 """
 (sort "hello, world")
-(sort '("hello" "goodbye" "doei" "farewell") :test < :key length)
+(sort '("hello" "goodbye" "doei" "farewell"))
+(sort '("hello" "goodbye" "doei" "farewell") :key length)
 )
 
 ;------------------------------------------------------------------------------
@@ -3694,7 +3849,7 @@ Returns true if `expr` is a symbol whose name starts with a $ character.
 
 (split-at (count seq)
 """
-Equivalent to `(list (take count seq) (skip count seq))`.
+Equivalent to `(list (take count seq) (drop count seq))`.
 """
 (split-at 4 (series 10))
 )
@@ -3703,7 +3858,7 @@ Equivalent to `(list (take count seq) (skip count seq))`.
 
 (split-with (predicate seq)
 """
-Equivalent to `(list (take-while predicate seq) (skip-while predicate seq))`.
+Equivalent to `(list (take-while predicate seq) (drop-while predicate seq))`.
 """
 (split-with even? '(2 2 2 1 3 3 3))
 )
@@ -3715,342 +3870,6 @@ Equivalent to `(list (take-while predicate seq) (skip-while predicate seq))`.
 Returns the concatenation of the pure string representations of each `value`.
 """
 (string "aap" '(1 2 3) 'noot)
-)
-
-;------------------------------------------------------------------------------
-
-(string:capitalize (str)
-"""
-Capitalizes each word of a string.
-"""
-(.capitalize "aap noot mies")
-)
-
-;------------------------------------------------------------------------------
-
-(string:convert-to-external-line-endings (str)
-"""
-On Windows, changes LF to CRLF.
-"""
-)
-
-;------------------------------------------------------------------------------
-
-(string:convert-to-internal-line-endings (str)
-"""
-On Windows, changes CRLF to LF.
-"""
-)
-
-;------------------------------------------------------------------------------
-
-(string:html-decode (str)
-"""
-Same as HttpUtility.HtmlDecode
-"""
-)
-
-;------------------------------------------------------------------------------
-
-(string:html-encode (str)
-"""
-Same as HttpUtility.HtmlEncode
-"""
-)
-
-;------------------------------------------------------------------------------
-
-(string:indent (text prefix)
-"""
-Adds a prefix string to each line in `text`.
-"""
-(print-line (.indent "aaaa\nbbbb" "---"))
-)
-
-;------------------------------------------------------------------------------
-
-(string:indent-with-line-numbers (text line-number width separator)
-"""
-Adds a line number and prefix string to each line in `text`.
-"""
-(print-line (.indent-with-line-numbers "aaaa\nbbbb" 12 4 ": "))
-)
-
-;------------------------------------------------------------------------------
-
-(string:join (separator values)
-             (separator value start-index count)
-             (separator seq)
-"""
-The third form is a Kiezellisp extension.
-"""
-(.join ", " '(aap noot mies))
-)
-
-;------------------------------------------------------------------------------
-
-(string:json-decode (str)
-"""
-Decodes a JSON string.
-"""
-(string:json-encode (new :name "mies"))
-(.json-decode it)
-)
-
-;------------------------------------------------------------------------------
-
-(string:json-encode (value)
-"""
-Encodes a value as a JSON string.
-"""
-(print-line (string:json-encode (new :name "mies")))
-)
-
-;------------------------------------------------------------------------------
-
-(string:latex-encode (str)
-"""
-Escapes characters that have a meaning in latex source.
-"""
-)
-
-;------------------------------------------------------------------------------
-
-(string:left (str count)
-"""
-Returns the leftmost `count` characters of `str`.
-"""
-(.left "aap" 2)
-(.left "aap" 22)
-)
-
-;------------------------------------------------------------------------------
-
-(string:lisp-name (name)
-"""
-Converts between naming conventions.
-"""
-(.lisp-name "EenTweeDrie")
-)
-
-;------------------------------------------------------------------------------
-
-(string:lisp-to-camel-case-name (name)
-"""
-Converts between naming conventions.
-"""
-(.lisp-to-camel-case-name "een-twee-drie")
-)
-
-;------------------------------------------------------------------------------
-
-(string:lisp-to-pascal-case-name (name)
-"""
-Converts between naming conventions.
-"""
-(.lisp-to-pascal-case-name "een-twee-drie")
-)
-
-;------------------------------------------------------------------------------
-
-(string:next (str)
-"""
-Returns the string that succeeds `str`.
-"""
-(.next "abc")
-(.next "abz")
-)
-
-;------------------------------------------------------------------------------
-
-(string:pad-left (str width)
-                 (str width padding-char)
-                 (str width padding-str)
-"""
-The third form is a Kiezellisp extension.
-"""
-)
-
-;------------------------------------------------------------------------------
-
-(string:pad-right (str width)
-                 (str width padding-char)
-                 (str width padding-str)
-"""
-The third form is a Kiezellisp extension.
-"""
-)
-
-;------------------------------------------------------------------------------
-
-(string:parse-date (str &key format culture)
-"""
-See also: [try-parse-date](#string:try-parse-date). 
-"""
-)
-
-;------------------------------------------------------------------------------
-
-(string:parse-number (str &key base culture)
-"""
-See also: [try-parse-number](#string:try-parse-number). 
-"""
-)
-
-;------------------------------------------------------------------------------
-
-(string:prev (str)
-"""
-Returns the string that preceeds `str`.
-"""
-(.prev "abc")
-(.prev "ab0")
-)
-
-;------------------------------------------------------------------------------
-
-(string:regex-encode (str)
-"""
-Same as Regex.Escape.
-"""
-)
-
-;------------------------------------------------------------------------------
-
-(string:regex-match (str pattern)
-"""
-Compares `str` to the string or Regex `pattern`. Returns null if no match.
-Returns a list of matches otherwise.
-"""
-(.regex-match "hello, world" "(.)rl")
-)
-
-;------------------------------------------------------------------------------
-
-(string:regex-replace (str pattern transform-func)
-                      (str pattern replacement-str)
-"""
-Compares `str` to the string or Regex `pattern`. The number of arguments of 
-`transform-func` must be equal to the number of groups in the pattern. 
-`replacement-str` may refer to groups as \1, \2, etc.
-"""
-)
-
-;------------------------------------------------------------------------------
-
-(string:regex-split (str pattern)
-"""
-
-"""
-)
-
-;------------------------------------------------------------------------------
-
-(string:repeat (str count)
-"""
-Returns a string consisting of `count` copies of `str`.
-"""
-(.repeat "abc" 3)
-)
-
-;------------------------------------------------------------------------------
-
-(string:right (s count)
-"""
-Returns the rightmost `count` characters of `str`.
-"""
-(.right "aap" 2)
-(.right "aap" 22)
-)
-
-;------------------------------------------------------------------------------
-
-(string:split (str)
-              (str count)
-              (str separators)
-              (str separators count)
-"""
-These forms are Kiezellisp extension methods. The first and second forms split on
-white space and always remove empty substrings. In the third and fourth forms
-`separators` is a string or another sequence (IEnumerable other than string).
-In case of a string, the function splits on the individual characters of the
-string.
-"""
-(.split "aap noot mies" 2)
-:d
-(.split "hello, world" "lw")
-:d
-)
-
-;------------------------------------------------------------------------------
-
-(string:trim (str)
-             (str &rest trim-chars)
-             (str trim-chars-str)
-"""
-The third form is a Kiezellisp extension. 
-"""
-(.trim "efefabcdefefefef" "fe")
-)
-
-;------------------------------------------------------------------------------
-
-(string:trim-end (str)
-                 (str &rest trim-chars)
-                 (str trim-chars-str)
-"""
-The third form is a Kiezellisp extension. 
-"""
-(.trim-end "abcdefefefef" "fe")
-)
-
-;------------------------------------------------------------------------------
-
-(string:trim-start (str)
-                   (str &rest trim-chars)
-                   (str trim-chars-str)
-"""
-The third form is a Kiezellisp extension. 
-"""
-(.trim-start "abcdefefefef" "fe")
-)
-
-
-;------------------------------------------------------------------------------
-
-(string:try-parse-date (str &key format culture)
-"""
-Converts a string to a DateTime.
-"""
-(.try-parse-date "20130104" :format "yyyyMMdd")
-(.try-parse-date "20139904" :format "yyyyMMdd")
-)
-
-;------------------------------------------------------------------------------
-
-(string:try-parse-number (str &key base culture)
-"""
-Converts a string to a number.
-"""
-(.try-parse-number "123.4" )
-(.try-parse-number "123a" )
-(.try-parse-number "123a" :base 16 )
-)
-
-;------------------------------------------------------------------------------
-
-(string:url-decode (str)
-"""
-Same as HttpUtility.UrlDecode
-"""
-)
-
-;------------------------------------------------------------------------------
-
-(string:url-encode (str)
-"""
-Same as HttpUtility.UrlEncode
-"""
 )
 
 ;------------------------------------------------------------------------------
@@ -4085,6 +3904,14 @@ subsequence is padded by `default` elements.
 """
 (subseq (series 5) 2)
 (subseq (series 5) 2 :count 7 :default 9999)
+)
+
+;------------------------------------------------------------------------------
+
+(subtype? (subtype supertype)
+"""
+TO DO
+"""
 )
 
 ;------------------------------------------------------------------------------
@@ -4217,6 +4044,14 @@ Internal use.
 
 ;------------------------------------------------------------------------------
 
+(system:get-delayed-expression-result (expr)
+"""
+TO DO
+"""
+)
+
+;------------------------------------------------------------------------------
+
 (system:get-safe-enumerator (list)
 """
 Internal use.
@@ -4227,10 +4062,9 @@ Internal use.
 
 (system:get-task-result (obj)
 """
-Internal use. 
+Internal use.
 """
 )
-
 
 ;------------------------------------------------------------------------------
 
@@ -4273,7 +4107,7 @@ Returns every `step` item from `seq`.
 """
 Returns items from `seq` while they satisfy the function `predicate`.
 """
-(take-while (λx (< x 3)) (series 10))
+(take-while (λ (x) (< x 3)) (series 10))
 )
 
 ;------------------------------------------------------------------------------
@@ -4305,7 +4139,7 @@ Returns the third item in `seq`.
 """
 Throws an exception.
 """
-(throw (lisp-exception:new "Bad things happened."))
+(EXCEPTION-EXAMPLE #q{(throw (lisp-exception:new "Bad things happened."))})
 )
 
 ;------------------------------------------------------------------------------
@@ -4316,7 +4150,7 @@ Throws an exception of type LispException. The arguments are combined as if by
 the function `string`.
 """
 (let n 2)
-(throw-error "There are " n " things wrong.")
+(EXCEPTION-EXAMPLE #q{(throw-error "There are " n " things wrong.")})
 )
 
 ;------------------------------------------------------------------------------
@@ -4327,35 +4161,32 @@ Conditionally writes the source code of `expr` and its value to `$stdlog`, depen
 on the value of `$tracing`. `expr` must not have side effects. Trace code is compiled
 away when running in production mode.
 """
-(do (let $tracing true) (trace (+ 1 2)))
-)
-
-;------------------------------------------------------------------------------
-
-(ignore-errors (&body forms)
-"""
-Executes `forms`. Returns `null` if an exception is thrown.
-"""
-(ignore-errors (+ 3 hello))
-)
-
-;------------------------------------------------------------------------------
-
-(try-and-catch (&body forms)
-"""
-Executes `forms`. Returns an exception if an exception is thrown.
-"""
-(try-and-catch (+ 3 hello))
+(do
+    (let $tracing true)
+    (trace (+ 1 2)))
 )
 
 ;------------------------------------------------------------------------------
 
 (try (&body forms)
 """
-Returns `form`. `cleanup-form` is executed when `form` returns normally and
-when `form` throws an exception.
+Exception handling.
 """
-(try (+ 3 hello) (catch (ex) (print-line ex)) (finally (print-line 111)))
+(try
+    (+ 3 hello)
+    (catch (ex)
+        (print-line ex))
+    (finally (print-line 111)))
+)
+
+;------------------------------------------------------------------------------
+
+(try-and-catch (&body forms)
+"""
+Executes `forms`. Returns an exception object if an exception is thrown.
+"""
+(try-and-catch
+    (+ 3 hello))
 )
 
 ;------------------------------------------------------------------------------
@@ -4371,7 +4202,7 @@ Returns true if `target` has type `type`.
 
 (typecase (keyform normal-clause* \[otherwise-clause\])
 """
-    normal-clause := '(' type form* ')'
+normal-clause := '(' type form* ')'
     otherwise-clause := '(' {true|otherwise} form* ')'
     type := symbol corresponding to a (imported) class
 """
@@ -4380,14 +4211,6 @@ Returns true if `target` has type `type`.
     (integer (print-line 1))
     (symbol (print-line 2))
     (otherwise (print-line 3)))
-)
-
-;------------------------------------------------------------------------------
-
-(etypecase (keyform normal-clause* \[otherwise-clause\])
-"""
-Like `typecase`, but throws an exception if no case matches.
-"""
 )
 
 ;------------------------------------------------------------------------------
@@ -4437,6 +4260,16 @@ Add package `name` from the use list of the current package.
 
 ;------------------------------------------------------------------------------
 
+(use-package-alias (package-name nick-name)
+"""
+Gives the package with the long offical name `package-name` a short `nick-name`
+but only within the current package.
+"""
+(use-package-alias "lisp" "l")
+)
+
+;------------------------------------------------------------------------------
+
 (using ((sym resource) &body forms)
 """
 Executes `forms` as a `do` block and guarantees to call `IDispose.dispose`
@@ -4446,16 +4279,10 @@ on the variable `sym` to release the `resource`.
 
 ;------------------------------------------------------------------------------
 
-(let (sym \[value\])
-     (sym-list \[seq\])
+(var (sym expr)
 """
-The first form declares a lexical variable `sym`, initialized to `value` or `null`. 
-The second form declares a list of variables that are initialized from the 
-sequence `seq`.
-This form must be used in an implicit or explicit `do` block.
+Declares a writable lexical or special variable.
 """
-(do (let x 111) (+ x x))
-(do (let (a b c) (series 2)) (list a b c))
 )
 
 ;------------------------------------------------------------------------------
@@ -4494,8 +4321,10 @@ Returns the unique instance of the class `VOID`. May be used to signal the absen
 of a return value, similar to Common Lisp's `(values)`.
 """
 (void)
-(if (void) 1 2)
-)    
+(if (void)
+    1
+    2)
+)
 
 ;------------------------------------------------------------------------------
 
@@ -4513,7 +4342,9 @@ Returns true if `expr` is of class VOID.
 """
 If `test` is true, then evaluates `forms` as a `do`-block; else `null`.
 """
-(when (odd? 123) (print-line "odd") 456)
+(when (odd? 123)
+    (print-line "odd")
+    456)
 )
 
 ;------------------------------------------------------------------------------
@@ -4600,7 +4431,6 @@ and strings are padded on the right.
 ConsoleColor enumeration.
 
 `left` and `right` are column offsets. Used `pretty` is true. See also `pprint.k`.
-
 """
 )
 
@@ -4653,7 +4483,7 @@ Returns true if the number `number` equals zero. Fails if `number` is not a numb
 """
 (zero? 0)
 (zero? 1)
-(zero? "aaa")
+(EXCEPTION-EXAMPLE #q{(zero? "aaa")})
 )
 
 ;------------------------------------------------------------------------------

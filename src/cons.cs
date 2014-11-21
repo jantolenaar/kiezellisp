@@ -4,16 +4,13 @@ using System;
 using System.Collections;
 using System.IO;
 
-
 namespace Kiezel
 {
     public class Cons : IEnumerable, IPrintsValue
     {
+        internal static Cons EMPTY = new Cons();
         internal object car;
         internal object cdr;
-
-        internal static Cons EMPTY = new Cons();
-        
         internal Cons()
         {
             car = null;
@@ -24,18 +21,6 @@ namespace Kiezel
         {
             car = first;
             cdr = second;
-        }
-
-        internal bool Contains( object value )
-        {
-            foreach ( object item in this )
-            {
-                if ( Runtime.Equal( item, value ) )
-                {
-                    return true;
-                }
-            }
-            return false;
         }
 
         internal object Car
@@ -64,14 +49,6 @@ namespace Kiezel
             }
         }
 
-        internal bool Forced
-        {
-            get
-            {
-                return cdr == null || cdr is Cons;
-            }
-        }
-
         internal Cons Cdr
         {
             get
@@ -89,7 +66,7 @@ namespace Kiezel
                 {
                     cdr = Runtime.Force( cdr );
                 }
-                
+
                 return ( Cons ) cdr;
             }
             set
@@ -109,86 +86,28 @@ namespace Kiezel
             }
         }
 
-        //internal static int Compare( Cons s1, Cons s2 )
-        //{
-        //    while ( s1 != null && s2 != null )
-        //    {
-        //        int c = Runtime.Compare( s1.Car, s2.Car );
-        //        if ( c != 0 )
-        //        {
-        //            return c;
-        //        }
-        //        s1 = s1.Rest;
-        //        s2 = s2.Rest;
-        //    }
-
-        //    if ( s2 != null )
-        //    {
-        //        return -1;
-        //    }
-        //    else if ( s1 != null )
-        //    {
-        //        return 1;
-        //    }
-        //    else
-        //    {
-        //        return 0;
-        //    }
-
-        //}
-
-        class ListEnumerator : IEnumerator
+        internal int Count
         {
-            // This enumerator does NOT keep a reference to the start of the list.
-
-            public Cons list;
-            public bool initialized = false;
-
-            public ListEnumerator( Cons list )
+            get
             {
-                this.list = list;
-            }
-
-            public object Current
-            {
-                get
+                int count = 0;
+                Cons list = this;
+                while ( list != null )
                 {
-                    return list == null ? null : list.Car;
+                    ++count;
+                    list = list.Cdr;
                 }
-            }
-
-            public bool MoveNext()
-            {
-                if ( initialized )
-                {
-                    if ( list == null )
-                    {
-                        return false;
-                    }
-                    else
-                    {
-                        list = list.Cdr;
-                        return list != null;
-                    }
-                }
-                else
-                {
-                    initialized = true;
-                    return list != null;
-                }
-            }
-
-            public void Reset()
-            {
-                throw new NotImplementedException();
+                return count;
             }
         }
 
-        IEnumerator IEnumerable.GetEnumerator()
+        internal bool Forced
         {
-            return new ListEnumerator( this );
+            get
+            {
+                return cdr == null || cdr is Cons;
+            }
         }
-
 
         public object this[ int index ]
         {
@@ -251,32 +170,19 @@ namespace Kiezel
                     list.Car = value;
                 }
             }
-
         }
 
-
-        internal int Count
+        IEnumerator IEnumerable.GetEnumerator()
         {
-            get
-            {
-                int count = 0;
-                Cons list = this;
-                while ( list != null )
-                {
-                    ++count;
-                    list = list.Cdr;
-                }
-                return count;
-            }
+            return new ListEnumerator( this );
         }
-
-        //internal static bool printCompact = true;
 
         public override string ToString()
         {
             return ToString( true );
         }
 
+        //internal static bool printCompact = true;
         public string ToString( bool escape, int radix = -1 )
         {
             if ( !( cdr is IEnumerator || cdr is DelayedExpression ) )
@@ -285,9 +191,9 @@ namespace Kiezel
 
                 if ( printCompact )
                 {
-                    var first = Runtime.First(this);
-                    var second = Runtime.Second(this);
-                    var third = Runtime.Third(this);
+                    var first = Runtime.First( this );
+                    var second = Runtime.Second( this );
+                    var third = Runtime.Third( this );
 
                     if ( first == Symbols.Dot && second is string && third == null )
                     {
@@ -303,7 +209,7 @@ namespace Kiezel
                     }
                 }
             }
-            
+
             var buf = new StringWriter();
 
             buf.Write( "(" );
@@ -335,10 +241,81 @@ namespace Kiezel
             return buf.ToString();
         }
 
+        internal bool Contains( object value )
+        {
+            foreach ( object item in this )
+            {
+                if ( Runtime.Equal( item, value ) )
+                {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        private class ListEnumerator : IEnumerator
+        {
+            // This enumerator does NOT keep a reference to the start of the list.
+
+            public bool initialized = false;
+            public Cons list;
+            public ListEnumerator( Cons list )
+            {
+                this.list = list;
+            }
+
+            public object Current
+            {
+                get
+                {
+                    return list == null ? null : list.Car;
+                }
+            }
+
+            public bool MoveNext()
+            {
+                if ( initialized )
+                {
+                    if ( list == null )
+                    {
+                        return false;
+                    }
+                    else
+                    {
+                        list = list.Cdr;
+                        return list != null;
+                    }
+                }
+                else
+                {
+                    initialized = true;
+                    return list != null;
+                }
+            }
+
+            public void Reset()
+            {
+                throw new NotImplementedException();
+            }
+        }
     }
 
     public partial class Runtime
     {
+ 
+        [Lisp( "copy-tree" )]
+        public static object CopyTree( object a )
+        {
+            if ( Consp( a ) )
+            {
+                var tree = ( Cons ) a;
+                return Runtime.MakeCons( CopyTree( tree.Car ), ( Cons ) CopyTree( tree.Cdr ) );
+            }
+            else
+            {
+                return a;
+            }
+        }
 
         [Lisp( "cons" )]
         public static Cons MakeCons( object item, Cons list )
@@ -351,25 +328,28 @@ namespace Kiezel
         {
             return new Cons( item, delayedExpression );
         }
-
-        [Lisp( "as-lazy-list" )]
-        public static Cons AsLazyList( IEnumerable seq )
+        [Lisp( "list" )]
+        public static Cons MakeList( params object[] items )
         {
-            //debug:
-            //return ConvertToList( seq );
+            return AsList( items );
+        }
 
-            if ( seq == null )
+        [Lisp( "list*" )]
+        public static Cons MakeListStar( params object[] items )
+        {
+            if ( items.Length == 0 )
             {
                 return null;
             }
-            else if ( seq is Cons )
+
+            var list = AsLazyList( ( IEnumerable ) items[ items.Length - 1 ] );
+
+            for ( int i = items.Length - 2; i >= 0; --i )
             {
-                return ( Cons ) seq;
+                list = new Cons( items[ i ], list );
             }
-            else
-            {
-                return MakeCons( seq.GetEnumerator() );
-            }
+
+            return list;
         }
 
         internal static Cons MakeCons( object a, IEnumerator seq )
@@ -386,45 +366,6 @@ namespace Kiezel
             else
             {
                 return null;
-            }
-        }
-
-        
-        [Lisp( "list*" )]
-        public static Cons MakeListStar( params object[] items )
-        {
-            if ( items.Length == 0 )
-            {
-                return null;
-            }
-
-            var list = AsLazyList( (IEnumerable) items[ items.Length - 1 ] );
-
-            for ( int i = items.Length - 2; i >= 0; --i )
-            {
-                list = new Cons( items[ i ], list );
-            }
-
-            return list;
-        }
-
-        [Lisp( "list" )]
-        public static Cons MakeList( params object[] items )
-        {
-            return AsList( items );
-        }
-
-        [Lisp( "copy-tree" )]
-        public static object CopyTree( object a )
-        {
-            if ( Consp(a) )
-            {
-                var tree = (Cons)a;
-                return Runtime.MakeCons( CopyTree( tree.Car ), (Cons) CopyTree( tree.Cdr ) );
-            }
-            else
-            {
-                return a;
             }
         }
     }

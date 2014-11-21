@@ -3,214 +3,244 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Reflection;
-using System.Dynamic;
-using System.Linq.Expressions;
 using System.Diagnostics;
-using System.Numerics;
-using System.Runtime.CompilerServices;
-using System.IO;
+using System.Dynamic;
+using System.Linq;
+using System.Linq.Expressions;
+using System.Reflection;
 
 namespace Kiezel
 {
+    public struct CandidateMethod<T> where T : MethodBase
+    {
+        public bool CreatedParamArray;
+
+        public T Method;
+
+        public CandidateMethod( T method, bool createdParamArray )
+        {
+            Method = method;
+            CreatedParamArray = createdParamArray;
+        }
+    }
 
     public static partial class RuntimeHelpers
     {
-
-        internal static T GetMostSpecific<T>( List<T> methods ) where T: MethodBase
-        {
-            methods.Sort( CompareMethodBase );
-            return methods[ 0 ];
-        }
-
-        internal static int CompareMethodBase( MethodBase m1, MethodBase m2 )
-        {
-            var p1 = m1.GetParameters();
-            var p2 = m2.GetParameters();
-            return CompareParameterInfo( p1, p2 );
-        }
-
-        internal static PropertyInfo GetMostSpecific( List<PropertyInfo> methods ) 
-        {
-            methods.Sort( ComparePropertyInfo );
-            return methods[ 0 ];
-        }
-
-        internal static int ComparePropertyInfo( PropertyInfo m1, PropertyInfo m2 )
-        {
-            var p1 = m1.GetIndexParameters();
-            var p2 = m2.GetIndexParameters();
-            return CompareParameterInfo( p1, p2 );
-        }
-
-        internal static int CompareParameterInfo( ParameterInfo[] p1, ParameterInfo[] p2)
-        {
-            var i = 0;
-            for ( ; i < p1.Length && i < p2.Length; ++i )
-            {
-                var t1 = p1[ i ].ParameterType;
-                var t2 = p2[ i ].ParameterType;
-                var cmp = 0;
-
-                if ( t1 == t2 )
-                {
-                    cmp = 0;
-                }
-                else if ( t1.IsAssignableFrom( t2 ) )
-                {
-                    cmp = 1;
-                }
-                else if ( t2.IsAssignableFrom( t1 ) )
-                {
-                    cmp = -1;
-                }
-                else 
-                {
-                    var param1 = p1[ i ].IsDefined( typeof( ParamArrayAttribute ), false );
-                    var param2 = p2[ i ].IsDefined( typeof( ParamArrayAttribute ), false );
-                    if ( param1 && !param2 )
-                    {
-                        cmp = 1;
-                    }
-                    else if ( !param1 && param2 )
-                    {
-                        cmp = -1;
-                    }
-                    else
-                    {
-                        //throw new LispException( "Cannot resolve parameter type comparison" );
-                        cmp = t1.GetHashCode().CompareTo( t2.GetHashCode() );
-                    }
-                }
-
-                if ( cmp != 0 )
-                {
-                    return cmp;
-                }
-            }
-            if ( i == p1.Length && i == p2.Length )
-            {
-                return 0;
-            }
-            else if ( i == p1.Length )
-            {
-                return -1;
-            }
-            else
-            {
-                return 1;
-            }
-        }
-
-        internal static DynamicMetaObject CheckTargetNullReference( DynamicMetaObject target, string context )
-        {
-            return CreateThrow(
-                    target, null,
-                    BindingRestrictions.GetExpressionRestriction( Expression.Equal( Expression.Constant( null, typeof( object ) ), target.Expression ) ),
-                    typeof( NullReferenceException ),
-                    context );
-        }
-
-        internal static bool ParametersMatchArguments( ParameterInfo[] parameters, object[] args )
-        {
-            int len = parameters.Length;
-
-            if ( len == 0 )
-            {
-                return args.Length == 0;
-            }
-
-            bool hasParamArray = len >= 1 && parameters[ len - 1 ].IsDefined( typeof( ParamArrayAttribute ), false );
-
-            if ( !hasParamArray )
-            {
-                if ( args.Length != len )
-                {
-                    return false;
-                }
-
-                for ( int i = 0; i < len; i++ )
-                {
-                    if ( !ParameterMatchArgument( parameters[ i ].ParameterType, args[ i ] ) )
-                    {
-                        return false;
-                    }
-                }
-
-                return true;
-
-            }
-            else
-            {
-                int last = len - 1;
-
-                if ( args.Length < last )
-                {
-                    return false;
-                }
-
-                for ( int i = 0; i < last; i++ )
-                {
-                    if ( !ParameterMatchArgument( parameters[ i ].ParameterType, args[ i ] ) )
-                    {
-                        return false;
-                    }
-                }
-
-                if ( args.Length == last )
-                {
-                    // One argument short is ok for param array
-                    return true;
-                }
-
-                if ( ParameterArrayMatchArguments( parameters[ last ], args, last, args.Length - last ) )
-                {
-                    return true;
-                }
-
-                return false;
-            }
-        }
-
-        internal static bool ParameterArrayMatchArguments( ParameterInfo parameter, object[] args, int offset, int count )
-        {
-            var elementType = parameter.ParameterType.GetElementType();
-
-            if ( elementType == null )
-            {
-                elementType = typeof( object );
-            }
-
-            for ( int i = offset; i < offset + count; i++ )
-            {
-                if ( !ParameterMatchArgument( elementType, args[ i ] ) )
-                {
-                    return false;
-                }
-            }
-
-            return true;
-        }
-
         internal static object ArgumentValue( object arg )
         {
             return arg is DynamicMetaObject ? ( ( DynamicMetaObject ) arg ).Value : arg;
         }
 
-        internal static bool ParameterMatchArgument( Type parameterType, object arg )
+        internal static bool CanConvertFrom( Type type1, Type type2 )
         {
-            Type type = arg is DynamicMetaObject ? ( ( DynamicMetaObject ) arg ).LimitType : arg == null ? null : arg.GetType();
-            object value = arg is DynamicMetaObject ? ( ( DynamicMetaObject ) arg ).Value : arg;
+            if ( type1.IsPrimitive && type2.IsPrimitive )
+            {
+                TypeCode typeCode1 = Type.GetTypeCode( type1 );
+                TypeCode typeCode2 = Type.GetTypeCode( type2 );
+                // If both type1 and type2 have the same type, return true.
+                if ( typeCode1 == typeCode2 )
+                    return true;
+                // Possible conversions from Char follow.
+                if ( typeCode1 == TypeCode.Char )
+                    switch ( typeCode2 )
+                    {
+                        case TypeCode.UInt16:
+                        return true;
 
-            return ( parameterType == typeof( Type ) && type == typeof( Type ) )
-                    || ( IsSpecificDelegate( parameterType ) && ( typeof( IApply ).IsAssignableFrom( type ) || type == typeof( Symbol ) ) )
-                    || ( value == null && !parameterType.IsValueType )
-                    || parameterType.IsAssignableFrom( type )
-                    || CanMaybeConvertToEnumType( parameterType, type )
-                    || CanMaybeCastToEnumerableT( parameterType, type )
-                    || CanConvertFrom( type, parameterType );
+                        case TypeCode.UInt32:
+                        return true;
+
+                        case TypeCode.Int32:
+                        return true;
+
+                        case TypeCode.UInt64:
+                        return true;
+
+                        case TypeCode.Int64:
+                        return true;
+
+                        case TypeCode.Single:
+                        return true;
+
+                        case TypeCode.Double:
+                        return true;
+
+                        default:
+                        return false;
+                    }
+                // Possible conversions from Byte follow.
+                if ( typeCode1 == TypeCode.Byte )
+                    switch ( typeCode2 )
+                    {
+                        case TypeCode.Char:
+                        return true;
+
+                        case TypeCode.UInt16:
+                        return true;
+
+                        case TypeCode.Int16:
+                        return true;
+
+                        case TypeCode.UInt32:
+                        return true;
+
+                        case TypeCode.Int32:
+                        return true;
+
+                        case TypeCode.UInt64:
+                        return true;
+
+                        case TypeCode.Int64:
+                        return true;
+
+                        case TypeCode.Single:
+                        return true;
+
+                        case TypeCode.Double:
+                        return true;
+
+                        default:
+                        return false;
+                    }
+                // Possible conversions from SByte follow.
+                if ( typeCode1 == TypeCode.SByte )
+                    switch ( typeCode2 )
+                    {
+                        case TypeCode.Int16:
+                        return true;
+
+                        case TypeCode.Int32:
+                        return true;
+
+                        case TypeCode.Int64:
+                        return true;
+
+                        case TypeCode.Single:
+                        return true;
+
+                        case TypeCode.Double:
+                        return true;
+
+                        default:
+                        return false;
+                    }
+                // Possible conversions from UInt16 follow.
+                if ( typeCode1 == TypeCode.UInt16 )
+                    switch ( typeCode2 )
+                    {
+                        case TypeCode.UInt32:
+                        return true;
+
+                        case TypeCode.Int32:
+                        return true;
+
+                        case TypeCode.UInt64:
+                        return true;
+
+                        case TypeCode.Int64:
+                        return true;
+
+                        case TypeCode.Single:
+                        return true;
+
+                        case TypeCode.Double:
+                        return true;
+
+                        default:
+                        return false;
+                    }
+                // Possible conversions from Int16 follow.
+                if ( typeCode1 == TypeCode.Int16 )
+                    switch ( typeCode2 )
+                    {
+                        case TypeCode.Int32:
+                        return true;
+
+                        case TypeCode.Int64:
+                        return true;
+
+                        case TypeCode.Single:
+                        return true;
+
+                        case TypeCode.Double:
+                        return true;
+
+                        default:
+                        return false;
+                    }
+                // Possible conversions from UInt32 follow.
+                if ( typeCode1 == TypeCode.UInt32 )
+                    switch ( typeCode2 )
+                    {
+                        case TypeCode.UInt64:
+                        return true;
+
+                        case TypeCode.Int64:
+                        return true;
+
+                        case TypeCode.Single:
+                        return true;
+
+                        case TypeCode.Double:
+                        return true;
+
+                        default:
+                        return false;
+                    }
+                // Possible conversions from Int32 follow.
+                if ( typeCode1 == TypeCode.Int32 )
+                    switch ( typeCode2 )
+                    {
+                        case TypeCode.Int64:
+                        return true;
+
+                        case TypeCode.Single:
+                        return true;
+
+                        case TypeCode.Double:
+                        return true;
+
+                        default:
+                        return false;
+                    }
+                // Possible conversions from UInt64 follow.
+                if ( typeCode1 == TypeCode.UInt64 )
+                    switch ( typeCode2 )
+                    {
+                        case TypeCode.Single:
+                        return true;
+
+                        case TypeCode.Double:
+                        return true;
+
+                        default:
+                        return false;
+                    }
+                // Possible conversions from Int64 follow.
+                if ( typeCode1 == TypeCode.Int64 )
+                    switch ( typeCode2 )
+                    {
+                        case TypeCode.Single:
+                        return true;
+
+                        case TypeCode.Double:
+                        return true;
+
+                        default:
+                        return false;
+                    }
+                // Possible conversions from Single follow.
+                if ( typeCode1 == TypeCode.Single )
+                    switch ( typeCode2 )
+                    {
+                        case TypeCode.Double:
+                        return true;
+
+                        default:
+                        return false;
+                    }
+            }
+            return false;
         }
 
         internal static bool CanMaybeCastToEnumerableT( Type parameterType, Type argType )
@@ -226,54 +256,92 @@ namespace Kiezel
             return b;
         }
 
-        internal static Expression[] ConvertArguments( object[] args, ParameterInfo[] parameters )
+        internal static DynamicMetaObject[] CheckDeferArgs( DynamicMetaObject target, DynamicMetaObject[] args )
         {
-            // Arguments are already checked!!
-            var len = parameters.Length;
-            var callArgs = new Expression[ len ];
-
-            if ( len == 0 )
+            if ( !target.HasValue || args.Any( ( a ) => !a.HasValue ) )
             {
-                return callArgs;
-            }
+                var deferArgs = new DynamicMetaObject[ args.Length + 1 ];
+                for ( int i = 0; i < args.Length; i++ )
+                {
+                    deferArgs[ i + 1 ] = args[ i ];
+                }
+                deferArgs[ 0 ] = target;
 
-            bool hasParamArray = len >= 1 && parameters[ len - 1 ].IsDefined( typeof( ParamArrayAttribute ), false );
-            var last = len - ( hasParamArray ? 1 : 0 );
-
-            for ( int i = 0; i < last; i++ )
-            {
-                callArgs[ i ] = ConvertArgument( args[ i ], parameters[ i ].ParameterType );
-            }
-
-            if ( !hasParamArray )
-            {
-                return callArgs;
-            }
-
-            // Param array creation
-            var tail = new List<Expression>();
-            var elementType = parameters[ last ].ParameterType.GetElementType();
-            if ( elementType == null )
-            {
-                elementType = typeof( object );
-            }
-            for ( int i = last; i < args.Length; ++i )
-            {
-                tail.Add( ConvertArgument( args[ i ], elementType ) );
-            }
-            callArgs[ last ] = Expression.NewArrayInit( elementType, tail );
-            return callArgs;
-        }
-
-        internal static bool IsSpecificDelegate( Type type )
-        {
-            if ( typeof( Delegate ).IsAssignableFrom( type ) )
-            {
-                return typeof( Delegate ) != type;
+                return deferArgs;
             }
             else
             {
-                return false;
+                return null;
+            }
+        }
+
+        internal static DynamicMetaObject CheckTargetNullReference( DynamicMetaObject target, string context )
+        {
+            return CreateThrow(
+                    target, null,
+                    BindingRestrictions.GetExpressionRestriction( Expression.Equal( Expression.Constant( null, typeof( object ) ), target.Expression ) ),
+                    typeof( NullReferenceException ),
+                    context );
+        }
+
+        internal static int CompareParameterInfo( ParameterInfo[] param1, bool createdParamArray1, ParameterInfo[] param2, bool createdParamArray2 )
+        {
+            var i = 0;
+            for ( ; i < param1.Length && i < param2.Length; ++i )
+            {
+                var type1 = param1[ i ].ParameterType;
+                var type2 = param2[ i ].ParameterType;
+                var paramArray1 = param1[ i ].IsDefined( typeof( ParamArrayAttribute ), false ) && createdParamArray1;
+                var paramArray2 = param2[ i ].IsDefined( typeof( ParamArrayAttribute ), false ) && createdParamArray2;
+
+                var cmp = 0;
+
+                if ( type1 == type2 )
+                {
+                    cmp = 0;
+                }
+                else if ( paramArray1 && !paramArray2 )
+                {
+                    // prefer param2
+                    cmp = 1;
+                }
+                else if ( paramArray2 && !paramArray1 )
+                {
+                    // prefer param1
+                    cmp = -1;
+                }
+                else if ( type1.IsAssignableFrom( type2 ) )
+                {
+                    // prefer param2
+                    cmp = 1;
+                }
+                else if ( type2.IsAssignableFrom( type1 ) )
+                {
+                    // prefer param1
+                    cmp = -1;
+                }
+                else
+                {
+                    //throw new LispException( "Cannot resolve parameter type comparison" );
+                    cmp = type1.GetHashCode().CompareTo( type2.GetHashCode() );
+                }
+
+                if ( cmp != 0 )
+                {
+                    return cmp;
+                }
+            }
+            if ( i == param1.Length && i == param2.Length )
+            {
+                return 0;
+            }
+            else if ( i == param1.Length )
+            {
+                return -1;
+            }
+            else
+            {
+                return 1;
             }
         }
 
@@ -287,7 +355,7 @@ namespace Kiezel
                 var dmo = ( DynamicMetaObject ) arg;
                 type = dmo.LimitType;
                 argExpr = dmo.Expression;
-                if ( ( typeof( IApply ).IsAssignableFrom( type ) || type == typeof( Symbol ) ) && IsSpecificDelegate( parameterType ) )
+                if ( typeof( IApply ).IsAssignableFrom( type ) && IsSpecificDelegate( parameterType ) )
                 {
                     argExpr = GetDelegateExpression( argExpr, parameterType );
                 }
@@ -316,7 +384,7 @@ namespace Kiezel
             else
             {
                 type = arg == null ? typeof( object ) : arg.GetType();
-                if ( ( typeof( IApply ).IsAssignableFrom( type ) || type == typeof( Symbol ) ) && IsSpecificDelegate( parameterType ) )
+                if ( typeof( IApply ).IsAssignableFrom( type ) && IsSpecificDelegate( parameterType ) )
                 {
                     argExpr = GetDelegateExpression( Expression.Constant( arg ), parameterType );
                 }
@@ -345,102 +413,50 @@ namespace Kiezel
             return argExpr;
         }
 
-        // GetTargetArgsRestrictions generates the restrictions needed for the
-        // MO resulting from binding an operation.  This combines all existing
-        // restrictions and adds some for arg conversions.  targetInst indicates
-        // whether to restrict the target to an instance (for operations on type
-        // objects) or to a type (for operations on an instance of that type).
-        //
-        // NOTE, this function should only be used when the caller is converting
-        // arguments to the same types as these restrictions.
-        //
-        internal static BindingRestrictions GetTargetArgsRestrictions(
-                DynamicMetaObject target, DynamicMetaObject[] args,
-                bool instanceRestrictionOnTarget )
+        internal static Expression[] ConvertArguments( object[] args, ParameterInfo[] parameters )
         {
-            // Important to add existing restriction first because the
-            // DynamicMetaObjects (and possibly values) we're looking at depend
-            // on the pre-existing restrictions holding true.
-            var restrictions = target.Restrictions.Merge( BindingRestrictions
-                                                            .Combine( args ) );
-            if ( instanceRestrictionOnTarget )
+            // Arguments are already checked!!
+            var len = parameters.Length;
+            var callArgs = new Expression[ len ];
+
+            if ( len == 0 )
             {
-                restrictions = restrictions.Merge(
-                    BindingRestrictions.GetInstanceRestriction(
-                        target.Expression,
-                        target.Value
-                    ) );
+                return callArgs;
             }
-            else
+
+            bool hasParamArray = len >= 1 && parameters[ len - 1 ].IsDefined( typeof( ParamArrayAttribute ), false );
+            var last = len - ( hasParamArray ? 1 : 0 );
+
+            for ( int i = 0; i < last; i++ )
             {
-                restrictions = restrictions.Merge(
-                    BindingRestrictions.GetTypeRestriction(
-                        target.Expression,
-                        target.LimitType
-                    ) );
+                callArgs[ i ] = ConvertArgument( args[ i ], parameters[ i ].ParameterType );
             }
-            for ( int i = 0; i < args.Length; i++ )
+
+            if ( !hasParamArray )
             {
-                BindingRestrictions r;
-                if ( args[ i ].HasValue && args[ i ].Value == null )
-                {
-                    r = BindingRestrictions.GetInstanceRestriction(
-                            args[ i ].Expression, null );
-                }
-                else
-                {
-                    r = BindingRestrictions.GetTypeRestriction(
-                            args[ i ].Expression, args[ i ].LimitType );
-                }
-                restrictions = restrictions.Merge( r );
+                return callArgs;
             }
-            return restrictions;
-        }
 
-        // Return the expression for getting target[indexes]
-        //
-        // Note, callers must ensure consistent restrictions are added for
-        // the conversions on args and target.
-        //
-        internal static Expression GetIndexingExpression(
-                                      DynamicMetaObject target,
-                                      DynamicMetaObject[] indexes )
-        {
-            Debug.Assert( target.HasValue && target.LimitType != typeof( Array ) );
-
-            if ( target.LimitType.IsArray )
+            if ( last + 1 == args.Length && ParameterMatchArgumentExact( parameters[ last ].ParameterType, args[ last ] ) )
             {
-                var indexExpressions = indexes.Select( i => Expression.Convert( i.Expression, typeof(int) ) );
-                return Expression.ArrayAccess( Expression.Convert( target.Expression, target.LimitType ), indexExpressions );
+                // Final argument is the param array
+                callArgs[ last ] = ConvertArgument( args[ last ], parameters[ last ].ParameterType );
+                return callArgs;
             }
-            else
+
+            // Param array creation
+            var tail = new List<Expression>();
+            var elementType = parameters[ last ].ParameterType.GetElementType();
+            if ( elementType == null )
             {
-                var props = target.LimitType.GetProperties();
-                var allIndexers = props.Where( idx => idx.GetIndexParameters().Length == indexes.Length ).ToArray();
-                var indexers = new List<PropertyInfo>();
-                ParameterInfo[] indexerParams = null;
-
-                foreach ( var idxer in allIndexers )
-                {
-                    indexerParams = idxer.GetIndexParameters();
-                    if ( RuntimeHelpers.ParametersMatchArguments( indexerParams, indexes ) )
-                    {
-                        indexers.Add( idxer );
-                    }
-                }
-
-                if ( indexers.Count == 0 )
-                {
-                    //Console.WriteLine( "no match" );
-                    return null;
-                }
-
-                var indexer = GetMostSpecific( indexers );
-                var indexExpressions = RuntimeHelpers.ConvertArguments( indexes, indexer.GetIndexParameters() );
-
-                return Expression.MakeIndex(
-                            Expression.Convert( target.Expression, target.LimitType ), indexer, indexExpressions );
+                elementType = typeof( object );
             }
+            for ( int i = last; i < args.Length; ++i )
+            {
+                tail.Add( ConvertArgument( args[ i ], elementType ) );
+            }
+            callArgs[ last ] = Expression.NewArrayInit( elementType, tail );
+            return callArgs;
         }
 
         // CreateThrow is a convenience function for when binders cannot bind.
@@ -519,6 +535,323 @@ namespace Kiezel
             return newargs;
         }
 
+        internal static LambdaExpression GetDelegateExpression( Expression lambda, Type delegateType )
+        {
+            MethodInfo method = delegateType.GetMethod( "Invoke" );
+            var parameters1 = method.GetParameters();
+            var parameters2 = parameters1.Select( p => Expression.Parameter( p.ParameterType ) ).ToArray();
+            var parameters3 = parameters2.Select( p => EnsureObjectResult( p ) ).ToArray();
+            var funcall = typeof( Runtime ).GetMethod( "Funcall" );
+            var argumentArray = Expression.NewArrayInit( typeof( object ), parameters3 );
+            var lambdaCall = Expression.Call( funcall, Expression.Convert( lambda, typeof( IApply ) ), argumentArray );
+            Expression returnVal;
+            if ( method.ReturnType == typeof( void ) )
+            {
+                returnVal = Expression.Convert( lambdaCall, typeof( object ) );
+            }
+            else
+            {
+                returnVal = Expression.Convert( lambdaCall, method.ReturnType );
+            }
+            var expression = Expression.Lambda( delegateType, returnVal, parameters2 );
+            return expression;
+        }
+
+        // Return the expression for getting target[indexes]
+        //
+        // Note, callers must ensure consistent restrictions are added for
+        // the conversions on args and target.
+        //
+        internal static Expression GetIndexingExpression(
+                                      DynamicMetaObject target,
+                                      DynamicMetaObject[] indexes )
+        {
+            Type valueType;
+            return GetIndexingExpression( target, indexes, out valueType );
+        }
+
+        
+        internal static Expression GetIndexingExpression(
+                                      DynamicMetaObject target,
+                                      DynamicMetaObject[] indexes, out Type valueType )
+        {
+            Debug.Assert( target.HasValue && target.LimitType != typeof( Array ) );
+            valueType = null;
+
+            if ( target.LimitType.IsArray )
+            {
+                valueType = target.LimitType.GetElementType();
+                var indexExpressions = indexes.Select( i => Expression.Convert( i.Expression, typeof( int ) ) );
+                return Expression.ArrayAccess( Expression.Convert( target.Expression, target.LimitType ), indexExpressions );
+            }
+            else
+            {
+                var props = target.LimitType.GetProperties();
+                var allIndexers = props.Where( idx => idx.GetIndexParameters().Length == indexes.Length ).ToArray();
+                var indexers = new List<CandidateProperty>();
+                ParameterInfo[] indexerParams = null;
+                bool createdParamArray;
+
+                foreach ( var idxer in allIndexers )
+                {
+                    indexerParams = idxer.GetIndexParameters();
+                    if ( RuntimeHelpers.ParametersMatchArguments( indexerParams, indexes, out createdParamArray ) )
+                    {
+                        RuntimeHelpers.InsertInMostSpecificOrder( indexers, idxer, createdParamArray );
+                    }
+                }
+
+                if ( indexers.Count == 0 )
+                {
+                    //Console.WriteLine( "no match" );
+                    return null;
+                }
+
+                var indexer = indexers[ 0 ].Property;
+                var indexExpressions = RuntimeHelpers.ConvertArguments( indexes, indexer.GetIndexParameters() );
+                valueType = indexer.PropertyType;
+
+                return Expression.MakeIndex(
+                            Expression.Convert( target.Expression, target.LimitType ), indexer, indexExpressions );
+            }
+        }
+
+        // GetTargetArgsRestrictions generates the restrictions needed for the
+        // MO resulting from binding an operation.  This combines all existing
+        // restrictions and adds some for arg conversions.  targetInst indicates
+        // whether to restrict the target to an instance (for operations on type
+        // objects) or to a type (for operations on an instance of that type).
+        //
+        // NOTE, this function should only be used when the caller is converting
+        // arguments to the same types as these restrictions.
+        //
+        internal static BindingRestrictions GetTargetArgsRestrictions(
+                DynamicMetaObject target, DynamicMetaObject[] args,
+                bool instanceRestrictionOnTarget )
+        {
+            // Important to add existing restriction first because the
+            // DynamicMetaObjects (and possibly values) we're looking at depend
+            // on the pre-existing restrictions holding true.
+            var restrictions = target.Restrictions.Merge( BindingRestrictions
+                                                            .Combine( args ) );
+            if ( instanceRestrictionOnTarget )
+            {
+                restrictions = restrictions.Merge(
+                    BindingRestrictions.GetInstanceRestriction(
+                        target.Expression,
+                        target.Value
+                    ) );
+            }
+            else
+            {
+                restrictions = restrictions.Merge(
+                    BindingRestrictions.GetTypeRestriction(
+                        target.Expression,
+                        target.LimitType
+                    ) );
+            }
+            for ( int i = 0; i < args.Length; i++ )
+            {
+                BindingRestrictions r;
+                if ( args[ i ].HasValue && args[ i ].Value == null )
+                {
+                    r = BindingRestrictions.GetInstanceRestriction(
+                            args[ i ].Expression, null );
+                }
+                else
+                {
+                    r = BindingRestrictions.GetTypeRestriction(
+                            args[ i ].Expression, args[ i ].LimitType );
+                }
+                restrictions = restrictions.Merge( r );
+            }
+            return restrictions;
+        }
+
+        internal static void InsertInMostSpecificOrder<T>( List<CandidateMethod<T>> candidates, T method, bool createdParamArray ) where T : MethodBase
+        {
+            var insertPoint = candidates.Count;
+            var p1 = method.GetParameters();
+
+            for ( var i = 0; i < candidates.Count; ++i )
+            {
+                var p2 = candidates[ i ].Method.GetParameters();
+                var f2 = candidates[ i ].CreatedParamArray;
+                if ( CompareParameterInfo( p1, createdParamArray, p2, f2 ) < 0 )
+                {
+                    insertPoint = i;
+                    break;
+                }
+            }
+
+            candidates.Insert( insertPoint, new CandidateMethod<T>( method, createdParamArray ) );
+        }
+
+        internal static void InsertInMostSpecificOrder( List<CandidateProperty> candidates, PropertyInfo property, bool createdParamArray )
+        {
+            var insertPoint = candidates.Count;
+            var p1 = property.GetIndexParameters();
+
+            for ( var i = 0; i < candidates.Count; ++i )
+            {
+                var p2 = candidates[ i ].Property.GetIndexParameters();
+                var f2 = candidates[ i ].CreatedParamArray;
+                if ( CompareParameterInfo( p1, createdParamArray, p2, f2 ) < 0 )
+                {
+                    insertPoint = i;
+                    break;
+                }
+            }
+
+            candidates.Insert( insertPoint, new CandidateProperty( property, createdParamArray ) );
+        }
+
+        internal static bool IsSpecificDelegate( Type type )
+        {
+            if ( typeof( Delegate ).IsAssignableFrom( type ) )
+            {
+                return typeof( Delegate ) != type;
+            }
+            else
+            {
+                return false;
+            }
+        }
+
+        internal static bool ParameterArrayMatchArguments( ParameterInfo parameter, object[] args, int offset, int count )
+        {
+            var elementType = parameter.ParameterType.GetElementType();
+
+            if ( elementType == null )
+            {
+                elementType = typeof( object );
+            }
+
+            for ( int i = offset; i < offset + count; i++ )
+            {
+                if ( !ParameterMatchArgument( elementType, args[ i ] ) )
+                {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
+        internal static bool ParameterMatchArgument( Type parameterType, object arg )
+        {
+            Type type = arg is DynamicMetaObject ? ( ( DynamicMetaObject ) arg ).LimitType : arg == null ? null : arg.GetType();
+            object value = arg is DynamicMetaObject ? ( ( DynamicMetaObject ) arg ).Value : arg;
+
+            return ( parameterType == typeof( Type ) && type == typeof( Type ) )
+                    || ( IsSpecificDelegate( parameterType ) && ( typeof( IApply ).IsAssignableFrom( type ) || type == typeof( Symbol ) ) )
+                    || ( value == null && !parameterType.IsValueType )
+                    || parameterType.IsAssignableFrom( type )
+                    || CanMaybeConvertToEnumType( parameterType, type )
+                    || CanMaybeCastToEnumerableT( parameterType, type )
+                    || CanConvertFrom( type, parameterType );
+        }
+
+        internal static bool ParameterMatchArgumentExact( Type parameterType, object arg )
+        {
+            object value;
+
+            if ( arg is DynamicMetaObject )
+            {
+                value = ( ( DynamicMetaObject ) arg ).Value;
+            }
+            else
+            {
+                value = arg;
+            }
+
+            if ( value == null )
+            {
+                return false;
+            }
+            else
+            {
+                return parameterType == value.GetType();
+            }
+        }
+
+        internal static bool ParametersMatchArguments( ParameterInfo[] parameters, object[] args )
+        {
+            bool createdParamArray;
+            return ParametersMatchArguments( parameters, args, out createdParamArray );
+        }
+
+        internal static bool ParametersMatchArguments( ParameterInfo[] parameters, object[] args, out bool createdParamArray )
+        {
+            createdParamArray = false;
+
+            int len = parameters.Length;
+
+            if ( len == 0 )
+            {
+                return args.Length == 0;
+            }
+
+            bool hasParamArray = len >= 1 && parameters[ len - 1 ].IsDefined( typeof( ParamArrayAttribute ), false );
+
+            if ( !hasParamArray )
+            {
+                if ( args.Length != len )
+                {
+                    return false;
+                }
+
+                for ( int i = 0; i < len; i++ )
+                {
+                    if ( !ParameterMatchArgument( parameters[ i ].ParameterType, args[ i ] ) )
+                    {
+                        return false;
+                    }
+                }
+
+                return true;
+            }
+            else
+            {
+                int last = len - 1;
+
+                if ( args.Length < last )
+                {
+                    return false;
+                }
+
+                for ( int i = 0; i < last; i++ )
+                {
+                    if ( !ParameterMatchArgument( parameters[ i ].ParameterType, args[ i ] ) )
+                    {
+                        return false;
+                    }
+                }
+
+                if ( args.Length == last )
+                {
+                    // One argument short is ok for param array
+                    return true;
+                }
+
+                if ( args.Length == last + 1 )
+                {
+                    // Final argument is the param array
+                    if ( ParameterMatchArgumentExact( parameters[ last ].ParameterType, args[ last ] ) )
+                    {
+                        return true;
+                    }
+                }
+
+                if ( ParameterArrayMatchArguments( parameters[ last ], args, last, args.Length - last ) )
+                {
+                    createdParamArray = true;
+                    return true;
+                }
+
+                return false;
+            }
+        }
 
         internal static bool SplitCombinedTargetArgs( DynamicMetaObject[] args, out DynamicMetaObject argsFirst, out DynamicMetaObject[] argsRest )
         {
@@ -537,217 +870,17 @@ namespace Kiezel
             }
         }
 
-        internal static DynamicMetaObject[] CheckDeferArgs( DynamicMetaObject target, DynamicMetaObject[] args )
+        public struct CandidateProperty
         {
-            if ( !target.HasValue || args.Any( ( a ) => !a.HasValue ) )
-            {
-                var deferArgs = new DynamicMetaObject[ args.Length + 1 ];
-                for ( int i = 0; i < args.Length; i++ )
-                {
-                    deferArgs[ i + 1 ] = args[ i ];
-                }
-                deferArgs[ 0 ] = target;
+            public bool CreatedParamArray;
 
-                return deferArgs;
-            }
-            else
+            public PropertyInfo Property;
+
+            public CandidateProperty( PropertyInfo property, bool createdParamArray )
             {
-                return null;
+                Property = property;
+                CreatedParamArray = createdParamArray;
             }
         }
-
-        internal static LambdaExpression GetDelegateExpression( Expression lambda, Type delegateType )
-        {
-            MethodInfo method = delegateType.GetMethod( "Invoke" );
-            var parameters1 = method.GetParameters();
-            var parameters2 = parameters1.Select( p => Expression.Parameter( p.ParameterType ) ).ToArray();
-            var parameters3 = parameters2.Select( p => EnsureObjectResult( p ) ).ToArray();
-            var funcall = typeof( Runtime ).GetMethod( "Funcall" );
-            var argumentArray = Expression.NewArrayInit( typeof( object ), parameters3 );
-            var lambdaCall = Expression.Call( funcall, lambda, argumentArray );
-            Expression returnVal;
-            if ( method.ReturnType == typeof( void ) )
-            {
-                returnVal = Expression.Convert( lambdaCall, typeof( object ) );
-            }
-            else
-            {
-                returnVal = Expression.Convert( lambdaCall, method.ReturnType );
-            }
-            var expression = Expression.Lambda( delegateType, returnVal, parameters2 );
-            return expression;
-        }
-
-        internal static bool CanConvertFrom( Type type1, Type type2 )
-        {
-            if ( type1.IsPrimitive && type2.IsPrimitive )
-            {
-                TypeCode typeCode1 = Type.GetTypeCode( type1 );
-                TypeCode typeCode2 = Type.GetTypeCode( type2 );
-                // If both type1 and type2 have the same type, return true.
-                if ( typeCode1 == typeCode2 )
-                    return true;
-                // Possible conversions from Char follow.
-                if ( typeCode1 == TypeCode.Char )
-                    switch ( typeCode2 )
-                    {
-                        case TypeCode.UInt16:
-                        return true;
-                        case TypeCode.UInt32:
-                        return true;
-                        case TypeCode.Int32:
-                        return true;
-                        case TypeCode.UInt64:
-                        return true;
-                        case TypeCode.Int64:
-                        return true;
-                        case TypeCode.Single:
-                        return true;
-                        case TypeCode.Double:
-                        return true;
-                        default:
-                        return false;
-                    }
-                // Possible conversions from Byte follow.
-                if ( typeCode1 == TypeCode.Byte )
-                    switch ( typeCode2 )
-                    {
-                        case TypeCode.Char:
-                        return true;
-                        case TypeCode.UInt16:
-                        return true;
-                        case TypeCode.Int16:
-                        return true;
-                        case TypeCode.UInt32:
-                        return true;
-                        case TypeCode.Int32:
-                        return true;
-                        case TypeCode.UInt64:
-                        return true;
-                        case TypeCode.Int64:
-                        return true;
-                        case TypeCode.Single:
-                        return true;
-                        case TypeCode.Double:
-                        return true;
-                        default:
-                        return false;
-                    }
-                // Possible conversions from SByte follow.
-                if ( typeCode1 == TypeCode.SByte )
-                    switch ( typeCode2 )
-                    {
-                        case TypeCode.Int16:
-                        return true;
-                        case TypeCode.Int32:
-                        return true;
-                        case TypeCode.Int64:
-                        return true;
-                        case TypeCode.Single:
-                        return true;
-                        case TypeCode.Double:
-                        return true;
-                        default:
-                        return false;
-                    }
-                // Possible conversions from UInt16 follow.
-                if ( typeCode1 == TypeCode.UInt16 )
-                    switch ( typeCode2 )
-                    {
-                        case TypeCode.UInt32:
-                        return true;
-                        case TypeCode.Int32:
-                        return true;
-                        case TypeCode.UInt64:
-                        return true;
-                        case TypeCode.Int64:
-                        return true;
-                        case TypeCode.Single:
-                        return true;
-                        case TypeCode.Double:
-                        return true;
-                        default:
-                        return false;
-                    }
-                // Possible conversions from Int16 follow.
-                if ( typeCode1 == TypeCode.Int16 )
-                    switch ( typeCode2 )
-                    {
-                        case TypeCode.Int32:
-                        return true;
-                        case TypeCode.Int64:
-                        return true;
-                        case TypeCode.Single:
-                        return true;
-                        case TypeCode.Double:
-                        return true;
-                        default:
-                        return false;
-                    }
-                // Possible conversions from UInt32 follow.
-                if ( typeCode1 == TypeCode.UInt32 )
-                    switch ( typeCode2 )
-                    {
-                        case TypeCode.UInt64:
-                        return true;
-                        case TypeCode.Int64:
-                        return true;
-                        case TypeCode.Single:
-                        return true;
-                        case TypeCode.Double:
-                        return true;
-                        default:
-                        return false;
-                    }
-                // Possible conversions from Int32 follow.
-                if ( typeCode1 == TypeCode.Int32 )
-                    switch ( typeCode2 )
-                    {
-                        case TypeCode.Int64:
-                        return true;
-                        case TypeCode.Single:
-                        return true;
-                        case TypeCode.Double:
-                        return true;
-                        default:
-                        return false;
-                    }
-                // Possible conversions from UInt64 follow.
-                if ( typeCode1 == TypeCode.UInt64 )
-                    switch ( typeCode2 )
-                    {
-                        case TypeCode.Single:
-                        return true;
-                        case TypeCode.Double:
-                        return true;
-                        default:
-                        return false;
-                    }
-                // Possible conversions from Int64 follow.
-                if ( typeCode1 == TypeCode.Int64 )
-                    switch ( typeCode2 )
-                    {
-                        case TypeCode.Single:
-                        return true;
-                        case TypeCode.Double:
-                        return true;
-                        default:
-                        return false;
-                    }
-                // Possible conversions from Single follow.
-                if ( typeCode1 == TypeCode.Single )
-                    switch ( typeCode2 )
-                    {
-                        case TypeCode.Double:
-                        return true;
-                        default:
-                        return false;
-                    }
-            }
-            return false;
-        }
-
     }
-
-
 }

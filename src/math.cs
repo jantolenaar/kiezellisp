@@ -1,13 +1,11 @@
 ﻿// Copyright (C) Jan Tolenaar. See the file LICENSE for details.
 
 using System;
-using System.Collections;
 using System.Numerics;
 using Numerics;
 
 namespace Kiezel
 {
-
     public partial class Runtime
     {
         [Pure, Lisp( "math:abs" )]
@@ -15,7 +13,7 @@ namespace Kiezel
         {
             if ( a is int )
             {
-                return Math.Abs( (int) a );
+                return Math.Abs( ( int ) a );
             }
             else if ( a is long )
             {
@@ -41,7 +39,6 @@ namespace Kiezel
             {
                 return Complex.Abs( AsComplex( a ) );
             }
-
         }
 
         [Pure, Lisp( "math:acos" )]
@@ -83,7 +80,6 @@ namespace Kiezel
             }
         }
 
-
         [Pure, Lisp( "math:ceiling" )]
         public static object Ceiling( object a )
         {
@@ -99,6 +95,12 @@ namespace Kiezel
             {
                 return Math.Ceiling( AsDecimal( a ) );
             }
+        }
+
+        [Pure, Lisp( "math:conjugate" )]
+        public static object Conjugate( object a )
+        {
+            return Complex.Conjugate( AsComplex( a ) );
         }
 
         [Pure, Lisp( "math:cos" )]
@@ -289,7 +291,7 @@ namespace Kiezel
             else if ( a is BigInteger )
             {
                 var b = ( BigInteger ) a;
-                return  b < 0 ? -1 : b == 0 ? 0 : 1;
+                return b < 0 ? -1 : b == 0 ? 0 : 1;
             }
             else if ( a is BigRational )
             {
@@ -387,13 +389,5 @@ namespace Kiezel
                 return Math.Truncate( AsDecimal( a ) );
             }
         }
-
-        [Pure, Lisp( "math:conjugate" )]
-        public static object Conjugate( object a )
-        {
-            return Complex.Conjugate( AsComplex( a ) );
-        }
-
-
     }
 }

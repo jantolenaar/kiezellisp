@@ -21,6 +21,9 @@
         "if-let"
         "ignore-errors"
         "macroexpand-all"
+        "multiple-let"
+        "multiple-setf"
+        "multiple-var"
         "new"
         "otherwise"
         "return-from"
@@ -296,3 +299,32 @@
     `(if (find ,item ,place)
             ,place
         (push item ,place)))
+
+;;;
+;;; multiple var macros
+;;;
+
+(defmacro multiple-let ((&rest vars) form)
+    (multiple-declare 'let vars form))
+
+(defmacro multiple-var ((&rest vars) form)
+    (multiple-declare 'var vars form))
+
+(defun multiple-declare (decl-keyword vars form)
+    (let temp (gentemp))
+    (let count (length vars))
+    (letfun do-var (index name)
+        `(,decl-keyword ,name (elt ,temp ,index)))
+    `(merging-do
+        (let ,temp (as-multiple-elements ,form ,count))
+        ,@(map-indexed do-var vars)))
+
+    
+(defmacro multiple-setf ((&rest places) form)
+    (let temp (gentemp))
+    (let count (length places))
+    (letfun do-var (index place)
+        `(setf ,place (elt ,temp ,index)))
+    `(do
+        (let ,temp (as-multiple-elements ,form ,count))
+        ,@(map-indexed do-var places)))

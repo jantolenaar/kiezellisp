@@ -1,4 +1,3 @@
-
 // Copyright (C) Jan Tolenaar. See the file LICENSE for details.
 
 using System;
@@ -6,9 +5,6 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
-using System.Text;
-using System.Dynamic;
-
 
 namespace Kiezel
 {
@@ -32,29 +28,6 @@ namespace Kiezel
                 args.Add( Expression.Constant( target ) );
                 args.AddRange( indexes.Select( x => Expression.Constant( x ) ) );
                 var binder = GetGetIndexBinder( args.Count - 1 );
-                var code = CompileDynamicExpression( binder, typeof( object ), args );
-                var result = Execute( code );
-                return result;
-            }
-        }
-
-        [Lisp( "%set-elt" )]
-        public static object SetElt( object target, params object[] indexesAndValue )
-        {
-            if ( target is Prototype )
-            {
-                var proto = ( Prototype ) target;
-                var indexes = indexesAndValue.Take( indexesAndValue.Length - 1 ).ToArray();
-                var value = indexesAndValue[ indexesAndValue.Length - 1 ];
-                proto.TrySetIndex( null, indexes, value );
-                return value;
-            }
-            else
-            {
-                var args = new List<Expression>();
-                args.Add( Expression.Constant( target ) );
-                args.AddRange( indexesAndValue.Select( x => Expression.Constant( x ) ) );
-                var binder = GetSetIndexBinder( args.Count - 1 );
                 var code = CompileDynamicExpression( binder, typeof( object ), args );
                 var result = Execute( code );
                 return result;
@@ -89,6 +62,27 @@ namespace Kiezel
             return result;
         }
 
-
+        [Lisp( "%set-elt" )]
+        public static object SetElt( object target, params object[] indexesAndValue )
+        {
+            if ( target is Prototype )
+            {
+                var proto = ( Prototype ) target;
+                var indexes = indexesAndValue.Take( indexesAndValue.Length - 1 ).ToArray();
+                var value = indexesAndValue[ indexesAndValue.Length - 1 ];
+                proto.TrySetIndex( null, indexes, value );
+                return value;
+            }
+            else
+            {
+                var args = new List<Expression>();
+                args.Add( Expression.Constant( target ) );
+                args.AddRange( indexesAndValue.Select( x => Expression.Constant( x ) ) );
+                var binder = GetSetIndexBinder( args.Count - 1 );
+                var code = CompileDynamicExpression( binder, typeof( object ), args );
+                var result = Execute( code );
+                return result;
+            }
+        }
     }
 }

@@ -2,19 +2,13 @@
 
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Reflection;
 using System.Dynamic;
+using System.Linq;
 using System.Linq.Expressions;
-using System.Diagnostics;
-using System.Numerics;
-using System.Runtime.CompilerServices;
-using System.IO;
+using System.Reflection;
 
 namespace Kiezel
 {
-
     public class AccessorLambda : IDynamicMetaObjectProvider, IApply
     {
         internal string Members;
@@ -31,16 +25,6 @@ namespace Kiezel
         {
             Members = members;
             Nullable = nullable;
-        }
-
-        public override string ToString()
-        {
-            return String.Format( "AccessorLambda Name=\"{0}\" Nullable=\"{1}\"", Members, Nullable );
-        }
-
-        DynamicMetaObject IDynamicMetaObjectProvider.GetMetaObject( Expression parameter )
-        {
-            return new AccessorLambdaMetaObject( parameter, this );
         }
 
         object IApply.Apply( object[] args )
@@ -69,15 +53,15 @@ namespace Kiezel
                     {
                         if ( Proc1 == null )
                         {
-                            Proc1 = (Func<object,object>) MakeExpressionProc( 1 );
+                            Proc1 = ( Func<object, object> ) MakeExpressionProc( 1 );
                         }
-                        return Proc1( args[0] );
+                        return Proc1( args[ 0 ] );
                     }
                     case 2:
                     {
                         if ( Proc2 == null )
                         {
-                            Proc2 = ( Func<object, object,object> ) MakeExpressionProc( 2 );
+                            Proc2 = ( Func<object, object, object> ) MakeExpressionProc( 2 );
                         }
                         return Proc2( args[ 0 ], args[ 1 ] );
                     }
@@ -121,6 +105,15 @@ namespace Kiezel
             }
         }
 
+        DynamicMetaObject IDynamicMetaObjectProvider.GetMetaObject( Expression parameter )
+        {
+            return new AccessorLambdaMetaObject( parameter, this );
+        }
+
+        public override string ToString()
+        {
+            return String.Format( "AccessorLambda Name=\"{0}\" Nullable=\"{1}\"", Members, Nullable );
+        }
         internal Delegate MakeExpressionProc( int argCount )
         {
             var names = Members.Split( new char[] { '.' }, StringSplitOptions.RemoveEmptyEntries );
@@ -133,10 +126,7 @@ namespace Kiezel
             var proc = Runtime.CompileToDelegate( code, args );
             return proc;
         }
-      
-
     }
-
 
     public class AccessorLambdaMetaObject : DynamicMetaObject
     {
@@ -146,14 +136,6 @@ namespace Kiezel
             : base( parameter, BindingRestrictions.Empty, lambda )
         {
             this.Lambda = lambda;
-        }
-
-        public override DynamicMetaObject BindInvoke( InvokeBinder binder, DynamicMetaObject[] args )
-        {
-            var args2 = args.Select(x=>x.Expression).ToArray();
-            var code = MakeExpression( false, Lambda.Members, args2 );
-            var restrictions = BindingRestrictions.GetInstanceRestriction( this.Expression, this.Value );
-            return new DynamicMetaObject( code, restrictions );
         }
 
         public static Expression MakeExpression( bool nullable, string members, Expression[] args )
@@ -189,7 +171,6 @@ namespace Kiezel
                     }
 
                     code = Expression.Condition( Runtime.WrapBooleanTest( Expression.Assign( temp, code ) ), code2, Expression.Constant( null ) );
-
                 }
 
                 code = Expression.Block( typeof( object ), new ParameterExpression[] { temp }, code );
@@ -214,345 +195,24 @@ namespace Kiezel
 
             return code;
         }
-    }
-
-    public class ImportedFunction : IDynamicMetaObjectProvider, IApply, ISyntax
-    {
-        internal string Name;
-        internal Type DeclaringType;
-        internal bool Pure;
-        internal MethodInfo[] BuiltinExtensionMembers;
-        internal MethodInfo[] Members;
-        internal MethodInfo[] ExternalExtensionMembers;
-        internal dynamic Proc0;
-        internal dynamic Proc1;
-        internal dynamic Proc2;
-        internal dynamic Proc3;
-        internal dynamic Proc4;
-        internal dynamic Proc5;
-        internal dynamic Proc6;
-        internal dynamic Proc7;
-        internal dynamic Proc8;
-        internal dynamic Proc9;
-        internal dynamic Proc10;
-        internal dynamic Proc11;
-        internal dynamic Proc12;
-
-
-        internal ImportedFunction( string name, Type declaringType )
-        {
-
-            Init();
-            Name = name;
-            DeclaringType = declaringType;
-            BuiltinExtensionMembers = new MethodInfo[ 0 ];
-            Members = new MethodInfo[0];
-            ExternalExtensionMembers = new MethodInfo[ 0 ];
-            Pure = false;
-        }
-
-        internal ImportedFunction( string name, Type declaringType, MethodInfo[] members, bool pure )
-            : this( name, declaringType )
-        {
-            Members = members;
-            Pure = pure;
-        }
-
-        internal void Init()
-        {
-            Proc0 = this;
-            Proc1 = this;
-            Proc2 = this;
-            Proc3 = this;
-            Proc4 = this;
-            Proc5 = this;
-            Proc6 = this;
-            Proc7 = this;
-            Proc8 = this;
-            Proc9 = this;
-            Proc10 = this;
-            Proc11 = this;
-            Proc12 = this;
-        }
-
-        Cons ISyntax.GetSyntax( Symbol context )
-        {
-            var v = new Vector();
-            foreach (var m in Members)
-            {
-                v.Add( Runtime.GetMethodSyntax( m, context ) );
-            }
-            return Runtime.AsList( Runtime.Distinct( v, Runtime.StructurallyEqual ) );
-        }
-
-        public bool HasKiezelMethods
-        {
-            get
-            {
-                return Members.Any( x => x.DeclaringType.FullName.IndexOf("Kiezel") != -1 );
-            }
-        }
-
-        public override string ToString()
-        {
-            return String.Format( "Function Name=\"{0}.{1}\"", DeclaringType, Name );
-        }
-
-        DynamicMetaObject IDynamicMetaObjectProvider.GetMetaObject( Expression parameter )
-        {
-            return new ImportedFunctionMetaObject( parameter, this );
-        }
-
-        object IApply.Apply( object[] args )
-        {
-            if ( args.Length > 12 )
-            {
-                var binder = Runtime.GetInvokeBinder( args.Length );
-                var exprs = new List<Expression>();
-                exprs.Add( Expression.Constant( this ) );
-                exprs.AddRange( args.Select( Expression.Constant ) );
-                var code = Runtime.CompileDynamicExpression( binder, typeof( object ), exprs );
-                var proc = Runtime.CompileToFunction( code );
-                return proc();
-            }
-            else
-            {
-                switch ( args.Length )
-                {
-                    case 0:
-                    {
-                        return Proc0();
-                    }
-                    case 1:
-                    {
-                        return Proc1( args[ 0 ] );
-                    }
-                    case 2:
-                    {
-                        return Proc2( args[ 0 ], args[ 1 ] );
-                    }
-                    case 3:
-                    {
-                        return Proc3( args[ 0 ], args[ 1 ], args[ 2 ] );
-                    }
-                    case 4:
-                    {
-                        return Proc4( args[ 0 ], args[ 1 ], args[ 2 ], args[ 3 ] );
-                    }
-                    case 5:
-                    {
-                        return Proc5( args[ 0 ], args[ 1 ], args[ 2 ], args[ 3 ], args[ 4 ] );
-                    }
-                    case 6:
-                    {
-                        return Proc6( args[ 0 ], args[ 1 ], args[ 2 ], args[ 3 ], args[ 4 ], args[ 5 ] );
-                    }
-                    case 7:
-                    {
-                        return Proc7( args[ 0 ], args[ 1 ], args[ 2 ], args[ 3 ], args[ 4 ], args[ 5 ], args[ 6 ] );
-                    }
-                    case 8:
-                    {
-                        return Proc8( args[ 0 ], args[ 1 ], args[ 2 ], args[ 3 ], args[ 4 ], args[ 5 ], args[ 6 ], args[ 7 ] );
-                    }
-                    case 9:
-                    {
-                        return Proc9( args[ 0 ], args[ 1 ], args[ 2 ], args[ 3 ], args[ 4 ], args[ 5 ], args[ 6 ], args[ 7 ], args[ 8 ] );
-                    }
-                    case 10:
-                    {
-                        return Proc9( args[ 0 ], args[ 1 ], args[ 2 ], args[ 3 ], args[ 4 ], args[ 5 ], args[ 6 ], args[ 7 ], args[ 8 ], args[ 9 ] );
-                    }
-                    case 11:
-                    {
-                        return Proc9( args[ 0 ], args[ 1 ], args[ 2 ], args[ 3 ], args[ 4 ], args[ 5 ], args[ 6 ], args[ 7 ], args[ 8 ], args[ 9 ], args[ 10 ] );
-                    }
-                    case 12:
-                    {
-                        return Proc9( args[ 0 ], args[ 1 ], args[ 2 ], args[ 3 ], args[ 4 ], args[ 5 ], args[ 6 ], args[ 7 ], args[ 8 ], args[ 9 ], args[ 10 ], args[ 11 ] );
-                    }
-                    default:
-                    {
-                        throw new NotImplementedException( "Apply supports up to 12 arguments" );
-                    }
-                }
-            }
-        }
-
-        //internal Delegate MakeExpressionProc( int argCount )
-        //{
-        //    var args = new ParameterExpression[ argCount ];
-        //    for ( var i = 0; i < argCount; ++i )
-        //    {
-        //        args[ i ] = Expression.Parameter( typeof( object ) );
-        //    }
-        //    var binder = Runtime.GetInvokeBinder( args.Length );
-        //    var code = Runtime.CompileDynamicExpression( binder, typeof( object ), args );
-        //    var proc = Runtime.CompileToDelegate( code, args );
-        //    return proc;
-        //}
-
-        public bool TryBindInvokeBestMethod( bool restrictionOnTargetInstance, DynamicMetaObject target, DynamicMetaObject[] args, out DynamicMetaObject result )
-        {
-            DynamicMetaObject argsFirst = null;
-            DynamicMetaObject[] argsRest = null;
-            return TryBindInvokeBestMethod( restrictionOnTargetInstance,  target, args, argsFirst, argsRest, out result );
-        }
-
-        public bool TryBindInvokeBestMethod( bool restrictionOnTargetInstance, DynamicMetaObject target, DynamicMetaObject argsFirst, DynamicMetaObject[] argsRest, out DynamicMetaObject result )
-        {
-            return TryBindInvokeBestMethod( restrictionOnTargetInstance, target, null, argsFirst, argsRest, out result );
-        }
-
-        public bool TryBindInvokeBestMethod( bool restrictionOnTargetInstance, DynamicMetaObject target, DynamicMetaObject[] args, DynamicMetaObject argsFirst, DynamicMetaObject[] argsRest, out DynamicMetaObject result )
-        {
-            var methods = new List<MethodInfo>();
-            args = args ?? RuntimeHelpers.GetCombinedTargetArgs( argsFirst, argsRest );
-
-            foreach ( MethodInfo m in BuiltinExtensionMembers )
-            {
-                if ( m.IsStatic )
-                {
-                    if ( RuntimeHelpers.ParametersMatchArguments( m.GetParameters(), args ) )
-                    {
-                        methods.Add( m );
-                    }
-                }
-                else
-                {
-                    if ( argsRest == null )
-                    {
-                        RuntimeHelpers.SplitCombinedTargetArgs( args, out argsFirst, out argsRest );
-                    }
-
-                    if ( argsRest != null && RuntimeHelpers.ParametersMatchArguments( m.GetParameters(), argsRest ) )
-                    {
-                        methods.Add( m );
-                    }
-                }
-
-            }
-
-            if ( methods.Count == 0 )
-            {
-                foreach ( MethodInfo m in Members )
-                {
-                    if ( m.IsStatic )
-                    {
-                        if ( RuntimeHelpers.ParametersMatchArguments( m.GetParameters(), args ) )
-                        {
-                            methods.Add( m );
-                        }
-                    }
-                    else
-                    {
-                        if ( argsRest == null )
-                        {
-                            RuntimeHelpers.SplitCombinedTargetArgs( args, out argsFirst, out argsRest );
-                        }
-
-                        if ( argsRest != null && RuntimeHelpers.ParametersMatchArguments( m.GetParameters(), argsRest ) )
-                        {
-                            methods.Add( m );
-                        }
-                    }
-
-                }
-            }
-
-            if ( methods.Count == 0 )
-            {
-                foreach ( MethodInfo m in ExternalExtensionMembers )
-                {
-                    if ( m.IsStatic )
-                    {
-                        if ( RuntimeHelpers.ParametersMatchArguments( m.GetParameters(), args ) )
-                        {
-                            methods.Add( m );
-                        }
-                    }
-                    else
-                    {
-                        if ( argsRest == null )
-                        {
-                            RuntimeHelpers.SplitCombinedTargetArgs( args, out argsFirst, out argsRest );
-                        }
-
-                        if ( argsRest != null && RuntimeHelpers.ParametersMatchArguments( m.GetParameters(), argsRest ) )
-                        {
-                            methods.Add( m );
-                        }
-                    }
-
-                }
-            }
-
-            if ( methods.Count == 0 )
-            {
-                result = null;
-                return false;
-            }
-
-            var method = RuntimeHelpers.GetMostSpecific( methods );
-
-            if ( method.IsStatic )
-            {
-                var restrictions = RuntimeHelpers.GetTargetArgsRestrictions( target, args, true );
-                var callArgs = RuntimeHelpers.ConvertArguments( args, method.GetParameters() );
-                result = new DynamicMetaObject( RuntimeHelpers.EnsureObjectResult( Expression.Call( method, callArgs ) ), restrictions );
-            }
-            else
-            {
-                if ( argsRest == null )
-                {
-                    RuntimeHelpers.SplitCombinedTargetArgs( args, out argsFirst, out argsRest );
-                }
-
-                // When called from FallbackInvokeMember we want to restrict on the type.
-                var restrictions = RuntimeHelpers.GetTargetArgsRestrictions( target, argsRest, restrictionOnTargetInstance );
-                var targetInst = Expression.Convert( argsFirst.Expression, method.DeclaringType );
-                var callArgs = RuntimeHelpers.ConvertArguments( argsRest, method.GetParameters() );
-                result = new DynamicMetaObject( RuntimeHelpers.EnsureObjectResult( Expression.Call( targetInst, method, callArgs ) ), restrictions );
-            }
-
-            return true;
-        }
-
-    }
-
-    public class ImportedFunctionMetaObject : DynamicMetaObject
-    {
-        internal ImportedFunction runtimeModel;
-
-        public ImportedFunctionMetaObject( Expression objParam, ImportedFunction runtimeModel )
-            : base( objParam, BindingRestrictions.Empty, runtimeModel )
-        {
-            this.runtimeModel = runtimeModel;
-        }
 
         public override DynamicMetaObject BindInvoke( InvokeBinder binder, DynamicMetaObject[] args )
         {
-            DynamicMetaObject result;
-            if ( !runtimeModel.TryBindInvokeBestMethod( true, this, args, out result ))
-            {
-                throw new MissingMemberException( "No (suitable) method found: " + runtimeModel.Name );
-            }
-            return result;
+            var args2 = args.Select( x => x.Expression ).ToArray();
+            var code = MakeExpression( false, Lambda.Members, args2 );
+            var restrictions = BindingRestrictions.GetInstanceRestriction( this.Expression, this.Value );
+            return new DynamicMetaObject( code, restrictions );
         }
-
-        //public override DynamicMetaObject BindConvert( ConvertBinder binder )
-        //{
-        //    var expr = Expression.Constant( RuntimeHelpers.CreateDelegate( runtimeModel.Runtime, runtimeModel.Members[ 0 ] ) );
-        //    return new DynamicMetaObject( expr, this.Restrictions );
-        //}
     }
-
 
     public class ImportedConstructor : IDynamicMetaObjectProvider, IApply
     {
         internal ConstructorInfo[] Members;
         internal dynamic Proc0;
         internal dynamic Proc1;
+        internal dynamic Proc10;
+        internal dynamic Proc11;
+        internal dynamic Proc12;
         internal dynamic Proc2;
         internal dynamic Proc3;
         internal dynamic Proc4;
@@ -561,11 +221,6 @@ namespace Kiezel
         internal dynamic Proc7;
         internal dynamic Proc8;
         internal dynamic Proc9;
-        internal dynamic Proc10;
-        internal dynamic Proc11;
-        internal dynamic Proc12;
-
-
         public ImportedConstructor( ConstructorInfo[] members )
         {
             Members = members;
@@ -584,14 +239,12 @@ namespace Kiezel
             Proc12 = this;
         }
 
-        public override string ToString()
+        public bool HasKiezelMethods
         {
-            return String.Format( "BuiltinConstructor Method=\"{0}.{1}\"", Members[ 0 ].DeclaringType, Members[ 0 ].Name );
-        }
-
-        DynamicMetaObject IDynamicMetaObjectProvider.GetMetaObject( Expression parameter )
-        {
-            return new ImportedConstructorMetaObject( parameter, this );
+            get
+            {
+                return Members.Any( x => x.DeclaringType.FullName.IndexOf( "Kiezel" ) != -1 );
+            }
         }
 
         object IApply.Apply( object[] args )
@@ -670,14 +323,15 @@ namespace Kiezel
             }
         }
 
-        public bool HasKiezelMethods
+        DynamicMetaObject IDynamicMetaObjectProvider.GetMetaObject( Expression parameter )
         {
-            get
-            {
-                return Members.Any( x => x.DeclaringType.FullName.IndexOf( "Kiezel" ) != -1 );
-            }
+            return new ImportedConstructorMetaObject( parameter, this );
         }
 
+        public override string ToString()
+        {
+            return String.Format( "BuiltinConstructor Method=\"{0}.{1}\"", Members[ 0 ].DeclaringType, Members[ 0 ].Name );
+        }
     }
 
     public class ImportedConstructorMetaObject : DynamicMetaObject
@@ -692,8 +346,9 @@ namespace Kiezel
 
         public override DynamicMetaObject BindInvoke( InvokeBinder binder, DynamicMetaObject[] args )
         {
+            bool createdParamArray;
             string suitable = "";
-            var ctors = new List<ConstructorInfo>();
+            var ctors = new List<CandidateMethod<ConstructorInfo>>();
 
             foreach ( ConstructorInfo m in runtimeModel.Members )
             {
@@ -704,9 +359,9 @@ namespace Kiezel
 
                 suitable = "suitable ";
 
-                if ( RuntimeHelpers.ParametersMatchArguments( m.GetParameters(), args ) )
+                if ( RuntimeHelpers.ParametersMatchArguments( m.GetParameters(), args, out createdParamArray ) )
                 {
-                    ctors.Add( m );
+                    RuntimeHelpers.InsertInMostSpecificOrder( ctors, m, createdParamArray );
                 }
             }
 
@@ -715,12 +370,11 @@ namespace Kiezel
                 throw new MissingMemberException( "No " + suitable + "constructor found: " + runtimeModel.Members[ 0 ].Name );
             }
 
-            var ctor = RuntimeHelpers.GetMostSpecific( ctors );
+            var ctor = ctors[ 0 ].Method;
             var restrictions = RuntimeHelpers.GetTargetArgsRestrictions( this, args, true );
             var callArgs = RuntimeHelpers.ConvertArguments( args, ctor.GetParameters() );
 
             return new DynamicMetaObject( RuntimeHelpers.EnsureObjectResult( Expression.New( ctor, callArgs ) ), restrictions );
-
         }
 
         //public override DynamicMetaObject BindConvert( ConvertBinder binder )
@@ -730,5 +384,327 @@ namespace Kiezel
         //}
     }
 
-}
+    public class ImportedFunction : IDynamicMetaObjectProvider, IApply, ISyntax
+    {
+        internal MethodInfo[] BuiltinExtensionMembers;
+        internal Type DeclaringType;
+        internal MethodInfo[] ExternalExtensionMembers;
+        internal MethodInfo[] Members;
+        internal string Name;
+        internal dynamic Proc0;
+        internal dynamic Proc1;
+        internal dynamic Proc10;
+        internal dynamic Proc11;
+        internal dynamic Proc12;
+        internal dynamic Proc2;
+        internal dynamic Proc3;
+        internal dynamic Proc4;
+        internal dynamic Proc5;
+        internal dynamic Proc6;
+        internal dynamic Proc7;
+        internal dynamic Proc8;
+        internal dynamic Proc9;
+        internal bool Pure;
+        internal ImportedFunction( string name, Type declaringType )
+        {
+            Init();
+            Name = name;
+            DeclaringType = declaringType;
+            BuiltinExtensionMembers = new MethodInfo[ 0 ];
+            Members = new MethodInfo[ 0 ];
+            ExternalExtensionMembers = new MethodInfo[ 0 ];
+            Pure = false;
+        }
 
+        internal ImportedFunction( string name, Type declaringType, MethodInfo[] members, bool pure )
+            : this( name, declaringType )
+        {
+            Members = members;
+            Pure = pure;
+        }
+
+        public bool HasKiezelMethods
+        {
+            get
+            {
+                return Members.Any( x => x.DeclaringType.FullName.IndexOf( "Kiezel" ) != -1 );
+            }
+        }
+
+        object IApply.Apply( object[] args )
+        {
+            if ( args.Length > 12 )
+            {
+                var binder = Runtime.GetInvokeBinder( args.Length );
+                var exprs = new List<Expression>();
+                exprs.Add( Expression.Constant( this ) );
+                exprs.AddRange( args.Select( Expression.Constant ) );
+                var code = Runtime.CompileDynamicExpression( binder, typeof( object ), exprs );
+                var proc = Runtime.CompileToFunction( code );
+                return proc();
+            }
+            else
+            {
+                switch ( args.Length )
+                {
+                    case 0:
+                    {
+                        return Proc0();
+                    }
+                    case 1:
+                    {
+                        return Proc1( args[ 0 ] );
+                    }
+                    case 2:
+                    {
+                        return Proc2( args[ 0 ], args[ 1 ] );
+                    }
+                    case 3:
+                    {
+                        return Proc3( args[ 0 ], args[ 1 ], args[ 2 ] );
+                    }
+                    case 4:
+                    {
+                        return Proc4( args[ 0 ], args[ 1 ], args[ 2 ], args[ 3 ] );
+                    }
+                    case 5:
+                    {
+                        return Proc5( args[ 0 ], args[ 1 ], args[ 2 ], args[ 3 ], args[ 4 ] );
+                    }
+                    case 6:
+                    {
+                        return Proc6( args[ 0 ], args[ 1 ], args[ 2 ], args[ 3 ], args[ 4 ], args[ 5 ] );
+                    }
+                    case 7:
+                    {
+                        return Proc7( args[ 0 ], args[ 1 ], args[ 2 ], args[ 3 ], args[ 4 ], args[ 5 ], args[ 6 ] );
+                    }
+                    case 8:
+                    {
+                        return Proc8( args[ 0 ], args[ 1 ], args[ 2 ], args[ 3 ], args[ 4 ], args[ 5 ], args[ 6 ], args[ 7 ] );
+                    }
+                    case 9:
+                    {
+                        return Proc9( args[ 0 ], args[ 1 ], args[ 2 ], args[ 3 ], args[ 4 ], args[ 5 ], args[ 6 ], args[ 7 ], args[ 8 ] );
+                    }
+                    case 10:
+                    {
+                        return Proc9( args[ 0 ], args[ 1 ], args[ 2 ], args[ 3 ], args[ 4 ], args[ 5 ], args[ 6 ], args[ 7 ], args[ 8 ], args[ 9 ] );
+                    }
+                    case 11:
+                    {
+                        return Proc9( args[ 0 ], args[ 1 ], args[ 2 ], args[ 3 ], args[ 4 ], args[ 5 ], args[ 6 ], args[ 7 ], args[ 8 ], args[ 9 ], args[ 10 ] );
+                    }
+                    case 12:
+                    {
+                        return Proc9( args[ 0 ], args[ 1 ], args[ 2 ], args[ 3 ], args[ 4 ], args[ 5 ], args[ 6 ], args[ 7 ], args[ 8 ], args[ 9 ], args[ 10 ], args[ 11 ] );
+                    }
+                    default:
+                    {
+                        throw new NotImplementedException( "Apply supports up to 12 arguments" );
+                    }
+                }
+            }
+        }
+
+        DynamicMetaObject IDynamicMetaObjectProvider.GetMetaObject( Expression parameter )
+        {
+            return new ImportedFunctionMetaObject( parameter, this );
+        }
+
+        Cons ISyntax.GetSyntax( Symbol context )
+        {
+            var v = new Vector();
+            foreach ( var m in Members )
+            {
+                v.Add( Runtime.GetMethodSyntax( m, context ) );
+            }
+            return Runtime.AsList( Runtime.SeqBase.Distinct( v, Runtime.StructurallyEqualApply ) );
+        }
+
+        public override string ToString()
+        {
+            return String.Format( "Function Name=\"{0}.{1}\"", DeclaringType, Name );
+        }
+
+        public bool TryBindInvokeBestMethod( bool restrictionOnTargetInstance, DynamicMetaObject target, DynamicMetaObject[] args, out DynamicMetaObject result )
+        {
+            DynamicMetaObject argsFirst = null;
+            DynamicMetaObject[] argsRest = null;
+            return TryBindInvokeBestMethod( restrictionOnTargetInstance, target, args, argsFirst, argsRest, out result );
+        }
+
+        //internal Delegate MakeExpressionProc( int argCount )
+        //{
+        //    var args = new ParameterExpression[ argCount ];
+        //    for ( var i = 0; i < argCount; ++i )
+        //    {
+        //        args[ i ] = Expression.Parameter( typeof( object ) );
+        //    }
+        //    var binder = Runtime.GetInvokeBinder( args.Length );
+        //    var code = Runtime.CompileDynamicExpression( binder, typeof( object ), args );
+        //    var proc = Runtime.CompileToDelegate( code, args );
+        //    return proc;
+        //}
+        public bool TryBindInvokeBestMethod( bool restrictionOnTargetInstance, DynamicMetaObject target, DynamicMetaObject argsFirst, DynamicMetaObject[] argsRest, out DynamicMetaObject result )
+        {
+            return TryBindInvokeBestMethod( restrictionOnTargetInstance, target, null, argsFirst, argsRest, out result );
+        }
+
+        public bool TryBindInvokeBestMethod( bool restrictionOnTargetInstance, DynamicMetaObject target, DynamicMetaObject[] args, DynamicMetaObject argsFirst, DynamicMetaObject[] argsRest, out DynamicMetaObject result )
+        {
+            bool createdParamArray;
+            var candidates = new List<CandidateMethod<MethodInfo>>();
+            args = args ?? RuntimeHelpers.GetCombinedTargetArgs( argsFirst, argsRest );
+
+            foreach ( MethodInfo m in BuiltinExtensionMembers )
+            {
+                if ( m.IsStatic )
+                {
+                    if ( RuntimeHelpers.ParametersMatchArguments( m.GetParameters(), args, out createdParamArray ) )
+                    {
+                        RuntimeHelpers.InsertInMostSpecificOrder( candidates, m, createdParamArray );
+                    }
+                }
+                else
+                {
+                    if ( argsRest == null )
+                    {
+                        RuntimeHelpers.SplitCombinedTargetArgs( args, out argsFirst, out argsRest );
+                    }
+
+                    if ( argsRest != null && RuntimeHelpers.ParametersMatchArguments( m.GetParameters(), argsRest, out createdParamArray ) )
+                    {
+                        RuntimeHelpers.InsertInMostSpecificOrder( candidates, m, createdParamArray );
+                    }
+                }
+            }
+
+            if ( candidates.Count == 0 )
+            {
+                foreach ( MethodInfo m in Members )
+                {
+                    if ( m.IsStatic )
+                    {
+                        if ( RuntimeHelpers.ParametersMatchArguments( m.GetParameters(), args, out createdParamArray ) )
+                        {
+                            RuntimeHelpers.InsertInMostSpecificOrder( candidates, m, createdParamArray );
+                        }
+                    }
+                    else
+                    {
+                        if ( argsRest == null )
+                        {
+                            RuntimeHelpers.SplitCombinedTargetArgs( args, out argsFirst, out argsRest );
+                        }
+
+                        if ( argsRest != null && RuntimeHelpers.ParametersMatchArguments( m.GetParameters(), argsRest, out createdParamArray ) )
+                        {
+                            RuntimeHelpers.InsertInMostSpecificOrder( candidates, m, createdParamArray );
+                        }
+                    }
+                }
+            }
+
+            if ( candidates.Count == 0 )
+            {
+                foreach ( MethodInfo m in ExternalExtensionMembers )
+                {
+                    if ( m.IsStatic )
+                    {
+                        if ( RuntimeHelpers.ParametersMatchArguments( m.GetParameters(), args, out createdParamArray ) )
+                        {
+                            RuntimeHelpers.InsertInMostSpecificOrder( candidates, m, createdParamArray );
+                        }
+                    }
+                    else
+                    {
+                        if ( argsRest == null )
+                        {
+                            RuntimeHelpers.SplitCombinedTargetArgs( args, out argsFirst, out argsRest );
+                        }
+
+                        if ( argsRest != null && RuntimeHelpers.ParametersMatchArguments( m.GetParameters(), argsRest, out createdParamArray ) )
+                        {
+                            RuntimeHelpers.InsertInMostSpecificOrder( candidates, m, createdParamArray );
+                        }
+                    }
+                }
+            }
+
+            if ( candidates.Count == 0 )
+            {
+                result = null;
+                return false;
+            }
+
+            var method = candidates[ 0 ].Method;
+
+            if ( method.IsStatic )
+            {
+                var restrictions = RuntimeHelpers.GetTargetArgsRestrictions( target, args, true );
+                var callArgs = RuntimeHelpers.ConvertArguments( args, method.GetParameters() );
+                result = new DynamicMetaObject( RuntimeHelpers.EnsureObjectResult( Expression.Call( method, callArgs ) ), restrictions );
+            }
+            else
+            {
+                if ( argsRest == null )
+                {
+                    RuntimeHelpers.SplitCombinedTargetArgs( args, out argsFirst, out argsRest );
+                }
+
+                // When called from FallbackInvokeMember we want to restrict on the type.
+                var restrictions = RuntimeHelpers.GetTargetArgsRestrictions( target, argsRest, restrictionOnTargetInstance );
+                var targetInst = Expression.Convert( argsFirst.Expression, method.DeclaringType );
+                var callArgs = RuntimeHelpers.ConvertArguments( argsRest, method.GetParameters() );
+                result = new DynamicMetaObject( RuntimeHelpers.EnsureObjectResult( Expression.Call( targetInst, method, callArgs ) ), restrictions );
+            }
+
+            return true;
+        }
+
+        internal void Init()
+        {
+            Proc0 = this;
+            Proc1 = this;
+            Proc2 = this;
+            Proc3 = this;
+            Proc4 = this;
+            Proc5 = this;
+            Proc6 = this;
+            Proc7 = this;
+            Proc8 = this;
+            Proc9 = this;
+            Proc10 = this;
+            Proc11 = this;
+            Proc12 = this;
+        }
+    }
+
+    public class ImportedFunctionMetaObject : DynamicMetaObject
+    {
+        internal ImportedFunction runtimeModel;
+
+        public ImportedFunctionMetaObject( Expression objParam, ImportedFunction runtimeModel )
+            : base( objParam, BindingRestrictions.Empty, runtimeModel )
+        {
+            this.runtimeModel = runtimeModel;
+        }
+
+        public override DynamicMetaObject BindInvoke( InvokeBinder binder, DynamicMetaObject[] args )
+        {
+            DynamicMetaObject result;
+            if ( !runtimeModel.TryBindInvokeBestMethod( true, this, args, out result ) )
+            {
+                throw new MissingMemberException( "No (suitable) method found: " + runtimeModel.Name );
+            }
+            return result;
+        }
+
+        //public override DynamicMetaObject BindConvert( ConvertBinder binder )
+        //{
+        //    var expr = Expression.Constant( RuntimeHelpers.CreateDelegate( runtimeModel.Runtime, runtimeModel.Members[ 0 ] ) );
+        //    return new DynamicMetaObject( expr, this.Restrictions );
+        //}
+    }
+}

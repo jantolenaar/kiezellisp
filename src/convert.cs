@@ -1,74 +1,83 @@
 // Copyright (C) Jan Tolenaar. See the file LICENSE for details.
 
-
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Text;
 using System.IO;
-using System.Linq;
 using System.Linq.Expressions;
 using System.Numerics;
+using System.Text;
 using Numerics;
-
-
+using ActionFunc = System.Action<object>;
+using CompareFunc = System.Func<object, object, int>;
+using JustFunc = System.Func<object>;
 using KeyFunc = System.Func<object, object>;
+
 using PredicateFunc = System.Func<object, bool>;
 using TestFunc = System.Func<object, object, bool>;
-using ActionFunc = System.Action<object>;
-using ReduceFunc = System.Func<object[], object>;
 using ThreadFunc = System.Func<object>;
-using JustFunc = System.Func<object>;
 
 namespace Kiezel
 {
-
-	public partial class Runtime
-	{
-
-        [Lisp( "as-int", "as-int32" )]
-        public static int AsInt( object a )
+    public partial class Runtime
+    {
+        [Lisp( "as-big-integer" )]
+        public static BigInteger AsBigInteger( object a )
         {
-            if ( a is int )
+            if ( a is BigInteger )
             {
-                return (int) a;
-            }
-            else if ( a is BigInteger )
-            {
-                var n = ( BigInteger ) a;
-                return ( int ) n;
+                return ( BigInteger ) a;
             }
             else if ( a is BigRational )
             {
                 var n = ( BigRational ) a;
-                return ( int ) n;
+                return n.GetWholePart();
+            }
+            else if ( a is int )
+            {
+                return new BigInteger( ( int ) a );
+            }
+            else if ( a is long )
+            {
+                return new BigInteger( ( long ) a );
+            }
+            else if ( a is double )
+            {
+                return new BigInteger( ( double ) a );
+            }
+            else if ( a is decimal )
+            {
+                return new BigInteger( ( decimal ) a );
             }
             else
             {
-                return Convert.ToInt32( a );
+                return ( BigInteger ) a;
             }
         }
 
-        [Lisp( "as-long", "as-int64" )]
-        public static long AsLong( object a )
+        [Lisp( "as-big-rational" )]
+        public static BigRational AsBigRational( object a )
         {
-            if ( a is long )
+            if ( a is BigRational )
             {
-                return ( long ) a;
-            }
-            else if ( a is BigInteger )
-            {
-                var n = ( BigInteger ) a;
-                return ( long ) n;
-            }
-            else if ( a is BigRational )
-            {
-                var n = ( BigRational ) a;
-                return ( long ) n;
+                return ( BigRational ) a;
             }
             else
             {
-                return Convert.ToInt64( a );
+                return new BigRational( AsBigInteger( a ) );
+            }
+        }
+
+        [Lisp( "as-complex" )]
+        public static Complex AsComplex( object a )
+        {
+            if ( a is Complex )
+            {
+                return ( Complex ) a;
+            }
+            else
+            {
+                return new Complex( AsDouble( a ), 0 );
             }
         }
 
@@ -118,281 +127,64 @@ namespace Kiezel
             }
         }
 
-        [Lisp( "as-big-integer" )]
-        public static BigInteger AsBigInteger( object a )
+        [Lisp( "as-int", "as-int32" )]
+        public static int AsInt( object a )
         {
-
-            if ( a is BigInteger )
+            if ( a is int )
             {
-                return ( BigInteger ) a;
+                return ( int ) a;
+            }
+            else if ( a is BigInteger )
+            {
+                var n = ( BigInteger ) a;
+                return ( int ) n;
             }
             else if ( a is BigRational )
             {
                 var n = ( BigRational ) a;
-                return n.GetWholePart();
-            }
-            else if (a is int)
-            {
-                return new BigInteger( ( int ) a );
-            }
-            else if ( a is long )
-            {
-                return new BigInteger( ( long ) a );
-            }
-            else if ( a is double )
-            {
-                return new BigInteger( ( double ) a );
-            }
-            else if ( a is decimal )
-            {
-                return new BigInteger( ( decimal ) a );
+                return ( int ) n;
             }
             else
             {
-                return ( BigInteger ) a;
+                return Convert.ToInt32( a );
             }
         }
 
-        [Lisp( "as-big-rational" )]
-        public static BigRational AsBigRational( object a )
+        [Lisp( "as-long", "as-int64" )]
+        public static long AsLong( object a )
         {
-            if ( a is BigRational )
+            if ( a is long )
             {
-                return ( BigRational ) a;
+                return ( long ) a;
+            }
+            else if ( a is BigInteger )
+            {
+                var n = ( BigInteger ) a;
+                return ( long ) n;
+            }
+            else if ( a is BigRational )
+            {
+                var n = ( BigRational ) a;
+                return ( long ) n;
             }
             else
             {
-                return new BigRational( AsBigInteger( a ) );
+                return Convert.ToInt64( a );
             }
         }
+        //
+        // typecasts
+        //
 
-        [Lisp( "as-complex" )]
-        public static Complex AsComplex( object a )
-        {
-            if ( a is Complex )
-            {
-                return ( Complex ) a;
-            }
-            else
-            {
-                return new Complex( AsDouble( a ), 0 );
-            }
-        }
-		//
-		// typecasts
-		//
-
-        internal static Cons ToCons( object obj )
-        {
-            if ( obj != null && !( obj is Cons ) )
-            {
-                throw new LispException( "Cannot cast to Cons: {0}", ToPrintString( obj ) );
-            }
-
-            return ( Cons ) obj;
-        }
-
-        internal static IList ToIList( object obj )
-		{
-			if ( obj == null )
-			{
-				// avoids crash
-				return new object[0];
-			}
-			else if ( obj is IList )
-			{
-				return (IList) obj;
-			}
-			else
-			{
-				throw new LispException( "Cannot cast to IList: {0}", ToPrintString( obj ) );
-			}
-		}
-
-
-        internal static ICollection ToICollection( object obj )
-		{
-			if ( obj == null )
-			{
-				// avoids crash
-				return new object[0];
-			}
-			else if ( obj is ICollection )
-			{
-				return (ICollection) obj;
-			}
-			else
-			{
-				throw new LispException( "Cannot cast to ICollection: {0}", ToPrintString( obj ) );
-			}
-		}
-
-        internal static IEnumerable ToIter( object obj )
-		{
-			if ( obj == null )
-			{
-				// avoids crash
-				return new object[0];
-			}
-			else if ( obj is IEnumerable )
-			{
-				return (IEnumerable) obj;
-			}
-			else
-			{
-				throw new LispException( "Cannot cast to IEnumerable: {0}", ToPrintString( obj ) );
-			}
-		}
-
-
-        internal static string ToString( object obj )
-		{
-			if ( obj == null )
-			{
-				return "";
-			}
-			else if ( obj is string )
-			{
-				return (string) obj;
-			}
-			else if ( obj is StringBuilder || obj is StringWriter)
-			{
-				return obj.ToString();
-			}
-			else
-			{
-				throw new LispException( "Cannot cast to String: {0}", ToPrintString( obj ) );
-			}
-		}
-
-        [ Pure, Lisp( "string" )]
+        [Pure, Lisp( "string" )]
         public static string MakeString( params object[] objs )
         {
-            return MakeStringFromObj( objs );
+            return MakeStringFromObj( objs );            
         }
 
-        internal static string MakeStringFromObj( object obj )
-		{
-			if ( obj == null )
-			{
-				return "";
-			}
-			else if ( obj is string )
-			{
-				return (string) obj;
-			}
-			else if ( obj is DateTime )
-			{
-                var dt = (DateTime) obj;
-                if ( dt.Hour == 0 && dt.Minute == 0 && dt.Second == 0 )
-                {
-                    return dt.ToString( "yyyy-MM-dd" );
-                }
-                else
-                {
-                    return dt.ToString( "yyyy-MM-dd HH:mm:ss" );
-                }
-
-			}
-			else if ( obj is StringBuilder || obj is StringWriter )
-			{
-				return obj.ToString();
-			}
-			else if ( obj is bool )
-			{
-				return obj.ToString().ToLower();
-			}
-			else if ( obj is ValueType )
-			{
-				return obj.ToString();
-			}
-			else if ( obj is Prototype )
-			{
-				//return (string) VM.CoerceToType( (Instance) obj, VM.sym_string );
-				return obj.ToString();
-			}
-			else if ( obj is IEnumerable )
-			{
-				var buf = new StringWriter();
-				foreach ( object item in ( (IEnumerable) obj ) )
-				{
-					if ( item is DictionaryEntry )
-					{
-                        buf.Write( MakeStringFromObj( ( ( DictionaryEntry ) item ).Value ) );
-					}
-					else
-					{
-                        buf.Write( MakeStringFromObj( item ) );
-					}
-				}
-				return buf.ToString();
-			}
-			else
-			{
-				return obj.ToString();
-			}
-
-		}
-
-        internal static double ToDouble( object val )
-		{
-			if ( val is double )
-			{
-				return (double) val;
-			}
-			else
-			{
-				return Convert.ToDouble( val );
-			}
-		}
-
-        internal static Symbol CheckSymbol( object val )
-        {
-            if ( val is Symbol )
-            {
-                return ( Symbol ) val;
-            }
-
-            throw new LispException( "{0} is not a symbol", val );
-        }
-
-        internal static Symbol CheckKeyword( object val )
-        {
-            if ( Keywordp( val ) )
-            {
-                return ( Symbol ) val;
-            }
-
-            throw new LispException( "{0} is not a keyword", val );
-        }
-
-        internal static int ToInt( object val )
-		{
-			if ( val is int || val is Enum )
-			{
-				return (int) val;
-			}
-			else
-			{
-				return Convert.ToInt32( val );
-			}
-		}
-
-        internal static int ToInt( object val, int defaultValue )
-        {
-            if ( val is int || val is Enum )
-            {
-                return ( int ) val;
-            }
-            else if ( val == null )
-            {
-                return defaultValue;
-            }
-            else
-            {
-                return Convert.ToInt32( val );
-            }
-        }
+        //
+        // Used by ChangeTypeMethod
+        //
 
         internal static object ChangeType( object value, Type targetType )
         {
@@ -460,7 +252,6 @@ namespace Kiezel
                 {
                     return ( BigRational ) ( BigInteger ) value;
                 }
-
             }
 
             if ( value is string && targetType.IsArray && targetType.GetElementType() == typeof( char ) )
@@ -531,6 +322,10 @@ namespace Kiezel
                 {
                     return new Func<object[], object>( new DelegateWrapper( value as IApply ).ObjA_Obj );
                 }
+                else if ( targetType == typeof( Func<object, object, int> ) )
+                {
+                    return new Func<object, object, int>( new DelegateWrapper( value as IApply ).Obj_Obj_Int );
+                }
                 else if ( targetType == typeof( Func<object, object, object> ) )
                 {
                     return new Func<object, object, object>( new DelegateWrapper( value as IApply ).Obj_Obj_Obj );
@@ -561,131 +356,216 @@ namespace Kiezel
             return value;
         }
 
-        internal class EltWrapper : IApply
+        internal static Symbol CheckKeyword( object val )
         {
-            object element;
-            
-            internal EltWrapper( object element )
+            if ( Keywordp( val ) )
             {
-                this.element = element;
+                return ( Symbol ) val;
             }
 
-            object IApply.Apply( object[] args )
+            throw new LispException( "{0} is not a keyword", val );
+        }
+
+        internal static Symbol CheckSymbol( object val )
+        {
+            if ( val is Symbol )
             {
-                return Elt( element, args );
+                return ( Symbol ) val;
             }
+
+            throw new LispException( "{0} is not a symbol", val );
         }
 
-        internal static bool EltWrappable( object arg )
-        {
-            return arg is Prototype || arg is IDictionary;
-        }
-
-        internal static IApply GetClosure( object arg )
-        {
-            if ( arg is Symbol )
-            {
-                return ( IApply ) ( ( Symbol ) arg ).CheckedValue;
-            }
-            else if ( EltWrappable( arg ) )
-            {
-                return new EltWrapper( arg );
-            }
-            else
-            {
-                return ( IApply ) arg;
-            }
-        }
-
-        internal static PredicateFunc GetPredicateFunc( object arg )
-        {
-            return GetPredicateFunc( arg, ToBool );
-        }
-
-        internal static PredicateFunc GetPredicateFunc( object arg, PredicateFunc defaultFunc )
-        {
-            return GetFunc<PredicateFunc>( arg, defaultFunc );
-        }
-
-        internal static T GetFunc<T>( object arg, T defaultFunc )
-        {
-            if ( arg == null && defaultFunc != null )
-            {
-                return defaultFunc;
-            }
-            if ( arg is T )
-            {
-                return ( T ) arg;
-            }
-            var test = GetClosure( arg );
-            var testf = ( T ) ChangeType( test, typeof( T ) );
-            if ( testf != null )
-            {
-                return testf;
-            }
-            if ( defaultFunc != null )
-            {
-                return defaultFunc;
-            }
-            throw new LispException( "{0} function cannot be null", typeof( T ) );
-        }
-
-        internal static JustFunc GetJustFunc( object arg )
-        {
-            return GetFunc<JustFunc>( arg, null );
-        }
-
-        internal static TestFunc GetTestFunc( object arg )
-        {
-            return GetTestFunc( arg, Equal );
-        }
-
-        internal static TestFunc GetTestFunc( object arg, TestFunc defaultFunc )
-        {
-            return GetFunc<TestFunc>( arg, defaultFunc );
-        }
-
-        internal static IEqualityComparer<object> GetEqualityComparer( object arg )
-        {
-            return GetFunc<IEqualityComparer<object>>( arg, EqualityComparer<object>.Default );
-        }
-
-        internal static KeyFunc GetKeyFunc( object arg )
-        {
-            return GetKeyFunc( arg, Identity );
-        }
-
-        internal static KeyFunc GetKeyFunc( object arg, KeyFunc defaultFunc )
-        {
-            return GetFunc<KeyFunc>( arg, defaultFunc );
-        }
-
-        internal static ThreadFunc GetThreadFunc( object arg )
-        {
-            return GetFunc<ThreadFunc>( arg, null );
-        }
-
-        internal static ActionFunc GetActionFunc( object arg )
-        {
-            return GetFunc<ActionFunc>( arg, null );
-        }
-
-        internal static ReduceFunc GetReduceFunc( object arg )
-        {
-            return GetFunc<ReduceFunc>( arg, null );
-        }
-
-        internal static Type GetDelegateType( params Type[] types )
-        {
-            return Expression.GetDelegateType( types );
-        }
-
-        internal static Delegate ConvertToDelegate( Type type, object closure )
+        internal static Delegate ConvertToDelegate( Type type, IApply closure )
         {
             var expr = RuntimeHelpers.GetDelegateExpression( Expression.Constant( closure ), type );
             return expr.Compile();
         }
 
- 	}
+        internal static IApply GetClosure( object arg, IApply defaultValue = null )
+        {
+            return arg == null ? defaultValue : ( IApply ) arg;
+        }
 
- }
+        internal static string MakeStringFromObj( object obj )
+        {
+            if ( obj == null )
+            {
+                return "";
+            }
+            else if ( obj is string )
+            {
+                return ( string ) obj;
+            }
+            else if ( obj is DateTime )
+            {
+                var dt = ( DateTime ) obj;
+                if ( dt.Hour == 0 && dt.Minute == 0 && dt.Second == 0 )
+                {
+                    return dt.ToString( "yyyy-MM-dd" );
+                }
+                else
+                {
+                    return dt.ToString( "yyyy-MM-dd HH:mm:ss" );
+                }
+            }
+            else if ( obj is StringBuilder || obj is StringWriter )
+            {
+                return obj.ToString();
+            }
+            else if ( obj is bool )
+            {
+                return obj.ToString().ToLower();
+            }
+            else if ( obj is ValueType )
+            {
+                return obj.ToString();
+            }
+            else if ( obj is Prototype )
+            {
+                //return (string) VM.CoerceToType( (Instance) obj, VM.sym_string );
+                return obj.ToString();
+            }
+            else if ( obj is IEnumerable )
+            {
+                var buf = new StringWriter();
+                foreach ( object item in ( ( IEnumerable ) obj ) )
+                {
+                    if ( item is DictionaryEntry )
+                    {
+                        buf.Write( MakeStringFromObj( ( ( DictionaryEntry ) item ).Value ) );
+                    }
+                    else
+                    {
+                        buf.Write( MakeStringFromObj( item ) );
+                    }
+                }
+                return buf.ToString();
+            }
+            else
+            {
+                return obj.ToString();
+            }
+        }
+
+        internal static Cons ToCons( object obj )
+        {
+            if ( obj != null && !( obj is Cons ) )
+            {
+                throw new LispException( "Cannot cast to Cons: {0}", ToPrintString( obj ) );
+            }
+
+            return ( Cons ) obj;
+        }
+
+        internal static double ToDouble( object val )
+        {
+            if ( val is double )
+            {
+                return ( double ) val;
+            }
+            else
+            {
+                return Convert.ToDouble( val );
+            }
+        }
+
+        internal static ICollection ToICollection( object obj )
+        {
+            if ( obj == null )
+            {
+                // avoids crash
+                return new object[ 0 ];
+            }
+            else if ( obj is ICollection )
+            {
+                return ( ICollection ) obj;
+            }
+            else
+            {
+                throw new LispException( "Cannot cast to ICollection: {0}", ToPrintString( obj ) );
+            }
+        }
+
+        internal static IList ToIList( object obj )
+        {
+            if ( obj == null )
+            {
+                // avoids crash
+                return new object[ 0 ];
+            }
+            else if ( obj is IList )
+            {
+                return ( IList ) obj;
+            }
+            else
+            {
+                throw new LispException( "Cannot cast to IList: {0}", ToPrintString( obj ) );
+            }
+        }
+        internal static int ToInt( object val )
+        {
+            if ( val is int || val is SeqBase )
+            {
+                return ( int ) val;
+            }
+            else
+            {
+                return Convert.ToInt32( val );
+            }
+        }
+
+        internal static int ToInt( object val, int defaultValue )
+        {
+            if ( val is int || val is SeqBase )
+            {
+                return ( int ) val;
+            }
+            else if ( val == null )
+            {
+                return defaultValue;
+            }
+            else
+            {
+                return Convert.ToInt32( val );
+            }
+        }
+
+        internal static IEnumerable ToIter( object obj )
+        {
+            if ( obj == null )
+            {
+                // avoids crash
+                return new object[ 0 ];
+            }
+            else if ( obj is IEnumerable )
+            {
+                return ( IEnumerable ) obj;
+            }
+            else
+            {
+                throw new LispException( "Cannot cast to IEnumerable: {0}", ToPrintString( obj ) );
+            }
+        }
+
+        internal static string ToString( object obj )
+        {
+            if ( obj == null )
+            {
+                return "";
+            }
+            else if ( obj is string )
+            {
+                return ( string ) obj;
+            }
+            else if ( obj is StringBuilder || obj is StringWriter )
+            {
+                return obj.ToString();
+            }
+            else
+            {
+                throw new LispException( "Cannot cast to String: {0}", ToPrintString( obj ) );
+            }
+        }
+    }
+}

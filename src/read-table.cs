@@ -1,28 +1,13 @@
 ﻿// Copyright (C) Jan Tolenaar. See the file LICENSE for details.
 
 using System;
-using System.Collections;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.IO;
-using System.Text.RegularExpressions;
-using System.Numerics;
 
 namespace Kiezel
 {
     public delegate object ReadtableHandler( LispReader stream, char ch );
+
     public delegate object ReadtableHandler2( LispReader stream, char ch, int arg );
-
-    public class EOF
-    {
-        public static EOF Value = new EOF();
-    }
-
-    public class VOID
-    {
-        public static VOID Value = new VOID();
-    }
 
     public enum CharacterType
     {
@@ -36,41 +21,25 @@ namespace Kiezel
         EOF = 32,
     }
 
-    public class ReadtableEntry
+    public class EOF
     {
-        public char Character;
-        public CharacterType Type;
-        public ReadtableHandler Handler;
-        public ReadtableHandler2 Handler2;
-        public Readtable DispatchReadtable;
-
-        public ReadtableEntry Clone()
-        {
-            var dest = new ReadtableEntry();
-            dest.Character = Character;
-            dest.Type = Type;
-            dest.Handler = Handler;
-            dest.Handler2 = Handler2;
-            dest.DispatchReadtable = DispatchReadtable == null ? null : Runtime.CopyReadtable( DispatchReadtable );
-            return dest;
-        }
+        public static EOF Value = new EOF();
     }
-
 
     public class Readtable
     {
-        internal ReadtableEntry[] Items;
-        internal Dictionary<char,ReadtableEntry> OtherItems;
-
         internal static ReadtableEntry DefaultItem = new ReadtableEntry
         {
             Type = CharacterType.Constituent
         };
+
         internal static ReadtableEntry EofItem = new ReadtableEntry
         {
             Type = CharacterType.EOF
         };
 
+        internal ReadtableEntry[] Items;
+        internal Dictionary<char, ReadtableEntry> OtherItems;
         internal Readtable()
         {
             Items = new ReadtableEntry[ 127 ];
@@ -81,13 +50,58 @@ namespace Kiezel
             OtherItems = new Dictionary<char, ReadtableEntry>();
         }
 
+        internal void DefineMacro( char ch, CharacterType type = CharacterType.TerminatingMacro )
+        {
+            var item = GetEntry( ch, true );
+            item.Handler = null;
+            item.Handler2 = null;
+            item.Type = type;
+        }
+
+        internal void DefineMacro( char ch, ReadtableHandler2 handler2, CharacterType type = CharacterType.TerminatingMacro )
+        {
+            var item = GetEntry( ch, true );
+            item.Handler = null;
+            item.Handler2 = handler2;
+            item.Type = type;
+        }
+
+        internal ReadtableEntry GetEntry( char code, bool defining = false )
+        {
+            ReadtableEntry item;
+
+            if ( code < 0 )
+            {
+                return EofItem;
+            }
+            else if ( code < Items.Length )
+            {
+                return Items[ code ];
+            }
+            else if ( OtherItems.TryGetValue( code, out item ) )
+            {
+                return item;
+            }
+            else if ( defining )
+            {
+                item = new ReadtableEntry();
+                item.Character = code;
+                OtherItems[ code ] = item;
+                return item;
+            }
+            else
+            {
+                return DefaultItem;
+            }
+        }
+
         internal void Init()
         {
             for ( var i = 0; i < Items.Length; ++i )
             {
                 var ch = ( char ) i;
                 Items[ i ].Character = ch;
-                Items[ i ].Type = Char.IsWhiteSpace( ch) || Char.IsControl( ch ) ? CharacterType.Whitespace : CharacterType.Constituent;
+                Items[ i ].Type = Char.IsWhiteSpace( ch ) || Char.IsControl( ch ) ? CharacterType.Whitespace : CharacterType.Constituent;
                 Items[ i ].Handler = null;
                 Items[ i ].DispatchReadtable = null;
             }
@@ -131,61 +145,6 @@ namespace Kiezel
             SetDispatchMacroCharacter( '#', 'i', Runtime.ReadInfixHandler );
             SetDispatchMacroCharacter( '#', ':', Runtime.ReadUninternedSymbolHandler );
         }
-
-        internal ReadtableEntry GetEntry( char code, bool defining = false  )
-        {
-            ReadtableEntry item;
-
-            if ( code < 0 )
-            {
-                return EofItem;
-            }
-            else if ( code < Items.Length )
-            {
-                return Items[ code ];
-            }
-            else if ( OtherItems.TryGetValue( code, out item ) )
-            {
-                return item;
-            }
-            else if ( defining )
-            {
-                item = new ReadtableEntry();
-                item.Character = code;
-                OtherItems[ code ] = item;
-                return item;
-            }
-            else
-            {
-                return DefaultItem;
-            }
-        }
-
-        internal void DefineMacro( char ch, CharacterType type = CharacterType.TerminatingMacro )
-        {
-            var item = GetEntry( ch, true );
-            item.Handler = null;
-            item.Handler2 = null;
-            item.Type = type;
-        }
-
-        internal void SetMacroCharacter( char ch, ReadtableHandler handler, CharacterType type = CharacterType.TerminatingMacro )
-        {
-            var item = GetEntry( ch, true );
-            item.Handler = handler;
-            item.Handler2 = null;
-            item.Type = type;
-        }
-
-        internal void DefineMacro( char ch, ReadtableHandler2 handler2, CharacterType type = CharacterType.TerminatingMacro )
-        {
-            var item = GetEntry( ch, true );
-            item.Handler = null;
-            item.Handler2 = handler2;
-            item.Type = type;
-        }
-
-
         internal void SetDispatchMacroCharacter( char ch1, char ch2, ReadtableHandler2 handler2, CharacterType type = CharacterType.TerminatingMacro )
         {
             var item = GetEntry( ch1, true );
@@ -197,58 +156,36 @@ namespace Kiezel
             item.DispatchReadtable.DefineMacro( ch2, handler2 );
         }
 
+        internal void SetMacroCharacter( char ch, ReadtableHandler handler, CharacterType type = CharacterType.TerminatingMacro )
+        {
+            var item = GetEntry( ch, true );
+            item.Handler = handler;
+            item.Handler2 = null;
+            item.Type = type;
+        }
+    }
+
+    public class ReadtableEntry
+    {
+        public char Character;
+        public Readtable DispatchReadtable;
+        public ReadtableHandler Handler;
+        public ReadtableHandler2 Handler2;
+        public CharacterType Type;
+        public ReadtableEntry Clone()
+        {
+            var dest = new ReadtableEntry();
+            dest.Character = Character;
+            dest.Type = Type;
+            dest.Handler = Handler;
+            dest.Handler2 = Handler2;
+            dest.DispatchReadtable = DispatchReadtable == null ? null : Runtime.CopyReadtable( DispatchReadtable );
+            return dest;
+        }
     }
 
     public partial class Runtime
     {
-        [Lisp( "void" )]
-        public static VOID Void()
-        {
-            return VOID.Value;
-        }
-
-        internal static Readtable GetReadtable()
-        {
-            var readtable = ( Readtable ) Runtime.GetDynamic( Symbols.Readtable );
-            return readtable;
-        }
-
-        internal static bool IsWordChar( char ch )
-        {
-            var item = DefaultReadtable.GetEntry( ch );
-            return item.Type == CharacterType.Constituent;
-        }
-
-        internal static bool MustEscapeChar( char ch )
-        {
-            var item = DefaultReadtable.GetEntry( ch );
-            return item.Type != CharacterType.Constituent && item.Type != CharacterType.NonTerminatingMacro;
-        }
-
-        [Lisp("set-macro-character")]
-        public static void SetMacroCharacter( char dispatchChar, ReadtableHandler handler, params object[] kwargs )
-        {
-            var args = ParseKwargs( kwargs, new string[] { "non-terminating?", "readtable" }, false, GetReadtable() );
-            var nonTerminating = ToBool( args[ 0 ] );
-            var readtable = ( Readtable ) args[ 1 ];
-            readtable.SetMacroCharacter( dispatchChar, handler, nonTerminating ? CharacterType.NonTerminatingMacro : CharacterType.TerminatingMacro );
-        }
-
-        [Lisp( "set-dispatch-macro-character" )]
-        public static void SetDispatchMacroCharacter( char dispatchChar, char subChar, ReadtableHandler2 handler, params object[] kwargs )
-        {
-            var args = ParseKwargs( kwargs, new string[] { "readtable" }, GetReadtable() );
-            var readtable = ( Readtable ) args[ 0 ];
-            readtable.SetDispatchMacroCharacter( dispatchChar, subChar, handler );
-        }
-
-        internal static Readtable GetStandardReadtable()
-        {
-            var table = new Readtable();
-            table.Init();
-            return table;
-        }
-
         [Lisp( "copy-readtable" )]
         public static Readtable CopyReadtable( params object[] kwargs )
         {
@@ -274,6 +211,57 @@ namespace Kiezel
             return dest;
         }
 
+        [Lisp( "set-dispatch-macro-character" )]
+        public static void SetDispatchMacroCharacter( char dispatchChar, char subChar, ReadtableHandler2 handler, params object[] kwargs )
+        {
+            var args = ParseKwargs( kwargs, new string[] { "readtable" }, GetReadtable() );
+            var readtable = ( Readtable ) args[ 0 ];
+            readtable.SetDispatchMacroCharacter( dispatchChar, subChar, handler );
+        }
+
+        [Lisp( "set-macro-character" )]
+        public static void SetMacroCharacter( char dispatchChar, ReadtableHandler handler, params object[] kwargs )
+        {
+            var args = ParseKwargs( kwargs, new string[] { "non-terminating?", "readtable" }, false, GetReadtable() );
+            var nonTerminating = ToBool( args[ 0 ] );
+            var readtable = ( Readtable ) args[ 1 ];
+            readtable.SetMacroCharacter( dispatchChar, handler, nonTerminating ? CharacterType.NonTerminatingMacro : CharacterType.TerminatingMacro );
+        }
+
+        [Lisp( "void" )]
+        public static VOID Void()
+        {
+            return VOID.Value;
+        }
+
+        internal static Readtable GetReadtable()
+        {
+            var readtable = ( Readtable ) Runtime.GetDynamic( Symbols.Readtable );
+            return readtable;
+        }
+
+        internal static Readtable GetStandardReadtable()
+        {
+            var table = new Readtable();
+            table.Init();
+            return table;
+        }
+
+        internal static bool IsWordChar( char ch )
+        {
+            var item = DefaultReadtable.GetEntry( ch );
+            return item.Type == CharacterType.Constituent;
+        }
+
+        internal static bool MustEscapeChar( char ch )
+        {
+            var item = DefaultReadtable.GetEntry( ch );
+            return item.Type != CharacterType.Constituent && item.Type != CharacterType.NonTerminatingMacro;
+        }
     }
 
+    public class VOID
+    {
+        public static VOID Value = new VOID();
+    }
 }

@@ -34,10 +34,9 @@
     (var $multiplying-vars null)
     (var $maximizing-vars null)
     (var $minimizing-vars null)
-    (var $break-label-used false)
     (var $continue-label-used false)
     (var $finish-label-used false)
-    (var $loop-result-used false)
+    (var $break-label-used false)
     (each do-form forms)
     (add-accumulator-steps)
     (loop-macroexpand-all (generate-code)))
@@ -52,18 +51,11 @@
         (for ,v :in ,seq)
         ,@forms))
 
-(defmacro break (&optional (value :missing-value))
+(defmacro break (&optional value)
     (setf $break-label-used true)
-    (cond 
-        ((eql value :missing-value)
-            `(goto break-label))
-        (true
-            (setf $loop-result-used true)
-            `(do
-                (setf %loop-result ,value)
-                (goto break-label)))))
+    `(goto break-label ,value))
 
-(defmacro break-if (test &optional (value :missing-value))
+(defmacro break-if (test &optional value)
     `(if ,test (break ,value)))
 
 (defmacro continue ()
@@ -119,7 +111,7 @@
             (print-line form)
             (return form))
         (when-let (proc (elt loop-clauses (first form)))
-            (return (list (funcall proc form) true))))
+            (return (list (funcall (symbol-value proc) form) true))))
     (return (macroexpand-1 form env)))
 
 (defun loop-macroexpand (form env)
@@ -140,13 +132,14 @@
         (var arg3)
         (var arg4)
         (declare (ignore arg1 arg2  arg3 arg4))
-        (let match (λx (let seq (pattern-match x form))
-                       (setq (arg1 arg2 arg3 arg4) (or seq null))
-                       (/= seq false)))))
+        (letfun match (x) 
+            (let seq (pattern-match x form))
+            (when (list? seq)
+                (multiple-setf (arg1 arg2 arg3 arg4) seq)
+                true))))
 
 (defun generate-code ()
     `(do
-        ,@(if $loop-result-used '((var %loop-result null)))
         ,@$initial-steps
         (label test-label)
         ,@$tests
@@ -157,8 +150,7 @@
         (goto test-label)
         ,@(if $finish-label-used '((label finish-label)))
         ,@$final-steps
-        ,@(if $break-label-used '((label break-label)))
-        ,@(if $loop-result-used '(%loop-result) )))
+        ,@(if $break-label-used '((label break-label)))))
 
 (defun pattern-match (pattern form)
     (cond
@@ -167,17 +159,17 @@
              null)
         ((= (first pattern) '?rest)
             (let result (recur (rest pattern) null))
-            (if (= result false)
-                  false
-                (cons form result)))
+            (if (list? result)
+                  (cons form result)
+                false))
         ((or (= null pattern)
              (= null form))
             false)
         ((= (first pattern) '?)
             (let result (recur (rest pattern) (rest form)))
-            (if (= result false)
-                  false
-                (cons (first form) result)))
+            (if (list? result)
+                  (cons (first form) result)
+                false))
         ((and (symbol? (first form))
               (= (symbol-name (first form))
                  (symbol-name (first pattern))))
@@ -190,7 +182,7 @@
     (if (and (list? form)
              (symbol? (first form)))
         (when-let (proc (elt loop-top-level-clauses (first form)))
-            (funcall proc form)
+            (funcall (symbol-value proc) form)
             (return)))
     (do-code form))
 
@@ -222,11 +214,11 @@
         ((match '(:for ? :in-list ? :by ?))
             (do-enumerator arg1 `(in-list-enumerator ,arg2 ,arg3)))
         ((match '(:for ? :in-list ?))
-            (do-enumerator arg1 `(in-list-enumerator ,arg2 'cdr)))
+            (do-enumerator arg1 `(in-list-enumerator ,arg2 cdr)))
         ((match '(:for ? :on-list ? :by ?))
             (do-enumerator arg1 `(on-list-enumerator ,arg2 ,arg3)))
         ((match '(:for ? :on-list ?))
-            (do-enumerator arg1 `(on-list-enumerator ,arg2 'cdr)))
+            (do-enumerator arg1 `(on-list-enumerator ,arg2 cdr)))
         (true
             (throw-error "Invalid <for> clause in loop"))))
 
@@ -250,11 +242,11 @@
         ((match '(:generate ? :in-list ? :by ?))
             (do-generator arg1 `(in-list-enumerator ,arg2 ,arg3)))
         ((match '(:generate ? :in-list ?))
-            (do-generator arg1 `(in-list-enumerator ,arg2 'cdr)))
+            (do-generator arg1 `(in-list-enumerator ,arg2 cdr)))
         ((match '(:generate ? :on-list ? :by ?))
             (do-generator arg1 `(on-list-enumerator ,arg2 'arg3)))
         ((match '(:generate ? :on-list ?))
-            (do-generator arg1 `(on-list-enumerator ,arg2 'cdr)))
+            (do-generator arg1 `(on-list-enumerator ,arg2 cdr)))
         (true
             (throw-error "Invalid <generate> clause in loop"))))
 
@@ -495,49 +487,30 @@
 
 (defun add-accumulator-steps ()
     (add-initial-collect-steps)
-    (add-final-collect-steps)
     (add-initial-summing-steps)
-    (add-final-summing-steps)
     (add-initial-multiplying-steps)
-    (add-final-multiplying-steps)
-    (add-initial-minimaximizing-steps)
-    (add-final-minimaximizing-steps))
+    (add-final-steps))
 
 (defun add-initial-collect-steps ()
     (each initial-collect-step $collect-vars))
 
-(defun add-final-collect-steps ()
-    (when (find '%accumulator $collect-vars)
-        (setf $loop-result-used true)
-        (.add $final-steps `(setf %loop-result (as-list %accumulator)))))
+(defun add-final-steps ()
+    (when (or (find '%accumulator $collect-vars)
+              (find '%accumulator $summing-vars)
+              (find '%accumulator $multiplying-vars)
+              (find '%accumulator $maximizing-vars)
+              (find '%accumulator $minimizing-vars))
+        (.add $final-steps `%accumulator)))
 
 (defun add-initial-summing-steps ()
     (each initial-summing-step $summing-vars))
 
-(defun add-final-summing-steps ()
-    (when (find '%accumulator $summing-vars)
-        (setf $loop-result-used true)
-        (.add $final-steps `(setf %loop-result %accumulator))))
-
 (defun add-initial-multiplying-steps ()
     (each initial-multiplying-step $multiplying-vars))
-
-(defun add-final-multiplying-steps ()
-    (when (find '%accumulator $multiplying-vars)
-        (setf $loop-result-used true)
-        (.add $final-steps `(setf %loop-result %accumulator))))
 
 (defun add-initial-minimaximizing-steps ()
     (each initial-minimaximizing-step $maximizing-vars)
     (each initial-minimaximizing-step $minimizing-vars))
-
-(defun add-final-minimaximizing-steps ()
-    (when (find '%accumulator $maximizing-vars)
-        (setf $loop-result-used true)
-        (.add $final-steps `(setf %loop-result %accumulator)))
-    (when (find '%accumulator $minimizing-vars)
-        (setf $loop-result-used true)
-        (.add $final-steps `(setf %loop-result %accumulator))))
 
 (defun initial-collect-step (sym)
     (.add $initial-steps `(var ,sym (vector))))

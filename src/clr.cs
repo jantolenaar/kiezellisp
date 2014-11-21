@@ -2,53 +2,68 @@
 
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Linq.Expressions;
-using System.Text;
 using System.Reflection;
-using System.Dynamic;
 using System.Runtime.CompilerServices;
-using System.Diagnostics;
-using System.IO;
 
 namespace Kiezel
 {
     public partial class Runtime
     {
-        internal static Cons GetMethodSyntax( MethodInfo method, Symbol context )
-        {
-            var name = context;
-            if ( name == null )
-            {
-                var attrs = method.GetCustomAttributes( typeof( LispAttribute ), false );
-                if ( attrs.Length != 0 )
-                {
-                    name = MakeSymbol( ( ( LispAttribute ) attrs[ 0 ] ).Names[ 0 ], LispDocPackage );
-                }
-                else
-                {
-                    name = MakeSymbol( method.Name.LispName(), LispDocPackage );
-                }
-            }
+        internal static BindingFlags ImportBindingFlags = BindingFlags.IgnoreCase | BindingFlags.Static | BindingFlags.Instance | BindingFlags.Public | BindingFlags.FlattenHierarchy;
 
-            var buf = new Vector();
-            if ( !method.IsStatic )
-            {
-                buf.Add( MakeSymbol( "object", LispDocPackage ) );
-            }
-            foreach ( var arg in method.GetParameters() )
-            {              
-                bool hasParamArray = arg.IsDefined( typeof( ParamArrayAttribute ), false );
-                if ( hasParamArray )
-                {
-                    buf.Add( Symbols.Rest );
-                }
-                buf.Add( MakeSymbol( arg.Name.LispName(), LispDocPackage ) );
-            }
-            return MakeListStar( name, AsList( buf ) );
+        internal static Assembly LastUsedAssembly = null;
+
+        [Lisp( "add-event-handler" )]
+        public static void AddEventHandler( System.Reflection.EventInfo eventinfo, object target, IApply func )
+        {
+            var type = eventinfo.EventHandlerType;
+            var dlg = ConvertToDelegate( type, func );
+            eventinfo.AddEventHandler( target, dlg );
         }
 
-        [Lisp("reference")]
+        //[Lisp("get-namespace-types")]
+        public static List<Type> GetNamespaceTypes( string pattern )
+        {
+            var allTypes = new List<Type>();
+            foreach ( Assembly asm in AppDomain.CurrentDomain.GetAssemblies() )
+            {
+                var types = asm.GetTypes();
+                allTypes.AddRange( types.Where( t => NamespaceOrClassNameMatch( pattern, t ) ) );
+            }
+            return allTypes;
+        }
+
+        [Lisp( "import" )]
+        public static Package Import( string typeName, params object[] args )
+        {
+            var kwargs = ParseKwargs( args, new string[] { "package-name", "package-name-prefix", "extends-package-name", "export", "type-parameters" }, null, null, null, true, null );
+            var typeParameters = ToIter( ( Cons ) kwargs[ 4 ] ).Cast<Symbol>().Select( GetType ).Cast<Type>().ToArray();
+            var type = GetTypeForImport( typeName, typeParameters );
+            var prefix = GetDesignatedString( kwargs[ 1 ] ?? GetDynamic( Symbols.PackageNamePrefix ) );
+            var packageName = GetDesignatedString( kwargs[ 0 ] ?? prefix + type.Name.LispName() );
+            var packageName2 = GetDesignatedString( kwargs[ 2 ] );
+            var export = ToBool( kwargs[ 3 ] );
+
+            return Import( type, packageName, packageName2, export );
+        }
+
+        //[Lisp( "import-namespace" )]
+        public static void ImportNamespace( string namespaceName, params object[] args )
+        {
+            var kwargs = ParseKwargs( args, new string[] { "package-name-prefix" } );
+            var packageNamePrefix = ( string ) kwargs[ 0 ] ?? "";
+            var types = GetNamespaceTypes( namespaceName );
+            foreach ( var type in types )
+            {
+                var packageName = packageNamePrefix + type.Name.LispName();
+                Import( type, packageName, null, true );
+            }
+        }
+
+        [Lisp( "reference" )]
         public static void Reference( string assemblyName )
         {
             var a = assemblyName;
@@ -90,6 +105,35 @@ namespace Kiezel
             }
         }
 
+        internal static bool ExtendsType( MethodInfo method, Type type )
+        {
+            var ext = method.GetCustomAttributes( typeof( ExtendsAttribute ), true );
+
+            if ( ext.Length != 0 && ( ( ExtendsAttribute ) ext[ 0 ] ).Type == type )
+            {
+                return true;
+            }
+
+            if ( method.GetCustomAttributes( typeof( ExtensionAttribute ), true ).Length == 0 )
+            {
+                return false;
+            }
+
+            var pars = method.GetParameters();
+            if ( pars.Length == 0 )
+            {
+                return false;
+            }
+
+            if ( type != pars[ 0 ].ParameterType )
+            {
+                // maybe test for subclass
+                return false;
+            }
+
+            return true;
+        }
+
         internal static string FindFileInPath( string fileName )
         {
             string[] folders = System.Environment.GetEnvironmentVariable( "path" ).Split( ";" );
@@ -104,68 +148,38 @@ namespace Kiezel
             return fileName;
         }
 
-        internal static string TypeNameAlias( string name )
+        internal static Cons GetMethodSyntax( MethodInfo method, Symbol context )
         {
-            var index = name.LastIndexOf( "." );
-            if ( index == -1 )
+            var name = context;
+            if ( name == null )
             {
-                return "";
-            }
-            else
-            {
-                return name.Substring( 0, index ) + "+" + name.Substring( index + 1 );
-            }
-        }
-
-        internal static bool NamespaceOrClassNameMatch( string pattern, Type type )
-        {
-            if ( type.FullName != null && type.FullName.WildcardMatch( pattern ) != null )
-            {
-                return true;
-            }
-            return false;
-        }
-
-        //[Lisp("get-namespace-types")]
-        public static List<Type> GetNamespaceTypes( string pattern )
-        {
-            var allTypes = new List<Type>();
-            foreach ( Assembly asm in AppDomain.CurrentDomain.GetAssemblies() )
-            {
-                var types = asm.GetTypes();
-                allTypes.AddRange( types.Where( t => NamespaceOrClassNameMatch( pattern, t ) ) );
-            }
-            return allTypes;
-        }
-
-        internal static MemberInfo ResolveGenericMethod( MemberInfo member )
-        {
-            if ( member is MethodInfo )
-            {
-                var method = ( MethodInfo ) member;
-                if ( method.ContainsGenericParameters )
+                var attrs = method.GetCustomAttributes( typeof( LispAttribute ), false );
+                if ( attrs.Length != 0 )
                 {
-                    var parameters = method.GetGenericArguments();
-                    var types = new Type[ parameters.Length ];
-                    for ( var i = 0; i < types.Length; ++i )
-                    {
-                        types[ i ] = typeof( object );
-                    }
-                    try
-                    {
-                        member = method.MakeGenericMethod( types );
-                    }
-                    catch ( Exception )
-                    {
-                    }
+                    name = MakeSymbol( ( ( LispAttribute ) attrs[ 0 ] ).Names[ 0 ], LispDocPackage );
+                }
+                else
+                {
+                    name = MakeSymbol( method.Name.LispName(), LispDocPackage );
                 }
             }
 
-            return member;
+            var buf = new Vector();
+            if ( !method.IsStatic )
+            {
+                buf.Add( MakeSymbol( "object", LispDocPackage ) );
+            }
+            foreach ( var arg in method.GetParameters() )
+            {
+                bool hasParamArray = arg.IsDefined( typeof( ParamArrayAttribute ), false );
+                if ( hasParamArray )
+                {
+                    buf.Add( Symbols.Rest );
+                }
+                buf.Add( MakeSymbol( arg.Name.LispName(), LispDocPackage ) );
+            }
+            return MakeListStar( name, AsList( buf ) );
         }
-
-        internal static Assembly LastUsedAssembly = null;
-
         internal static Type GetTypeForImport( string typeName, Type[] typeParameters )
         {
             if ( typeParameters != null && typeParameters.Length != 0 )
@@ -202,35 +216,6 @@ namespace Kiezel
             }
 
             return type;
-        }
-
-        internal static BindingFlags ImportBindingFlags = BindingFlags.IgnoreCase | BindingFlags.Static | BindingFlags.Instance | BindingFlags.Public | BindingFlags.FlattenHierarchy;
-
-        //[Lisp( "import-namespace" )]
-        public static void ImportNamespace( string namespaceName, params object[] args )
-        {
-            var kwargs = ParseKwargs( args, new string[] { "package-name-prefix" } );
-            var packageNamePrefix = ( string ) kwargs[ 0 ] ?? "";
-            var types = GetNamespaceTypes( namespaceName );
-            foreach ( var type in types )
-            {
-                var packageName = packageNamePrefix + type.Name.LispName();
-                Import( type, packageName, null, true );
-            }
-        }
-
-        [Lisp( "import" )]
-        public static Package Import( string typeName, params object[] args )
-        {
-            var kwargs = ParseKwargs( args, new string[] { "package-name", "package-name-prefix", "extends-package-name", "export", "type-parameters" }, null, null, null, true, null );
-            var typeParameters = ToIter( ( Cons ) kwargs[ 4 ] ).Cast<Symbol>().Select( GetType ).Cast<Type>().ToArray();
-            var type = GetTypeForImport( typeName, typeParameters );
-            var prefix = GetDesignatedString( kwargs[ 1 ] ?? GetDynamic( Symbols.PackageNamePrefix ) );
-            var packageName = GetDesignatedString( kwargs[ 0 ] ?? prefix + type.Name.LispName() );
-            var packageName2 = GetDesignatedString( kwargs[ 2 ] );
-            var export = ToBool( kwargs[ 3 ] );
-
-            return Import( type, packageName, packageName2, export );
         }
 
         internal static Package Import( Type type, string packageName, string extendsPackageName, bool export )
@@ -275,36 +260,6 @@ namespace Kiezel
 
                 return package;
             }
-        }
-
-        internal static bool ExtendsType( MethodInfo method, Type type )
-        {
-
-            var ext = method.GetCustomAttributes( typeof( ExtendsAttribute ), true );
-
-            if ( ext.Length != 0 && ( ( ExtendsAttribute ) ext[ 0 ] ).Type == type )
-            {
-                return true;
-            }
-
-            if ( method.GetCustomAttributes( typeof( ExtensionAttribute ), true ).Length == 0 )
-            {
-                return false;
-            }
-
-            var pars = method.GetParameters();
-            if ( pars.Length == 0 )
-            {
-                return false;
-            }
-
-            if ( type != pars[ 0 ].ParameterType )
-            {
-                // maybe test for subclass
-                return false;
-            }
-
-            return true;
         }
 
         internal static void ImportExtensionMethodsIntoPackage( Package package, Type type )
@@ -360,6 +315,26 @@ namespace Kiezel
             }
         }
 
+        internal static void ImportIntoPackage( Package package, Type type )
+        {
+            AddPackageByType( type, package );
+
+            var isbuiltin = type.Assembly == Assembly.GetExecutingAssembly();
+            var restrictedImport = type.GetCustomAttributes( typeof( RestrictedImportAttribute ), true ).Length != 0;
+
+            package.ImportedType = type;
+            package.RestrictedImport = restrictedImport;
+            Symbol sym = package.InternNoInherit( "T" );
+            sym.ConstantValue = type;
+            sym.Package.Export( sym.Name );
+            sym.Documentation = MakeList( String.Format( "The .NET type <{0}> imported in this package.", type ) );
+
+            if ( !ToBool( Symbols.LazyImport.Value ) )
+            {
+                VerifyNoMissingSymbols( package );
+            }
+        }
+
         internal static void ImportMissingSymbol( string name, Package package )
         {
             name = name.LispToPascalCaseName();
@@ -393,7 +368,7 @@ namespace Kiezel
             {
                 if ( field.IsLiteral || ( field.IsStatic && field.IsInitOnly ) )
                 {
-                    Symbol sym = package.InternNoInherit( members[0].Name.LispName().ToUpper() );
+                    Symbol sym = package.InternNoInherit( members[ 0 ].Name.LispName().ToUpper() );
                     sym.ConstantValue = field.GetValue( null );
                     sym.Package.Export( sym.Name );
                 }
@@ -423,7 +398,7 @@ namespace Kiezel
                 if ( !name.StartsWith( "get_" ) && !name.StartsWith( "set_" ) )
                 {
                     var sym = package.InternNoInherit( members[ 0 ].Name.LispName() );
-                    var builtin = new ImportedFunction( members[ 0 ].Name, members[0].DeclaringType, members.Cast<MethodInfo>().ToArray(), false );
+                    var builtin = new ImportedFunction( members[ 0 ].Name, members[ 0 ].DeclaringType, members.Cast<MethodInfo>().ToArray(), false );
                     sym.FunctionValue = builtin;
                     sym.Package.Export( sym.Name );
                 }
@@ -455,41 +430,6 @@ namespace Kiezel
                 }
                 return;
             }
-
-
-        }
-
-        internal static void ImportIntoPackage( Package package, Type type )
-        {
-            AddPackageByType( type, package );
-
-            var isbuiltin = type.Assembly == Assembly.GetExecutingAssembly();
-            var restrictedImport = type.GetCustomAttributes( typeof( RestrictedImportAttribute ), true ).Length != 0;
-
-            package.ImportedType = type;
-            package.RestrictedImport = restrictedImport;
-            Symbol sym = package.InternNoInherit( "T" );
-            sym.ConstantValue = type;
-            sym.Package.Export( sym.Name );
-            sym.Documentation = MakeList( String.Format( "The .NET type <{0}> imported in this package.", type ) );
-
-            if ( !ToBool( Symbols.LazyImport.Value ) )
-            {
-                VerifyNoMissingSymbols( package );
-            }
-        }
-
-        internal static void VerifyNoMissingSymbols( Package package )
-        {
-            if ( package.ImportedType != null && !package.ImportMissingDone )
-            {
-                package.ImportMissingDone = true;
-                var names = package.ImportedType.GetMembers( ImportBindingFlags ).Select( x => x.Name ).Distinct().ToArray();
-                foreach ( var name in names )
-                {
-                    ImportMissingSymbol( name, package );
-                }
-            }
         }
 
         internal static object InvokeMember( object target, string name, params object[] args )
@@ -502,15 +442,64 @@ namespace Kiezel
             return proc();
         }
 
-        [Lisp( "add-event-handler" )]
-        public static void AddEventHandler( System.Reflection.EventInfo eventinfo, object target, object func )
+        internal static bool NamespaceOrClassNameMatch( string pattern, Type type )
         {
-            var type = eventinfo.EventHandlerType;
-            var closure = GetClosure( func );
-            var dlg = ConvertToDelegate( type, closure );
-            eventinfo.AddEventHandler( target, dlg );
+            if ( type.FullName != null && type.FullName.WildcardMatch( pattern ) != null )
+            {
+                return true;
+            }
+            return false;
         }
 
-  
+        internal static MemberInfo ResolveGenericMethod( MemberInfo member )
+        {
+            if ( member is MethodInfo )
+            {
+                var method = ( MethodInfo ) member;
+                if ( method.ContainsGenericParameters )
+                {
+                    var parameters = method.GetGenericArguments();
+                    var types = new Type[ parameters.Length ];
+                    for ( var i = 0; i < types.Length; ++i )
+                    {
+                        types[ i ] = typeof( object );
+                    }
+                    try
+                    {
+                        member = method.MakeGenericMethod( types );
+                    }
+                    catch ( Exception )
+                    {
+                    }
+                }
+            }
+
+            return member;
+        }
+
+        internal static string TypeNameAlias( string name )
+        {
+            var index = name.LastIndexOf( "." );
+            if ( index == -1 )
+            {
+                return "";
+            }
+            else
+            {
+                return name.Substring( 0, index ) + "+" + name.Substring( index + 1 );
+            }
+        }
+        internal static void VerifyNoMissingSymbols( Package package )
+        {
+            if ( package.ImportedType != null && !package.ImportMissingDone )
+            {
+                package.ImportMissingDone = true;
+                var names = package.ImportedType.GetMembers( ImportBindingFlags ).Select( x => x.Name ).Distinct().ToArray();
+                foreach ( var name in names )
+                {
+                    ImportMissingSymbol( name, package );
+                }
+            }
+        }
     }
 }

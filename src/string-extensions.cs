@@ -3,33 +3,88 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.IO;
+using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Web;
-using System.IO;
-using System.Globalization;
-using System.Linq;
 
 namespace Kiezel
 {
-
     public static class StringExtensions
     {
-        [Lisp( "join" )]
-        public static string Join( this string separator, IEnumerable seq )
+        public static string Capitalize( this string str )
         {
-            var buf = new StringWriter();
-            bool first = true;
-            foreach ( object item in Runtime.ToIter( seq ) )
+            char[] chars = new char[ str.Length ];
+            bool makeUpper = true;
+
+            for ( int i = 0; i < str.Length; ++i )
             {
-                if ( !first )
+                char ch = str[ i ];
+
+                if ( Char.IsLetterOrDigit( ch ) )
                 {
-                    buf.Write( separator );
+                    if ( makeUpper )
+                    {
+                        chars[ i ] = Char.ToUpper( ch );
+                        makeUpper = false;
+                    }
+                    else
+                    {
+                        chars[ i ] = Char.ToLower( ch );
+                    }
                 }
-                buf.Write( Runtime.MakeString( item ) );
-                first = false;
+                else
+                {
+                    chars[ i ] = ch;
+                    makeUpper = true;
+                }
             }
-            return buf.ToString();
+
+            string t = new String( chars );
+            return t;
+        }
+
+        public static string ConvertToExternalLineEndings( this string str )
+        {
+            if ( str.IndexOf( '\n' ) != -1 )
+            {
+                var str2 = str.ConvertToInternalLineEndings();
+                if ( Environment.NewLine != "\n" )
+                {
+                    return str2.Replace( "\n", Environment.NewLine );
+                }
+                else
+                {
+                    return str2;
+                }
+            }
+            else
+            {
+                return str;
+            }
+        }
+
+        public static string ConvertToInternalLineEndings( this string str )
+        {
+            if ( str.IndexOf( '\r' ) != -1 )
+            {
+                return str.Replace( "\r\n", "\n" );
+            }
+            else
+            {
+                return str;
+            }
+        }
+
+        public static string HtmlDecode( this string str )
+        {
+            return HttpUtility.HtmlDecode( str );
+        }
+
+        public static string HtmlEncode( this string str )
+        {
+            return HttpUtility.HtmlEncode( str );
         }
 
         public static string Indent( this string text, string prefix )
@@ -54,142 +109,73 @@ namespace Kiezel
             }
             var output = new StringWriter();
 
-            for (int i = 0; i < lines.Count; ++i)
+            for ( int i = 0; i < lines.Count; ++i )
             {
-                var s = ( lineNumber + i ).ToString().PadLeft( width ) + separator + lines[i];
+                var s = ( lineNumber + i ).ToString().PadLeft( width ) + separator + lines[ i ];
                 output.WriteLine( s );
             }
 
             return output.ToString();
         }
 
-        public static string Next( this string str )
+        [Lisp( "join" )]
+        public static string Join( this string separator, IEnumerable seq )
         {
-            return Runtime.IncrementString( str );
-        }
-
-        public static string Prev( this string str )
-        {
-            return Runtime.DecrementString( str );
-        }
-
-        public static string[] Split( this string str )
-        {
-            return str.Split( new char[ 0 ], StringSplitOptions.RemoveEmptyEntries );
-        }
-
-        public static string[] Split( this string str, string separators )
-        {
-            return str.Split( separators.ToCharArray() );
-        }
-
-        public static string[] Split( this string str, IEnumerable separators )
-        {
-            var list = new List<string>();
-            foreach ( object s in separators )
+            var buf = new StringWriter();
+            bool first = true;
+            foreach ( object item in Runtime.ToIter( seq ) )
             {
-                list.Add( Runtime.MakeString( s ) );
-            }
-            return str.Split( list.ToArray(), StringSplitOptions.None );
-        }
-
-        public static string[] Split( this string str, int count )
-        {
-            return str.Split( new char[ 0 ], count, StringSplitOptions.RemoveEmptyEntries );
-        }
-
-        public static string[] Split( this string str, string separators, int count )
-        {
-            return str.Split( separators.ToCharArray(), count );
-        }
-
-        public static string[] Split( this string str, IEnumerable separators, int count )
-        {
-            var list = new List<string>();
-            foreach ( object s in separators )
-            {
-                list.Add( Runtime.MakeString( s ) );
-            }
-            return str.Split( list.ToArray(), count, StringSplitOptions.None );
-        }
-
-        public static string Trim( this string str, string chars )
-        {
-            return str.Trim( chars.ToCharArray() );
-        }
-
-        public static string TrimStart( this string str, string chars )
-        {
-            return str.TrimStart( chars.ToCharArray() );
-        }
-
-        public static string TrimEnd( this string str, string chars )
-        {
-            return str.TrimEnd( chars.ToCharArray() );
-        }
-
-        public static string PadLeft( this string str, int width, string chr )
-        {
-            if ( chr == null || chr.Length == 0 )
-            {
-                return str.PadLeft( width );
-            }
-            else if ( chr.Length == 1 )
-            {
-                return str.PadLeft( width, chr[ 0 ] );
-            }
-            else
-            {
-                throw new LispException( "Too many padding characters" );
-            }
-        }
-
-        public static string PadRight( this string str, int width, string chr )
-        {
-            if ( chr == null || chr.Length == 0 )
-            {
-                return str.PadRight( width );
-            }
-            else if ( chr.Length == 1 )
-            {
-                return str.PadRight( width, chr[ 0 ] );
-            }
-            else
-            {
-                throw new LispException( "Too many padding characters" );
-            }
-        }
-
-        public static string ConvertToInternalLineEndings( this string str )
-        {
-            if ( str.IndexOf( '\r' ) != -1 )
-            {
-                return str.Replace( "\r\n", "\n" );
-            }
-            else
-            {
-                return str;
-            }
-        }
-
-        public static string ConvertToExternalLineEndings( this string str )
-        {
-            if ( str.IndexOf( '\n' ) != -1 )
-            {
-                var str2 = str.ConvertToInternalLineEndings();
-                if ( Environment.NewLine != "\n" )
+                if ( !first )
                 {
-                    return str2.Replace( "\n", Environment.NewLine );
+                    buf.Write( separator );
                 }
-                else
-                {
-                    return str2;
-                }
+                buf.Write( Runtime.MakeString( item ) );
+                first = false;
             }
-            else
+            return buf.ToString();
+        }
+        public static object JsonDecode( this string str )
+        {
+            return new JsonDecoder().Decode( str );
+        }
+
+        [Extends( typeof( string ) )]
+        public static string JsonEncode( object value )
+        {
+            return new JsonEncoder().Encode( value );
+        }
+
+        public static string LatexEncode( this string s )
+        {
+            var SpecialChars = "#$%&_^{}";
+            var SpecialCharsArray = SpecialChars.ToCharArray();
+
+            s = s.Replace( @"\", @"\backslash " );
+
+            int i = s.IndexOfAny( SpecialCharsArray );
+
+            if ( i != -1 )
             {
-                return str;
+                StringBuilder buf = new StringBuilder( i > 0 ? s.Substring( 0, i ) : "" );
+
+                for ( int j = i; j < s.Length; ++j )
+                {
+                    if ( SpecialChars.IndexOf( s[ j ] ) != -1 )
+                    {
+                        buf.Append( @"\" );
+                    }
+                    buf.Append( s[ j ] );
+                }
+
+                s = buf.ToString();
             }
+
+            return s;
+        }
+
+        public static string Left( this string s, int count )
+        {
+            return s.Substring( 0, Math.Min( count, s.Length ) );
         }
 
         public static string LispName( this string name )
@@ -282,53 +268,85 @@ namespace Kiezel
             return buf.ToString();
         }
 
-        public static string Capitalize( this string str )
+        public static string Next( this string str )
         {
-            char[] chars = new char[ str.Length ];
-            bool makeUpper = true;
-
-            for ( int i = 0; i < str.Length; ++i )
-            {
-                char ch = str[ i ];
-
-                if ( Char.IsLetterOrDigit( ch ) )
-                {
-                    if ( makeUpper )
-                    {
-                        chars[ i ] = Char.ToUpper( ch );
-                        makeUpper = false;
-                    }
-                    else
-                    {
-                        chars[ i ] = Char.ToLower( ch );
-                    }
-                }
-                else
-                {
-                    chars[ i ] = ch;
-                    makeUpper = true;
-                }
-            }
-
-            string t = new String( chars );
-            return t;
+            return Runtime.IncrementString( str );
         }
 
-        internal static Regex GetRegex( object pattern )
+        public static string PadLeft( this string str, int width, string chr )
         {
-            if ( pattern is string )
+            if ( chr == null || chr.Length == 0 )
             {
-                return new Regex( (string) pattern );
+                return str.PadLeft( width );
+            }
+            else if ( chr.Length == 1 )
+            {
+                return str.PadLeft( width, chr[ 0 ] );
             }
             else
             {
-                return ( Regex ) pattern;
+                throw new LispException( "Too many padding characters" );
             }
         }
 
-        public static string[] RegexSplit( this string str, object pattern )
+        public static string PadRight( this string str, int width, string chr )
         {
-            return GetRegex( pattern ).Split( str );
+            if ( chr == null || chr.Length == 0 )
+            {
+                return str.PadRight( width );
+            }
+            else if ( chr.Length == 1 )
+            {
+                return str.PadRight( width, chr[ 0 ] );
+            }
+            else
+            {
+                throw new LispException( "Too many padding characters" );
+            }
+        }
+
+        public static object ParseDate( this string str, params object[] kwargs )
+        {
+            object val = TryParseDate( str, kwargs );
+
+            if ( val == null )
+            {
+                throw new LispException( "Could not convert to date: \"{0}\"", str );
+            }
+
+            return val;
+        }
+
+        public static object ParseNumber( this string str, params object[] kwargs )
+        {
+            var result = TryParseNumber( str, kwargs );
+            if ( result == null )
+            {
+                throw new LispException( "Cannot convert to number: \"{0}\"", str );
+            }
+            return result;
+        }
+
+        public static string Prev( this string str )
+        {
+            return Runtime.DecrementString( str );
+        }
+
+        public static string RegexEncode( this string str )
+        {
+            return Regex.Escape( str );
+        }
+
+        public static Cons RegexMatch( this string str, object pattern )
+        {
+            Match match = GetRegex( pattern ).Match( str );
+            return MakeMatchResult( match );
+        }
+
+        public static Cons RegexMatchAll( this string str, object pattern )
+        {
+            var matches = GetRegex( pattern ).Matches( str );
+            return Runtime.Map( x => MakeMatchResult( ( Match ) x ), matches );
         }
 
         public static string RegexReplace( this string str, object pattern, string replacement )
@@ -345,80 +363,80 @@ namespace Kiezel
             return val;
         }
 
-        public static object JsonDecode( this string str )
+        public static string[] RegexSplit( this string str, object pattern )
         {
-            return new JsonDecoder().Decode( str );
+            return GetRegex( pattern ).Split( str );
         }
 
-        [Extends(typeof(string))]
-        public static string JsonEncode( object value )
+        public static string Repeat( this string str, int count )
         {
-            return new JsonEncoder().Encode( value );
-        }
-
-        public static string HtmlEncode( this string str )
-        {
-            return HttpUtility.HtmlEncode( str );
-        }
-
-        public static string HtmlDecode( this string str )
-        {
-            return HttpUtility.HtmlDecode( str );
-        }
-
-        internal static Cons MakeMatchResult( Match match )
-        {
-            Cons result = null;
-            if ( match.Success )
+            StringBuilder buf = new StringBuilder();
+            for ( int i = 0; i < count; ++i )
             {
-                for ( int i = match.Groups.Count - 1; i >= 0 ; --i )
-                {
-                    var group = match.Groups[ i ];
-                    result = new Cons( group.Value, result );
-                }
+                buf.Append( str );
             }
-            return result;
+            return buf.ToString();
         }
 
-        public static Cons RegexMatch( this string str, object pattern )
+        public static string Right( this string s, int count )
         {
-            Match match = GetRegex( pattern ).Match( str );
-            return MakeMatchResult( match );
+            return s.Substring( s.Length - Math.Min( count, s.Length ) );
         }
 
-        public static Cons RegexMatchAll( this string str, object pattern )
+        public static string[] Split( this string str )
         {
-            var matches = GetRegex( pattern ).Matches( str );
-            return Runtime.Map( x => MakeMatchResult((Match)x), matches );
+            return str.Split( new char[ 0 ], StringSplitOptions.RemoveEmptyEntries );
         }
 
-        public static Cons WildcardMatch( this string str, string pattern )
+        public static string[] Split( this string str, string separators )
         {
-            var star = "<<sadaskdSTARadfgjkdlf>>";
-            var qm = "<<sdkjlfQUESTIONMARKsdalwe>>";
-
-            var pattern2 = "^" + pattern
-                                .Replace( "*", star )
-                                .Replace( "?", qm )
-                                .RegexEncode()
-                                .Replace( star, "(.*?)" )
-                                .Replace( qm, "(.*)" ) + "$";
-
-            return RegexMatch( str, pattern2 );
+            return str.Split( separators.ToCharArray() );
         }
 
-        public static object ParseDate( this string str, params object[] kwargs )
+        public static string[] Split( this string str, IEnumerable separators )
         {
-            object val = TryParseDate( str, kwargs );
-
-            if ( val == null )
+            var list = new List<string>();
+            foreach ( object s in separators )
             {
-                throw new LispException( "Could not convert to date: \"{0}\"", str );
+                list.Add( Runtime.MakeString( s ) );
             }
-
-            return val;
+            return str.Split( list.ToArray(), StringSplitOptions.None );
         }
 
+        public static string[] Split( this string str, int count )
+        {
+            return str.Split( new char[ 0 ], count, StringSplitOptions.RemoveEmptyEntries );
+        }
+
+        public static string[] Split( this string str, string separators, int count )
+        {
+            return str.Split( separators.ToCharArray(), count );
+        }
+
+        public static string[] Split( this string str, IEnumerable separators, int count )
+        {
+            var list = new List<string>();
+            foreach ( object s in separators )
+            {
+                list.Add( Runtime.MakeString( s ) );
+            }
+            return str.Split( list.ToArray(), count, StringSplitOptions.None );
+        }
+
+        public static string Trim( this string str, string chars )
+        {
+            return str.Trim( chars.ToCharArray() );
+        }
+
+        public static string TrimEnd( this string str, string chars )
+        {
+            return str.TrimEnd( chars.ToCharArray() );
+        }
+
+        public static string TrimStart( this string str, string chars )
+        {
+            return str.TrimStart( chars.ToCharArray() );
+        }
         public static object TryParseDate( this string str, params object[] kwargs )
         {
             object[] args = Runtime.ParseKwargs( kwargs, new string[] { "culture", "format" } );
@@ -449,16 +467,6 @@ namespace Kiezel
             }
         }
 
-        public static object ParseNumber( this string str, params object[] kwargs )
-        {
-            var result = TryParseNumber( str, kwargs );
-            if ( result == null )
-            {
-                throw new LispException( "Cannot convert to number: \"{0}\"", str );
-            }
-            return result;
-        }
-
         public static object TryParseNumber( this string str, params object[] kwargs )
         {
             object[] args = Runtime.ParseKwargs( kwargs, new string[] { "culture", "base" } );
@@ -480,61 +488,55 @@ namespace Kiezel
             }
         }
 
-        public static string RegexEncode( this string str )
+        public static string UrlDecode( this string str )
         {
-            return Regex.Escape( str );
+            return HttpUtility.UrlDecode( str );
         }
-
-        public static string Repeat( this string str, int count )
-        {
-            StringBuilder buf = new StringBuilder();
-            for ( int i = 0; i < count; ++i )
-            {
-                buf.Append( str );
-            }
-            return buf.ToString();
-        }
-
-        public static string LatexEncode( this string s )
-        {
-            var SpecialChars = "#$%&_^{}";
-            var SpecialCharsArray = SpecialChars.ToCharArray();
-
-            s = s.Replace( @"\", @"\backslash " );
-
-            int i = s.IndexOfAny( SpecialCharsArray );
-
-            if ( i != -1 )
-            {
-                StringBuilder buf = new StringBuilder( i > 0 ? s.Substring( 0, i ) : "" );
-
-                for ( int j = i; j < s.Length; ++j )
-                {
-                    if ( SpecialChars.IndexOf( s[ j ] ) != -1 )
-                    {
-                        buf.Append( @"\" );
-                    }
-                    buf.Append( s[ j ] );
-                }
-
-                s = buf.ToString();
-            }
-
-            return s;
-
-        }
-
 
         public static string UrlEncode( this string str )
         {
             return HttpUtility.UrlEncode( str );
         }
 
-        public static string UrlDecode( this string str )
+        public static Cons WildcardMatch( this string str, string pattern )
         {
-            return HttpUtility.UrlDecode( str );
+            var star = "<<sadaskdSTARadfgjkdlf>>";
+            var qm = "<<sdkjlfQUESTIONMARKsdalwe>>";
+
+            var pattern2 = "^" + pattern
+                                .Replace( "*", star )
+                                .Replace( "?", qm )
+                                .RegexEncode()
+                                .Replace( star, "(.*?)" )
+                                .Replace( qm, "(.*)" ) + "$";
+
+            return RegexMatch( str, pattern2 );
         }
 
+        internal static Regex GetRegex( object pattern )
+        {
+            if ( pattern is string )
+            {
+                return new Regex( ( string ) pattern );
+            }
+            else
+            {
+                return ( Regex ) pattern;
+            }
+        }
+        internal static Cons MakeMatchResult( Match match )
+        {
+            Cons result = null;
+            if ( match.Success )
+            {
+                for ( int i = match.Groups.Count - 1; i >= 0; --i )
+                {
+                    var group = match.Groups[ i ];
+                    result = new Cons( group.Value, result );
+                }
+            }
+            return result;
+        }
         internal static string Shorten( this string str, int maxLength, string insert = "..." )
         {
             int extra = insert == null ? 0 : insert.Length;
@@ -546,27 +548,6 @@ namespace Kiezel
             {
                 return str;
             }
-        }
-
-        public static string Left( this string s, int count )
-        {
-            return s.Substring( 0, Math.Min( count, s.Length ) );
-        }
-
-        public static string Right( this string s, int count )
-        {
-            return s.Substring( s.Length - Math.Min( count, s.Length ) );
-        }
-
-    }
-
-    class Kwarg
-    {
-        public object Value;
-
-        public Kwarg( object value )
-        {
-            Value = value;
         }
     }
 
@@ -587,13 +568,13 @@ namespace Kiezel
             }
             else
             {
-                return new object[0];
+                return new object[ 0 ];
             }
         }
 
         internal class FunctionMatcher
         {
-            IApply transform;
+            private IApply transform;
 
             internal FunctionMatcher( IApply transform )
             {
@@ -601,7 +582,7 @@ namespace Kiezel
             }
 
             internal string Evaluate( Match match )
-            {              
+            {
                 string result = Runtime.MakeString( transform.Apply( RegexBind( match ) ) );
                 return result;
             }
@@ -609,7 +590,7 @@ namespace Kiezel
 
         internal class StringMatcher
         {
-            string replacement;
+            private string replacement;
 
             internal StringMatcher( string replacement )
             {
@@ -623,7 +604,7 @@ namespace Kiezel
                 for ( int i = 0; i < match.Groups.Count; ++i )
                 {
                     string v = match.Groups[ i ].Value;
-                    string t = Symbols.NumberedVariables[i].Name;
+                    string t = Symbols.NumberedVariables[ i ].Name;
                     result = result.Replace( t, v );
                 }
 
@@ -632,4 +613,13 @@ namespace Kiezel
         }
     }
 
+    internal class Kwarg
+    {
+        public object Value;
+
+        public Kwarg( object value )
+        {
+            Value = value;
+        }
+    }
 }

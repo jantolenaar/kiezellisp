@@ -1,5 +1,22 @@
 # Change Log
 
+## 2014/11/21
+
+*   Renamed `skip` to `drop`.
+*   Changed `map` to support multiple sequences.
+*   Added `remove`, `map-indexed`, `keep`, `keep-indexed`.
+*   Added `reductions`, `cycle`, `repeatedly`, `iterate`.
+*   Refactored method selection code.
+*   Changed `multiple-var` etc from special form to macro.
+*   Added `complement`.
+*   Fixed bug in code of array/indexer assignment.
+
+## 2014/09/07
+
+*   Added `multiple-var`.
+*   Added `multiple-let`.
+*   Added `multiple-setf`. 
+
 ## 2014/08/18
 
 *   Fixed bug: `any` sequence function.

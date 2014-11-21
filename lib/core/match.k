@@ -53,7 +53,7 @@
     (force (cond
         ($variables
             `(do
-                (var ,(as-list $variables) null)
+                (multiple-var ,(as-list $variables) null)
                 (if ,test-form (return-from case-match ,body))))
         ((= test-form true)
             `(return-from case-match ,body))
@@ -94,7 +94,7 @@
             (let key (first pattern))
             (let args (rest pattern))
             (if-let (proc (elt encode-handlers key))
-                (funcall proc expr args)))))
+                (funcall (symbol-value proc) expr args)))))
 
 (defun encode-symbol (expr pattern)
     (if (not (find pattern $variables))

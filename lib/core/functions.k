@@ -6,27 +6,49 @@
 
 (defpackage "lisp"
     (:export
-        "compose"
+        "constantly"
+        "filterv"
+        "keep-indexed"
         "partially-apply"
+        "map-indexed"
+        "mapv"
+        "mapcat"
     ))
 
 (in-package "lisp")
+
+;;;
+;;; Misc functions
+;;;
+
+(defun constantly (expr)
+    (lambda (&rest args)
+        (declare (ignore args))
+        expr))
+
+;;;
+;;; Functional functions
+;;;
 
 (defun partially-apply (func &rest head-args)
     "Creates a new function by partially applying arguments to the given function."
     (lambda (&rest tail-args)
         (apply func (append head-args tail-args))))
 
-(defmacro compose (func1 &rest funcs)
-    "Creates a new function that applies the given functions from the right to the left."
-    (if funcs
-          `(lambda (&rest args) ,(compose-functions func1 funcs))
-        func1))
+;;;
+;;; Sequence functions
+;;;
 
-(defun compose-functions (func1 funcs)
-    (if funcs
-            (list func1 (compose-functions (first funcs) (rest funcs)))
-        (list 'apply func1 'args)))
+(defun map-indexed (func &rest seqs)
+    (apply map func (range) seqs)) 
 
+(defun mapv (func &rest seqs)
+    (as-vector (apply map func seqs))) 
+
+(defun mapcat (func &rest seqs)
+    (apply concat (apply map func seqs)))
+
+(defun filterv (predicate seq &rest args)
+    (as-vector (apply filter predicate seq args)))
 
 

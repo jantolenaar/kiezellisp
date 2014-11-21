@@ -4,41 +4,39 @@ using System;
 
 namespace Kiezel
 {
+    public class DelayedExpression
+    {
+        internal IApply Recipe;
+        internal object Result;
 
-	public class DelayedExpression
-	{
-		internal Func<object> Recipe;
-		internal object Result;
-
-		internal DelayedExpression( Func<object> code )
-		{
-			Recipe = code;
+        internal DelayedExpression( IApply code )
+        {
+            Recipe = code;
             Result = null;
         }
 
-		internal object GetValue()
-		{
-			if ( Recipe != null )
-			{
-				Result = Recipe();
-				Recipe = null;
-			}
-			return Result;
-		}
-
-
         public override string ToString()
-		{
+        {
             return System.String.Format( "DelayedExpr Result={0}", Runtime.ToPrintString( Result ) );
-		}
-	}
+        }
+
+        internal object GetValue()
+        {
+            if ( Recipe != null )
+            {
+                Result = Runtime.Funcall( Recipe );
+                Recipe = null;
+            }
+            return Result;
+        }
+    }
 
     public partial class Runtime
     {
-        [Lisp( "system:get-delayed-expression-result" )]
-        public static object GetDelayedExpressionResult( DelayedExpression expr )
+        [Lisp( "system:create-delayed-expression" )]
+        public static DelayedExpression CreateDelayedExpression( IApply func )
         {
-            return expr.GetValue();
+            return new DelayedExpression( func );
         }
 
         [Lisp( "force" )]
@@ -79,12 +77,10 @@ namespace Kiezel
             }
         }
 
-        [Lisp( "system:create-delayed-expression")]
-        public static DelayedExpression CreateDelayedExpression( object func )
+        [Lisp( "system:get-delayed-expression-result" )]
+        public static object GetDelayedExpressionResult( DelayedExpression expr )
         {
-            var f = GetThreadFunc( func );
-            return new DelayedExpression( f );
+            return expr.GetValue();
         }
-
     }
 }

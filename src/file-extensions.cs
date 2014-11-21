@@ -1,20 +1,13 @@
 // Copyright (C) Jan Tolenaar. See the file LICENSE for details.
 
-using System;
-using System.Collections;
-using System.Collections.Generic;
-using System.Text;
-using System.Text.RegularExpressions;
-using System.Web;
 using System.IO;
-using System.Globalization;
-using System.Linq;
+using System.Text;
 
 namespace Kiezel
 {
     internal static class FileExtensions
     {
-        [Extends(typeof(File))]
+        [Extends( typeof( File ) )]
         public static string ReadAllText( string path )
         {
             var contents = File.ReadAllText( path );
@@ -42,5 +35,24 @@ namespace Kiezel
             File.WriteAllText( path, contents, encoding );
         }
 
+        [Extends( typeof( File ) )]
+        public static string ReadLogAllText( string path )
+        {
+            using ( var stream = File.Open( path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite ) )
+            {
+                using ( var file = new StreamReader( stream ) )
+                {
+                    var contents = file.ReadToEnd();
+                    return contents.ConvertToInternalLineEndings();
+                }
+            }
+        }
+
+        [Extends( typeof( File ) )]
+        public static string[] ReadLogAllLines( string path )
+        {
+            var contents = ReadLogAllText( path );
+            return contents.Split( '\n' );
+        }
     }
 }

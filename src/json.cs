@@ -8,15 +8,13 @@ namespace Kiezel
 {
     internal class JsonDecoder
     {
-        string text;
-        int index;
-        string token;
-        char ch;
-        bool tokenIsString;
-        bool tokenIsNumber;
-        char eofChar = Convert.ToChar( 0 );
-
-
+        private char ch;
+        private char eofChar = Convert.ToChar( 0 );
+        private int index;
+        private string text;
+        private string token;
+        private bool tokenIsNumber;
+        private bool tokenIsString;
         public object Decode( string encodedText )
         {
             text = encodedText;
@@ -25,31 +23,7 @@ namespace Kiezel
             return Read();
         }
 
-        char ReadChar()
-        {
-            if ( index >= text.Length )
-            {
-                return eofChar;
-            }
-            else
-            {
-                return text[ index++ ];
-            }
-        }
-
-        char PeekChar( int offset = 0 )
-        {
-            if ( index + offset >= text.Length )
-            {
-                return eofChar;
-            }
-            else
-            {
-                return text[ index + offset ];
-            }
-        }
-
-        void GetToken()
+        private void GetToken()
         {
             tokenIsString = tokenIsNumber = false;
             token = null;
@@ -159,10 +133,9 @@ namespace Kiezel
 
                 token = buf.ToString();
             }
-
         }
 
-        bool Match( string target )
+        private bool Match( string target )
         {
             if ( tokenIsString || tokenIsNumber )
             {
@@ -178,7 +151,7 @@ namespace Kiezel
             }
         }
 
-        void NeedToken( string target )
+        private void NeedToken( string target )
         {
             if ( !Match( target ) )
             {
@@ -186,7 +159,92 @@ namespace Kiezel
             }
         }
 
-        Prototype ReadObject()
+        private char PeekChar( int offset = 0 )
+        {
+            if ( index + offset >= text.Length )
+            {
+                return eofChar;
+            }
+            else
+            {
+                return text[ index + offset ];
+            }
+        }
+
+        private object Read()
+        {
+            return ReadExp( false );
+        }
+
+        private char ReadChar()
+        {
+            if ( index >= text.Length )
+            {
+                return eofChar;
+            }
+            else
+            {
+                return text[ index++ ];
+            }
+        }
+        private object ReadExp( bool haveToken )
+        {
+            if ( !haveToken )
+            {
+                GetToken();
+            }
+
+            if ( Match( null ) )
+            {
+                return null;
+            }
+
+            if ( tokenIsString )
+            {
+                // string
+                return token;
+            }
+
+            if ( tokenIsNumber )
+            {
+                if ( token == "true" )
+                {
+                    return true;
+                }
+
+                if ( token == "false" )
+                {
+                    return false;
+                }
+
+                if ( token == "null" )
+                {
+                    return null;
+                }
+
+                double val;
+
+                if ( !double.TryParse( token, System.Globalization.NumberStyles.Any, null, out val ) )
+                {
+                    throw new LispException( "json: invalid number: {0}", token );
+                }
+                return val;
+            }
+
+            if ( Match( "[" ) )
+            {
+                return ReadVector();
+            }
+
+            if ( Match( "{" ) )
+            {
+                return ReadObject();
+            }
+
+            throw new LispException( "json: unexpected token: {0}", token );
+        }
+
+        private Prototype ReadObject()
         {
             var obj = new Prototype();
             GetToken();
@@ -223,7 +281,7 @@ namespace Kiezel
             return obj;
         }
 
-        Vector ReadVector()
+        private Vector ReadVector()
         {
             var vector = new Vector();
 
@@ -255,75 +313,11 @@ namespace Kiezel
 
             return vector;
         }
-
-
-        object Read()
-        {
-            return ReadExp( false );
-        }
-
-        object ReadExp( bool haveToken )
-        {
-            if ( !haveToken )
-            {
-                GetToken();
-            }
-
-            if ( Match( null ) )
-            {
-                return null;
-            }
-
-            if ( tokenIsString )
-            {
-                // string
-                return token;
-            }
-
-            if ( tokenIsNumber )
-            {
-                if ( token == "true" )
-                {
-                    return true;
-                }
-
-                if ( token == "false" )
-                {
-                    return false;
-                }
-
-                if ( token == "null" )
-                {
-                    return null;
-                }
-                
-                double val;
-
-                if ( !double.TryParse( token, System.Globalization.NumberStyles.Any, null, out val ) )
-                {
-                    throw new LispException( "json: invalid number: {0}", token );
-                }
-                return val;
-            }
-
-            if ( Match( "[" ) )
-            {
-                return ReadVector();
-            }
-
-            if ( Match( "{" ) )
-            {
-                return ReadObject();
-            }
-
-            throw new LispException( "json: unexpected token: {0}", token );
-        }
-
     }
 
     internal class JsonEncoder
     {
-        StringBuilder buf = new StringBuilder();
+        private StringBuilder buf = new StringBuilder();
 
         public string Encode( object value )
         {
@@ -331,20 +325,7 @@ namespace Kiezel
             return buf.ToString();
         }
 
-        string StringEscape( string str )
-        {
-            str = str.Replace( "\"", "\\\"" );
-            str = str.Replace( @"\", @"\\" );
-            str = str.Replace( "/", @"\/" );
-            str = str.Replace( "\b", @"\b" );
-            str = str.Replace( "\f", @"\f" );
-            str = str.Replace( "\n", @"\n" );
-            str = str.Replace( "\r", @"\r" );
-            str = str.Replace( "\t", @"\t" );
-            return str;
-        }
-
-        void Add( object value )
+        private void Add( object value )
         {
             if ( value == null )
             {
@@ -401,6 +382,18 @@ namespace Kiezel
                 throw new LispException( "json: value not supported: {0}", value );
             }
         }
-    }
 
+        private string StringEscape( string str )
+        {
+            str = str.Replace( "\"", "\\\"" );
+            str = str.Replace( @"\", @"\\" );
+            str = str.Replace( "/", @"\/" );
+            str = str.Replace( "\b", @"\b" );
+            str = str.Replace( "\f", @"\f" );
+            str = str.Replace( "\n", @"\n" );
+            str = str.Replace( "\r", @"\r" );
+            str = str.Replace( "\t", @"\t" );
+            return str;
+        }
+    }
 }

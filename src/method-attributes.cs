@@ -4,7 +4,17 @@ using System;
 
 namespace Kiezel
 {
-    class LispAttribute : Attribute
+    internal class ExtendsAttribute : Attribute
+    {
+        public Type Type;
+
+        public ExtendsAttribute( Type type )
+        {
+            Type = type;
+        }
+    }
+
+    internal class LispAttribute : Attribute
     {
         public string[] Names;
 
@@ -14,23 +24,11 @@ namespace Kiezel
         }
     }
 
-    class PureAttribute : Attribute
+    internal class PureAttribute : Attribute
     {
-
     }
 
-    class RestrictedImportAttribute : Attribute
+    internal class RestrictedImportAttribute : Attribute
     {
-
-    }
-
-    class ExtendsAttribute : Attribute
-    {
-        public Type Type;
-
-        public ExtendsAttribute( Type type )
-        {
-            Type = type;
-        }
     }
 }

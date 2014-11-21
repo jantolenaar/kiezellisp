@@ -41,6 +41,7 @@
       (defmulti 2)
       (defun 2)
       (do 0)
+      (merging-do 0)
       (ecase 1)
       (ecase-match 1)
       (etypecase 1)
@@ -68,6 +69,10 @@
       (try-and-catch 0)
       (typecase 1)
       (let 2)
+      (var 2)
+      (multiple-let 2)
+      (multiple-var 2)
+      (multiple-setf 2)
       (when 1)
       (when-match 2)
       (while 1)
@@ -132,7 +137,10 @@ $print-escape and $print-base.
     (let sym (and (symbol? a)
                   a))
 
-    (let config (rest (find sym pprint-form-settings :key first)))
+    (var config (rest (find sym pprint-form-settings :key first)))
+    (if (and config 
+             (not (rest config)))
+        (setf (rest config) '(:align)))
 
     (cond
         ((not config)

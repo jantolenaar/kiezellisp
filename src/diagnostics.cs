@@ -3,25 +3,43 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Linq;
-using System.Linq.Expressions;
-using System.Text;
-using System.Numerics;
-using System.Reflection;
-using System.Dynamic;
-using System.Runtime.CompilerServices;
-using System.Diagnostics;
 using System.IO;
-using System.Threading;
+using System.Linq;
+using System.Reflection;
 
 #if KIEZELLISPW
 using System.Windows.Forms;
 #endif
+
 namespace Kiezel
 {
-  
     public partial class Runtime
     {
+        [Lisp( "as-prototype" )]
+        public static Prototype AsPrototype( object obj )
+        {
+            return AsPrototype( obj, false );
+        }
+
+        [Lisp( "as-prototype-ci" )]
+        public static Prototype AsPrototypeIgnoreCase( object obj )
+        {
+            return AsPrototype( obj, true );
+        }
+
+        [Lisp( "describe" )]
+        public static void Describe( object obj )
+        {
+            Describe( obj, false );
+        }
+
+        [Lisp( "describe" )]
+        public static void Describe( object obj, bool showNonPublic )
+        {
+            var description = GetDescription( obj, showNonPublic );
+            WriteLine( description, Symbols.Pretty, true );
+        }
+
         public static object GetColor( object color )
         {
             if ( color is ConsoleColor )
@@ -39,23 +57,6 @@ namespace Kiezel
                 }
             }
             return null;
-        }
-
-        [Lisp( "print-warning" )]
-        public static void PrintWarning( params object[] args )
-        {
-            if ( DebugMode && ToBool( GetDynamic( Symbols.EnableWarnings ) ) )
-            {
-                var text = ";;; Warning: " + MakeString( args );
-                PrintLogColor( GetDynamic( Symbols.StandoutColor ), GetDynamic( Symbols.StandoutBackgroundColor ), text );
-            }
-        }
-
-        [Lisp( "throw-error" )]
-        public static void ThrowError( params object[] args )
-        {
-            var text = MakeString( args );
-            throw new LispException( text );
         }
 
         [Lisp( "get-description" )]
@@ -135,7 +136,6 @@ namespace Kiezel
                         z[ "usage" ] = Symbols.Function;
                         break;
                     }
-
                 }
 
                 if ( !Emptyp( sym.Documentation ) )
@@ -158,7 +158,6 @@ namespace Kiezel
             {
                 return result;
             }
-
             else if ( !( a is ICollection ) || ( a is IList ) )
             {
                 z[ "type" ] = a.GetType().ToString();
@@ -236,7 +235,7 @@ namespace Kiezel
             else
             {
                 var dict = AsPrototype( a );
-                
+
                 if ( dict.Dict.Count != 0 )
                 {
                     z[ "members" ] = dict;
@@ -246,188 +245,57 @@ namespace Kiezel
             return result;
         }
 
-        internal static object GetSyntax( object a )
+        [Lisp( "get-diagnostics" )]
+        public static string GetDiagnostics( Exception exception )
         {
-            var z = GetDescription( a );
-            return z.GetValue( "function-syntax" );
-        }
-
-        [Lisp( "describe" )]
-        public static void Describe( object obj )
-        {
-            Describe( obj, false );
-        }
-
-        [Lisp( "describe" )]
-        public static void Describe( object obj, bool showNonPublic )
-        {
-            var description = GetDescription( obj, showNonPublic );
-            WriteLine( description, Symbols.Pretty, true );
-        }
-
-        [Lisp( "as-prototype" )]
-        public static Prototype AsPrototype( object obj )
-        {
-            return AsPrototype( obj, false );
-        }
-
-        [Lisp( "as-prototype-ignore-case" )]
-        public static Prototype AsPrototypeIgnoreCase( object obj )
-        {
-            return AsPrototype( obj, true );
-        }
-
-        internal static Prototype AsPrototype( object obj, bool caseInsensitive )
-        {
-            Type type = obj.GetType();
-            TypeCode typecode = Type.GetTypeCode( type );
-
-            if ( obj is Prototype )
+            var buf = new StringWriter();
+            if ( exception != null )
             {
-                var dict = ConvertToLispDictionary( (( Prototype ) obj).Dict, caseInsensitive );
-                return Prototype.FromDictionary( dict );
-            }
-            else if ( obj is IDictionary )
-            {
-                var dict = ConvertToLispDictionary( ( IDictionary ) obj, caseInsensitive );
-                return Prototype.FromDictionary( dict );
-            }
-            else if ( obj is Type )
-            {
-                var dict = ConvertToDictionary( ( Type ) obj, null, false );
-                return Prototype.FromDictionary( dict );
-            }
-            else if ( true || typecode == TypeCode.Object )
-            {
-                var dict = ConvertToDictionary( obj.GetType(), obj, false  );
-                return Prototype.FromDictionary( dict );
-            }
-            else
-            {
-                return null;
-            }
-        }
-
-        internal static PrototypeDictionary ConvertToLispDictionary( IDictionary obj, bool caseInsensitive )
-        {
-            var dict = new PrototypeDictionary( caseInsensitive );
-            foreach ( DictionaryEntry item in obj )
-            {
-                dict[ item.Key ] = item.Value;
-            }
-            return dict;
-        }
-
-        internal static PrototypeDictionary ConvertToDictionary( Type type, object obj, bool showNonPublic )
-        {
-            var flags = BindingFlags.Public | ( obj == null ? BindingFlags.Static : BindingFlags.Instance ) | BindingFlags.FlattenHierarchy;
-
-            if ( showNonPublic )
-            {
-                flags |= BindingFlags.NonPublic;
-            }
-            var members = type.GetMembers( flags );
-            var dict = new PrototypeDictionary();
-
-            foreach ( var m in members )
-            {
-                var name = m.Name;
-                object value = null;
-
-                try
+                var ex2 = exception;
+                while ( ex2.InnerException != null && ex2 is System.Reflection.TargetInvocationException )
                 {
-                    if ( m is PropertyInfo )
-                    {
-                        var p = ( PropertyInfo ) m;
-                        value = p.GetValue( obj, new object[ 0 ] );
-                        dict[ name.LispName() ] = value;
-                    }
-                    else if ( m is FieldInfo )
-                    {
-                        var f = ( FieldInfo ) m;
-                        value = f.GetValue( obj );
-                        dict[ name.LispName() ] = value;
-                    }
+                    ex2 = ex2.InnerException;
                 }
-                catch
+                buf.WriteLine( "EXCEPTION" );
+                buf.WriteLine( new string( '=', 80 ) );
+                buf.WriteLine( ex2.Message );
+                buf.WriteLine( new string( '=', 80 ) );
+                buf.WriteLine( exception.ToString() );
+                buf.WriteLine( new string( '=', 80 ) );
+            }
+            buf.WriteLine( "LEXICAL ENVIRONMENT" );
+            buf.WriteLine( new string( '=', 80 ) );
+            for ( int i = 0; ; ++i )
+            {
+                var obj = GetLexicalVariablesDictionary( i );
+                if ( obj == null )
                 {
+                    break;
                 }
-
+                DumpDictionary( buf, obj );
+                buf.WriteLine( new string( '=', 80 ) );
             }
-
-            return dict;
+            buf.WriteLine( "DYNAMIC ENVIRONMENT" );
+            buf.WriteLine( new string( '=', 80 ) );
+            DumpDictionary( buf, GetDynamicVariablesDictionary( 0 ) );
+            buf.WriteLine( new string( '=', 80 ) );
+            buf.WriteLine( "EVALUATION STACK" );
+            buf.WriteLine( new string( '=', 80 ) );
+            buf.Write( GetEvaluationStack() );
+            return buf.ToString();
         }
 
-        internal static void PrintLogColor( object color, object bkcolor, params object[] args )
-        {
-            var msg = MakeString( args );
-            WriteLine( msg, Symbols.Stream, GetDynamic( Symbols.StdLog ), Symbols.Escape, false, Symbols.Color, color, Symbols.BackgroundColor, bkcolor );
-        }
-
-        internal static void PrintLog( params object[] args )
-        {
-            PrintLogColor( null, null, args );
-#if KIEZELLISPW
-            MessageBox.Show( MakeString( args ), "EXCEPTION", MessageBoxButtons.OK );
-#endif
-        }
-
-        internal static int GetConsoleWidth()
-        {
-            try
-            {
-                return Console.WindowWidth - 1;
-            }
-            catch
-            {
-                // When running as windows application.
-                return 80 - 1;
-            }
-        }
-
-        internal static void DumpDictionary( object stream, Prototype prototype )
-        {
-            if ( prototype == null )
-            {
-                return;
-            }
-
-            var dict = prototype.Dict;
-
-            foreach ( string key in ToIter( Sort( dict.Keys, NaturalLess, Identity ) ) )
-            {
-                object val = dict[ key ];
-                string line = String.Format( "{0} => ", key );
-                Write( line, Symbols.Escape, false, Symbols.Stream, stream );
-                PrettyPrint( stream, line.Length, val );
-            }
-        }
-
-        //[Lisp( "get-global-variables-dictionary" )]
-        public static Prototype GetGlobalVariablesDictionary()
-        {
-            return GetGlobalVariablesDictionary( "" );
-        }
-
-        //[Lisp( "get-global-variables-dictionary" )]
-        public static Prototype GetGlobalVariablesDictionary( string pattern )
+        //[Lisp( "get-dynamic-variables-dictionary" )]
+        public static Prototype GetDynamicVariablesDictionary( int pos )
         {
             var env = new PrototypeDictionary();
-            var pat = (pattern ?? "").ToLower();
 
-            foreach ( var package in Packages.Values )
+            for ( var entry = GetSpecialVariablesAt( pos ); entry != null; entry = entry.Link )
             {
-                if ( package.Name != "" )
+                var key = entry.Sym.DiagnosticsName;
+                if ( !env.ContainsKey( key ) )
                 {
-                    foreach ( Symbol sym in package.Dict.Values )
-                    {
-                        var name = sym.DiagnosticsName;
-
-                        if ( !sym.IsUndefined && ( pattern == null || name.ToLower().IndexOf( pat ) != -1 ) )
-                        {
-                            env[ name ] = sym.Value;
-                        }
-                    }
+                    env[ key ] = entry.Value;
                 }
             }
 
@@ -457,17 +325,31 @@ namespace Kiezel
             return AsList( env.ToArray() );
         }
 
-        //[Lisp( "get-dynamic-variables-dictionary" )]
-        public static Prototype GetDynamicVariablesDictionary( int pos )
+        //[Lisp( "get-global-variables-dictionary" )]
+        public static Prototype GetGlobalVariablesDictionary()
+        {
+            return GetGlobalVariablesDictionary( "" );
+        }
+
+        //[Lisp( "get-global-variables-dictionary" )]
+        public static Prototype GetGlobalVariablesDictionary( string pattern )
         {
             var env = new PrototypeDictionary();
+            var pat = ( pattern ?? "" ).ToLower();
 
-            for ( var entry = GetSpecialVariablesAt( pos ); entry != null; entry = entry.Link )
+            foreach ( var package in Packages.Values )
             {
-                var key = entry.Sym.DiagnosticsName;
-                if ( !env.ContainsKey( key ) )
+                if ( package.Name != "" )
                 {
-                    env[ key ] = entry.Value;
+                    foreach ( Symbol sym in package.Dict.Values )
+                    {
+                        var name = sym.DiagnosticsName;
+
+                        if ( !sym.IsUndefined && ( pattern == null || name.ToLower().IndexOf( pat ) != -1 ) )
+                        {
+                            env[ name ] = sym.Value;
+                        }
+                    }
                 }
             }
 
@@ -520,47 +402,132 @@ namespace Kiezel
             return Prototype.FromDictionary( env );
         }
 
-
-        [Lisp( "get-diagnostics" )]
-        public static string GetDiagnostics( Exception exception )
+        [Lisp( "print-warning" )]
+        public static void PrintWarning( params object[] args )
         {
-            var buf = new StringWriter();
-            if ( exception != null )
+            if ( DebugMode && ToBool( GetDynamic( Symbols.EnableWarnings ) ) )
             {
-                var ex2 = exception;
-                while ( ex2.InnerException != null && ex2 is System.Reflection.TargetInvocationException )
-                {
-                    ex2 = ex2.InnerException;
-                }
-                buf.WriteLine( "EXCEPTION" );
-                buf.WriteLine( new string( '=', 80 ) );
-                buf.WriteLine( ex2.Message );
-                buf.WriteLine( new string( '=', 80 ) );
-                buf.WriteLine( exception.ToString() );
-                buf.WriteLine( new string( '=', 80 ) );
+                var text = ";;; Warning: " + MakeString( args );
+                PrintLogColor( GetDynamic( Symbols.StandoutColor ), GetDynamic( Symbols.StandoutBackgroundColor ), text );
             }
-            buf.WriteLine( "LEXICAL ENVIRONMENT" );
-            buf.WriteLine( new string( '=', 80 ) );
-            for ( int i = 0; ; ++i )
-            {
-                var obj = GetLexicalVariablesDictionary( i );
-                if ( obj == null )
-                {
-                    break;
-                }
-                DumpDictionary( buf, obj );
-                buf.WriteLine( new string( '=', 80 ) );
-            }
-            buf.WriteLine( "DYNAMIC ENVIRONMENT" );
-            buf.WriteLine( new string( '=', 80 ) );
-            DumpDictionary( buf, GetDynamicVariablesDictionary( 0 ) );
-            buf.WriteLine( new string( '=', 80 ) );
-            buf.WriteLine( "EVALUATION STACK" );
-            buf.WriteLine( new string( '=', 80 ) );
-            buf.Write( GetEvaluationStack() );
-            return buf.ToString();
         }
 
+        [Lisp( "throw-error" )]
+        public static void ThrowError( params object[] args )
+        {
+            var text = MakeString( args );
+            throw new LispException( text );
+        }
+        internal static Prototype AsPrototype( object obj, bool caseInsensitive )
+        {
+            Type type = obj.GetType();
+            TypeCode typecode = Type.GetTypeCode( type );
+
+            if ( obj is Prototype )
+            {
+                var dict = ConvertToLispDictionary( ( ( Prototype ) obj ).Dict, caseInsensitive );
+                return Prototype.FromDictionary( dict );
+            }
+            else if ( obj is IDictionary )
+            {
+                var dict = ConvertToLispDictionary( ( IDictionary ) obj, caseInsensitive );
+                return Prototype.FromDictionary( dict );
+            }
+            else if ( obj is Type )
+            {
+                var dict = ConvertToDictionary( ( Type ) obj, null, false );
+                return Prototype.FromDictionary( dict );
+            }
+            else if ( true || typecode == TypeCode.Object )
+            {
+                var dict = ConvertToDictionary( obj.GetType(), obj, false );
+                return Prototype.FromDictionary( dict );
+            }
+            else
+            {
+                return null;
+            }
+        }
+
+        internal static PrototypeDictionary ConvertToDictionary( Type type, object obj, bool showNonPublic )
+        {
+            var flags = BindingFlags.Public | ( obj == null ? BindingFlags.Static : BindingFlags.Instance ) | BindingFlags.FlattenHierarchy;
+
+            if ( showNonPublic )
+            {
+                flags |= BindingFlags.NonPublic;
+            }
+            var members = type.GetMembers( flags );
+            var dict = new PrototypeDictionary();
+
+            foreach ( var m in members )
+            {
+                var name = m.Name;
+                object value = null;
+
+                try
+                {
+                    if ( m is PropertyInfo )
+                    {
+                        var p = ( PropertyInfo ) m;
+                        value = p.GetValue( obj, new object[ 0 ] );
+                        dict[ name.LispName() ] = value;
+                    }
+                    else if ( m is FieldInfo )
+                    {
+                        var f = ( FieldInfo ) m;
+                        value = f.GetValue( obj );
+                        dict[ name.LispName() ] = value;
+                    }
+                }
+                catch
+                {
+                }
+            }
+
+            return dict;
+        }
+
+        internal static PrototypeDictionary ConvertToLispDictionary( IDictionary obj, bool caseInsensitive )
+        {
+            var dict = new PrototypeDictionary( caseInsensitive );
+            foreach ( DictionaryEntry item in obj )
+            {
+                dict[ item.Key ] = item.Value;
+            }
+            return dict;
+        }
+
+        internal static void DumpDictionary( object stream, Prototype prototype )
+        {
+            if ( prototype == null )
+            {
+                return;
+            }
+
+            var dict = prototype.Dict;
+
+            foreach ( string key in ToIter( SeqBase.Sort( dict.Keys, CompareApply, IdentityApply ) ) )
+            {
+                object val = dict[ key ];
+                string line = String.Format( "{0} => ", key );
+                Write( line, Symbols.Escape, false, Symbols.Stream, stream );
+                PrettyPrint( stream, line.Length, val );
+            }
+        }
+
+        internal static int GetConsoleWidth()
+        {
+            try
+            {
+                return Console.WindowWidth - 1;
+            }
+            catch
+            {
+                // When running as windows application.
+                return 80 - 1;
+            }
+        }
 
         internal static string GetEvaluationStack()
         {
@@ -584,7 +551,7 @@ namespace Kiezel
                     else if ( item is Cons )
                     {
                         var form = ( Cons ) item;
-                        var leader = prefix.PadLeft(3,' ');
+                        var leader = prefix.PadLeft( 3, ' ' );
                         buf.WriteLine( "{0} {1}", leader, ToPrintString( form ).Shorten( GetConsoleWidth() - leader.Length - 1 ) );
                         prefix = "";
                     }
@@ -646,6 +613,11 @@ namespace Kiezel
             return null;
         }
 
+        internal static object GetSyntax( object a )
+        {
+            var z = GetDescription( a );
+            return z.GetValue( "function-syntax" );
+        }
         internal static bool IsNotDlrCode( string line )
         {
             return line.IndexOf( "CallSite" ) == -1
@@ -653,11 +625,22 @@ namespace Kiezel
                 && line.IndexOf( "Microsoft.Scripting" ) == -1;
         }
 
+        internal static void PrintLog( params object[] args )
+        {
+            PrintLogColor( null, null, args );
+#if KIEZELLISPW
+            MessageBox.Show( MakeString( args ), "EXCEPTION", MessageBoxButtons.OK );
+#endif
+        }
+
+        internal static void PrintLogColor( object color, object bkcolor, params object[] args )
+        {
+            var msg = MakeString( args );
+            WriteLine( msg, Symbols.Stream, GetDynamic( Symbols.StdLog ), Symbols.Escape, false, Symbols.Color, color, Symbols.BackgroundColor, bkcolor );
+        }
         internal static string RemoveDlrReferencesFromException( Exception ex )
         {
             return String.Join( "\n", ex.ToString().Split( '\n' ).Where( IsNotDlrCode ) );
         }
-	}
+    }
 }
-
-

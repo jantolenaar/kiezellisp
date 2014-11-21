@@ -1,11 +1,7 @@
 // Copyright (C) Jan Tolenaar. See the file LICENSE for details.
 
-
 using System;
 using System.Collections;
-using System.Collections.Generic;
-using System.Runtime.Serialization;
-using System.Security.Permissions;
 using System.Text;
 
 namespace Kiezel
@@ -19,13 +15,129 @@ namespace Kiezel
         Function
     }
 
-    public class Symbol: IPrintsValue
+    public partial class Runtime
     {
-        internal string Name;
-        internal Cons PropList;
-        internal Package Package;
+        [Lisp( "get-designated-string" )]
+        public static string GetDesignatedString( object target )
+        {
+            if ( target == null )
+            {
+                return "";
+            }
+            else if ( target is string )
+            {
+                return ( string ) target;
+            }
+            else
+            {
+                return SymbolName( target );
+            }
+        }
+
+        [Lisp( "set" )]
+        public static object Set( object var, object val )
+        {
+            var sym = CheckSymbol( var );
+            if ( sym.IsDynamic )
+            {
+                SetDynamic( sym, val );
+            }
+            else
+            {
+                sym.CheckedValue = val;
+            }
+            return val;
+        }
+
+        [Lisp( "set-symbol-documentation" )]
+        public static object SetSymbolDocumentation( object target, object value )
+        {
+            var sym = CheckSymbol( target );
+            sym.Documentation = value;
+            return value;
+        }
+
+        [Lisp( "set-symbol-function-syntax" )]
+        public static object SetSymbolFunctionSyntax( object target, object value )
+        {
+            var sym = CheckSymbol( target );
+            sym.FunctionSyntax = value;
+            return value;
+        }
+
+        [Lisp( "set-symbol-value" )]
+        public static object SetSymbolValue( object target, object value )
+        {
+            var sym = CheckSymbol( target );
+            sym.Value = value;
+            return value;
+        }
+
+        [Lisp( "symbol-documentation" )]
+        public static Cons SymbolDocumentation( object target )
+        {
+            var sym = CheckSymbol( target );
+            return AsList( ( IEnumerable ) sym.Documentation );
+        }
+
+        [Lisp( "symbol-function-syntax" )]
+        public static Cons SymbolFunctionSyntax( object target )
+        {
+            var sym = CheckSymbol( target );
+            return AsList( ( IEnumerable ) sym.FunctionSyntax );
+        }
+
+        [Lisp( "symbol-name" )]
+        public static string SymbolName( object target )
+        {
+            var sym = CheckSymbol( target );
+            return sym.Name;
+        }
+
+        [Lisp( "symbol-package" )]
+        public static Package SymbolPackage( object target )
+        {
+            var sym = CheckSymbol( target );
+            return sym.Package;
+        }
+
+        [Lisp( "symbol-value" )]
+        public static object SymbolValue( object target )
+        {
+            var sym = CheckSymbol( target );
+            return sym.CheckedValue;
+        }
+
+        internal static object DefineConstant( Symbol sym, object value, string doc )
+        {
+            sym.ConstantValue = value;
+            sym.Documentation = String.IsNullOrWhiteSpace( doc ) ? null : MakeList( doc );
+            return sym;
+        }
+
+        internal static object DefineFunction( Symbol sym, object value, string doc )
+        {
+            sym.FunctionValue = value;
+            sym.Documentation = String.IsNullOrWhiteSpace( doc ) ? null : MakeList( doc );
+            return sym;
+        }
+
+        internal static object DefineVariable( Symbol sym, object value, string doc )
+        {
+            sym.VariableValue = value;
+            sym.Documentation = String.IsNullOrWhiteSpace( doc ) ? null : MakeList( doc );
+            return sym;
+        }
+    }
+
+    public class Symbol : IPrintsValue
+    {
+        internal object _value;
         internal object /*Cons*/ Documentation;
         internal object /*Cons*/ FunctionSyntax;
+        internal string Name;
+        internal Package Package;
+        internal Cons PropList;
         internal SymbolUsage Usage;
 
         internal Symbol( string name, Package package = null )
@@ -44,197 +156,6 @@ namespace Kiezel
                 _value = null;
                 Usage = SymbolUsage.None;
             }
-        }
-
-        internal bool IsDynamic
-        {
-            get
-            {
-                return Name[ 0 ] == '$';
-            }
-        }
-
-        internal bool IsVariable
-        {
-            get
-            {
-                return Usage == SymbolUsage.Variable;
-            }
-        }
-
-        internal bool IsReadonlyVariable
-        {
-            get
-            {
-                return Usage == SymbolUsage.ReadonlyVariable;
-            }
-        }
-
-        internal bool IsConstant
-        {
-            get
-            {
-                return Usage == SymbolUsage.Constant;
-            }
-        }
-
-        internal bool IsFunction
-        {
-            get
-            {
-                return Usage == SymbolUsage.Function;
-            }
-        }
-
-        internal bool IsUndefined
-        {
-            get
-            {
-                return Usage == SymbolUsage.None;
-            }
-        }
-
-        internal object _value;
-
-        internal object Value
-        {
-            get
-            {
-                return _value;
-            }
-
-            set
-            {
-                if ( IsUndefined )
-                {
-                    Usage = SymbolUsage.Variable;
-                }
-
-                _value = value;
-            }
-        }
-
-        internal object VariableValue
-        {
-            set
-            {
-                _value = value;
-                Usage = SymbolUsage.Variable;
-            }
-        }
-
-        internal SpecialForm SpecialFormValue
-        {
-            get
-            {
-                return _value as SpecialForm;
-            }
-        }
-
-        internal object FunctionValue
-        {
-            set
-            {
-                _value = value;
-                Usage = SymbolUsage.Function;
-            }
-        }
-
-        internal object ConstantValue
-        {
-            set
-            {
-                _value = value;
-                Usage = SymbolUsage.Constant;
-            }
-        }
-
-        internal object ReadonlyValue
-        {
-            set
-            {
-                _value = value;
-                Usage = SymbolUsage.ReadonlyVariable;
-            }
-        }
-
-        internal object CheckedValue
-        {
-            get
-            {
-                if ( IsUndefined )
-                {
-                    throw new LispException( "Undefined variable: {0}", LongName );
-                }
-                
-                return _value;
-            }
-
-            set
-            {
-                if ( IsUndefined )
-                {
-                    throw new LispException( "Undefined variable: {0}", LongName );
-                }
-
-                if ( !IsVariable )
-                {
-                    throw new LispException( "Cannot assign to constant or function: {0}", LongName );
-                }
-
-                _value = value;
-            }
-        }
-
-        internal object LessCheckedValue
-        {
-            get
-            {
-                if ( IsUndefined )
-                {
-                    throw new LispException( "Undefined variable: {0}", ContextualName );
-                }
-
-                return _value;
-            }
-
-            set
-            {
-                if ( IsUndefined )
-                {
-                    Usage = SymbolUsage.Variable;
-                }
-                else if ( !IsVariable )
-                {
-                    throw new LispException( "Cannot assign to constant or function: {0}", ContextualName );
-                }
-
-                _value = value;
-            }
-        }
-
-        public string ToString( bool escape )
-        {
-            var s = ContextualName;
-            if ( escape && Package != null )
-            {
-                var buf = new StringBuilder();
-                foreach ( var ch in s )
-                {
-                    if ( Runtime.MustEscapeChar(ch) )
-                    {
-                        buf.Append( "\\" );
-                    }
-                    buf.Append( ch );
-                }
-                s = buf.ToString();
-            }
-            return s;
-        }
-
-        public override string ToString()
-        {
-            return ContextualName;
         }
 
         public string ContextualName
@@ -268,11 +189,131 @@ namespace Kiezel
             }
         }
 
+        internal object CheckedValue
+        {
+            get
+            {
+                if ( IsUndefined )
+                {
+                    throw new LispException( "Undefined variable: {0}", LongName );
+                }
+
+                return _value;
+            }
+
+            set
+            {
+                if ( IsUndefined )
+                {
+                    throw new LispException( "Undefined variable: {0}", LongName );
+                }
+
+                if ( !IsVariable )
+                {
+                    throw new LispException( "Cannot assign to constant or function: {0}", LongName );
+                }
+
+                _value = value;
+            }
+        }
+
+        internal object ConstantValue
+        {
+            set
+            {
+                _value = value;
+                Usage = SymbolUsage.Constant;
+            }
+        }
+
         internal string DiagnosticsName
         {
             get
             {
                 return ContextualName;
+            }
+        }
+
+        internal object FunctionValue
+        {
+            set
+            {
+                _value = value;
+                Usage = SymbolUsage.Function;
+            }
+        }
+
+        internal bool IsConstant
+        {
+            get
+            {
+                return Usage == SymbolUsage.Constant;
+            }
+        }
+
+        internal bool IsDynamic
+        {
+            get
+            {
+                return Name[ 0 ] == '$';
+            }
+        }
+
+        internal bool IsFunction
+        {
+            get
+            {
+                return Usage == SymbolUsage.Function;
+            }
+        }
+
+        internal bool IsReadonlyVariable
+        {
+            get
+            {
+                return Usage == SymbolUsage.ReadonlyVariable;
+            }
+        }
+
+        internal bool IsUndefined
+        {
+            get
+            {
+                return Usage == SymbolUsage.None;
+            }
+        }
+
+        internal bool IsVariable
+        {
+            get
+            {
+                return Usage == SymbolUsage.Variable;
+            }
+        }
+        internal object LessCheckedValue
+        {
+            get
+            {
+                if ( IsUndefined )
+                {
+                    throw new LispException( "Undefined variable: {0}", ContextualName );
+                }
+
+                return _value;
+            }
+
+            set
+            {
+                if ( IsUndefined )
+                {
+                    Usage = SymbolUsage.Variable;
+                }
+                else if ( !IsVariable )
+                {
+                    throw new LispException( "Cannot assign to constant or function: {0}", ContextualName );
+                }
+
+                _value = value;
             }
         }
 
@@ -294,15 +335,448 @@ namespace Kiezel
                 }
             }
         }
+
+        internal object ReadonlyValue
+        {
+            set
+            {
+                _value = value;
+                Usage = SymbolUsage.ReadonlyVariable;
+            }
+        }
+
+        internal SpecialForm SpecialFormValue
+        {
+            get
+            {
+                return _value as SpecialForm;
+            }
+        }
+
+        internal object Value
+        {
+            get
+            {
+                return _value;
+            }
+
+            set
+            {
+                if ( IsUndefined )
+                {
+                    Usage = SymbolUsage.Variable;
+                }
+
+                _value = value;
+            }
+        }
+
+        internal object VariableValue
+        {
+            set
+            {
+                _value = value;
+                Usage = SymbolUsage.Variable;
+            }
+        }
+        public string ToString( bool escape )
+        {
+            var s = ContextualName;
+            if ( escape && Package != null )
+            {
+                var buf = new StringBuilder();
+                foreach ( var ch in s )
+                {
+                    if ( Runtime.MustEscapeChar( ch ) )
+                    {
+                        buf.Append( "\\" );
+                    }
+                    buf.Append( ch );
+                }
+                s = buf.ToString();
+            }
+            return s;
+        }
+
+        public override string ToString()
+        {
+            return ContextualName;
+        }
     }
 
     internal partial class Symbols
     {
+        internal static Symbol And;
 
-        internal static Symbol MakeSymbol( string name )
-        {
-            return Runtime.MakeInitialSymbol( name );
-        }
+        internal static Symbol Append;
+
+        internal static Symbol Apply;
+
+        internal static Symbol Args;
+
+        internal static Symbol AsLazyList;
+
+        internal static Symbol AsMultipleElements;
+
+        internal static Symbol AsVector;
+
+        internal static Symbol BackgroundColor;
+
+        internal static Symbol Base;
+
+        internal static Symbol BitAnd;
+
+        internal static Symbol BitNot;
+
+        internal static Symbol BitOr;
+
+        internal static Symbol BitShiftLeft;
+
+        internal static Symbol BitShiftRight;
+
+        internal static Symbol BitXor;
+
+        internal static Symbol Body;
+
+        internal static Symbol Bool;
+
+        internal static Symbol bqAppend;
+
+        internal static Symbol bqClobberable;
+
+        internal static Symbol bqList;
+
+        internal static Symbol bqListStar;
+
+        internal static Symbol bqQuote;
+
+        internal static Symbol BuiltinConstructor;
+
+        internal static Symbol BuiltinFunction;
+
+        internal static Symbol Case;
+
+        internal static Symbol Catch;
+
+        internal static Symbol Color;
+
+        internal static Symbol Comma;
+
+        internal static Symbol CommaAt;
+
+        internal static Symbol CommaDot;
+
+        internal static Symbol CommandLineArguments;
+
+        internal static Symbol Compiling;
+
+        internal static Symbol Constant;
+
+        internal static Symbol CreateTask;
+
+        internal static Symbol DebugMode;
+
+        internal static Symbol Declare;
+
+        internal static Symbol Def;
+
+        internal static Symbol Default;
+
+        internal static Symbol DefConstant;
+
+        internal static Symbol DefMacro;
+
+        internal static Symbol DefMethod;
+
+        internal static Symbol DefMulti;
+
+        internal static Symbol DefSpecialForm;
+
+        internal static Symbol Defun;
+
+        internal static Symbol Do;
+
+        internal static Symbol Documentation;
+
+        internal static Symbol Dot;
+
+        internal static Symbol[] DynamicVariables;
+
+        internal static Symbol E;
+
+        internal static Symbol EnableExternalDocumentation;
+
+        internal static Symbol EnableWarnings;
+
+        internal static Symbol Environment;
+
+        internal static Symbol EofValue;
+
+        internal static Symbol Equality;
+
+        internal static Symbol Escape;
+
+        internal static Symbol Eval;
+
+        internal static Symbol Exception;
+
+        internal static Symbol False;
+
+        internal static Symbol Features;
+
+        internal static Symbol Finally;
+
+        internal static Symbol Force;
+
+        internal static Symbol Function;
+
+        internal static Symbol FunctionExitLabel;
+
+        internal static Symbol FunctionKeyword;
+
+        internal static Symbol FutureVar;
+
+        internal static Symbol GenericFunction;
+
+        internal static Symbol GetArgumentOrDefault;
+
+        internal static Symbol GetAttr;
+
+        internal static Symbol GetAttrFunc;
+
+        internal static Symbol GetElt;
+
+        internal static Symbol Goto;
+
+        internal static Symbol GreekLambda;
+
+        internal static Symbol HelpHook;
+
+        internal static Symbol HiddenVar;
+
+        internal static Symbol I;
+
+        internal static Symbol If;
+
+        internal static Symbol IfLet;
+
+        internal static Symbol Ignore;
+
+        internal static Symbol ImportedConstructor;
+
+        internal static Symbol ImportedFunction;
+
+        internal static Symbol InitialValue;
+
+        internal static Symbol InteractiveMode;
+
+        internal static Symbol It;
+
+        internal static Symbol Key;
+
+        internal static Symbol kwForce;
+
+        internal static Symbol Label;
+
+        internal static Symbol Lambda;
+
+        internal static Symbol LambdaList;
+
+        internal static Symbol LazyImport;
+
+        internal static Symbol LazyVar;
+
+        internal static Symbol Left;
+
+        internal static Symbol Let;
+
+        internal static Symbol LetFun;
+
+        internal static Symbol List;
+
+        internal static Symbol ListStar;
+
+        internal static Symbol LoadPath;
+
+        internal static Symbol LoadPrint;
+
+        internal static Symbol LoadVerbose;
+
+        internal static Symbol Macro;
+
+        internal static Symbol Macroexpand1;
+
+        internal static Symbol MacroKeyword;
+
+        internal static Symbol Main;
+
+        internal static Symbol Math;
+
+        internal static Symbol MaxElements;
+
+        internal static Symbol MergingDo;
+
+        internal static Symbol Method;
+
+        internal static Symbol MethodKeyword;
+
+        internal static Symbol Modules;
+
+        internal static Symbol New;
+
+        internal static Symbol Not;
+
+        internal static Symbol Nth;
+
+        internal static Symbol Null;
+
+        internal static Symbol NullableDot;
+
+        internal static Symbol[] NumberedVariables;
+
+        internal static Symbol Optional;
+
+        internal static Symbol OptionalKeyword;
+
+        internal static Symbol Or;
+
+        internal static Symbol Package;
+
+        internal static Symbol PackageNamePrefix;
+
+        internal static Symbol Padding;
+
+        internal static Symbol Params;
+
+        internal static Symbol PI;
+
+        internal static Symbol Pow;
+
+        internal static Symbol Pretty;
+
+        internal static Symbol PrettyPrintHook;
+
+        internal static Symbol PrintBackgroundColor;
+
+        internal static Symbol PrintBase;
+
+        internal static Symbol PrintColor;
+
+        internal static Symbol PrintCompact;
+
+        internal static Symbol PrintEscape;
+
+        internal static Symbol PrintForce;
+
+        internal static Symbol PrintShortSymbolNames;
+
+        internal static Symbol Quote;
+
+        internal static Symbol ReadEval;
+
+        internal static Symbol ReadonlyVariable;
+
+        internal static Symbol Readtable;
+
+        internal static Symbol Recur;
+
+        internal static Symbol ReplListenerPort;
+
+        internal static Symbol[] ReservedVariables;
+
+        internal static Symbol Rest;
+
+        internal static Symbol Return;
+
+        internal static Symbol ReturnFrom;
+
+        internal static Symbol ReturnFromLoad;
+
+        internal static Symbol Returns;
+
+        internal static Symbol Right;
+
+        internal static Symbol ScriptDirectory;
+
+        internal static Symbol ScriptName;
+
+        internal static Symbol Set;
+
+        internal static Symbol SetAttr;
+
+        internal static Symbol SetAttrFunc;
+
+        internal static Symbol SetElt;
+
+        internal static Symbol Setf;
+
+        internal static Symbol Setq;
+
+        internal static Symbol[] ShortLambdaVariables;
+
+        internal static Symbol SpecialConstant;
+
+        internal static Symbol SpecialForm;
+
+        internal static Symbol SpecialReadonlyVariable;
+
+        internal static Symbol SpecialVariable;
+
+        internal static Symbol StandoutBackgroundColor;
+
+        internal static Symbol StandoutColor;
+
+        internal static Symbol StdErr;
+
+        internal static Symbol StdIn;
+
+        internal static Symbol StdLog;
+
+        internal static Symbol StdOut;
+
+        internal static Symbol Str;
+
+        internal static Symbol Stream;
+
+        internal static Symbol StructurallyEqual;
+
+        internal static Symbol TagBody;
+
+        internal static Symbol TailCall;
+
+        internal static Symbol Target;
+
+        internal static Symbol Temp;
+
+        internal static Symbol Throw;
+
+        internal static Symbol Tilde;
+
+        internal static Symbol Tracing;
+
+        internal static Symbol True;
+
+        internal static Symbol Try;
+
+        internal static Symbol Undefined;
+
+        internal static Symbol Underscore;
+
+        internal static Symbol Values;
+
+        internal static Symbol Var;
+
+        internal static Symbol Variable;
+
+        internal static Symbol Vector;
+
+        internal static Symbol Verbose;
+
+        internal static Symbol Whole;
+
+        internal static Symbol Width;
+
+        internal static Symbol WriteHook;
 
         internal static void Create()
         {
@@ -311,7 +785,7 @@ namespace Kiezel
             Apply = MakeSymbol( "apply" );
             Args = MakeSymbol( "__args__" );
             AsLazyList = MakeSymbol( "as-lazy-list" );
-            AsTuple = MakeSymbol( "as-tuple" );
+            AsMultipleElements = MakeSymbol( "as-multiple-elements" );
             AsVector = MakeSymbol( "as-vector" );
             BackgroundColor = Runtime.MakeSymbol( "background-color", Runtime.KeywordPackage );
             Base = Runtime.MakeSymbol( "base", Runtime.KeywordPackage );
@@ -401,7 +875,6 @@ namespace Kiezel
             Macroexpand1 = MakeSymbol( "macroexpand-1" );
             MacroKeyword = Runtime.MakeSymbol( "macro", Runtime.KeywordPackage );
             Main = Runtime.MakeSymbol( "main", Runtime.UserPackage );
-            MakeLambdaParameterBinder = Runtime.MakeSymbol( "make-lambda-parameter-binder", Runtime.SystemPackage );
             Math = MakeSymbol( "math" );
             MaxElements = Runtime.MakeSymbol( "max-elements", Runtime.KeywordPackage );
             MergingDo = MakeSymbol( "merging-do" );
@@ -421,7 +894,7 @@ namespace Kiezel
             PackageNamePrefix = MakeSymbol( "$package-name-prefix" );
             Padding = Runtime.MakeSymbol( "padding", Runtime.KeywordPackage );
             Params = MakeSymbol( "&params" );
-            Pow = Runtime.MakeSymbol( "pow", Runtime.MathPackage, true  );
+            Pow = Runtime.MakeSymbol( "pow", Runtime.MathPackage, true );
             Pretty = Runtime.MakeSymbol( "pretty", Runtime.KeywordPackage );
             PrettyPrintHook = MakeSymbol( "$pprint-hook" );
             PrintBackgroundColor = MakeSymbol( "$print-background-color" );
@@ -547,314 +1020,11 @@ namespace Kiezel
 			    MakeSymbol( "%8" ),
 			    MakeSymbol( "%9" )
             };
-
-
         }
 
-        internal static Symbol And;
-        internal static Symbol Append;
-        internal static Symbol Apply;
-        internal static Symbol Args;
-        internal static Symbol AsLazyList;
-        internal static Symbol AsTuple;
-        internal static Symbol AsVector;
-        internal static Symbol BackgroundColor;
-        internal static Symbol Base;
-        internal static Symbol BitAnd;
-        internal static Symbol BitNot;
-        internal static Symbol BitOr;
-        internal static Symbol BitShiftLeft;
-        internal static Symbol BitShiftRight;
-        internal static Symbol BitXor;
-        internal static Symbol Body;
-        internal static Symbol Bool;
-        internal static Symbol BuiltinConstructor;
-        internal static Symbol BuiltinFunction;
-        internal static Symbol Case;
-        internal static Symbol Catch;
-        internal static Symbol Color;
-        internal static Symbol Comma;
-        internal static Symbol CommaAt;
-        internal static Symbol CommaDot;
-        internal static Symbol CommandLineArguments;
-        internal static Symbol Compiling;
-        internal static Symbol Constant;
-        internal static Symbol CreateTask;
-        internal static Symbol DebugMode;
-        internal static Symbol Declare;
-        internal static Symbol Def;
-        internal static Symbol DefConstant;
-        internal static Symbol DefMacro;
-        internal static Symbol DefMethod;
-        internal static Symbol DefMulti;
-        internal static Symbol DefSpecialForm;
-        internal static Symbol Default;
-        internal static Symbol Defun;
-        internal static Symbol Do;
-        internal static Symbol Documentation;
-        internal static Symbol Dot;
-        internal static Symbol E;
-        internal static Symbol EnableExternalDocumentation;
-        internal static Symbol EnableWarnings;
-        internal static Symbol Environment;
-        internal static Symbol EofValue;
-        internal static Symbol Equality;
-        internal static Symbol Escape;
-        internal static Symbol Eval;
-        internal static Symbol Exception;
-        internal static Symbol False;
-        internal static Symbol Features;
-        internal static Symbol Finally;
-        internal static Symbol Force;
-        internal static Symbol Function;
-        internal static Symbol FunctionExitLabel;
-        internal static Symbol FunctionKeyword;
-        internal static Symbol FutureVar;
-        internal static Symbol GenericFunction;
-        internal static Symbol GetArgumentOrDefault;
-        internal static Symbol GetAttr;
-        internal static Symbol GetAttrFunc;
-        internal static Symbol GetElt;
-        internal static Symbol Goto;
-        internal static Symbol GreekLambda;
-        internal static Symbol HelpHook;
-        internal static Symbol HiddenVar;
-        internal static Symbol I;
-        internal static Symbol If;
-        internal static Symbol IfLet;
-        internal static Symbol Ignore;
-        internal static Symbol ImportedConstructor;
-        internal static Symbol ImportedFunction;
-        internal static Symbol InitialValue;
-        internal static Symbol InteractiveMode;
-        internal static Symbol It;
-        internal static Symbol Key;
-        internal static Symbol Label;
-        internal static Symbol Lambda;
-        internal static Symbol LambdaList;
-        internal static Symbol LazyImport;
-        internal static Symbol LazyVar;
-        internal static Symbol Left;
-        internal static Symbol Let;
-        internal static Symbol LetFun;
-        internal static Symbol List;
-        internal static Symbol ListStar;
-        internal static Symbol LoadPath;
-        internal static Symbol LoadPrint;
-        internal static Symbol LoadVerbose;
-        internal static Symbol Macro;
-        internal static Symbol Macroexpand1;
-        internal static Symbol MacroKeyword;
-        internal static Symbol Main;
-        internal static Symbol MakeLambdaParameterBinder;
-        internal static Symbol Math;
-        internal static Symbol MaxElements;
-        internal static Symbol MergingDo;
-        internal static Symbol Method;
-        internal static Symbol MethodKeyword;
-        internal static Symbol Modules;
-        internal static Symbol New;
-        internal static Symbol Not;
-        internal static Symbol Nth;
-        internal static Symbol Null;
-        internal static Symbol NullableDot;
-        internal static Symbol Optional;
-        internal static Symbol OptionalKeyword;
-        internal static Symbol Or;
-        internal static Symbol PI;
-        internal static Symbol Package;
-        internal static Symbol PackageNamePrefix;
-        internal static Symbol Padding;
-        internal static Symbol Params;
-        internal static Symbol Pow;
-        internal static Symbol Pretty;
-        internal static Symbol PrettyPrintHook;
-        internal static Symbol PrintBackgroundColor;
-        internal static Symbol PrintBase;
-        internal static Symbol PrintColor;
-        internal static Symbol PrintCompact;
-        internal static Symbol PrintEscape;
-        internal static Symbol PrintForce;
-        internal static Symbol PrintShortSymbolNames;
-        internal static Symbol Quote;
-        internal static Symbol ReadEval;
-        internal static Symbol ReadonlyVariable;
-        internal static Symbol Readtable;
-        internal static Symbol Recur;
-        internal static Symbol ReplListenerPort;
-        internal static Symbol Rest;
-        internal static Symbol Return;
-        internal static Symbol ReturnFrom;
-        internal static Symbol ReturnFromLoad;
-        internal static Symbol Returns;
-        internal static Symbol Right;
-        internal static Symbol ScriptDirectory;
-        internal static Symbol ScriptName;
-        internal static Symbol Set;
-        internal static Symbol SetAttr;
-        internal static Symbol SetAttrFunc;
-        internal static Symbol SetElt;
-        internal static Symbol Setf;
-        internal static Symbol Setq;
-        internal static Symbol SpecialConstant;
-        internal static Symbol SpecialForm;
-        internal static Symbol SpecialReadonlyVariable;
-        internal static Symbol SpecialVariable;
-        internal static Symbol StandoutBackgroundColor;
-        internal static Symbol StandoutColor;
-        internal static Symbol StdErr;
-        internal static Symbol StdIn;
-        internal static Symbol StdLog;
-        internal static Symbol StdOut;
-        internal static Symbol Str;
-        internal static Symbol Stream;
-        internal static Symbol StructurallyEqual;
-        internal static Symbol TagBody;
-        internal static Symbol TailCall;
-        internal static Symbol Target;
-        internal static Symbol Temp;
-        internal static Symbol Throw;
-        internal static Symbol Tilde;
-        internal static Symbol Tracing;
-        internal static Symbol True;
-        internal static Symbol Try;
-        internal static Symbol Undefined;
-        internal static Symbol Underscore;
-        internal static Symbol Values;
-        internal static Symbol Var;
-        internal static Symbol Variable;
-        internal static Symbol Vector;
-        internal static Symbol Verbose;
-        internal static Symbol Whole;
-        internal static Symbol Width;
-        internal static Symbol WriteHook;
-        internal static Symbol bqAppend;
-        internal static Symbol bqClobberable;
-        internal static Symbol bqList;
-        internal static Symbol bqListStar;
-        internal static Symbol bqQuote;
-        internal static Symbol kwForce;
-        internal static Symbol[] DynamicVariables;
-        internal static Symbol[] NumberedVariables;
-        internal static Symbol[] ReservedVariables;
-        internal static Symbol[] ShortLambdaVariables;
-    }
-
-    public partial class Runtime
-    {
-        internal static object DefineFunction(Symbol sym, object value, string doc )
+        internal static Symbol MakeSymbol( string name )
         {
-            sym.FunctionValue = value;
-            sym.Documentation = String.IsNullOrWhiteSpace( doc ) ? null : MakeList( doc );
-            return sym;
-        }
-
-        internal static object DefineVariable( Symbol sym, object value, string doc )
-        {
-            sym.VariableValue = value;
-            sym.Documentation = String.IsNullOrWhiteSpace( doc ) ? null : MakeList( doc );
-            return sym;
-        }
-
-        internal static object DefineConstant( Symbol sym, object value, string doc )
-        {
-            sym.ConstantValue = value;
-            sym.Documentation = String.IsNullOrWhiteSpace( doc ) ? null : MakeList( doc );
-            return sym;
-        }
-
-        [Lisp( "get-designated-string" )]
-        public static string GetDesignatedString( object target )
-        {
-            if ( target == null )
-            {
-                return "";
-            }
-            else if ( target is string )
-            {
-                return ( string ) target;
-            }
-            else
-            {
-                return SymbolName( target );
-            }
-        }
-
-        [Lisp( "symbol-name" )]
-        public static string SymbolName( object target )
-        {
-            var sym = CheckSymbol( target );
-            return sym.Name;
-        }
-
-        [Lisp( "symbol-package" )]
-        public static Package SymbolPackage( object target )
-        {
-            var sym = CheckSymbol( target );
-            return sym.Package;
-        }
-
-        [Lisp( "symbol-value" )]
-        public static object SymbolValue( object target )
-        {
-            var sym = CheckSymbol( target );
-            return sym.CheckedValue;
-        }
-
-        [Lisp( "set-symbol-value" )]
-        public static object SetSymbolValue( object target, object value )
-        {
-            var sym = CheckSymbol( target );
-            sym.Value = value;
-            return value;
-        }
-
-        [Lisp( "symbol-documentation" )]
-        public static Cons SymbolDocumentation( object target )
-        {
-            var sym = CheckSymbol( target );
-            return AsList( ( IEnumerable ) sym.Documentation );
-        }
-
-        [Lisp( "set-symbol-documentation" )]
-        public static object SetSymbolDocumentation( object target, object value )
-        {
-            var sym = CheckSymbol( target );
-            sym.Documentation = value;
-            return value;
-        }
-
-        [Lisp( "symbol-function-syntax" )]
-        public static Cons SymbolFunctionSyntax( object target )
-        {
-            var sym = CheckSymbol( target );
-            return AsList( ( IEnumerable ) sym.FunctionSyntax );
-        }
-
-        [Lisp( "set-symbol-function-syntax" )]
-        public static object SetSymbolFunctionSyntax( object target, object value )
-        {
-            var sym = CheckSymbol( target );
-            sym.FunctionSyntax = value;
-            return value;
-        }
-
-
-        [Lisp( "set" )]
-        public static object Set( object var, object val )
-        {
-            var sym = CheckSymbol( var );
-            if ( sym.IsDynamic )
-            {
-                SetDynamic( sym, val );
-            }
-            else
-            {
-                sym.CheckedValue = val;
-            }
-            return val;
+            return Runtime.MakeInitialSymbol( name );
         }
     }
-
-
 }
