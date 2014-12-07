@@ -8,7 +8,13 @@ namespace Kiezel
 {
     public partial class Runtime
     {
-        public static object QuasiQuoteExpand( object expr )
+        public static object QuasiQuoteExpand( Cons expr )
+        {
+            return QuasiQuoteExpandRest( Second( expr ) );
+        }
+            
+        [Lisp("system:quasi-quote-expand")]
+        public static object QuasiQuoteExpandRest( object expr )
         {
             Cons list = expr as Cons;
 
@@ -17,7 +23,7 @@ namespace Kiezel
                 // not a list or empty
                 if ( Symbolp( expr ) && !Keywordp( expr ) )
                 {
-                    return MakeList( Symbols.bqQuote, expr );
+                    return MakeList( Symbols.Quote, expr );
                 }
                 else
                 {
@@ -25,21 +31,26 @@ namespace Kiezel
                 }
             }
 
-            if ( First( list ) == Symbols.Comma )
+            if ( First( list ) == Symbols.Unquote )
             {
                 return Second( list );
             }
 
-            if ( First( list ) == Symbols.CommaAt )
+            if ( First( list ) == Symbols.UnquoteSplicing )
             {
                 throw new LispException( "`,@args is illegal syntax" );
             }
 
-            if ( First( list ) == Symbols.CommaDot )
+            if ( First( list ) == Symbols.UnquoteNSplicing )
             {
                 throw new LispException( "`,.args is illegal syntax" );
             }
 
+            return QuasiQuoteExpandList( list );
+        }
+
+        internal static object QuasiQuoteExpandList(Cons list)
+        {
             Stack stack = new Stack();
 
             while ( list != null )
@@ -50,37 +61,37 @@ namespace Kiezel
                 if ( item1 is Cons )
                 {
                     var item2 = ( Cons ) item1;
-                    if ( First( item2 ) == Symbols.Comma )
+                    if ( First( item2 ) == Symbols.Unquote )
                     {
-                        stack.Push( new Cons( Symbols.bqList, Cdr( item2 ) ) );
+                        stack.Push( new Cons( Symbols.List, Cdr( item2 ) ) );
                         continue;
                     }
-                    else if ( First( item2 ) == Symbols.CommaAt )
+                    else if ( First( item2 ) == Symbols.UnquoteSplicing )
                     {
                         stack.Push( Second( item2 ) );
                         continue;
                     }
-                    else if ( First( item2 ) == Symbols.CommaDot )
+                    else if ( First( item2 ) == Symbols.UnquoteNSplicing )
                     {
                         stack.Push( new Cons( Symbols.bqClobberable, Cdr( item2 ) ) );
                         continue;
                     }
                 }
 
-                object expansion = QuasiQuoteExpand( item1 );
-                stack.Push( MakeList( Symbols.bqList, expansion ) );
+                object expansion = QuasiQuoteExpandRest( item1 );
+                stack.Push( MakeList( Symbols.List, expansion ) );
             }
 
             Cons code = null;
             list = null;
-            var listFunction = Symbols.bqList;
+            var listFunction = Symbols.List;
 
             while ( stack.Count > 0 )
             {
                 var expr2 = stack.Pop();
                 var temp = expr2 as Cons;
 
-                if ( temp != null && First( temp ) == Symbols.bqList )
+                if ( temp != null && First( temp ) == Symbols.List )
                 {
                     list = new Cons( Second( temp ), list );
                 }
@@ -90,14 +101,14 @@ namespace Kiezel
                     {
                         throw new LispException( ",.-expression must be at the end" );
                     }
-                    listFunction = Symbols.bqListStar;
+                    listFunction = Symbols.ListStar;
                     list = new Cons( Second( temp ), list );
                 }
                 else
                 {
                     if ( list != null )
                     {
-                        code = new Cons( new Cons( Symbols.bqList, list ), code );
+                        code = new Cons( new Cons( Symbols.List, list ), code );
                         list = null;
                     }
                     code = new Cons( expr2, code );
@@ -117,7 +128,7 @@ namespace Kiezel
             }
             else
             {
-                return new Cons( Symbols.bqAppend, code );
+                return new Cons( Symbols.ForceAppend, code );
             }
         }
 

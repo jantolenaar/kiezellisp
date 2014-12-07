@@ -627,7 +627,7 @@ namespace Kiezel
                         if ( val != VOID.Value )
                         {
                             Console.Write( "it: " );
-                            PrettyPrint( Console.Out, 4, val );
+                            PrettyPrintLine( Console.Out, 4, null, val );
                         }
                     }
                     else

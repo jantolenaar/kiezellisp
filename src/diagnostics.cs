@@ -512,7 +512,7 @@ namespace Kiezel
                 object val = dict[ key ];
                 string line = String.Format( "{0} => ", key );
                 Write( line, Symbols.Escape, false, Symbols.Stream, stream );
-                PrettyPrint( stream, line.Length, val );
+                PrettyPrintLine( stream, line.Length, null, val );
             }
         }
 

@@ -8,7 +8,9 @@
     (:export
         "$pprint-left-margin"
         "$pprint-right-margin"
-        "pprint"        
+        "pprint"    
+        "with-indent"
+        "with-default-indent"
     ))
 
 (in-package "lisp")
@@ -20,33 +22,41 @@
 (def $pprint-right-margin default-right-margin)
 (def $pprint-indent-size default-indent-size)
 
+(defmacro with-indent ((offset) &body forms)
+    `(do
+        (let $pprint-left-margin (+ $pprint-left-margin ,offset))
+        ,@forms))
+
+(defmacro with-default-indent ((&optional (offset 0)) &body forms)
+    `(with-indent ((+ default-indent-size ,offset)) ,@forms))
 
 (def pprint-form-settings
     ;; The number is the number of expressions to keep on the same line as the keyword.
     '(
-      (and 1)
+      (and 1 :align)
       (block 1)
       (break 1)
       (break-if 1)
-      (case 1)
-      (case-match 1)
+      (case pprint-case)
+      (case-match pprint-case)
       (catch 1)
-      (cond 0)
+      (cond pprint-cond)
       (continue 0)
       (continue-if 0)
-      (def 2 :pprint)
-      (defconstant 2 :pprint)
+      (def 2)
+      (defconstant 2)
       (defmacro 2)
       (defmethod 2)
       (defmulti 2)
       (defun 2)
       (do 0)
       (merging-do 0)
-      (ecase 1)
-      (ecase-match 1)
-      (etypecase 1)
+      (ecase pprint-case)
+      (ecase-match pprint-case)
+      (etypecase pprint-case)
       (future 2)
-      (if 1)
+      ;(if 1)
+      (if pprint-if)
       (if-match 2)
       (ignore-errors 0)
       (lambda 1)
@@ -55,7 +65,7 @@
       (letfun 2)
       (loop 0)
       (new 1 :align)
-      (or 1)
+      (or 1 :align)
       (quote 1)
       (return 1)
       (return-from 2)
@@ -67,7 +77,7 @@
       (throw 1)
       (try 0)
       (try-and-catch 0)
-      (typecase 1)
+      (typecase pprint-case)
       (let 2)
       (var 2)
       (multiple-let 2)
@@ -84,16 +94,10 @@
 The pretty printer must write to $stdout and obey the settings of
 $print-escape and $print-base.
 """
-    (let $print-compact true)
+    ;;(let $print-compact true)
     (let $pprint-left-margin (or left 0))
     (let $pprint-right-margin (or right default-right-margin))
     (pprint-expr expr))
-
-;;;
-;;; This wires Kiezellisp's internal WRITE to PPRINT.
-;;;
-
-(setq $pprint-hook pprint)
 
 ;;;
 ;;; Pretty printing implementation.
@@ -112,35 +116,18 @@ $print-escape and $print-base.
 
 (defun pprint-cons (expr)
 
-    (let a (first expr))
-    (let b (second expr))
-    (let c (third expr))
-
-    (when (eq a 'quote)
-        (print "'")
-        (let $pprint-left-margin (inc $pprint-left-margin))
-        (pprint-expr b)
+    (when (and $print-compact
+               (pprint-cons-try-compact expr))
         (return))
 
-    (when (and (eq a '.)
-               (string? b)
-               (null? c))
-            (print "." b)
-            (return))
-
-    (when (and (eq a '?)
-               (string? b)
-               (null? c))
-            (print "?" b)
-            (return))
-
+    (let a (first expr))
     (let sym (and (symbol? a)
                   a))
 
     (var config (rest (find sym pprint-form-settings :key first)))
     (if (and config 
              (not (rest config)))
-        (setf (rest config) '(:align)))
+        (setf (rest config) '(:indent)))
 
     (cond
         ((not config)
@@ -151,8 +138,62 @@ $print-escape and $print-base.
                   (pprint-code expr '(1 :align))
                 (pprint-sequence expr "(" ")")
             ))
+        ((function? (first config))
+            (funcall (first config) expr))
+        ((symbol? (first config))
+            (funcall (symbol-value (first config)) expr))
         (true
             (pprint-formatted-code expr config))))
+
+(defun pprint-cons-try-compact (expr)
+
+    (let a (first expr))
+    (let b (second expr))
+    (let c (third expr))
+    
+    (when (eq a 'quote)
+        (print "'")
+        (with-indent (1)
+            (pprint-expr b))
+        (return true))
+
+    (when (eq a 'quasi-quote)
+        (print "`")
+        (with-indent (1)
+            (pprint-expr b))
+        (return true))
+
+    (when (eq a 'system:unquote)
+        (print ",")
+        (with-indent (1)
+            (pprint-expr b))
+        (return true))
+
+    (when (eq a 'system:unquote-splicing)
+        (print ",@")
+        (with-indent (2)
+            (pprint-expr b))
+        (return true))
+
+    (when (eq a 'system:unquote-nsplicing)
+        (print ",.")
+        (with-indent (2)
+            (pprint-expr b))
+        (return true))
+
+    (when (and (eq a '.)
+               (string? b)
+               (null? c))
+            (print "." b)
+            (return true))
+
+    (when (and (eq a '?)
+               (string? b)
+               (null? c))
+            (print "?" b)
+            (return true))
+
+    (return false))
 
 (defun pprint-sequence (expr leftpar rightpar)
     (let text (write-to-string expr))
@@ -170,8 +211,8 @@ $print-escape and $print-base.
 
 (defun pprint-formatted-list (seq leftpar rightpar)
     (print leftpar)
-    (let $pprint-left-margin (+ $pprint-left-margin (.length leftpar)))
-    (pprint-items-vertically seq false)
+    (with-indent (1)
+        (pprint-items-vertically seq false))
     (print rightpar))
 
 (defun pprint-code (expr config)
@@ -181,6 +222,71 @@ $print-escape and $print-base.
             (write text :escape false))
         (true
             (pprint-formatted-code expr config))))
+
+(defun pprint-if (expr)
+    (multiple-let (operator test then else) expr)
+    (print "(" operator " ")
+    (with-default-indent ()
+        (pprint test)
+        (print-line)
+        (pprint-left-margin)
+        (cond
+            (else
+                (print "  ")
+                (with-indent (2)
+                    (pprint then))
+                (print-line)
+                (pprint-left-margin)
+                (pprint else))
+            (true
+                (pprint then))))
+    (print ")"))
+
+(defun pprint-cond (expr)
+    (print "(" (first expr) " ")
+    (with-default-indent ()
+        (loop 
+            (for cond-case in (rest expr))
+            (print-line)
+            (pprint-left-margin)
+            (print "(")
+            (with-indent (1)
+                (pprint (first cond-case))
+                (cond
+                    ((= (length cond-case) 1)
+                        (print ")"))
+                    (true
+                        (with-default-indent ()
+                            (print-line)
+                            (pprint-left-margin)
+                            (pprint (second cond-case))))))
+            (print ")")))
+    (print ")"))
+
+(defun pprint-case (expr)
+    (let target (second expr))
+    (let cases (rest (rest expr)))  
+    (print "(" (first expr) " ")
+    (with-default-indent (2)
+        (pprint target))
+    (with-default-indent ()
+        (loop 
+            (for case in cases)
+            (print-line)
+            (pprint-left-margin)
+            (print "(")
+            (with-indent (1)
+                (pprint (first case))
+                (cond
+                    ((= (length case) 1)
+                        (print ")"))
+                    (true
+                        (with-default-indent ()
+                            (print-line)
+                            (pprint-left-margin)
+                            (pprint (second case))))))
+            (print ")")))
+    (print ")"))
 
 (defun pprint-formatted-code (expr config)
     (let num-items (first config))
@@ -254,5 +360,12 @@ $print-escape and $print-base.
 
 (defun pprint-left-margin ()
     (write "" :width $pprint-left-margin :escape false))
+
+;;;
+;;; This wires Kiezellisp's internal WRITE to PPRINT.
+;;;
+
+(setq $pprint-hook pprint)
+
 
 

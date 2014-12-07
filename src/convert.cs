@@ -134,6 +134,10 @@ namespace Kiezel
             {
                 return ( int ) a;
             }
+            else if ( a is long )
+            {
+                return ( int ) (long) a;
+            }
             else if ( a is BigInteger )
             {
                 var n = ( BigInteger ) a;

@@ -22,14 +22,14 @@ namespace Kiezel
         {
             // used by compiler generated code
             CurrentThreadContext.SpecialStack = new SpecialVariables( sym, false, value, CurrentThreadContext.SpecialStack );
-            return null;
+            return value;
         }
 
         internal static object DefDynamicConst( Symbol sym, object value )
         {
             // used by compiler generated code
             CurrentThreadContext.SpecialStack = new SpecialVariables( sym, true, value, CurrentThreadContext.SpecialStack );
-            return null;
+            return value;
         }
 
         internal static object GetDynamic( Symbol sym )

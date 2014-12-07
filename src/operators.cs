@@ -433,7 +433,7 @@ namespace Kiezel
             return Compare( a1, a2 ) > 0;
         }
 
-        [Pure, Lisp( "<" )]
+        [Pure, Lisp( ">" )]
         public static bool Greater( params object[] args )
         {
             return IterateBinaryTestOperator( Greater, args );

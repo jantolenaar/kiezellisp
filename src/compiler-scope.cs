@@ -96,7 +96,7 @@ namespace Kiezel
                 }
                 else if ( !v.Referenced )
                 {
-                    if ( !v.Key.Name.StartsWith( "__" ) && !v.Key.Name.StartsWith( "~" ) && !v.Key.Name.StartsWith( "%" ) && !v.Ignore )
+                    if ( !v.Key.Name.StartsWith( "_" ) && !v.Key.Name.StartsWith( "~" ) && !v.Key.Name.StartsWith( "%" ) && !v.Ignore )
                     {
                         PrintWarning( context, "unreferenced variable", v.Key );
                     }
@@ -234,6 +234,7 @@ namespace Kiezel
             ScopeFlags flags;
             return FindLocal( name, 0, out realDepth, out depth, out index, out parameter, out flags ) && realDepth <= maxDepth;
         }
+
         internal void PrintWarning( string context, string error, Symbol sym )
         {
             if ( context == null )

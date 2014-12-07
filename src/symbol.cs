@@ -130,7 +130,7 @@ namespace Kiezel
         }
     }
 
-    public class Symbol : IPrintsValue
+    public class Symbol : IPrintsValue, IApply
     {
         internal object _value;
         internal object /*Cons*/ Documentation;
@@ -402,6 +402,17 @@ namespace Kiezel
         {
             return ContextualName;
         }
+
+
+        object IApply.Apply( object[] args )
+        {
+            var value = CheckedValue as IApply;
+            if ( value == null )
+            {
+                throw new LispException( "The value of the global variable {0} is not a function.", ContextualName );
+            }
+            return Runtime.Apply( value, args );
+        }
     }
 
     internal partial class Symbols
@@ -440,15 +451,9 @@ namespace Kiezel
 
         internal static Symbol Bool;
 
-        internal static Symbol bqAppend;
+        internal static Symbol ForceAppend;
 
         internal static Symbol bqClobberable;
-
-        internal static Symbol bqList;
-
-        internal static Symbol bqListStar;
-
-        internal static Symbol bqQuote;
 
         internal static Symbol BuiltinConstructor;
 
@@ -459,12 +464,6 @@ namespace Kiezel
         internal static Symbol Catch;
 
         internal static Symbol Color;
-
-        internal static Symbol Comma;
-
-        internal static Symbol CommaAt;
-
-        internal static Symbol CommaDot;
 
         internal static Symbol CommandLineArguments;
 
@@ -670,6 +669,8 @@ namespace Kiezel
 
         internal static Symbol PrintShortSymbolNames;
 
+        internal static Symbol QuasiQuote;
+
         internal static Symbol Quote;
 
         internal static Symbol ReadEval;
@@ -762,6 +763,12 @@ namespace Kiezel
 
         internal static Symbol Underscore;
 
+        internal static Symbol Unquote;
+
+        internal static Symbol UnquoteSplicing;
+
+        internal static Symbol UnquoteNSplicing;
+
         internal static Symbol Values;
 
         internal static Symbol Var;
@@ -802,9 +809,6 @@ namespace Kiezel
             Case = MakeSymbol( "case" );
             Catch = MakeSymbol( "catch" );
             Color = Runtime.MakeSymbol( "color", Runtime.KeywordPackage );
-            Comma = MakeSymbol( "comma" );
-            CommaAt = MakeSymbol( "comma-at" );
-            CommaDot = MakeSymbol( "comma-dot" );
             CommandLineArguments = MakeSymbol( "$command-line-arguments" );
             Compiling = MakeSymbol( "compiling" );
             Constant = MakeSymbol( "constant" );
@@ -904,6 +908,7 @@ namespace Kiezel
             PrintEscape = MakeSymbol( "$print-escape" );
             PrintForce = MakeSymbol( "$print-force" );
             PrintShortSymbolNames = MakeSymbol( "$print-short-symbol-names" );
+            QuasiQuote = MakeSymbol( "quasi-quote" );
             Quote = MakeSymbol( "quote" );
             ReadEval = MakeSymbol( "$read-eval" );
             ReadonlyVariable = MakeSymbol( "readonly-variable" );
@@ -948,6 +953,9 @@ namespace Kiezel
             Try = MakeSymbol( "try" );
             Undefined = MakeSymbol( "undefined" );
             Underscore = MakeSymbol( "_" );
+            Unquote = Runtime.MakeSymbol( "unquote", Runtime.SystemPackage );
+            UnquoteSplicing = Runtime.MakeSymbol( "unquote-splicing", Runtime.SystemPackage );
+            UnquoteNSplicing = Runtime.MakeSymbol( "unquote-nsplicing", Runtime.SystemPackage );
             Values = MakeSymbol( "values" );
             Var = MakeSymbol( "var" );
             Variable = MakeSymbol( "variable" );
@@ -959,11 +967,8 @@ namespace Kiezel
             kwForce = Runtime.MakeSymbol( "force", Runtime.KeywordPackage );
 
             // Add bq- prefix when writing an optimizer
-            bqAppend = MakeSymbol( "force-append" );
-            bqList = MakeSymbol( "list" );
-            bqListStar = MakeSymbol( "list*" );
+            ForceAppend = MakeSymbol( "force-append" );
             bqClobberable = MakeSymbol( "clobberable" );
-            bqQuote = MakeSymbol( "quote" );
 
             NumberedVariables = new Symbol[]
 		    {

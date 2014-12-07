@@ -6,6 +6,9 @@
 
 (in-package "lisp")
 
+(defmacro quasi-quote (form)
+    (system:quasi-quote-expand form))
+
 (load "core/clr")
 (load "core/package")
 (load "core/functions")

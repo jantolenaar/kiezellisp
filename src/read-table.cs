@@ -247,6 +247,14 @@ namespace Kiezel
             return table;
         }
 
+        internal static Readtable GetPrettyPrintingReadtable()
+        {
+            var table = new Readtable();
+            table.Init();
+            //table.SetMacroCharacter( '`', Runtime.ReadPrettyPrintingQuasiQuoteHandler );
+            return table;
+        }
+
         internal static bool IsWordChar( char ch )
         {
             var item = DefaultReadtable.GetEntry( ch );

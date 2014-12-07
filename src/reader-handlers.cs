@@ -158,16 +158,16 @@ namespace Kiezel
             if ( code == '@' )
             {
                 stream.ReadChar();
-                return MakeList( Symbols.CommaAt, stream.Read() );
+                return MakeList( Symbols.UnquoteSplicing, stream.Read() );
             }
             else if ( code == '.' )
             {
                 stream.ReadChar();
-                return MakeList( Symbols.CommaDot, stream.Read() );
+                return MakeList( Symbols.UnquoteNSplicing, stream.Read() );
             }
             else
             {
-                return MakeList( Symbols.Comma, stream.Read() );
+                return MakeList( Symbols.Unquote, stream.Read() );
             }
         }
 
@@ -304,7 +304,7 @@ namespace Kiezel
         internal static object ReadQuasiQuoteHandler( LispReader stream, char ch )
         {
             var exp1 = stream.Read();
-            var exp2 = Runtime.QuasiQuoteExpand( exp1 );
+            var exp2 = MakeList( Symbols.QuasiQuote, exp1 );
             return exp2;
         }
 

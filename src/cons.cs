@@ -207,6 +207,22 @@ namespace Kiezel
                     {
                         return System.String.Format( "'{0}", second );
                     }
+                    else if ( first == Symbols.QuasiQuote && third == null )
+                    {
+                        return System.String.Format( "`{0}", second );
+                    }
+                    else if ( first == Symbols.Unquote && third == null )
+                    {
+                        return System.String.Format( ",{0}", second );
+                    }
+                    else if ( first == Symbols.UnquoteSplicing && third == null )
+                    {
+                        return System.String.Format( ",@{0}", second );
+                    }
+                    else if ( first == Symbols.UnquoteNSplicing && third == null )
+                    {
+                        return System.String.Format( ",.{0}", second );
+                    }
                 }
             }
 

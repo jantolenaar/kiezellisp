@@ -48,7 +48,7 @@
 
 (defun declaration? (form)
     (and (cons? form)
-         (find (first form) '(let var hidden-var letfun future lazy))))
+         (find (first form) '( let var hidden-var letfun future lazy multiple-let multiple-var))))
 
 (defmacro do? (&body forms)
     (let count (length forms))

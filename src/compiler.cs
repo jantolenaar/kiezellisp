@@ -1513,6 +1513,11 @@ namespace Kiezel
                         var expansion = MacroExpand( form, scope );
                         return Compile( expansion, scope );
                     }
+
+                    if ( head == Symbols.Catch || head == Symbols.Finally )
+                    {
+                        PrintWarning( "Catch/finally used outside of a try block?!" );
+                    }
                 }
 
                 return CompileFunctionCall( form, scope );
@@ -1594,7 +1599,7 @@ namespace Kiezel
         internal static void RestartCompiler()
         {
             Symbols.And.FunctionValue = new SpecialForm( CompileAnd );
-            Symbols.bqQuote.FunctionValue = new SpecialForm( CompileQuote );
+            Symbols.Quote.FunctionValue = new SpecialForm( CompileQuote );
             Symbols.Declare.FunctionValue = new SpecialForm( CompileDeclare );
             Symbols.Def.FunctionValue = new SpecialForm( CompileDef );
             Symbols.DefConstant.FunctionValue = new SpecialForm( CompileDefConstant );

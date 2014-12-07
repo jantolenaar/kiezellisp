@@ -1,5 +1,12 @@
 # Change Log
 
+## 2014/12/07
+
+*   Added `IApply` interface to `Symbol`.
+*   Pretty print extensions for Kiezellisp IDE (in progress).
+*   Moved backquote/quasiquote expansion from reader to compiler.
+*   Fixed bug in funcation call to `>` operator with three or more arguments.
+
 ## 2014/11/21
 
 *   Renamed `skip` to `drop`.

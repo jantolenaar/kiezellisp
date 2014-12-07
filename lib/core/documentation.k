@@ -188,10 +188,10 @@ $print-color
 
 ($print-compact 
 """
-Used by `pprint`.
+Used by `write`.
 """
-(EXAMPLE "(write-line '(.to-upper \"abc\"))")
-(EXAMPLE "(do (let $print-compact true) (write-line '(.to-upper \"abc\")))")
+(EXAMPLE """(do (let $print-compact false) (write-line '(.to-upper "abc")))""")
+(EXAMPLE """(do (let $print-compact true) (write-line '(.to-upper "abc")))""")
 )
 
 ;------------------------------------------------------------------------------
@@ -3254,6 +3254,21 @@ the `setf`able `place` to the new list.
 (let a '(1 2 3))
 (pushnew 4 a)
 (pushnew 3 a)
+)
+
+;------------------------------------------------------------------------------
+
+(quasi-quote (expr)
+"""
+See also [Macros](macros).
+"""
+(let temp (gentemp))
+(setf $print-compact false)
+(let code (read-from-string "`(var ,temp 123))"))
+(setf $print-compact true)
+(macroexpand code)
+`(var ,temp 123)
+
 )
 
 ;------------------------------------------------------------------------------

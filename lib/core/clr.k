@@ -44,6 +44,7 @@
 (import "System.IO.StreamWriter")
 (import "System.IO.StringReader")
 (import "System.IO.StringWriter")
+(import "System.IO.SearchOption")
 (import "System.Int32" :package-name "int")
 (import "System.Int32")
 (import "System.Int64")

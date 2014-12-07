@@ -486,9 +486,23 @@ namespace Kiezel
             return null;
         }
 
-        internal static Symbol FindSymbol( string name, bool creating = false )
+        internal static Symbol FindSymbol( string name, bool creating = false, bool prettyPrinting = false )
         {
-            var descr = ParseSymbol( name );
+            SymbolDescriptor descr;
+
+            if ( prettyPrinting )
+            {
+                // Ignore package specifier since package may not exist anyway.
+                descr = new SymbolDescriptor();
+                descr.Internal = false;
+                descr.PackageName = "";
+                descr.Package = CurrentPackage();
+                descr.SymbolName = name;
+            }
+            else
+            {
+                descr = ParseSymbol( name );
+            }
 
             if ( descr.PackageName == "" || descr.Package == KeywordPackage )
             {

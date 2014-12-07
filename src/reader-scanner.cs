@@ -20,7 +20,7 @@ namespace Kiezel
         private Cons insertedForms = null;
         private int line;
         private int linePos;
-        private bool loading;
+        private bool prettyPrinting;
         private int pos;
         private int symbolSuppression = 0;
 
@@ -30,13 +30,15 @@ namespace Kiezel
         {
         }
 
-        internal LispReader( string sourceCode, bool loading )
+        internal LispReader( string sourceCode, bool prettyPrinting )
         {
+            // When parsing source code for subsequent pretty printing,
+            // packages and symbols are handled in more relaxed way.
             buffer = sourceCode;
             linePos = pos = 0;
             line = 0;
             col = 0;
-            this.loading = loading;
+            this.prettyPrinting = prettyPrinting;
         }
 
         object IEnumerator.Current
@@ -407,7 +409,7 @@ namespace Kiezel
             }
             else
             {
-                return Runtime.FindSymbol( token );
+                return Runtime.FindSymbol( token, prettyPrinting: prettyPrinting );
             }
         }
 

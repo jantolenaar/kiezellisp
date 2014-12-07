@@ -94,6 +94,56 @@ namespace Kiezel
             }
         }
 
+        [Lisp( "pretty-print-source-code" )]
+        public static string PrettyPrintSourceCode( string text, params object[] kwargs )
+        {
+            var args = ParseKwargs( kwargs, new string[] { "left", "right" }, 0, null );
+            var left = (int) args[ 0 ];
+            var right = args[ 1 ];
+            var buf = new StringWriter();
+            var saved = SaveStackAndFrame();
+            var env = MakeExtendedEnvironment();
+            var package = MakePackage( "__pprint__" );
+            var scope = env.Scope;
+            var readtable = GetPrettyPrintingReadtable();
+
+            CurrentThreadContext.Frame = env.Frame;           
+                        
+            DefDynamic( Symbols.Package, package );
+            DefDynamic( Symbols.PackageNamePrefix, null );
+            DefDynamic( Symbols.Readtable, readtable );
+
+            var parts = text.RegexMatch( new Regex( @"^(\s*)(.*?)(\s*)$", RegexOptions.Singleline ) );
+            var leader = (string) Second( parts );
+            var code = ( string ) Third( parts );
+            var trailer = ( string ) Fourth( parts );
+
+            var reader = new LispReader( code, true );
+
+            try
+            {
+                var separator = "";
+
+                foreach ( object expr in reader )
+                {
+                    buf.Write( separator );
+                    separator= "\n\n";
+
+                    for ( int i = 0; i < left; ++i )
+                    {
+                        buf.Write( " " );
+                    }
+                    PrettyPrint( buf, left, right, expr );
+                }
+            }
+            finally
+            {
+                RestoreStackAndFrame( saved );
+            }
+
+            return MakeString( leader, buf.ToString(), trailer );
+        }
+
         [Lisp( "print" )]
         public static void Print( params object[] items )
         {
@@ -163,6 +213,7 @@ namespace Kiezel
             var value = parser.ReadDelimitedList( terminator );
             return value;
         }
+
         [Lisp( "read-from-string" )]
         public static object ReadFromString( string text, params object[] kwargs )
         {
@@ -171,6 +222,7 @@ namespace Kiezel
             var parser = new LispReader( text );
             return Read( Symbols.Stream, parser, Symbols.EofValue, eofValue );
         }
+
         [Lisp( "require" )]
         public static void Require( object filespec, params object[] args )
         {
@@ -421,9 +473,14 @@ namespace Kiezel
             return null;
         }
 
-        internal static void PrettyPrint( object stream, int currentOffset, object obj )
+        internal static void PrettyPrintLine( object stream, object left, object right, object obj )
         {
-            WriteLine( obj, Symbols.Stream, stream, Symbols.Left, currentOffset, Symbols.Escape, true, Symbols.Pretty, true, Symbols.kwForce, false );
+            WriteLine( obj, Symbols.Stream, stream, Symbols.Left, left, Symbols.Right, right, Symbols.Escape, true, Symbols.Pretty, true, Symbols.kwForce, false );
+        }
+
+        internal static void PrettyPrint( object stream, object left, object right, object obj )
+        {
+            Write( obj, Symbols.Stream, stream, Symbols.Left, left, Symbols.Right, right, Symbols.Escape, true, Symbols.Pretty, true, Symbols.kwForce, false );
         }
 
         internal static string ToPrintString( object obj, bool escape = true, int radix = -1 )
@@ -614,7 +671,7 @@ namespace Kiezel
             }
 
             var content = File.ReadAllText( path );
-            var reader = new LispReader( content, true );
+            var reader = new LispReader( content );
             var newDir = NormalizePath( Path.GetDirectoryName( path ) );
             var scriptName = Path.GetFileName( path );
 

@@ -189,7 +189,7 @@ namespace Kiezel
 
                     foreach ( string symbolName in ( ( LispAttribute ) attrs[ 0 ] ).Names )
                     {
-                        var sym = FindSymbol( symbolName, true );
+                        var sym = FindSymbol( symbolName, creating: true );
                         if ( !sym.IsUndefined || sym.SpecialFormValue != null )
                         {
                             PrintWarning( "Duplicate builtin name: ", sym.Name );
@@ -324,7 +324,7 @@ namespace Kiezel
             Symbols.PrintBackgroundColor.Value = null;
             Symbols.PrintBase.VariableValue = 10;
             Symbols.PrintColor.Value = null;
-            Symbols.PrintCompact.Value = false;
+            Symbols.PrintCompact.Value = true;
             Symbols.PrintEscape.VariableValue = true;
             Symbols.PrintForce.VariableValue = true;
             Symbols.PrintShortSymbolNames.VariableValue = false;
