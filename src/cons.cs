@@ -194,6 +194,7 @@ namespace Kiezel
                     var first = Runtime.First( this );
                     var second = Runtime.Second( this );
                     var third = Runtime.Third( this );
+                    var fourth = Runtime.Fourth( this );
 
                     if ( first == Symbols.Dot && second is string && third == null )
                     {
@@ -222,6 +223,24 @@ namespace Kiezel
                     else if ( first == Symbols.UnquoteNSplicing && third == null )
                     {
                         return System.String.Format( ",.{0}", second );
+                    }
+                    else if ( first == Symbols.PrettyReader )
+                    {
+                        switch ( ( string ) second )
+                        {
+                            case "#+":
+                            case "#-":
+                            {
+                                return System.String.Format( "{0}{1}{2}", second, third, fourth );
+                            }
+                            case "literally":
+                            case "line-comment":
+                            case "block-comment":
+                            case "string":
+                            {
+                                return ( string ) third;
+                            }
+                        }
                     }
                 }
             }

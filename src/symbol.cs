@@ -713,6 +713,8 @@ namespace Kiezel
 
         internal static Symbol Setq;
 
+        internal static Symbol PrettyReader;
+
         internal static Symbol[] ShortLambdaVariables;
 
         internal static Symbol SpecialConstant;
@@ -929,6 +931,7 @@ namespace Kiezel
             SetElt = MakeSymbol( "set-elt" );
             Setf = MakeSymbol( "setf" );
             Setq = MakeSymbol( "setq" );
+            PrettyReader = Runtime.MakeSymbol( "pretty-reader", Runtime.SystemPackage );
             SpecialConstant = MakeSymbol( "special-constant" );
             SpecialForm = MakeSymbol( "special-form" );
             SpecialReadonlyVariable = MakeSymbol( "special-readonly-variable" );

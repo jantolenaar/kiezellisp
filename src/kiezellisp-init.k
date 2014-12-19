@@ -8,11 +8,21 @@
 (if (find :windows-mode $features)
     (setq $stdlog "d:/temp/stdlog"))
 
-(set-load-path "d:/projects/kiezellisp-private/lib"
-               "d:/projects/kiezellisp-private/app"
-               "d:/projects/kiezellisp/contrib/lib"
-               "d:/projects/kiezellisp/lib"
-               "d:/projects/kiezellisp/app" )
+#+unix
+(let project-path "/home/jan/projects/")
+
+#-unix 
+(let project-path "d:/projects/")
+
+(letfun make-path (x)
+    (string project-path x))
+
+(apply set-load-path (map make-path (list 
+                "kiezellisp-private/lib"
+                "kiezellisp-private/app"
+                "kiezellisp/contrib/lib"
+                "kiezellisp/lib"
+                "kiezellisp/app" )))
 
 (setq $load-verbose $interactive-mode)
 

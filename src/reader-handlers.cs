@@ -218,12 +218,14 @@ namespace Kiezel
 
         internal static object ReadLineCommentHandler( LispReader stream, char ch )
         {
+            // ;
             stream.ReadLine();
             return VOID.Value;
         }
 
         internal static object ReadLineCommentHandler2( LispReader stream, char ch, int arg )
         {
+            // #!
             stream.ReadLine();
             return VOID.Value;
         }
@@ -354,5 +356,66 @@ namespace Kiezel
             obj.AddRange( list );
             return obj;
         }
+
+        internal class PrettyPrinting
+        {
+            internal static object ReadBlockCommentHandler( LispReader stream, char ch, int arg )
+            {
+                // Nested comments are allowed.
+                var s = stream.ReadBlockComment( "#|", "|#" );
+                return MakeList( Symbols.PrettyReader, "block-comment", s );
+            }
+
+            internal static object ReadLineCommentHandler( LispReader stream, char ch )
+            {
+                // ;
+                var s = stream.ReadLine();
+                return MakeList( Symbols.PrettyReader, "line-comment", ";" + s );
+            }
+
+            internal static object ReadLineCommentHandler2( LispReader stream, char ch, int arg )
+            {
+                // #!
+                var s = stream.ReadLine();
+                return MakeList( Symbols.PrettyReader, "line-comment", "#!" + s );
+            }
+
+            internal static object ReadNumberHandler( LispReader stream, char ch, int arg )
+            {
+                var token = stream.ReadToken();
+                return MakeList( Symbols.PrettyReader, "literally", "#" + ch + token );
+            }
+
+            internal static object ReadPlusMinusExprHandler( LispReader stream, char ch, int arg )
+            {
+                object test = stream.Read();
+                object expr = stream.Read();
+                return MakeList( Symbols.PrettyReader, "#" + ch, test, expr );
+            }
+
+            internal static object ReadSpecialStringHandler( LispReader stream, char ch, int arg )
+            {
+                return MakeList( Symbols.PrettyReader, "string", stream.ExtractSpecialStringForm() );
+            }
+
+            internal static object ReadStringHandler( LispReader stream, char ch )
+            {
+                // C# string "...."
+                return MakeList( Symbols.PrettyReader, "string", stream.ExtractStringForm() );
+            }
+
+            internal static object ReadStringHandler2( LispReader stream, char ch, int arg )
+            {
+                // C# string @"..."
+                return MakeList( Symbols.PrettyReader, "string", stream.ExtractMultiLineStringForm() );
+            }
+
+            internal static object ReadShortLambdaExpressionHandler( LispReader stream, char ch, int arg )
+            {
+                return stream.ReadDelimitedList( ")" );
+            }
+
+        }
+
     }
 }

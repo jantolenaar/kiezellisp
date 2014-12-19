@@ -1,11 +1,16 @@
 # Change Log
 
+## 2014/12/19
+
+*   Fixed bug using PATH environment variable on unix.
+*   Changed location of DLR dlls to be in the src tree.
+
 ## 2014/12/07
 
 *   Added `IApply` interface to `Symbol`.
 *   Pretty print extensions for Kiezellisp IDE (in progress).
 *   Moved backquote/quasiquote expansion from reader to compiler.
-*   Fixed bug in funcation call to `>` operator with three or more arguments.
+*   Fixed bug in function call to `>` operator with three or more arguments.
 
 ## 2014/11/21
 

@@ -113,7 +113,7 @@ namespace Kiezel
             DefDynamic( Symbols.PackageNamePrefix, null );
             DefDynamic( Symbols.Readtable, readtable );
 
-            var parts = text.RegexMatch( new Regex( @"^(\s*)(.*?)(\s*)$", RegexOptions.Singleline ) );
+            var parts = text.ConvertToInternalLineEndings().RegexMatch( new Regex( @"^(\s*)(.*?)(\s*)$", RegexOptions.Singleline ) );
             var leader = (string) Second( parts );
             var code = ( string ) Third( parts );
             var trailer = ( string ) Fourth( parts );
@@ -122,12 +122,26 @@ namespace Kiezel
 
             try
             {
-                var separator = "";
+                object previousExpr = null;
 
                 foreach ( object expr in reader )
                 {
-                    buf.Write( separator );
-                    separator= "\n\n";
+                    if ( previousExpr != null )
+                    {
+                        if ( Consp( previousExpr ) && Consp( expr ) && First( previousExpr ) == Symbols.PrettyReader && First( expr ) == Symbols.PrettyReader
+                            && ( string ) Second( previousExpr ) == "line-comment" && ( string ) Second( expr ) == "line-comment" )
+                        {
+                            // no blank line between comment forms
+                            buf.WriteLine();
+                        }
+                        else
+                        {
+                            buf.WriteLine();
+                            buf.WriteLine();
+                        }
+                    }
+
+                    previousExpr = expr;
 
                     for ( int i = 0; i < left; ++i )
                     {

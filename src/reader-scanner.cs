@@ -441,15 +441,6 @@ namespace Kiezel
 
                 if ( haveSeparator )
                 {
-                    if ( ch == '"' && terminator == "\"\"\"" && PeekChar( 3 ) == '"' )
-                    {
-                        // Append quote if there four or more in succession.
-                        haveSeparator = false;
-                    }
-                }
-
-                if ( haveSeparator )
-                {
                     SkipChars( terminator.Length );
                     break;
                 }
@@ -540,6 +531,48 @@ namespace Kiezel
             }
 
             return buf.ToString();
+        }
+
+        internal string ExtractMultiLineStringForm()
+        {
+            // @"..."
+            // supports double double quote escape
+            // multi-line
+
+            char ch;
+            StringBuilder buf = new StringBuilder();
+
+            while ( true )
+            {
+                ch = PeekChar( 0 );
+
+                if ( ch == EofChar )
+                {
+                    throw MakeScannerException( "EOF: Unterminated string" );
+                }
+
+                if ( ch == '"' )
+                {
+                    if ( PeekChar( 1 ) == '"' )
+                    {
+                        buf.Append( ch );
+                        buf.Append( ch );
+                        SkipChars( 2 );
+                    }
+                    else
+                    {
+                        SkipChars( 1 );
+                        break;
+                    }
+                }
+                else
+                {
+                    buf.Append( ch );
+                    SkipChars( 1 );
+                }
+            }
+
+            return "@\"" + buf.ToString() + "\"";
         }
 
         internal Regex ParseRegexString( char terminator )
@@ -706,6 +739,85 @@ namespace Kiezel
             return buf.ToString();
         }
 
+        internal string ExtractSingleLineStringForm()
+        {
+            // supports backsslash escapes
+            // single line
+
+            char ch;
+            StringBuilder buf = new StringBuilder();
+
+            while ( true )
+            {
+                ch = PeekChar( 0 );
+
+                if ( ch == '\n' || ch == EofChar )
+                {
+                    throw MakeScannerException( "EOF: Unterminated string" );
+                }
+
+                if ( ch == '"' )
+                {
+                    SkipChars( 1 );
+                    break;
+                }
+
+                if ( ch == '\\' )
+                {
+                    buf.Append( ch );
+                    SkipChars( 1 );
+                    ch = PeekChar( 0 );
+
+                    if ( ch == EofChar )
+                    {
+                        throw MakeScannerException( "EOF: Unterminated string" );
+                    }
+
+                    switch ( ch )
+                    {
+                        case 'x':
+                        {
+                            char ch1 = PeekChar( 1 );
+                            char ch2 = PeekChar( 2 );
+                            SkipChars( 1 + 2 );
+                            buf.Append( ch );
+                            buf.Append( ch1 );
+                            buf.Append( ch2 );
+                            break;
+                        }
+                        case 'u':
+                        {
+                            char ch1 = PeekChar( 1 );
+                            char ch2 = PeekChar( 2 );
+                            char ch3 = PeekChar( 3 );
+                            char ch4 = PeekChar( 4 );
+                            SkipChars( 1 + 4 );
+                            int n = ( int ) Number.ParseNumberBase( new string( new char[] { ch1, ch2, ch3, ch4 } ), 16 );
+                            buf.Append( ch );
+                            buf.Append( ch1 );
+                            buf.Append( ch2 );
+                            buf.Append( ch3 );
+                            buf.Append( ch4 );
+                            break;
+                        }
+                        default:
+                        {
+                            buf.Append( ch );
+                            SkipChars( 1 );
+                            break;
+                        }
+                    }
+                }
+                else
+                {
+                    buf.Append( ch );
+                    SkipChars( 1 );
+                }
+            }
+
+            return buf.ToString();
+        }
+
         internal string ParseSpecialString()
         {
             var begin = ReadChar();
@@ -747,6 +859,47 @@ namespace Kiezel
             return ParseDocString( new string( end, 1 ) );
         }
 
+        internal string ExtractSpecialStringForm()
+        {
+            var begin = ReadChar();
+            var end = ' ';
+
+            switch ( begin )
+            {
+                case '(':
+                {
+                    end = ')';
+                    break;
+                }
+                case '{':
+                {
+                    end = '}';
+                    break;
+                }
+                case '[':
+                {
+                    end = ']';
+                    break;
+                }
+                case '<':
+                {
+                    end = '>';
+                    break;
+                }
+                case '|':
+                {
+                    end = '|';
+                    break;
+                }
+                default:
+                {
+                    throw MakeScannerException( "Invalid #q string character: '{0}'", begin );
+                }
+            }
+
+            return begin + ParseDocString( new string( end, 1 ) ) + end;
+        }
+
         internal string ParseString()
         {
             if ( TryTakeChars( "\"\"" ) )
@@ -756,6 +909,18 @@ namespace Kiezel
             else
             {
                 return ParseSingleLineString();
+            }
+        }
+
+        internal string ExtractStringForm()
+        {
+            if ( TryTakeChars( "\"\"" ) )
+            {
+                return "\"\"\"" + ParseDocString( "\"\"\"" ) + "\"\"\"";
+            }
+            else
+            {
+                return "\""+ ExtractSingleLineStringForm() + "\"";
             }
         }
 

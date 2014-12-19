@@ -48,6 +48,8 @@
       (defmacro 2)
       (defmethod 2)
       (defmulti 2)
+      (defonce 2)
+      (defpackage 1)
       (defun 2)
       (do 0)
       (merging-do 0)
@@ -150,6 +152,7 @@ $print-escape and $print-base.
     (let a (first expr))
     (let b (second expr))
     (let c (third expr))
+    (let d (fourth expr))
     
     (when (eq a 'quote)
         (print "'")
@@ -179,6 +182,18 @@ $print-escape and $print-base.
         (print ",.")
         (with-indent (2)
             (pprint-expr b))
+        (return true))
+
+    (when (eq a 'system:pretty-reader)
+        (case b
+            (("#+" "#-")
+                (print b)
+                (print c)
+                (print-line)
+                (pprint d))
+            (("literally" "line-comment" "block-comment" "string")
+                (print c))
+        )
         (return true))
 
     (when (and (eq a '.)

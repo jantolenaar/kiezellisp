@@ -251,7 +251,19 @@ namespace Kiezel
         {
             var table = new Readtable();
             table.Init();
-            //table.SetMacroCharacter( '`', Runtime.ReadPrettyPrintingQuasiQuoteHandler );
+            table.SetMacroCharacter( '"', PrettyPrinting.ReadStringHandler );
+            table.SetMacroCharacter( ';', PrettyPrinting.ReadLineCommentHandler );
+            table.SetDispatchMacroCharacter( '@', '"', PrettyPrinting.ReadStringHandler2 );
+            table.SetDispatchMacroCharacter( '#', '(', PrettyPrinting.ReadShortLambdaExpressionHandler );
+            table.SetDispatchMacroCharacter( '#', '!', PrettyPrinting.ReadLineCommentHandler2 );
+            table.SetDispatchMacroCharacter( '#', '|', PrettyPrinting.ReadBlockCommentHandler );
+            table.SetDispatchMacroCharacter( '#', 'r', PrettyPrinting.ReadNumberHandler );
+            table.SetDispatchMacroCharacter( '#', 'x', PrettyPrinting.ReadNumberHandler );
+            table.SetDispatchMacroCharacter( '#', 'o', PrettyPrinting.ReadNumberHandler );
+            table.SetDispatchMacroCharacter( '#', 'b', PrettyPrinting.ReadNumberHandler );
+            table.SetDispatchMacroCharacter( '#', '+', PrettyPrinting.ReadPlusMinusExprHandler );
+            table.SetDispatchMacroCharacter( '#', '-', PrettyPrinting.ReadPlusMinusExprHandler );
+            table.SetDispatchMacroCharacter( '#', 'q', PrettyPrinting.ReadSpecialStringHandler );
             return table;
         }
 
