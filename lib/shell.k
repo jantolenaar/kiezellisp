@@ -55,7 +55,7 @@
             ,@forms
             (finally (cd old-path)))))
 
-#+windows-nt
+#+windows
 (defun dir ()
     (run "cmd.exe" "/c" "dir")
     (void))
@@ -120,6 +120,8 @@
 
 (defun enclose-in-quotes (arg)
     (cond
+        ((null? arg)
+            "")
         ((find #\double-quote arg)
             (string "\"" arg "\""))
         ((find #\space arg)

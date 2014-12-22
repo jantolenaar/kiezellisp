@@ -240,7 +240,7 @@ namespace Kiezel
         {
             if ( Environment.OSVersion.Platform == PlatformID.Win32NT )
             {
-                AddFeature( "windows-nt" );
+                AddFeature( "windows" );
             }
             else if ( Environment.OSVersion.Platform == PlatformID.Unix )
             {
@@ -278,7 +278,7 @@ namespace Kiezel
             AddFeature( "kiezellisp" );
 
 #if KIEZELLISPW
-            AddFeature( "windows-mode" );
+            AddFeature( "graphical-mode" );
 #else
             AddFeature( "console-mode" );
 #endif

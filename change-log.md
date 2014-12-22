@@ -1,5 +1,11 @@
 # Change Log
 
+## 2014/12/22
+
+*   Renamed `:windows-nt` feature to `:windows`.
+*   Renamed `:windows-mode` feature to `:graphical-mode`.
+*   Fixed bug in `shell::enclose-in-quotes`.
+
 ## 2014/12/19
 
 *   Fixed bug using PATH environment variable on unix.

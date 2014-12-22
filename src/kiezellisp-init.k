@@ -5,13 +5,13 @@
 ;;; kiezellisp-init.k
 ;;;
 
-(if (find :windows-mode $features)
+(if (find :graphical-mode $features)
     (setq $stdlog "d:/temp/stdlog"))
 
 #+unix
 (let project-path "/home/jan/projects/")
 
-#-unix 
+#+windows
 (let project-path "d:/projects/")
 
 (letfun make-path (x)

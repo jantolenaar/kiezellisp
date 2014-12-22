@@ -3,6 +3,7 @@
 (require :constructor-factory)
 
 (reference "System.Windows.Forms" )
+(reference "System.Drawing")
 
 (defpackage :winforms)
 
