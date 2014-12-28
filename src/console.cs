@@ -731,7 +731,6 @@ namespace Kiezel
 
                 var assembly = Assembly.GetExecutingAssembly();
                 var fileVersion = FileVersionInfo.GetVersionInfo( assembly.Location );
-                var date = new DateTime( 2000, 1, 1 ).AddDays( fileVersion.FileBuildPart );
                 Console.WriteLine( GetVersion() );
                 Console.WriteLine( fileVersion.LegalCopyright );
                 Console.WriteLine( "Type :help or ? for help on top-level commands" );

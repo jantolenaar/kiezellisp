@@ -792,7 +792,6 @@ namespace Kiezel
                             char ch3 = PeekChar( 3 );
                             char ch4 = PeekChar( 4 );
                             SkipChars( 1 + 4 );
-                            int n = ( int ) Number.ParseNumberBase( new string( new char[] { ch1, ch2, ch3, ch4 } ), 16 );
                             buf.Append( ch );
                             buf.Append( ch1 );
                             buf.Append( ch2 );
@@ -928,9 +927,8 @@ namespace Kiezel
         {
             var start = pos - startDelimiter.Length;
             var nesting = 1;
-            char ch;
 
-            while ( ( ch = PeekChar() ) != EofChar )
+            while ( PeekChar() != EofChar )
             {
                 if ( TryTakeChars( startDelimiter ) )
                 {

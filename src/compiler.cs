@@ -474,7 +474,6 @@ namespace Kiezel
             }
             var args = ( Cons ) Third( form );
             var body = Cdr( Cddr( form ) );
-            var syntax = MakeListStar( sym, args );
             var lispParams = CompileFormalArgs( args, new AnalysisScope(), LambdaKind.Function );
             string doc = "";
             if ( Length( body ) >= 1 && body.Car is string )
@@ -519,7 +518,6 @@ namespace Kiezel
         {
             // var sym [expr]
             var sym = ( Symbol ) Second( form );
-            var initForm = Third( form );
 
             if ( !scope.IsBlockScope )
             {
@@ -1365,7 +1363,6 @@ namespace Kiezel
             var tryForms = new Vector();
             var catchForms = new List<Cons>();
             var cleanupForms = new Vector();
-            var faultForms = new Vector();
             foreach ( var expr in Cdr( form ) )
             {
                 if ( expr is Cons )
@@ -1570,7 +1567,6 @@ namespace Kiezel
 
         internal static void GetLambdaParameterBindingCode( Vector code, LambdaSignature signature )
         {
-            var temp = GenTemp();
             for ( int i = 0; i < signature.Names.Count; ++i )
             {
                 if ( signature.Names[ i ] != Symbols.Underscore )

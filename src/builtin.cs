@@ -116,7 +116,6 @@ namespace Kiezel
         }
         internal Delegate MakeExpressionProc( int argCount )
         {
-            var names = Members.Split( new char[] { '.' }, StringSplitOptions.RemoveEmptyEntries );
             var args = new ParameterExpression[ argCount ];
             for ( var i = 0; i < argCount; ++i )
             {

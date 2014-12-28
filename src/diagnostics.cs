@@ -420,9 +420,7 @@ namespace Kiezel
         }
         internal static Prototype AsPrototype( object obj, bool caseInsensitive )
         {
-            Type type = obj.GetType();
-            TypeCode typecode = Type.GetTypeCode( type );
-
+   
             if ( obj is Prototype )
             {
                 var dict = ConvertToLispDictionary( ( ( Prototype ) obj ).Dict, caseInsensitive );
@@ -438,14 +436,10 @@ namespace Kiezel
                 var dict = ConvertToDictionary( ( Type ) obj, null, false );
                 return Prototype.FromDictionary( dict );
             }
-            else if ( true || typecode == TypeCode.Object )
+            else 
             {
                 var dict = ConvertToDictionary( obj.GetType(), obj, false );
                 return Prototype.FromDictionary( dict );
-            }
-            else
-            {
-                return null;
             }
         }
 

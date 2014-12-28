@@ -1,5 +1,13 @@
 # Change Log
 
+## 2014/12/28
+
+*   Changed all files to LF instead of CRLF line endings.
+*   Fixed warnings detected by mono compiler.
+*   Added `$home` and other variables to `shell.k`.
+*   Added function `shell:expand-path-name` to expand path names 
+    starting with a tilde.
+
 ## 2014/12/22
 
 *   Renamed `:windows-nt` feature to `:windows`.

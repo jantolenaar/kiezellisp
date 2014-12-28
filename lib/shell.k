@@ -21,13 +21,12 @@
         "env"
         "path"
         "get-special-folder"
-        "home"
-        "windows"
-        "system"
-        "local-application-data"
-        "roaming-application-data"
-        "my-documents"
+        "$home"
+        "$local-application-data"
+        "$roaming-application-data"
+        "$my-documents"
         "robocopy-mirror"
+        "expand-path-name"
     )
     (:shadow
         "run"
@@ -71,24 +70,6 @@
 (defun path ()
     (.split (path:get-unix-name (.path (env))) (string #\semicolon)))
 
-(defun home ()
-    (get-special-folder :home))
-
-(defun local-application-data ()
-    (get-special-folder :local-application-data))
-
-(defun roaming-application-data ()
-    (get-special-folder :roaming-application-data))
-
-(defun windows ()
-    (get-special-folder :windows))
-
-(defun system ()
-    (get-special-folder :system))
-
-(defun my-documents ()
-    (get-special-folder :my-documents))
-
 (defun get-special-folder (special-folder)
     (path:get-unix-name (environment:get-folder-path
         (case special-folder
@@ -106,6 +87,18 @@
                 special-folder:MY-DOCUMENTS)
             (true
                 special-folder)))))
+
+(def $home
+    (get-special-folder :home))
+
+(def $local-application-data
+    (get-special-folder :local-application-data))
+
+(def $roaming-application-data
+    (get-special-folder :roaming-application-data))
+
+(def $my-documents
+    (get-special-folder :my-documents))
 
 (defun run-windows-command (cmd)
     (let proc (process:new))
@@ -166,11 +159,30 @@
     (print result)
     (= 0 (.exit-code proc)))
 
-
+#+windows
 (defun robocopy-mirror (source destination)
     ;(let $stdout null)
     (run "robocopy.exe" source destination "/MIR" "/MT" "/NS" "/NC" "/NDL" "/NP" "/NJH" "/NJS"))
-    
+
+#+unix
+(defun robocopy-mirror (source destination)
+    (run "rsync" "-av" source destination))
+
+(defun expand-path-name (path)
+    (if (.starts-with path "~")
+          (do
+            (let parts (as-list (.split path "/")))
+            (string:join "/" (cons (replace-head (first parts)) (rest parts))))
+        path))
+
+(defun replace-head (head)
+    (case head
+        (("~" "~home") $home)
+        ("~local-application-data" $local-application-data)
+        ("~roaming-application-data" $roaming-application-data)
+        ("~my-documents" $my-documents)
+        (true head)))
+
 (defun back-tick-readhandler (stream char count)
     (declare (ignore count))
     (let seq (map string (.read-delimited-list stream (string char))))

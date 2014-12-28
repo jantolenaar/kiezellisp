@@ -1161,12 +1161,10 @@ namespace Kiezel
 
             char[] a = s.ToCharArray();
             bool carry = false;
-            int lasti = -1;
             for ( int i = a.Length - 1; i >= 0; --i )
             {
                 if ( IncrementChar( ref a[ i ], out carry ) )
                 {
-                    lasti = i;
                 }
                 if ( !carry )
                 {
@@ -1174,21 +1172,6 @@ namespace Kiezel
                 }
             }
             s = new string( a );
-            //if ( carry )
-            //{
-            //    if ( lasti == -1 || Char.IsLower( a[lasti] ) )
-            //    {
-            //        s = 'a' + s;
-            //    }
-            //    else if ( Char.IsUpper( a[lasti] ) )
-            //    {
-            //        s = 'A' + s;
-            //    }
-            //    else if ( Char.IsDigit( a[lasti] ) )
-            //    {
-            //        s = '1' + s;
-            //    }
-            //}
             return s;
         }
 

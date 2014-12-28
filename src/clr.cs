@@ -30,7 +30,7 @@ namespace Kiezel
             var allTypes = new List<Type>();
             foreach ( Assembly asm in AppDomain.CurrentDomain.GetAssemblies() )
             {
-                var types = asm.GetTypes();
+            	var types = asm.GetTypes();
                 allTypes.AddRange( types.Where( t => NamespaceOrClassNameMatch( pattern, t ) ) );
             }
             return allTypes;
@@ -270,6 +270,8 @@ namespace Kiezel
 
         internal static void ImportExtensionMethodsIntoPackage( Package package, Type type )
         {
+			VerifyNoMissingSymbols (package);
+
             var isbuiltin = type.Assembly == Assembly.GetExecutingAssembly();
             var extendedType = ( Type ) package.Dict[ "T" ].CheckedValue;
             var restrictedImport = type.GetCustomAttributes( typeof( RestrictedImportAttribute ), true ).Length != 0;
@@ -325,7 +327,6 @@ namespace Kiezel
         {
             AddPackageByType( type, package );
 
-            var isbuiltin = type.Assembly == Assembly.GetExecutingAssembly();
             var restrictedImport = type.GetCustomAttributes( typeof( RestrictedImportAttribute ), true ).Length != 0;
 
             package.ImportedType = type;
@@ -404,9 +405,9 @@ namespace Kiezel
                 if ( !name.StartsWith( "get_" ) && !name.StartsWith( "set_" ) )
                 {
                     var sym = package.InternNoInherit( members[ 0 ].Name.LispName() );
-                    var builtin = new ImportedFunction( members[ 0 ].Name, members[ 0 ].DeclaringType, members.Cast<MethodInfo>().ToArray(), false );
-                    sym.FunctionValue = builtin;
-                    sym.Package.Export( sym.Name );
+					var builtin = new ImportedFunction (members [0].Name, members [0].DeclaringType, members.Cast<MethodInfo> ().ToArray (), false);
+					sym.FunctionValue = builtin;
+					sym.Package.Export( sym.Name );
                 }
 
                 return;
@@ -421,9 +422,9 @@ namespace Kiezel
                 if ( getters.Length != 0 )
                 {
                     Symbol sym = package.InternNoInherit( members[ 0 ].Name.LispName() );
-                    var builtin = new ImportedFunction( members[ 0 ].Name, members[ 0 ].DeclaringType, getters, false );
-                    sym.FunctionValue = builtin;
-                    sym.Package.Export( sym.Name );
+					var builtin = new ImportedFunction (members [0].Name, members [0].DeclaringType, getters, false);
+					sym.FunctionValue = builtin;
+					sym.Package.Export( sym.Name );
                 }
 
                 if ( setters.Length != 0 )

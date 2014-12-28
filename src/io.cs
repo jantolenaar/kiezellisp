@@ -104,7 +104,6 @@ namespace Kiezel
             var saved = SaveStackAndFrame();
             var env = MakeExtendedEnvironment();
             var package = MakePackage( "__pprint__" );
-            var scope = env.Scope;
             var readtable = GetPrettyPrintingReadtable();
 
             CurrentThreadContext.Frame = env.Frame;           
