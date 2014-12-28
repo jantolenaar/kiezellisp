@@ -3393,7 +3393,7 @@ recursion of anonymous functions.
 
 (reduce (reducer seq &key initial-value (key identity))
 """
-Returns the accumulated result of repeatly calling the function `adder` 
+Returns the accumulated result of repeatly calling the function `reducer` 
 on each element of `seq`. `reducer` is a function with two parameters. 
 The first argument is the result so far, the second argument is the current 
 element of `seq`.
@@ -3405,7 +3405,7 @@ element of `seq`.
 
 (reductions (reducer seq &key initial-value (key identity))
 """
-Returns a lazy list of every intermediate value produced by the function `reduce` 
+Returns a lazy list of every intermediate value produced by the function `reducer` 
 called with the same arguments.
 """
 (reductions + (series 10))
@@ -3477,7 +3477,7 @@ Returns the remainder of `list` without the `first` element.
 (resume (ctx)
 """
 Called by the thread that created the generator thread `ctx`. Returns the value 
-the was `yield`ed by the generator thread.
+`yield`ed by the generator thread.
 """
 )
 
