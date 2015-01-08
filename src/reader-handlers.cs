@@ -7,7 +7,16 @@ namespace Kiezel
 {
     public partial class Runtime
     {
-        internal static Regex InterpolationPatterns = new Regex( @"``(.*?)``|\<\%(.*?)\%\>|\<\!(.*?)\!\>", RegexOptions.Singleline );
+        internal static string[] StringPatterns = new string[]
+        {
+            @"\``(.*?)``",
+            @"\<\%(.*?)\%\>",
+            @"\<\!(.*?)\!\>",
+            @"\$\{(.*?)\}",
+            @"^~([a-zA-Z0-9-_]*)",
+        };
+
+        internal static Regex InterpolationStringPatterns = new Regex( "|".Join( StringPatterns ), RegexOptions.Singleline );
 
         internal static bool EvalFeatureExpr( object expr )
         {
@@ -48,13 +57,23 @@ namespace Kiezel
             int pos = 0;
             Vector code = new Vector();
 
-            for ( var match = InterpolationPatterns.Match( s, pos ); match.Success; match = match.NextMatch() )
+//            if ( s.StartsWith( "~/" ) )
+//            {
+//                code.Add( FindSymbol( "shell:$home" ) );
+//                pos = 1;
+//            }
+
+            for ( var match = InterpolationStringPatterns.Match( s, pos ); match.Success; match = match.NextMatch() )
             {
                 var left = match.Index;
                 var sideEffect = false;
                 var script = "";
 
-                code.Add( s.Substring( pos, left - pos ) );
+                if ( left != pos )
+                {
+                    code.Add( s.Substring( pos, left - pos ) );
+                }
+
                 pos = match.Index + match.Length;
 
                 if ( match.Groups[ 1 ].Success )
@@ -65,7 +84,7 @@ namespace Kiezel
                 }
                 else if ( match.Groups[ 2 ].Success )
                 {
-                    // <%...%> <%=...%>
+                    // <%...%> or <%=...%>
                     script = match.Groups[ 2 ].Value.Trim();
                     if ( script.StartsWith( "=" ) )
                     {
@@ -79,7 +98,7 @@ namespace Kiezel
                 }
                 else if ( match.Groups[ 3 ].Success )
                 {
-                    // <!...!> <!=...!>
+                    // <!...!> or <!=...!>
                     script = match.Groups[ 3 ].Value.Trim();
                     if ( script.StartsWith( "=" ) )
                     {
@@ -90,6 +109,23 @@ namespace Kiezel
                     {
                         sideEffect = true;
                     }
+                }
+                else if ( match.Groups[ 4 ].Success )
+                {
+                    // ${...}
+                    script = match.Groups[ 4 ].Value;
+                    sideEffect = false;
+                }
+                else if ( match.Groups[ 5 ].Success )
+                {
+                    // ~.../
+                    var name = match.Groups[ 5 ].Value;
+                    if ( string.IsNullOrWhiteSpace( name ) )
+                    {
+                        name = "home";
+                    }
+                    script = string.Format( "({0} {1})", Symbols.GetLexicalOrEnvironmentVariable.LongName, name );
+                    sideEffect = false;
                 }
 
                 script = script.Trim();

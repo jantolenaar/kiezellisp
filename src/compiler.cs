@@ -782,7 +782,14 @@ namespace Kiezel
             }
         }
 
-        internal static Expression CompileGetVariable( Symbol sym, AnalysisScope scope )
+        internal static Expression CompileGetLexicalOrEnvironmentVariable( Cons form, AnalysisScope scope )
+        {
+            CheckLength( form, 2 );
+            var sym = CheckSymbol( Second( form ) );
+            return CompileGetVariable( sym, scope, true );
+        }
+
+        internal static Expression CompileGetVariable( Symbol sym, AnalysisScope scope, bool useEnvironment )
         {
             if ( sym.IsDynamic )
             {
@@ -819,6 +826,10 @@ namespace Kiezel
                     }
 
                     return code;
+                }
+                else if ( useEnvironment )
+                {
+                    return Expression.PropertyOrField( Expression.Constant( sym ), "CheckedOrEnvironmentValue" );
                 }
                 else
                 {
@@ -1485,7 +1496,7 @@ namespace Kiezel
                 //}
                 //else
                 {
-                    return CompileGetVariable( sym, scope );
+                    return CompileGetVariable( sym, scope, false );
                 }
             }
             else if ( expr is Cons )
@@ -1607,6 +1618,7 @@ namespace Kiezel
             Symbols.FutureVar.FunctionValue = new SpecialForm( CompileFutureVar );
             Symbols.GetAttr.FunctionValue = new SpecialForm( CompileGetMember );
             Symbols.GetElt.FunctionValue = new SpecialForm( CompileGetElt );
+            Symbols.GetLexicalOrEnvironmentVariable.FunctionValue = new SpecialForm( CompileGetLexicalOrEnvironmentVariable );
             Symbols.Goto.FunctionValue = new SpecialForm( CompileGoto );
             Symbols.GreekLambda.FunctionValue = new SpecialForm( CompileLambda );
             Symbols.HiddenVar.FunctionValue = new SpecialForm( CompileHiddenVar );

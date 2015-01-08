@@ -1724,7 +1724,10 @@ Terminates the program with exit-code `0` or `code`.
 Exports the documentation currently attached to the global symbols of the named
 packages to a text file.
 """
+#+windows
 (export-documentation "d:/temp/csv-doc.k" "csv")
+#+unix
+(export-documentation "~/temp/csv-doc.k" "csv")
 )
 
 ;------------------------------------------------------------------------------
@@ -3536,7 +3539,7 @@ Returns a lazy sequence with the elements of `seq` in reverse order.
 
 (run (file)
 """
-Loads `file` and (if it exists) executes the function `user.main`.
+Loads `file` and executes the function `user:main` (if it exists).
 """
 )
 

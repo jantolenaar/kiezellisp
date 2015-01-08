@@ -1,5 +1,7 @@
 ;;;; Copyright (c) Jan Tolenaar. See the file LICENSE for details.
 
+(pushnew :winforms $features)
+
 (require :constructor-factory)
 
 (reference "System.Windows.Forms" )

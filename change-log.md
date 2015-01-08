@@ -1,5 +1,13 @@
 # Change Log
 
+## 2015/01/08
+
+*   Better handling of numeric conversions.
+*   Fixed extension handling in `reference` function.
+*   Fixed bug in `shell.k`.
+*   Added `~/` expansion in strings.
+*   Added `${...}` expansion in strings.
+
 ## 2014/12/28
 
 *   Changed all files to LF instead of CRLF line endings.

@@ -67,7 +67,7 @@ namespace Kiezel
         public static void Reference( string assemblyName )
         {
             var a = assemblyName;
-            if ( Path.GetExtension( a ) != ".dll" )
+            if (a.IndexOf (",") == -1 && Path.GetExtension (a) != ".dll") 
             {
                 a = a + ".dll";
             }

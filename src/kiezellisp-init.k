@@ -5,8 +5,11 @@
 ;;; kiezellisp-init.k
 ;;;
 
-(if (find :graphical-mode $features)
-    (setq $stdlog "d:/temp/stdlog"))
+#+(and unix graphical-mode)
+(setq $stdlog "/tmp/stdlog")
+
+#+(and windows graphical-mode)
+(setq $stdlog "d:/temp/stdlog")
 
 #+unix
 (let project-path "/home/jan/projects/")

@@ -33,212 +33,51 @@ namespace Kiezel
 
         internal static bool CanConvertFrom( Type type1, Type type2 )
         {
-            if ( type1.IsPrimitive && type2.IsPrimitive )
-            {
-                TypeCode typeCode1 = Type.GetTypeCode( type1 );
-                TypeCode typeCode2 = Type.GetTypeCode( type2 );
+            if (type1.IsPrimitive && type2.IsPrimitive) {
+                TypeCode typeCode1 = Type.GetTypeCode (type1);
+                TypeCode typeCode2 = Type.GetTypeCode (type2);
                 // If both type1 and type2 have the same type, return true.
-                if ( typeCode1 == typeCode2 )
+                if (typeCode1 == typeCode2) {
                     return true;
-                // Possible conversions from Char follow.
-                if ( typeCode1 == TypeCode.Char )
-                    switch ( typeCode2 )
-                    {
-                        case TypeCode.UInt16:
-                        return true;
-
-                        case TypeCode.UInt32:
-                        return true;
-
-                        case TypeCode.Int32:
-                        return true;
-
-                        case TypeCode.UInt64:
-                        return true;
-
-                        case TypeCode.Int64:
-                        return true;
-
-                        case TypeCode.Single:
-                        return true;
-
-                        case TypeCode.Double:
-                        return true;
-
-                        default:
-                        return false;
-                    }
-                // Possible conversions from Byte follow.
-                if ( typeCode1 == TypeCode.Byte )
-                    switch ( typeCode2 )
-                    {
-                        case TypeCode.Char:
-                        return true;
-
-                        case TypeCode.UInt16:
-                        return true;
-
-                        case TypeCode.Int16:
-                        return true;
-
-                        case TypeCode.UInt32:
-                        return true;
-
-                        case TypeCode.Int32:
-                        return true;
-
-                        case TypeCode.UInt64:
-                        return true;
-
-                        case TypeCode.Int64:
-                        return true;
-
-                        case TypeCode.Single:
-                        return true;
-
-                        case TypeCode.Double:
-                        return true;
-
-                        default:
-                        return false;
-                    }
-                // Possible conversions from SByte follow.
-                if ( typeCode1 == TypeCode.SByte )
-                    switch ( typeCode2 )
-                    {
-                        case TypeCode.Int16:
-                        return true;
-
-                        case TypeCode.Int32:
-                        return true;
-
-                        case TypeCode.Int64:
-                        return true;
-
-                        case TypeCode.Single:
-                        return true;
-
-                        case TypeCode.Double:
-                        return true;
-
-                        default:
-                        return false;
-                    }
-                // Possible conversions from UInt16 follow.
-                if ( typeCode1 == TypeCode.UInt16 )
-                    switch ( typeCode2 )
-                    {
-                        case TypeCode.UInt32:
-                        return true;
-
-                        case TypeCode.Int32:
-                        return true;
-
-                        case TypeCode.UInt64:
-                        return true;
-
-                        case TypeCode.Int64:
-                        return true;
-
-                        case TypeCode.Single:
-                        return true;
-
-                        case TypeCode.Double:
-                        return true;
-
-                        default:
-                        return false;
-                    }
-                // Possible conversions from Int16 follow.
-                if ( typeCode1 == TypeCode.Int16 )
-                    switch ( typeCode2 )
-                    {
-                        case TypeCode.Int32:
-                        return true;
-
-                        case TypeCode.Int64:
-                        return true;
-
-                        case TypeCode.Single:
-                        return true;
-
-                        case TypeCode.Double:
-                        return true;
-
-                        default:
-                        return false;
-                    }
-                // Possible conversions from UInt32 follow.
-                if ( typeCode1 == TypeCode.UInt32 )
-                    switch ( typeCode2 )
-                    {
-                        case TypeCode.UInt64:
-                        return true;
-
-                        case TypeCode.Int64:
-                        return true;
-
-                        case TypeCode.Single:
-                        return true;
-
-                        case TypeCode.Double:
-                        return true;
-
-                        default:
-                        return false;
-                    }
-                // Possible conversions from Int32 follow.
-                if ( typeCode1 == TypeCode.Int32 )
-                    switch ( typeCode2 )
-                    {
-                        case TypeCode.Int64:
-                        return true;
-
-                        case TypeCode.Single:
-                        return true;
-
-                        case TypeCode.Double:
-                        return true;
-
-                        default:
-                        return false;
-                    }
-                // Possible conversions from UInt64 follow.
-                if ( typeCode1 == TypeCode.UInt64 )
-                    switch ( typeCode2 )
-                    {
-                        case TypeCode.Single:
-                        return true;
-
-                        case TypeCode.Double:
-                        return true;
-
-                        default:
-                        return false;
-                    }
-                // Possible conversions from Int64 follow.
-                if ( typeCode1 == TypeCode.Int64 )
-                    switch ( typeCode2 )
-                    {
-                        case TypeCode.Single:
-                        return true;
-
-                        case TypeCode.Double:
-                        return true;
-
-                        default:
-                        return false;
-                    }
-                // Possible conversions from Single follow.
-                if ( typeCode1 == TypeCode.Single )
-                    switch ( typeCode2 )
-                    {
-                        case TypeCode.Double:
-                        return true;
-
-                        default:
-                        return false;
-                    }
+                }
+                // Allow all numeric conversions in principle.
+                switch (typeCode1) {
+                case TypeCode.Boolean:
+                case TypeCode.Char:
+                case TypeCode.Byte:
+                case TypeCode.SByte:
+                case TypeCode.UInt16:
+                case TypeCode.UInt32:
+                case TypeCode.UInt64:
+                case TypeCode.Int16:
+                case TypeCode.Int32:
+                case TypeCode.Int64:
+                case TypeCode.Single:
+                case TypeCode.Double:
+                case TypeCode.Decimal:
+                    break;
+                default:
+                    return false;
+                }
+                switch (typeCode2) {
+                case TypeCode.Boolean:
+                case TypeCode.Char:
+                case TypeCode.Byte:
+                case TypeCode.SByte:
+                case TypeCode.UInt16:
+                case TypeCode.UInt32:
+                case TypeCode.UInt64:
+                case TypeCode.Int16:
+                case TypeCode.Int32:
+                case TypeCode.Int64:
+                case TypeCode.Single:
+                case TypeCode.Double:
+                case TypeCode.Decimal:
+                    break;
+                default:
+                    return false;
+                }
+                return true;
             }
             return false;
         }

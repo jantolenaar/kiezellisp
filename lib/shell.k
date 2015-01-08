@@ -65,7 +65,7 @@
     (void))
 
 (defun env ()
-    (as-prototype-ignore-case (environment:get-environment-variables)))
+    (as-prototype-ci (environment:get-environment-variables)))
 
 (defun path ()
     (.split (path:get-unix-name (.path (env))) (string #\semicolon)))
@@ -166,7 +166,8 @@
 
 #+unix
 (defun robocopy-mirror (source destination)
-    (run "rsync" "-av" source destination))
+    ;;; TODO handle appending of slash???
+    (run "rsync" "-av" (string source "/") destination))
 
 (defun expand-path-name (path)
     (if (.starts-with path "~")

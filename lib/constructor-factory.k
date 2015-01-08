@@ -23,9 +23,10 @@
 
 (defun make-obj (type args)
     (let obj (gentemp "obj"))
+    (multiple-let (ctor-args props) (split-with (complement keyword?) args))
     `(do
-        (let ,obj (,type))
-        ,@(init-obj-properties obj args)
+        (let ,obj (,type ,@ctor-args))
+        ,@(init-obj-properties obj props)
         ,obj))
 
 (defun init-obj-properties (obj args)
@@ -35,9 +36,23 @@
         (let value (second head))
         (collect (init-obj-property obj name value))))
 
-(defun init-obj-property (obj name value)
-    (let match (.regex-match (symbol-name name) @"^(.*)-add$"))
+#+gtk
+(def verbs (as-list (map symbol-name '(
+    add append pack-start pack-end
+    ))))
+
+#+winforms
+(def verbs (as-list (map symbol-name '(
+    add 
+    ))))
+
+(defun init-obj-property (obj kwname value)
+    (let name (symbol-name kwname))
+    (let verb (find name verbs))
+    (lazy match (.regex-match name @"^(.*)-add$"))
     (cond
+        (verb
+            `((. ,verb) ,obj ,value))
         (match
             `(.add ((. ,(second match)) ,obj) ,value))
         (true

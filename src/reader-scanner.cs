@@ -844,14 +844,10 @@ namespace Kiezel
                     end = '>';
                     break;
                 }
-                case '|':
-                {
-                    end = '|';
-                    break;
-                }
                 default:
                 {
-                    throw MakeScannerException( "Invalid #q string character: '{0}'", begin );
+                    end = begin;
+                    break;
                 }
             }
 
@@ -885,14 +881,10 @@ namespace Kiezel
                     end = '>';
                     break;
                 }
-                case '|':
-                {
-                    end = '|';
-                    break;
-                }
                 default:
                 {
-                    throw MakeScannerException( "Invalid #q string character: '{0}'", begin );
+                    end = begin;
+                    break;
                 }
             }
 

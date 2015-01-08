@@ -40,6 +40,7 @@
 (import "System.IO.Directory")
 (import "System.IO.File")
 (import "System.IO.Path")
+(import "System.IO.FileInfo")
 (import "System.IO.StreamReader")
 (import "System.IO.StreamWriter")
 (import "System.IO.StringReader")

@@ -217,6 +217,19 @@ namespace Kiezel
             }
         }
 
+        internal object CheckedOrEnvironmentValue
+        {
+            get
+            {
+                if ( IsUndefined )
+                {
+                    return Environment.GetEnvironmentVariable( Name ) ?? Environment.GetEnvironmentVariable( Name.ToUpper() );
+                }
+
+                return _value;
+
+            }
+        }
         internal object ConstantValue
         {
             set
@@ -545,6 +558,8 @@ namespace Kiezel
 
         internal static Symbol GetElt;
 
+        internal static Symbol GetLexicalOrEnvironmentVariable;
+
         internal static Symbol Goto;
 
         internal static Symbol GreekLambda;
@@ -850,6 +865,7 @@ namespace Kiezel
             GetAttr = MakeSymbol( "attr" );
             GetAttrFunc = MakeSymbol( "%attr" );
             GetElt = MakeSymbol( "elt" );
+            GetLexicalOrEnvironmentVariable = Runtime.MakeSymbol( "get-lexical-or-environment-variable", Runtime.SystemPackage );
             Goto = MakeSymbol( "goto" );
             GreekLambda = MakeSymbol( "\u03bb" );
             HelpHook = MakeSymbol( "$help-hook" );
@@ -860,7 +876,7 @@ namespace Kiezel
             Ignore = MakeSymbol( "ignore" );
             ImportedConstructor = MakeSymbol( "imported-constructor" );
             ImportedFunction = MakeSymbol( "imported-function" );
-            InitialValue = Runtime.MakeSymbol( "initxxxial-value", Runtime.KeywordPackage );
+            InitialValue = Runtime.MakeSymbol( "initial-value", Runtime.KeywordPackage );
             InteractiveMode = MakeSymbol( "$interactive-mode" );
             It = MakeSymbol( "it" );
             Key = MakeSymbol( "&key" );
