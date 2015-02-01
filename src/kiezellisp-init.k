@@ -12,20 +12,20 @@
 (setq $stdlog "d:/temp/stdlog")
 
 #+unix
-(let project-path "/home/jan/projects/")
+(let project-path "/home/jan/projects/kiezellisp/")
 
 #+windows
-(let project-path "d:/projects/")
+(let project-path "d:/projects/kiezellisp/")
 
 (letfun make-path (x)
     (string project-path x))
 
-(apply set-load-path (map make-path (list 
-                "kiezellisp-private/lib"
-                "kiezellisp-private/app"
-                "kiezellisp/contrib/lib"
-                "kiezellisp/lib"
-                "kiezellisp/app" )))
+(apply set-load-path (map make-path (list
+                "private/lib"
+                "private/app"
+                "contrib/lib"
+                "lib"
+                "app" )))
 
 (setq $load-verbose $interactive-mode)
 

@@ -157,7 +157,7 @@ namespace Kiezel
             }
         }
 
-        internal static object TryParse( string str, CultureInfo culture, int numberBase )
+        internal static object TryParse( string str, CultureInfo culture, int numberBase, bool decimalPointIsComma )
         {
             string s = str;
             BigInteger result;
@@ -167,6 +167,8 @@ namespace Kiezel
                 // Mono parses this as a zero.
                 return null;
             }
+
+            var point = decimalPointIsComma ? "," : ".";
 
             if ( numberBase != 0 && numberBase != 10 )
             {
@@ -208,7 +210,7 @@ namespace Kiezel
                     return Shrink( -result );
                 }
             }
-            else if ( s.IndexOf( '.' ) == -1 )
+            else if ( s.IndexOf( point ) == -1 )
             {
                 int pos = s.IndexOf( '/' );
 
@@ -237,6 +239,15 @@ namespace Kiezel
                 double result3;
 
                 s = s.Replace( "_", "" );
+
+                if ( decimalPointIsComma )
+                {
+                    s = s.Replace( ".", "" ).Replace( ",", "." );
+                }
+                else
+                {
+                    s = s.Replace( ",", "" );
+                }
 
                 if ( Runtime.ReadDecimalNumbers && decimal.TryParse( s, NumberStyles.Any, culture ?? CultureInfo.InvariantCulture, out result2 ) )
                 {

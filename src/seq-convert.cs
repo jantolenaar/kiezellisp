@@ -251,5 +251,17 @@ namespace Kiezel
             }
         }
 
+        [Lisp( "as-prototype" )]
+        public static Prototype AsPrototype( IEnumerable seq, IApply keyFunc, IApply valueFunc )
+        {
+            var dict = new Prototype();
+            foreach ( var item in ToIter( seq ) )
+            {
+                var k = Funcall( keyFunc, item );
+                var v = Funcall( valueFunc, item );
+                dict.SetValue( k, v );
+            }
+            return dict;
+        }
     }
 }

@@ -2,6 +2,7 @@ bin/
 obj/
 github.git/
 grammar/
+private/
 *~
 *.user
 *.suo

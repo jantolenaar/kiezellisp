@@ -223,7 +223,16 @@ namespace Kiezel
             {
                 if ( IsUndefined )
                 {
-                    return Environment.GetEnvironmentVariable( Name ) ?? Environment.GetEnvironmentVariable( Name.ToUpper() );
+                    var val = Environment.GetEnvironmentVariable( Name ) ?? Environment.GetEnvironmentVariable( Name.ToUpper() );
+                    if ( val != null )
+                    {
+                        return val;
+                    }
+                    if ( Name.ToUpper() == "HOME" )
+                    {
+                        val = Environment.GetEnvironmentVariable( "USERPROFILE" );
+                    }
+                    return val;
                 }
 
                 return _value;

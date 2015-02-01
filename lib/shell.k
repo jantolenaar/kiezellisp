@@ -162,6 +162,8 @@
 #+windows
 (defun robocopy-mirror (source destination)
     ;(let $stdout null)
+    (let source (path:get-windows-name source))
+    (let destination (path:get-windows-name destination))
     (run "robocopy.exe" source destination "/MIR" "/MT" "/NS" "/NC" "/NDL" "/NP" "/NJH" "/NJS"))
 
 #+unix

@@ -418,6 +418,7 @@ namespace Kiezel
             var text = MakeString( args );
             throw new LispException( text );
         }
+
         internal static Prototype AsPrototype( object obj, bool caseInsensitive )
         {
    

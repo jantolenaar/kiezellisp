@@ -469,10 +469,11 @@ namespace Kiezel
 
         public static object TryParseNumber( this string str, params object[] kwargs )
         {
-            object[] args = Runtime.ParseKwargs( kwargs, new string[] { "culture", "base" } );
+            object[] args = Runtime.ParseKwargs( kwargs, new string[] { "culture", "base", "decimal-point-is-comma" } );
             var culture = Runtime.GetCultureInfo( args[ 0 ] );
             var numberBase = Convert.ToInt32( args[ 1 ] ?? "0" );
-            return Number.TryParse( str, culture, numberBase );
+            var decimalPointIsComma = Runtime.ToBool( args[ 2 ] );
+            return Number.TryParse( str, culture, numberBase, decimalPointIsComma );
         }
 
         public static object TryParseTime( this string str )

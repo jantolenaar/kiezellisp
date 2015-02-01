@@ -3892,6 +3892,344 @@ Returns the concatenation of the pure string representations of each `value`.
 
 ;------------------------------------------------------------------------------
 
+(string:capitalize (str)
+"""
+Capitalizes each word of a string.
+"""
+(.capitalize "aap noot mies")
+)
+
+;------------------------------------------------------------------------------
+
+(string:convert-to-external-line-endings (str)
+"""
+On Windows, changes LF to CRLF.
+"""
+)
+
+;------------------------------------------------------------------------------
+
+(string:convert-to-internal-line-endings (str)
+"""
+On Windows, changes CRLF to LF.
+"""
+)
+
+;------------------------------------------------------------------------------
+
+(string:html-decode (str)
+"""
+Same as HttpUtility.HtmlDecode
+"""
+)
+
+;------------------------------------------------------------------------------
+
+(string:html-encode (str)
+"""
+Same as HttpUtility.HtmlEncode
+"""
+)
+
+;------------------------------------------------------------------------------
+
+(string:indent (text prefix)
+"""
+Adds a prefix string to each line in `text`.
+"""
+(print-line (.indent "aaaa\nbbbb" "---"))
+)
+
+;------------------------------------------------------------------------------
+
+(string:indent-with-line-numbers (text line-number width separator)
+"""
+Adds a line number and prefix string to each line in `text`.
+"""
+(print-line (.indent-with-line-numbers "aaaa\nbbbb" 12 4 ": "))
+)
+
+;------------------------------------------------------------------------------
+
+(string:join (separator values)
+             (separator value start-index count)
+             (separator seq)
+"""
+The third form is a Kiezellisp extension.
+"""
+(.join ", " '(aap noot mies))
+)
+
+;------------------------------------------------------------------------------
+
+(string:json-decode (str)
+"""
+Decodes a JSON string.
+"""
+(string:json-encode (new :name "mies"))
+(.json-decode it)
+)
+
+;------------------------------------------------------------------------------
+
+(string:json-encode (value)
+"""
+Encodes a value as a JSON string.
+"""
+(print-line (string:json-encode (new :name "mies")))
+)
+
+;------------------------------------------------------------------------------
+
+(string:latex-encode (str)
+"""
+Escapes characters that have a meaning in latex source.
+"""
+)
+
+;------------------------------------------------------------------------------
+
+(string:left (str count)
+"""
+Returns the leftmost `count` characters of `str`.
+"""
+(.left "aap" 2)
+(.left "aap" 22)
+)
+
+;------------------------------------------------------------------------------
+
+(string:lisp-name (name)
+"""
+Converts between naming conventions.
+"""
+(.lisp-name "EenTweeDrie")
+)
+
+;------------------------------------------------------------------------------
+
+(string:lisp-to-camel-case-name (name)
+"""
+Converts between naming conventions.
+"""
+(.lisp-to-camel-case-name "een-twee-drie")
+)
+
+;------------------------------------------------------------------------------
+
+(string:lisp-to-pascal-case-name (name)
+"""
+Converts between naming conventions.
+"""
+(.lisp-to-pascal-case-name "een-twee-drie")
+)
+
+;------------------------------------------------------------------------------
+
+(string:next (str)
+"""
+Returns the string that succeeds `str`.
+"""
+(.next "abc")
+(.next "abz")
+)
+
+;------------------------------------------------------------------------------
+
+(string:pad-left (str width)
+                 (str width padding-char)
+                 (str width padding-str)
+"""
+The third form is a Kiezellisp extension.
+"""
+)
+
+;------------------------------------------------------------------------------
+
+(string:pad-right (str width)
+                 (str width padding-char)
+                 (str width padding-str)
+"""
+The third form is a Kiezellisp extension.
+"""
+)
+
+;------------------------------------------------------------------------------
+
+(string:parse-date (str &key format culture)
+"""
+See also: [try-parse-date](#string:try-parse-date). 
+"""
+)
+
+;------------------------------------------------------------------------------
+
+(string:parse-number (str &key base culture)
+"""
+See also: [try-parse-number](#string:try-parse-number). 
+"""
+)
+
+;------------------------------------------------------------------------------
+
+(string:prev (str)
+"""
+Returns the string that preceeds `str`.
+"""
+(.prev "abc")
+(.prev "ab0")
+)
+
+;------------------------------------------------------------------------------
+
+(string:regex-encode (str)
+"""
+Same as Regex.Escape.
+"""
+)
+
+;------------------------------------------------------------------------------
+
+(string:regex-match (str pattern)
+"""
+Compares `str` to the string or Regex `pattern`. Returns null if no match.
+Returns a list of matches otherwise.
+"""
+(.regex-match "hello, world" "(.)rl")
+)
+
+;------------------------------------------------------------------------------
+
+(string:regex-replace (str pattern transform-func)
+                      (str pattern replacement-str)
+"""
+Compares `str` to the string or Regex `pattern`. The number of arguments of 
+`transform-func` must be equal to the number of groups in the pattern. 
+`replacement-str` may refer to groups as \1, \2, etc.
+"""
+)
+
+;------------------------------------------------------------------------------
+
+(string:regex-split (str pattern)
+"""
+
+"""
+)
+
+;------------------------------------------------------------------------------
+
+(string:repeat (str count)
+"""
+Returns a string consisting of `count` copies of `str`.
+"""
+(.repeat "abc" 3)
+)
+
+;------------------------------------------------------------------------------
+
+(string:right (s count)
+"""
+Returns the rightmost `count` characters of `str`.
+"""
+(.right "aap" 2)
+(.right "aap" 22)
+)
+
+;------------------------------------------------------------------------------
+
+(string:split (str)
+              (str count)
+              (str separators)
+              (str separators count)
+"""
+These forms are Kiezellisp extension methods. The first and second forms split on
+white space and always remove empty substrings. In the third and fourth forms
+`separators` is a string or another sequence (IEnumerable other than string).
+In case of a string, the function splits on the individual characters of the
+string.
+"""
+(.split "aap noot mies" 2)
+:d
+(.split "hello, world" "lw")
+:d
+)
+
+;------------------------------------------------------------------------------
+
+(string:trim (str)
+             (str &rest trim-chars)
+             (str trim-chars-str)
+"""
+The third form is a Kiezellisp extension. 
+"""
+(.trim "efefabcdefefefef" "fe")
+)
+
+;------------------------------------------------------------------------------
+
+(string:trim-end (str)
+                 (str &rest trim-chars)
+                 (str trim-chars-str)
+"""
+The third form is a Kiezellisp extension. 
+"""
+(.trim-end "abcdefefefef" "fe")
+)
+
+;------------------------------------------------------------------------------
+
+(string:trim-start (str)
+                   (str &rest trim-chars)
+                   (str trim-chars-str)
+"""
+The third form is a Kiezellisp extension. 
+"""
+(.trim-start "abcdefefefef" "fe")
+)
+
+
+;------------------------------------------------------------------------------
+
+(string:try-parse-date (str &key format culture)
+"""
+Converts a string to a DateTime.
+"""
+(.try-parse-date "20130104" :format "yyyyMMdd")
+(.try-parse-date "20139904" :format "yyyyMMdd")
+)
+
+;------------------------------------------------------------------------------
+
+(string:try-parse-number (str &key base decimal-point-is-comma culture )
+"""
+Converts a string to a number. Precedence: `base` (<> 10),  
+`decimal-point-is-comma`, `culture`.
+"""
+(.try-parse-number "123.4" )
+(.try-parse-number "123,4" :decimal-point-is-comma true)
+(.try-parse-number "123a" )
+(.try-parse-number "123a" :base 16 )
+)
+
+;------------------------------------------------------------------------------
+
+(string:url-decode (str)
+"""
+Same as HttpUtility.UrlDecode
+"""
+)
+
+;------------------------------------------------------------------------------
+
+(string:url-encode (str)
+"""
+Same as HttpUtility.UrlEncode
+"""
+)
+
+;------------------------------------------------------------------------------
+
 (string? (value)
 """
 Returns true if `value` is a string.

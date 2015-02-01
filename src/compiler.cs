@@ -316,7 +316,7 @@ namespace Kiezel
                 else
                 {
                     var code = Compile( expr, bodyScope );
-                    if ( !( code is GotoExpression ) )
+                    if ( !( code is GotoExpression ) && tilde != null )
                     {
                         code = Expression.Assign( tilde, code );
                     }
