@@ -25,3 +25,5 @@ private/
 *.out
 *.pdf
 *.userprefs
+
+_FOSSIL_
