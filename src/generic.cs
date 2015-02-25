@@ -30,7 +30,7 @@ namespace Kiezel
 
         public void Add( LambdaClosure method )
         {
-            method.Generic = this;
+            method.Owner = this;
 
             var comparer = new LambdaSignatureComparer();
 
@@ -74,10 +74,12 @@ namespace Kiezel
         {
             return Runtime.AsList( Lambdas.Select( Runtime.GetSyntax ).Distinct() );
         }
+
         public Cons Match( object[] args )
         {
             return Runtime.AsList( Lambdas.Where( x => x.Definition.Signature.ParametersMatchArguments( args ) ) );
         }
+
         internal object ApplyNext( LambdaClosure current, object[] args )
         {
             foreach ( var lambda in Lambdas )

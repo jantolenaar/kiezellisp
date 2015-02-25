@@ -514,6 +514,8 @@ namespace Kiezel
         internal static Symbol DefSpecialForm;
 
         internal static Symbol Defun;
+        
+        internal static Symbol DefunStar;
 
         internal static Symbol Do;
 
@@ -602,6 +604,8 @@ namespace Kiezel
         internal static Symbol Label;
 
         internal static Symbol Lambda;
+        
+        internal static Symbol LambdaStar;
 
         internal static Symbol LambdaList;
 
@@ -849,6 +853,7 @@ namespace Kiezel
             DefSpecialForm = MakeSymbol( "define-special-form" );
             Default = MakeSymbol( "default" );
             Defun = MakeSymbol( "defun" );
+            DefunStar = MakeSymbol( "defun*" );
             Do = MakeSymbol( "do" );
             Documentation = MakeSymbol( "documentation" );
             Dot = MakeSymbol( "." );
@@ -892,6 +897,7 @@ namespace Kiezel
             Label = MakeSymbol( "label" );
             Lambda = MakeSymbol( "lambda" );
             LambdaList = MakeSymbol( @"__lambdas__" );
+            LambdaStar = MakeSymbol( "lambda*" );
             LazyImport = MakeSymbol( "$lazy-import" );
             LazyVar = MakeSymbol( "lazy" );
             Left = Runtime.MakeSymbol( "left", Runtime.KeywordPackage );

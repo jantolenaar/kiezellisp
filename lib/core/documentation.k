@@ -1460,6 +1460,16 @@ See also: [Functions](functions.html)
 
 ;------------------------------------------------------------------------------
 
+(defun* (name ((arg*) \[doc-string\] form*)...)
+"""
+Defines a multi-arity function.
+
+See also: [Functions](functions.html)
+"""
+)
+
+;------------------------------------------------------------------------------
+
 (delay (&body forms)
 """
 Creates a delayed expression which is not evaluated until the function `force` is called.
@@ -2345,6 +2355,15 @@ Defines a `goto` target in a `do` block. Internal use.
 
 (lambda ((arg*) form*)
 """
+See also: [Functions](functions.html).
+"""
+)
+
+;------------------------------------------------------------------------------
+
+(lambda* (((arg*) form*)...)
+"""
+Defines a multi-arity function.
 See also: [Functions](functions.html).
 """
 )

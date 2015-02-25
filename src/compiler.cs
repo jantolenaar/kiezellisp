@@ -60,6 +60,8 @@ namespace Kiezel
 
         internal static MethodInfo MakeLambdaClosureMethod = RuntimeMethod( typeof( LambdaDefinition ), "MakeLambdaClosure" );
 
+        internal static MethodInfo MakeMultiArityLambdaMethod = RuntimeMethod( "MakeMultiArityLambda" );
+
         internal static MethodInfo NotMethod = RuntimeMethod( "Not" );
 
         internal static MethodInfo NullOperationMethod = RuntimeMethod( "NullOperation" );
@@ -497,6 +499,20 @@ namespace Kiezel
             return CallRuntime( DefineFunctionMethod, Expression.Constant( sym ), lambda, Expression.Constant( doc, typeof( string ) ) );
         }
 
+        internal static Expression CompileDefunStar( Cons form, AnalysisScope scope )
+        {
+            // defun* name (args body) ...
+            CheckMinLength( form, 3 );
+            var sym = CheckSymbol( Second( form ) );
+            if ( sym.IsDynamic )
+            {
+                throw new LispException( "Invalid function name: {0}", sym );
+            }
+            string doc;
+            var lambda = CompileMultiArityLambdaDef( sym, Cddr( form ), scope, out doc );
+            return CallRuntime( DefineFunctionMethod, Expression.Constant( sym ), lambda, Expression.Constant( doc, typeof( string ) ) );
+        }
+
         internal static Expression CompileDo( Cons form, AnalysisScope scope )
         {
             return CompileBody( Cdr( form ), scope );
@@ -561,7 +577,7 @@ namespace Kiezel
 
         internal static LambdaSignature CompileFormalArgs( Cons args, AnalysisScope scope, LambdaKind kind )
         {
-            var signature = new LambdaSignature( kind );
+            var signature = new LambdaSignature( kind == LambdaKind.MultiArityFunction ? LambdaKind.Function : kind );
             signature.ArgModifier = null;
             bool wantWholeArgName = false;
             bool wantEnvArgName = false;
@@ -600,6 +616,10 @@ namespace Kiezel
                     }
                     else if ( sym == Symbols.Optional || sym == Symbols.Key || sym == Symbols.Rest || sym == Symbols.Body || sym == Symbols.Params || sym == Symbols.Vector )
                     {
+                        if ( kind == LambdaKind.MultiArityFunction )
+                        {
+                            throw new LispException( "Modifiers not allowed on multi-lambda function" );
+                        }
                         if ( signature.ArgModifier != null )
                         {
                             throw new LispException( "Only one modifier can be used: &key, &optional, &rest, &body, &vector or &params" );
@@ -913,6 +933,40 @@ namespace Kiezel
             }
         }
 
+        internal static Expression CompileLambdaStar( Cons form, AnalysisScope scope )
+        {
+            // lambda [name] args body
+
+            string doc;
+            if ( Symbolp( Second( form ) ) )
+            {
+                CheckMinLength( form, 3 );
+                return CompileMultiArityLambdaDef( ( Symbol ) Second( form ), Cddr( form ), scope, out doc );
+            }
+            else
+            {
+                CheckMinLength( form, 2 );
+                return CompileMultiArityLambdaDef( null, Cdr( form ), scope, out doc );
+            }
+        }
+
+        internal static Expression CompileMultiArityLambdaDef( Symbol name, Cons forms, AnalysisScope scope, out string doc )
+        {
+            doc = "";
+            var lambdas = new List<Expression>();
+            foreach ( Cons form in ToIter( forms ) )
+            {
+                string doc2;
+                lambdas.Add( CompileLambdaDef( name, form, scope, LambdaKind.MultiArityFunction, out doc2 ) );
+                if ( !String.IsNullOrWhiteSpace( doc2 ))
+                {
+                    doc = doc + doc2 + "\n";
+                }
+            }
+            var expr = CallRuntime( MakeMultiArityLambdaMethod, Expression.NewArrayInit( typeof( LambdaClosure), lambdas ) );
+            return expr;
+        }
+
         internal static Expression CompileLambdaDef( Symbol name, Cons forms, AnalysisScope scope, LambdaKind kind, out string doc )
         {
             CheckMinLength( forms, 0 );
@@ -922,8 +976,13 @@ namespace Kiezel
                 PrintWarning( "Function body contains no forms." );
             }
 
-            var maybeArgs = First( forms );
-            var args = Listp( maybeArgs ) ? ( Cons ) maybeArgs : MakeList( maybeArgs );
+            var args = (Cons) First( forms );
+
+            //if ( kind == LambdaKind.Function && args != null && Listp( First(args) ) )
+            //{
+            //    return CompileMultiArityLambdaDef( name, forms, scope, out doc );
+            //}
+            
             var body = Cdr( forms );
 
             var funscope = new AnalysisScope( scope, name == null ? null : name.Name );
@@ -996,9 +1055,16 @@ namespace Kiezel
             template.Source = MakeListStar( Symbols.Lambda, args, body );
 #endif
             doc = "";
-            if ( Length( body ) > 1 && body.Car is string )
+            if ( body != null )
             {
-                doc = ( string ) body.Car;
+                if ( body.Car is string )
+                {
+                    doc = ( string ) body.Car;
+                    if ( body.Cdr != null )
+                    {
+                        body = body.Cdr;
+                    }
+                }
             }
 
             var v = new Vector();
@@ -1614,6 +1680,7 @@ namespace Kiezel
             Symbols.DefMethod.FunctionValue = new SpecialForm( CompileDefMethod );
             Symbols.DefMulti.FunctionValue = new SpecialForm( CompileDefMulti );
             Symbols.Defun.FunctionValue = new SpecialForm( CompileDefun );
+            Symbols.DefunStar.FunctionValue = new SpecialForm( CompileDefunStar );
             Symbols.Do.FunctionValue = new SpecialForm( CompileDo );
             Symbols.FutureVar.FunctionValue = new SpecialForm( CompileFutureVar );
             Symbols.GetAttr.FunctionValue = new SpecialForm( CompileGetMember );
@@ -1625,6 +1692,7 @@ namespace Kiezel
             Symbols.If.FunctionValue = new SpecialForm( CompileIf );
             Symbols.Label.FunctionValue = new SpecialForm( CompileLabel );
             Symbols.Lambda.FunctionValue = new SpecialForm( CompileLambda );
+            Symbols.LambdaStar.FunctionValue = new SpecialForm( CompileLambdaStar );
             Symbols.LazyVar.FunctionValue = new SpecialForm( CompileLazyVar );
             Symbols.Let.FunctionValue = new SpecialForm( CompileLet );
             Symbols.LetFun.FunctionValue = new SpecialForm( CompileLetFun );

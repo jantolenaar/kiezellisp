@@ -13,15 +13,30 @@ namespace Kiezel
     {
         Function,
         Method,
-        Macro
+        Macro,
+        MultiArityFunction
     }
 
     public class LambdaClosure : IDynamicMetaObjectProvider, IApply, ISyntax
     {
         internal LambdaDefinition Definition;
         internal Frame Frame;
-        internal MultiMethod Generic;
+        internal object Owner;
+        internal MultiMethod Generic
+        {
+            get
+            {
+                return Owner as MultiMethod;
+            }
+        }
         internal BindingRestrictions GenericRestrictions;
+        internal MultiArityLambda MultiLambda
+        {
+            get
+            {
+                return Owner as MultiArityLambda;
+            }
+        }
 
         internal bool IsGetter
         {
@@ -100,12 +115,12 @@ namespace Kiezel
             if ( Runtime.DebugMode )
             {
                 context.EvaluationStack = Runtime.MakeListStar( saved, context.SpecialStack, context.EvaluationStack );
-                result = Definition.Proc( lambdaList, this, args );
+                result = Definition.Proc( lambdaList, Owner ?? this, args );
                 context.EvaluationStack = Runtime.Cddr( context.EvaluationStack );
             }
             else
             {
-                result = Definition.Proc( lambdaList, this, args );
+                result = Definition.Proc( lambdaList, Owner ?? this, args );
             }
             context.Frame = saved;
 
@@ -285,6 +300,7 @@ namespace Kiezel
         internal LambdaSignature Signature;
         internal Cons Source;
         internal Cons Syntax;
+
         internal static LambdaClosure MakeLambdaClosure( LambdaDefinition def )
         {
             var closure = new LambdaClosure

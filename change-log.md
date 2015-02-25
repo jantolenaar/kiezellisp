@@ -1,5 +1,10 @@
 # Change Log
 
+## 2015/02/21
+
+*   Added `lambda*` and `defun*` defining multi-arity functions.
+*   Fixed `recur` bug.
+
 ## 2015/01/08
 
 *   Better handling of numeric conversions.
