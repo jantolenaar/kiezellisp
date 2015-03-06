@@ -1,9 +1,15 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 2012
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "kiezellisp", "kiezellisp.csproj", "{648A838C-3B6C-42B8-ADD3-AC9FF3ADB848}"
+# Visual Studio 2013
+VisualStudioVersion = 12.0.31101.0
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "kiezellisp-lib", "kiezellisp-lib\kiezellisp-lib.csproj", "{648A838C-3B6C-42B8-ADD3-AC9FF3ADB848}"
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{83CB1228-A5DE-4CC0-B2AC-5890D259DACF}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "kiezellisp-console", "kiezellisp-console\kiezellisp-console.csproj", "{A1F4AD6A-2BBF-49DE-99C8-3171C922C038}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "kiezellisp-windows", "kiezellisp-windows\kiezellisp-windows.csproj", "{BCA6FF8C-CAE2-4FC3-8BDF-9FDE553B2045}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "kiezellisp-embedded-demo", "kiezellisp-embedded-demo\kiezellisp-embedded-demo.csproj", "{9C305C0B-767E-4EBF-A054-304F4B107873}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -27,13 +33,41 @@ Global
 		{648A838C-3B6C-42B8-ADD3-AC9FF3ADB848}.Release|Mixed Platforms.Build.0 = Release|x86
 		{648A838C-3B6C-42B8-ADD3-AC9FF3ADB848}.Release|x86.ActiveCfg = Release|x86
 		{648A838C-3B6C-42B8-ADD3-AC9FF3ADB848}.Release|x86.Build.0 = Release|x86
-	EndGlobalSection
-	GlobalSection(NestedProjects) = preSolution
-	EndGlobalSection
-	GlobalSection(MonoDevelopProperties) = preSolution
-		StartupItem = kiezellisp.csproj
+		{A1F4AD6A-2BBF-49DE-99C8-3171C922C038}.Debug|Any CPU.ActiveCfg = Debug|x86
+		{A1F4AD6A-2BBF-49DE-99C8-3171C922C038}.Debug|Mixed Platforms.ActiveCfg = Debug|x86
+		{A1F4AD6A-2BBF-49DE-99C8-3171C922C038}.Debug|Mixed Platforms.Build.0 = Debug|x86
+		{A1F4AD6A-2BBF-49DE-99C8-3171C922C038}.Debug|x86.ActiveCfg = Debug|x86
+		{A1F4AD6A-2BBF-49DE-99C8-3171C922C038}.Debug|x86.Build.0 = Debug|x86
+		{A1F4AD6A-2BBF-49DE-99C8-3171C922C038}.Release|Any CPU.ActiveCfg = Release|x86
+		{A1F4AD6A-2BBF-49DE-99C8-3171C922C038}.Release|Mixed Platforms.ActiveCfg = Release|x86
+		{A1F4AD6A-2BBF-49DE-99C8-3171C922C038}.Release|Mixed Platforms.Build.0 = Release|x86
+		{A1F4AD6A-2BBF-49DE-99C8-3171C922C038}.Release|x86.ActiveCfg = Release|x86
+		{A1F4AD6A-2BBF-49DE-99C8-3171C922C038}.Release|x86.Build.0 = Release|x86
+		{BCA6FF8C-CAE2-4FC3-8BDF-9FDE553B2045}.Debug|Any CPU.ActiveCfg = Debug|x86
+		{BCA6FF8C-CAE2-4FC3-8BDF-9FDE553B2045}.Debug|Mixed Platforms.ActiveCfg = Debug|x86
+		{BCA6FF8C-CAE2-4FC3-8BDF-9FDE553B2045}.Debug|Mixed Platforms.Build.0 = Debug|x86
+		{BCA6FF8C-CAE2-4FC3-8BDF-9FDE553B2045}.Debug|x86.ActiveCfg = Debug|x86
+		{BCA6FF8C-CAE2-4FC3-8BDF-9FDE553B2045}.Debug|x86.Build.0 = Debug|x86
+		{BCA6FF8C-CAE2-4FC3-8BDF-9FDE553B2045}.Release|Any CPU.ActiveCfg = Release|x86
+		{BCA6FF8C-CAE2-4FC3-8BDF-9FDE553B2045}.Release|Mixed Platforms.ActiveCfg = Release|x86
+		{BCA6FF8C-CAE2-4FC3-8BDF-9FDE553B2045}.Release|Mixed Platforms.Build.0 = Release|x86
+		{BCA6FF8C-CAE2-4FC3-8BDF-9FDE553B2045}.Release|x86.ActiveCfg = Release|x86
+		{BCA6FF8C-CAE2-4FC3-8BDF-9FDE553B2045}.Release|x86.Build.0 = Release|x86
+		{9C305C0B-767E-4EBF-A054-304F4B107873}.Debug|Any CPU.ActiveCfg = Debug|x86
+		{9C305C0B-767E-4EBF-A054-304F4B107873}.Debug|Mixed Platforms.ActiveCfg = Debug|x86
+		{9C305C0B-767E-4EBF-A054-304F4B107873}.Debug|Mixed Platforms.Build.0 = Debug|x86
+		{9C305C0B-767E-4EBF-A054-304F4B107873}.Debug|x86.ActiveCfg = Debug|x86
+		{9C305C0B-767E-4EBF-A054-304F4B107873}.Debug|x86.Build.0 = Debug|x86
+		{9C305C0B-767E-4EBF-A054-304F4B107873}.Release|Any CPU.ActiveCfg = Release|x86
+		{9C305C0B-767E-4EBF-A054-304F4B107873}.Release|Mixed Platforms.ActiveCfg = Release|x86
+		{9C305C0B-767E-4EBF-A054-304F4B107873}.Release|Mixed Platforms.Build.0 = Release|x86
+		{9C305C0B-767E-4EBF-A054-304F4B107873}.Release|x86.ActiveCfg = Release|x86
+		{9C305C0B-767E-4EBF-A054-304F4B107873}.Release|x86.Build.0 = Release|x86
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(MonoDevelopProperties) = preSolution
+		StartupItem = kiezellisp.csproj
 	EndGlobalSection
 EndGlobal

@@ -6,10 +6,10 @@
     <ProductVersion>8.0.30703</ProductVersion>
     <SchemaVersion>2.0</SchemaVersion>
     <ProjectGuid>{648A838C-3B6C-42B8-ADD3-AC9FF3ADB848}</ProjectGuid>
-    <OutputType>Exe</OutputType>
+    <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>Kiezel</RootNamespace>
-    <AssemblyName>kiezellisp</AssemblyName>
+    <AssemblyName>kiezellisp-lib</AssemblyName>
     <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
     <TargetFrameworkProfile>
     </TargetFrameworkProfile>
@@ -55,12 +55,17 @@
     <Externalconsole>true</Externalconsole>
   </PropertyGroup>
   <PropertyGroup>
-    <ApplicationIcon>lisp-icon.ico</ApplicationIcon>
+    <ApplicationIcon>
+    </ApplicationIcon>
+  </PropertyGroup>
+  <PropertyGroup>
+    <StartupObject />
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="Microsoft.CSharp" />
     <Reference Include="System" />
     <Reference Include="System.Core" />
+    <Reference Include="System.Drawing" />
     <Reference Include="System.Management" />
     <Reference Include="System.Numerics" />
     <Reference Include="System.Web" />
@@ -92,7 +97,9 @@
     <Compile Include="compiler-scope.cs" />
     <Compile Include="compiler.cs" />
     <Compile Include="cons.cs" />
-    <Compile Include="console.cs" />
+    <Compile Include="forms-mode.cs" />
+    <Compile Include="embedded-mode.cs" />
+    <Compile Include="console-mode.cs" />
     <Compile Include="constants.cs" />
     <Compile Include="convert.cs" />
     <Compile Include="csv.cs" />
@@ -161,14 +168,6 @@
     </BootstrapperPackage>
   </ItemGroup>
   <ItemGroup>
-    <None Include="app.config" />
-    <None Include="kiezellisp-init.k">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
-    <None Include="release-kiezellisp-init.k" />
-    <None Include="release-kiezellispw-init.k" />
-  </ItemGroup>
-  <ItemGroup>
     <EmbeddedResource Include="lisp-icon.ico" />
   </ItemGroup>
   <ItemGroup>
@@ -177,15 +176,12 @@
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <ProjectExtensions>
     <VisualStudio>
-      <UserProperties BuildVersion_BuildVersioningStyle="None.None.Increment.None" BuildVersion_AssemblyInfoFilename="Properties\AssemblyInfo.cs" BuildVersion_UpdateFileVersion="True" />
+      <UserProperties BuildVersion_UpdateFileVersion="True" BuildVersion_AssemblyInfoFilename="Properties\AssemblyInfo.cs" BuildVersion_BuildVersioningStyle="None.None.Increment.None" />
     </VisualStudio>
   </ProjectExtensions>
   <PropertyGroup>
-    <PostBuildEvent>copy /y "$(TargetPath)" c:\bin\k.exe
-copy /y "$(TargetDir)kiezellisp-init.k" c:\bin\k-init.k
-copy /y "$(TargetPath)" c:\bin\kiezellisp.exe
-copy /y "$(TargetDir)kiezellisp-init.k" c:\bin\kiezellisp-init.k
-C:\Windows\Microsoft.NET\Framework\v4.0.30319\ngen.exe install c:\bin\kiezellisp.exe</PostBuildEvent>
+    <PostBuildEvent>
+    </PostBuildEvent>
   </PropertyGroup>
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it.
        Other similar extension points exist, see Microsoft.Common.targets.

@@ -1,5 +1,9 @@
 # Change Log
 
+## 2015/03/06
+
+*   Added `EmbeddedMode` feature.
+
 ## 2015/02/21
 
 *   Added `lambda*` and `defun*` defining multi-arity functions.

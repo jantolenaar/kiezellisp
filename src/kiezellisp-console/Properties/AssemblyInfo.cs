@@ -1,7 +1,8 @@
-using System.Reflection;
+﻿using System.Reflection;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
-// General Information about an assembly is controlled through the following
+// General Information about an assembly is controlled through the following 
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
 [assembly: AssemblyTitle( "Kiezellisp" )]
@@ -9,27 +10,26 @@ using System.Runtime.InteropServices;
 [assembly: AssemblyConfiguration( "" )]
 [assembly: AssemblyCompany( "Tolenaar IT Services" )]
 [assembly: AssemblyProduct( "Kiezellisp" )]
-[assembly: AssemblyCopyright( "Copyright \u00a9 Jan Tolenaar 2009-2015" )]
+[assembly: AssemblyCopyright( "Copyright \u00a9 2009-2015" )]
 [assembly: AssemblyTrademark( "" )]
 [assembly: AssemblyCulture( "" )]
 
-// Setting ComVisible to false makes the types in this assembly not visible
-// to COM components.  If you need to access a type in this assembly from
+// Setting ComVisible to false makes the types in this assembly not visible 
+// to COM components.  If you need to access a type in this assembly from 
 // COM, set the ComVisible attribute to true on that type.
 [assembly: ComVisible( false )]
 
 // The following GUID is for the ID of the typelib if this project is exposed to COM
-[assembly: Guid( "da6eeacf-da3a-44ed-98f0-925c70ed3017" )]
+[assembly: Guid( "b7f3bdd6-18a4-454f-a2f3-e42aacdf4739" )]
 
 // Version information for an assembly consists of the following four values:
 //
 //      Major Version
-//      Minor Version
+//      Minor Version 
 //      Build Number
 //      Revision
 //
-// You can specify all the values or you can default the Build and Revision Numbers
+// You can specify all the values or you can default the Build and Revision Numbers 
 // by using the '*' as shown below:
-[assembly: AssemblyVersion( "1.0.*" )]
-//[assembly: AssemblyFileVersion( "1.0.*.*" )]
+[assembly: AssemblyVersion("1.0.*")]
 [assembly: AssemblyInformationalVersion( "1.0" )]

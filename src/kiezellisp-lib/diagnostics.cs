@@ -7,10 +7,6 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 
-#if KIEZELLISPW
-using System.Windows.Forms;
-#endif
-
 namespace Kiezel
 {
     public partial class Runtime
@@ -623,9 +619,6 @@ namespace Kiezel
         internal static void PrintLog( params object[] args )
         {
             PrintLogColor( null, null, args );
-#if KIEZELLISPW
-            MessageBox.Show( MakeString( args ), "EXCEPTION", MessageBoxButtons.OK );
-#endif
         }
 
         internal static void PrintLogColor( object color, object bkcolor, params object[] args )
@@ -633,6 +626,7 @@ namespace Kiezel
             var msg = MakeString( args );
             WriteLine( msg, Symbols.Stream, GetDynamic( Symbols.StdLog ), Symbols.Escape, false, Symbols.Color, color, Symbols.BackgroundColor, bkcolor );
         }
+
         internal static string RemoveDlrReferencesFromException( Exception ex )
         {
             return String.Join( "\n", ex.ToString().Split( '\n' ).Where( IsNotDlrCode ) );

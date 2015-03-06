@@ -885,12 +885,10 @@ namespace Kiezel
                 }
             }
 
-#if !KIEZELLISPW
-            if ( stream == Console.Out )
+            if ( ConsoleMode && stream == Console.Out )
             {
                 ConsoleSetColor( color, bkcolor );
             }
-#endif
 
             try
             {
@@ -905,12 +903,10 @@ namespace Kiezel
             }
             finally
             {
-#if !KIEZELLISPW
-                if ( stream == Console.Out )
+                if ( ConsoleMode && stream == Console.Out )
                 {
                     Console.ResetColor();
                 }
-#endif
             }
         }
     }

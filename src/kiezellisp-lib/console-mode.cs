@@ -12,6 +12,14 @@ using System.Threading;
 
 namespace Kiezel
 {
+    public class ConsoleMode
+    {
+        public static void Run( string[] args )
+        {
+            Runtime.RunConsoleMode( args );
+        }
+    }
+
     public partial class Runtime
     {
         internal static string clipboard = "";
@@ -647,44 +655,9 @@ namespace Kiezel
                 func( Symbols.It.Value );
             }
         }
-        internal static void RunConsole( string[] args )
+
+        public static void RunConsoleMode( string[] args )
         {
-#if KIEZELLISPW
-
-            CommandLineParser parser = new CommandLineParser();
-
-            parser.AddOption( "-c", "--command code" );
-            parser.AddOption( "-d", "--debug" );
-            parser.AddOption( "-n", "--nodebug" );
-            parser.AddOption( "-o", "--optimize" );
-
-            parser.Parse( args );
-
-            ConsoleMode = false;
-            string expr1 = parser.GetOption( "c" );
-            UserArguments = AsList( parser.GetArgumentArray( 0 ) );
-
-            if ( expr1 == null )
-            {
-                throw new LispException( "Must use --command option when running in windows mode" );
-            }
-
-            try
-            {
-                DebugMode = parser.GetOption( "d" ) == null;
-                OptimizerEnabled = !DebugMode;
-                InteractiveMode = false;
-                ListenerEnabled = false;
-                Reset( false );
-                var code = ReadFromString( "(do " + expr1 + ")" );
-                Eval( code );
-            }
-            catch ( Exception ex )
-            {
-                PrintLog( GetDiagnostics( ex ) );
-            }
-
-#else
             CommandLineParser parser = new CommandLineParser();
 
             parser.AddOption( "-c", "--command code" );
@@ -697,6 +670,8 @@ namespace Kiezel
             parser.Parse( args );
 
             ConsoleMode = true;
+            EmbeddedMode = false;
+
             Console.OutputEncoding = System.Text.Encoding.UTF8;
             InitEditor();
 
@@ -736,8 +711,8 @@ namespace Kiezel
                 Console.WriteLine( "Type :help or ? for help on top-level commands" );
                 ReadEvalPrintLoop( commandOptionArgument: expr2, initialized: false );
             }
-#endif
         }
+
 
         internal static void ShowManual( Symbol target )
         {
@@ -769,13 +744,4 @@ namespace Kiezel
         }
     }
 
-    internal class MainApp
-    {
-        [STAThread]
-        private static void Main( string[] args )
-        {
-            Thread.CurrentThread.CurrentCulture = CultureInfo.InvariantCulture;
-            Runtime.RunConsole( args );
-        }
-    }
 }

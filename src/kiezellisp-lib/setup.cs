@@ -20,6 +20,7 @@ namespace Kiezel
         internal static bool AdaptiveCompilation = true;
         internal static int CompilationThreshold = 100;
         internal static bool ConsoleMode;
+        internal static bool EmbeddedMode;
         internal static bool DebugMode;
         internal static Readtable DefaultReadtable;
         internal static Dictionary<object, string> Documentation;
@@ -92,7 +93,7 @@ namespace Kiezel
         internal static string GetApplicationInitFile()
         {
             // application config file is same folder as kiezellisp.exe
-            var assembly = Assembly.GetExecutingAssembly();
+            var assembly = Assembly.GetEntryAssembly();
             var root = assembly.Location;
             var dir = Path.GetDirectoryName( root );
             var file = Path.GetFileNameWithoutExtension( root );
@@ -276,12 +277,7 @@ namespace Kiezel
 #endif
 
             AddFeature( "kiezellisp" );
-
-#if KIEZELLISPW
-            AddFeature( "graphical-mode" );
-#else
-            AddFeature( "console-mode" );
-#endif
+            AddFeature( ConsoleMode ? "console-mode" : "graphical-mode" );
 
             Symbols.Features.VariableValue = AsList( Sort( ( Cons ) Symbols.Features.Value ) );
         }
@@ -338,14 +334,8 @@ namespace Kiezel
             Symbols.StdIn.VariableValue = Console.In;
             Symbols.StdLog.VariableValue = true;
             Symbols.StdOut.VariableValue = true;
-
-#if KIEZELLISPW
-            Symbols.StandoutColor.Value = null;
-            Symbols.StandoutBackgroundColor.Value = null;
-#else
             Symbols.StandoutColor.Value = Console.BackgroundColor;
             Symbols.StandoutBackgroundColor.Value = Console.ForegroundColor;
-#endif
         }
 
         internal static void RestartVariables()
