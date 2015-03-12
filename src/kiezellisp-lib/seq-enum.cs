@@ -768,11 +768,10 @@ namespace Kiezel
             internal static IEnumerable Shuffle( IEnumerable seq )
             {
                 var v = AsVector( seq );
-                var r = new Random();
                 var v2 = new Vector();
                 for ( int i = v.Count; i > 0; --i )
                 {
-                    var j = r.Next( i );
+                    var j = Random( i );
                     v2.Add( v[ j ] );
                     v.RemoveAt( j );
                 }

@@ -13,8 +13,8 @@ namespace kiezellisp_embedded_demo
             try
             {
                 Kiezel.EmbeddedMode.Init( consoleMode: true, debugMode: false );
-                var a = Kiezel.EmbeddedMode.Eval( "(+ 3 4)" );
-                Kiezel.EmbeddedMode.Eval( "(print-line (if true 'een 'twee))" );
+                var a = Kiezel.EmbeddedMode.Funcall( "+", 2, 3 );
+                Kiezel.EmbeddedMode.Funcall( "print-line", a );
                 var b = Kiezel.EmbeddedMode.Funcall( "+", a, a );
                 Kiezel.EmbeddedMode.Funcall( "++", 3, 4 );
                 

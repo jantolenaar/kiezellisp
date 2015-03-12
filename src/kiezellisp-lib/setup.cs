@@ -349,6 +349,8 @@ namespace Kiezel
             Packages = new Dictionary<string, Package>();
             PackagesByType = new Dictionary<Type, Package>();
             Types = new Dictionary<Symbol, object>();
+            
+            InitRandom();
 
             DefaultReadtable = GetStandardReadtable();
         }

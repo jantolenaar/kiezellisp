@@ -25,18 +25,6 @@ namespace Kiezel
             Runtime.Reset( false );
         }
 
-        public static void Load( string filename )
-        {
-            Runtime.TryLoad( filename, false, false, false );
-        }
-
-        public static object Eval( string statement )
-        {
-            var code = Runtime.ReadFromString( statement );
-            var result = Runtime.Eval( code );
-            return result;
-        }
-
         public static string GetDiagnostics( Exception ex )
         {
             return Runtime.GetDiagnostics( ex );

@@ -771,6 +771,8 @@ namespace Kiezel
                 var cki = Console.ReadKey( true );
                 mod = cki.Modifiers;
 
+                Runtime.InitRandom();
+
                 if ( cki.Key == ConsoleKey.Escape )
                 {
                     if ( EraseCompletion() )

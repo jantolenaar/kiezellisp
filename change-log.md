@@ -1,5 +1,10 @@
 # Change Log
 
+## 2015/03/12
+
+*   Simplified `EmbeddedMode` class.
+*   Added `math::random` function.
+
 ## 2015/03/06
 
 *   Added `EmbeddedMode` feature.

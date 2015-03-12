@@ -8,6 +8,38 @@ namespace Kiezel
 {
     public partial class Runtime
     {
+        internal static Random RandomNumbers = new Random();
+
+        [Lisp( "math:random" )]
+        public static int Random()
+        {
+            return RandomNumbers.Next();
+        }
+
+        [Lisp( "math:random" )]
+        public static int Random( int maxValue )
+        {
+            return RandomNumbers.Next( maxValue );
+        }
+
+        [Lisp( "math:random" )]
+        public static int Random( int minValue, int maxValue )
+        {
+            return RandomNumbers.Next( minValue, maxValue );
+        }
+
+        [Lisp( "math:random-double" )]
+        public static double RandomDouble()
+        {
+            return RandomNumbers.NextDouble();
+        }
+
+        [Lisp( "math:init-random" )]
+        public static void InitRandom()
+        {
+            RandomNumbers = new Random();
+        }
+
         [Pure, Lisp( "math:abs" )]
         public static object Abs( object a )
         {
