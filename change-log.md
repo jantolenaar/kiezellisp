@@ -1,5 +1,10 @@
 # Change Log
 
+## 2015/03/15
+
+*   Added `KIEZELLISP-INIT` environment variable.
+*   Changed algorithm to find `kiezellisp-init`.
+
 ## 2015/03/12
 
 *   Simplified `EmbeddedMode` class.

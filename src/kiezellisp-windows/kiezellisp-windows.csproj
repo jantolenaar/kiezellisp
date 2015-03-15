@@ -53,10 +53,6 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
-    <None Include="kiezellispw-init.k">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
-    <None Include="release-kiezellispw-init.k" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\kiezellisp-lib\kiezellisp-lib.csproj">
@@ -72,7 +68,7 @@
     <PostBuildEvent>copy /y "$(TargetPath)" c:\bin\kiezellispw.exe
 
 copy /y "$(TargetDir)kiezellisp-lib.dll" c:\bin\kiezellisp-lib.dll
-copy /y "$(TargetDir)kiezellispw-init.k" c:\bin\kiezellispw-init.k
+copy /y "$(TargetDir)kiezellisp-init.k" c:\bin\kiezellisp-init.k
 
 </PostBuildEvent>
   </PropertyGroup>

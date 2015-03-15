@@ -50,10 +50,6 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
-    <None Include="kiezellisp-init.k">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
-    <None Include="release-kiezellisp-init.k" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\kiezellisp-lib\kiezellisp-lib.csproj">

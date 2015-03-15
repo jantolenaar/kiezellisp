@@ -92,12 +92,16 @@ namespace Kiezel
 
         internal static string GetApplicationInitFile()
         {
-            // application config file is same folder as kiezellisp.exe
-            var assembly = Assembly.GetEntryAssembly();
+            var init = Environment.GetEnvironmentVariable( "KIEZELLISP_INIT" );
+            if ( !String.IsNullOrWhiteSpace( init ) )
+            {
+                return init;
+            }
+            // application config file is same folder as kiezellisp-lib.dll
+            var assembly = Assembly.GetExecutingAssembly();
             var root = assembly.Location;
             var dir = Path.GetDirectoryName( root );
-            var file = Path.GetFileNameWithoutExtension( root );
-            return PathExtensions.Combine( dir, file + "-init" );
+            return PathExtensions.Combine( dir, "kiezellisp-init" );
         }
 
         internal static string GetUserFile( string name )
