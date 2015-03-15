@@ -2,7 +2,12 @@
 
 ## 2015/03/15
 
+<<<<<<< HEAD
 *   Changed the name of `kiezellisp-init` to be a constant.
+=======
+*   Added `KIEZELLISP-INIT` environment variable.
+*   Changed algorithm to find `kiezellisp-init`.
+>>>>>>> origin/master
 
 ## 2015/03/12
 
