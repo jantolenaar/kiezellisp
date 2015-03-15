@@ -1,5 +1,9 @@
 # Change Log
 
+## 2015/03/15
+
+*   Changed the name of `kiezellisp-init` to be a constant.
+
 ## 2015/03/12
 
 *   Simplified `EmbeddedMode` class.
