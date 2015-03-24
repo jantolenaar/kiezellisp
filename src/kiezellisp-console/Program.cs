@@ -6,6 +6,7 @@ namespace Kiezel
 {
     class Program
     {
+        [STAThread]
         static void Main( string[] args )
         {
             Thread.CurrentThread.CurrentCulture = CultureInfo.InvariantCulture;

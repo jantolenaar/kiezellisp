@@ -77,7 +77,7 @@ namespace Kiezel
         [Pure, Lisp( "function?" )]
         public static bool Functionp( object expr )
         {
-            return expr is IApply;
+            return expr is IApply && !Macrop( expr );
         }
 
         [Pure, Lisp( "ilist?" )]

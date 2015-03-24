@@ -162,22 +162,22 @@ namespace Kiezel
                 return RuntimeHelpers.CheckTargetNullReference( target, "Cannot invoke a null function" );
             }
 
-            //if ( Runtime.EltWrappable( target.Value ) )
-            //{
-            //    var indexingExpr = RuntimeHelpers.GetIndexingExpression( target, argMOs );
+            if ( Runtime.Prototypep( target.Value ) )
+            {
+                var indexingExpr = RuntimeHelpers.GetIndexingExpression( target, argMOs );
+                var restrictions = RuntimeHelpers.GetTargetArgsRestrictions( target, argMOs, false );
 
-            //    if ( indexingExpr == null )
-            //    {
-            //        return errorSuggestion ??
-            //                RuntimeHelpers.CreateThrow(
-            //                     target, argMOs, BindingRestrictions.Empty,
-            //                     typeof( InvalidOperationException ),
-            //                     "No get indexer available on: " + target.LimitType.Name + " " + Runtime.ToPrintString( target.Value ) );
-            //    }
+                if ( indexingExpr == null )
+                {
+                    return errorSuggestion ??
+                            RuntimeHelpers.CreateThrow(
+                                 target, argMOs, restrictions,
+                                 typeof( InvalidOperationException ),
+                                 "Not invokable: no suitable indexer available on: " + target.LimitType.Name + " " + Runtime.ToPrintString( target.Value ) );
+                }
 
-            //    var restrictions = RuntimeHelpers.GetTargetArgsRestrictions( target, argMOs, false );
-            //    return new DynamicMetaObject( RuntimeHelpers.EnsureObjectResult( indexingExpr ), restrictions );
-            //}
+                return new DynamicMetaObject( RuntimeHelpers.EnsureObjectResult( indexingExpr ), restrictions );
+            }
 
             if ( target.LimitType.IsSubclassOf( typeof( Delegate ) ) )
             {
@@ -204,7 +204,7 @@ namespace Kiezel
                     BindingRestrictions.GetTypeRestriction( target.Expression,
                                                            target.LimitType ),
                     typeof( InvalidOperationException ),
-                    "Not invokable" );
+                    "Not invokable: type=" + target.LimitType.Name + " value=" + Runtime.ToPrintString( target.Value ) );
         }
     }
 

@@ -83,6 +83,7 @@
     <Reference Include="System.Configuration" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="alist.cs" />
     <Compile Include="array.cs" />
     <Compile Include="attribute.cs" />
     <Compile Include="backquote.cs" />

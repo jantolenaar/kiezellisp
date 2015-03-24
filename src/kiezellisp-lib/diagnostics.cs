@@ -417,7 +417,6 @@ namespace Kiezel
 
         internal static Prototype AsPrototype( object obj, bool caseInsensitive )
         {
-   
             if ( obj is Prototype )
             {
                 var dict = ConvertToLispDictionary( ( ( Prototype ) obj ).Dict, caseInsensitive );

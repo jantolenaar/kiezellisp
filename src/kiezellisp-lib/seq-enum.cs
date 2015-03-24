@@ -50,6 +50,40 @@ namespace Kiezel
                 }
             }
 
+            internal static Cons Assoc( object item, Cons seq, IApply test, IApply key )
+            {
+                int i = -1;
+
+                foreach ( Cons x in ToIter( seq ) )
+                {
+                    ++i;
+
+                    if ( FuncallBool( test, item, Funcall( key, Car( x ) ) ) )
+                    {
+                        return x;
+                    }
+                }
+
+                return null;
+            }
+
+            internal static Cons AssocIf( IApply predicate, Cons seq, IApply key )
+            {
+                int i = -1;
+
+                foreach ( Cons x in ToIter( seq ) )
+                {
+                    ++i;
+
+                    if ( FuncallBool( predicate, Funcall( key, Car( x ) ) ) )
+                    {
+                        return x;
+                    }
+                }
+
+                return null;
+            }
+
             internal static object Average( IEnumerable seq, IApply key )
             {
                 object result = null;

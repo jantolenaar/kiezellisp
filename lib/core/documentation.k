@@ -790,6 +790,28 @@ when `$debug-mode` is false.
 
 ;------------------------------------------------------------------------------
 
+(assoc (item alist &key key test)
+"""
+Returns the first `Cons` item in association list `alist` with a `car` matching 
+`item`.
+"""
+(assoc 'a '((b c)(a d)(e f)))
+(assoc 3 '(("bbb" c)("a" d)("e" f)) :key length)
+
+)
+
+;------------------------------------------------------------------------------
+
+(assoc-if (predicate alist &key key)
+"""
+Returns the first `Cons` item in association list `alist` with a `car` 
+satisfying `predicate`.
+"""
+(assoc-if  odd? '((2 c)(4 d)(5 f)))
+)
+
+;------------------------------------------------------------------------------
+
 (atom? (expr)
 """
 Returns true if `expr` is `null`, a value type, a number, a string or a symbol.

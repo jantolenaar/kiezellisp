@@ -613,10 +613,13 @@ namespace Kiezel
             if ( lispCode != null )
             {
                 var head = First( lispCode ) as Symbol;
-                if ( head != null && ( Functionp( head.Value ) || SpecialFormp( head.Value ) ) )
+                if ( head != null )
                 {
-                    // Symbol and Parameters: assume function call.
-                    lispCode = MakeCons( lispCode, ( Cons ) null );
+                    if ( ( Functionp( head.Value ) || SpecialFormp( head.Value ) || Macrop( head.Value ) ) && !Prototypep( head.Value ) )
+                    {
+                        // Symbol and Parameters: assume function call.
+                        lispCode = MakeCons( lispCode, ( Cons ) null );
+                    }
                 }
 
                 var scope = ReconstructAnalysisScope( CurrentThreadContext.Frame );

@@ -64,8 +64,6 @@
   <PropertyGroup>
     <PostBuildEvent>copy /y "$(TargetPath)" c:\bin\k.exe
 
-copy /y "$(TargetDir)kiezellisp-init.k" c:\bin\k-init.k
-
 copy /y "$(TargetPath)" c:\bin\kiezellisp.exe
 
 copy /y "$(TargetDir)kiezellisp-lib.dll" c:\bin\kiezellisp-lib.dll
