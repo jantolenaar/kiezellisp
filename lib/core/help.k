@@ -56,8 +56,8 @@ Prints information attached to the global symbol `topic`.
 (defun show-string (item)
     ; rewrite markdown html links []() and [][]
     (let item1 (.trim item "\r\n"))
-    (let item2 (.regex-replace item1 #"\[(.*?)\]\(.*?\)" @"`\1`"))
-    (let item3 (.regex-replace item2 #"\[(.*?)\]\[.*?\]" @"`\1`"))
+    (let item2 (.regex-replace item1 #/\[(.*?)\]\(.*?\)" @"`\1`/))
+    (let item3 (.regex-replace item2 #/\[(.*?)\]\[.*?\]" @"`\1`/))
     #;(loop 
         (for part :in (.split item3 "`"))
         (with standout :initially false :then (not standout))
@@ -76,58 +76,68 @@ Prints information attached to the global symbol `topic`.
         (print " > ")))
 
 (defun show-examples (examples &key add-terminating-prompt)
-    (let content (print-examples-to-string examples add-terminating-prompt))
+    (let content (print-examples-to-string examples 
+                                        :add-terminating-prompt add-terminating-prompt
+                                        :examples-in-string false))
     (print-line (.indent content "    ")))
 
-(defun print-examples-to-string (examples add-terminating-prompt)
+(defun print-examples-to-string (examples &key add-terminating-prompt example-in-string)
     (var $package $package)
     (let env (make-extended-environment))
     (var prompt-nr 1)
     (var dbglevel 0)
+    (var catch-exceptions false)
     (with-output-to-string ($stdout)
         (loop
             (for example :in examples)
+            (when (and example-in-string 
+                       (= example "throws:"))
+                (setf catch-exceptions true)
+                (continue))
             (let prompt (make-prompt prompt-nr dbglevel))
             (print prompt)
             (var example-code null)
-            (var throws-exception false)
             (cond 
+                (example-in-string
+                    (let code example)
+                    (let $print-escape false)
+                    (pprint code :left (length prompt))
+                    (setf example-code (delay (read-from-string code))))
                 ((and (cons? example)
                       (= (string (first example)) "EXAMPLE"))
                     (let code (apply string (rest example)))
                     (let $print-escape false)
                     (pprint code :left (length prompt))
-                    (setf example-code (read-from-string code)))
+                    (setf example-code (delay (read-from-string code))))
                 ((and (cons? example)
                       (= (string (first example)) "EXCEPTION-EXAMPLE"))
                     (let code (apply string (rest example)))
                     (let $print-escape false)
                     (pprint code :left (length prompt))
-                    (setf throws-exception true)
-                    (setf example-code (read-from-string code)))
+                    (setf catch-exceptions true)
+                    (setf example-code (delay (read-from-string code))))
                 (true
                     (pprint example :left (length prompt))
-                    (setf example-code example)))
+                    (setf example-code (delay example))))
             (print-line)
             (case example
-                (:a
+                ((:a ":a")
                     (assert (< 0 dbglevel))
                     (decf dbglevel))
-                (:t
+                ((:t ":t")
                     (assert (< 0 dbglevel))
                     (setf dbglevel 0))
-                (:d 
+                ((:d  ":d")
                     (describe it))
                 (true
                     (incf prompt-nr)
                     (let result (do
                                     (let $enable-warnings false)
                                     (let $stdlog $stdout)
-                                    (if throws-exception
+                                    (if catch-exceptions
                                           (try-and-catch
-                                              (force (eval example-code env)))
-                                        (force (eval example-code env)))
-                                    ))
+                                              (force (eval (force example-code) env)))
+                                        (force (eval (force example-code) env)))))
                     (cond
                         ((exception? result)
                             (print-line (.message (.inner-exception result)))
@@ -137,6 +147,7 @@ Prints information attached to the global symbol `topic`.
                             (print "it: ")
                             (pprint result :left 4))))
                 )
+            (setf catch-exceptions false)
             (print-line))
         (if add-terminating-prompt
             (print (make-prompt prompt-nr dbglevel)))))

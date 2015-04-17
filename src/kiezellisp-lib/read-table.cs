@@ -133,8 +133,9 @@ namespace Kiezel
             SetDispatchMacroCharacter( '#', 'o', Runtime.ReadNumberHandler );
             SetDispatchMacroCharacter( '#', 'b', Runtime.ReadNumberHandler );
             SetDispatchMacroCharacter( '#', 'q', Runtime.ReadSpecialStringHandler );
-            SetDispatchMacroCharacter( '#', '"', Runtime.ReadRegexHandler );
-            //DefineMacro( '#', '/', Runtime.ReadRegexHandler );
+            SetDispatchMacroCharacter( '#', 'v', Runtime.ReadVectorHandler2 );
+            SetDispatchMacroCharacter( '#', 's', Runtime.ReadStructHandler );
+            SetDispatchMacroCharacter( '#', '/', Runtime.ReadRegexHandler );
             SetDispatchMacroCharacter( '#', '.', Runtime.ReadExecuteHandler );
             SetDispatchMacroCharacter( '#', '!', Runtime.ReadLineCommentHandler2 );
             SetDispatchMacroCharacter( '#', ';', Runtime.ReadExprCommentHandler );
@@ -264,6 +265,7 @@ namespace Kiezel
             table.SetDispatchMacroCharacter( '#', '+', PrettyPrinting.ReadPlusMinusExprHandler );
             table.SetDispatchMacroCharacter( '#', '-', PrettyPrinting.ReadPlusMinusExprHandler );
             table.SetDispatchMacroCharacter( '#', 'q', PrettyPrinting.ReadSpecialStringHandler );
+            table.SetDispatchMacroCharacter( '#', 's', PrettyPrinting.ReadStructHandler );
             return table;
         }
 

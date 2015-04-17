@@ -226,7 +226,7 @@ namespace Kiezel
             if ( a is Prototype )
             {
                 var p = ( Prototype ) a;
-                z[ "superclasses" ] = p.GetSuperclasses();
+                z[ "type-specifier" ] = p.GetTypeSpecifier();
             }
             else
             {

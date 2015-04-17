@@ -222,6 +222,11 @@ namespace Kiezel
 
         internal static object ReadExecuteHandler( LispReader stream, char ch, int arg )
         {
+            var expr = stream.Read();
+            if ( stream.Scanning )
+            {
+                return expr;
+            }
             var readEval = Runtime.GetDynamic( Symbols.ReadEval );
             if ( readEval == null )
             {
@@ -231,7 +236,6 @@ namespace Kiezel
             {
                 throw stream.MakeScannerException( "Invalid use of '#.' (prohibited by $read-eval variable)" );
             }
-            var expr = stream.Read();
             var value = Eval( expr );
             return value;
         }
@@ -274,6 +278,11 @@ namespace Kiezel
         internal static object ReadMinusExprHandler( LispReader stream, char ch, int arg )
         {
             object test = stream.Read();
+            if ( stream.Scanning )
+            {
+                //scanning
+                return stream.Read();
+            }
             bool haveFeatures = EvalFeatureExpr( test );
             if ( haveFeatures )
             {
@@ -319,6 +328,11 @@ namespace Kiezel
         internal static object ReadPlusExprHandler( LispReader stream, char ch, int arg )
         {
             object test = stream.Read();
+            if ( stream.Scanning )
+            {
+                //scanning
+                return stream.Read();
+            }
             bool haveFeatures = EvalFeatureExpr( test );
             if ( !haveFeatures )
             {
@@ -334,8 +348,12 @@ namespace Kiezel
         internal static object ReadPrototypeHandler( LispReader stream, char ch )
         {
             var list = stream.ReadDelimitedList( "}" );
-            var obj = new Prototype();
-            obj.Create( true, Runtime.AsArray( list ) );
+            if ( stream.Scanning )
+            {
+                //scanning
+                return list;
+            }
+            var obj = new Prototype( Runtime.AsArray( list ) );
             return obj;
         }
 
@@ -390,6 +408,45 @@ namespace Kiezel
             var list = stream.ReadDelimitedList( "]" );
             var obj = new Vector();
             obj.AddRange( list );
+            return obj;
+        }
+
+        internal static object ReadVectorHandler2( LispReader stream, char ch, int arg )
+        {
+            if ( stream.ReadChar() != '(' )
+            {
+                throw stream.MakeScannerException( "Invalid #() expression" );
+            }
+            var list = stream.ReadDelimitedList( ")" );
+            var obj = new Vector();
+            obj.AddRange( list );
+            if ( arg == -1 )
+            {
+                // default no action
+            }
+            else if ( arg < obj.Count )
+            {
+                throw new LispException( "Vector {0} contains more than {1} items", ToPrintString( obj ), arg );
+            }
+            else if ( arg > obj.Count )
+            {
+                var filler = obj.Count == 0 ? ( object ) null : obj[ obj.Count - 1 ];
+                while ( obj.Count < arg )
+                {
+                    obj.Add( filler );
+                }
+            }
+            return obj;
+        }
+
+        internal static object ReadStructHandler( LispReader stream, char ch, int arg )
+        {
+            if ( stream.ReadChar() != '(' )
+            {
+                throw stream.MakeScannerException( "Invalid #s() expression" );
+            }
+            var list = stream.ReadDelimitedList( ")" );
+            var obj = new Prototype( AsArray( list ) );
             return obj;
         }
 
@@ -449,6 +506,16 @@ namespace Kiezel
             internal static object ReadShortLambdaExpressionHandler( LispReader stream, char ch, int arg )
             {
                 return stream.ReadDelimitedList( ")" );
+            }
+
+            internal static object ReadStructHandler( LispReader stream, char ch, int arg )
+            {
+                // #s(...)
+                if ( stream.ReadChar() != '(' )
+                {
+                    throw stream.MakeScannerException( "Invalid #s expression" );
+                }
+                return MakeList( Symbols.PrettyReader, "struct", stream.ReadDelimitedList( ")" ) );
             }
 
         }

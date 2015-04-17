@@ -695,7 +695,11 @@ namespace Kiezel
 
         internal static Symbol PrintForce;
 
+        internal static Symbol PrintPrototypeWithBraces;
+        
         internal static Symbol PrintShortSymbolNames;
+
+        internal static Symbol PrintVectorWithBrackets;
 
         internal static Symbol QuasiQuote;
 
@@ -940,7 +944,9 @@ namespace Kiezel
             PrintCompact = MakeSymbol( "$print-compact" );
             PrintEscape = MakeSymbol( "$print-escape" );
             PrintForce = MakeSymbol( "$print-force" );
+            PrintPrototypeWithBraces = MakeSymbol( "$print-prototype-with-braces" );
             PrintShortSymbolNames = MakeSymbol( "$print-short-symbol-names" );
+            PrintVectorWithBrackets = MakeSymbol( "$print-vector-with-brackets" );
             QuasiQuote = MakeSymbol( "quasi-quote" );
             Quote = MakeSymbol( "quote" );
             ReadEval = MakeSymbol( "$read-eval" );

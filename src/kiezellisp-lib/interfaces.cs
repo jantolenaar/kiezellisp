@@ -10,6 +10,7 @@ namespace Kiezel
     internal interface IPrintsValue
     {
     }
+
     internal interface ISyntax
     {
         Cons GetSyntax( Symbol context );

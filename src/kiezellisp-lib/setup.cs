@@ -316,7 +316,9 @@ namespace Kiezel
             Symbols.PrintCompact.Value = true;
             Symbols.PrintEscape.VariableValue = true;
             Symbols.PrintForce.VariableValue = true;
+            Symbols.PrintPrototypeWithBraces.VariableValue = false;
             Symbols.PrintShortSymbolNames.VariableValue = false;
+            Symbols.PrintVectorWithBrackets.VariableValue = false;
             Symbols.ReadEval.VariableValue = null;
             Symbols.Readtable.VariableValue = GetStandardReadtable();
             Symbols.Recur.ReadonlyValue = null;

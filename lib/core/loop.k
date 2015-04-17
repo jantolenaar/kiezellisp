@@ -102,14 +102,14 @@
     ))
 
 (def loop-ignorables '(defun defmacro defmulti defmethod lambda λ letfun))
+;(def loop-ignorables null)
 
 (defun loop-macroexpand-1 (form env)
     (when (and (cons? form)
                (symbol? (first form))
                (not (find-name-in-environment (first form) env)))
         (when (find (first form) loop-ignorables)
-            (print-line form)
-            (return form))
+            (return (list form false)))
         (when-let (proc (elt loop-clauses (first form)))
             (return (list (funcall (symbol-value proc) form) true))))
     (return (macroexpand-1 form env)))

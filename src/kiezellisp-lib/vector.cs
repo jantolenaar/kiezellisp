@@ -2,6 +2,7 @@
 
 using System.Collections;
 using System.Collections.Generic;
+using System.Text;
 
 namespace Kiezel
 {
@@ -31,7 +32,7 @@ namespace Kiezel
         }
     }
 
-    public class Vector : List<object> //ArrayList
+    public class Vector : List<object>
     {
         internal Vector()
             : base( 20 )

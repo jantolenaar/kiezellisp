@@ -23,6 +23,7 @@ namespace Kiezel
         private bool prettyPrinting;
         private int pos;
         private int symbolSuppression = 0;
+        private bool scanning = false;
 
         [Lisp]
         public LispReader( string sourceCode )
@@ -41,6 +42,15 @@ namespace Kiezel
             this.prettyPrinting = prettyPrinting;
         }
 
+        public bool Scanning
+        {
+            get
+            {
+                return scanning;
+            }
+        }
+
+        
         object IEnumerator.Current
         {
             get
@@ -101,10 +111,40 @@ namespace Kiezel
         }
 
         [Lisp]
+        public Vector ScanAll( object eofValue = null )
+        {
+            try
+            {
+                ++symbolSuppression;
+                scanning = true;
+
+                var v = new Vector();
+                while ( true )
+                {
+                    var start = pos;
+                    object obj = MaybeRead( eofValue );
+                    if ( obj == eofValue )
+                    {
+                        break;
+                    }
+                    var end = pos;
+                    v.Add( buffer.Substring( start, end - start ).Trim() );
+                }
+                return v;
+            }
+            finally
+            {
+                ++symbolSuppression;
+                scanning = false;
+            }
+        }
+
+        [Lisp]
         public Vector ReadAll()
         {
             return Runtime.AsVector( this );
         }
+
         [Lisp]
         public char ReadChar()
         {
@@ -373,7 +413,7 @@ namespace Kiezel
             object numberValue;
             object timespan;
 
-            if ( symbolSuppression > 0 )
+            if ( scanning || symbolSuppression > 0 )
             {
                 return null;
             }
@@ -819,39 +859,47 @@ namespace Kiezel
 
         internal string ParseSpecialString()
         {
-            var begin = ReadChar();
-            var end = ' ';
+            var begin = PeekChar();
+            var terminator = "";
 
             switch ( begin )
             {
                 case '(':
                 {
-                    end = ')';
+                    SkipChars( 1 );
+                    terminator = ")";
                     break;
                 }
                 case '{':
                 {
-                    end = '}';
+                    SkipChars( 1 );
+                    terminator = "}";
                     break;
                 }
                 case '[':
                 {
-                    end = ']';
+                    SkipChars( 1 );
+                    terminator = "]";
                     break;
                 }
                 case '<':
                 {
-                    end = '>';
+                    SkipChars( 1 );
+                    terminator = ">";
                     break;
                 }
                 default:
                 {
-                    end = begin;
+                    terminator = ReadLine().Trim();
+                    if ( terminator == "" )
+                    {
+                        MakeScannerException( "No terminator after #q expression" );
+                    }
                     break;
                 }
             }
 
-            return ParseDocString( new string( end, 1 ) );
+            return ParseDocString( terminator );
         }
 
         internal string ExtractSpecialStringForm()
@@ -1001,6 +1049,7 @@ namespace Kiezel
                 --symbolSuppression;
             }
         }
+
         internal void SkipLineComment()
         {
             ReadLine();
@@ -1022,13 +1071,17 @@ namespace Kiezel
 
         private int ReadDecimalArg()
         {
-            int arg = 0;
+            int arg = -1;
             while ( true )
             {
                 var ch = PeekChar();
                 if ( ch == EofChar || !char.IsDigit( ( char ) ch ) )
                 {
                     break;
+                }
+                if ( arg == -1 )
+                {
+                    arg = 0;
                 }
                 arg = 10 * arg + ( ch - '0' );
                 SkipChars( 1 );

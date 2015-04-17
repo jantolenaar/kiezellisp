@@ -68,7 +68,8 @@
       (let 2)
       (letfun 2)
       (loop 0)
-      (new 1 :align)
+      ;(new 1 :align)
+      (new pprint-new)
       (or 1 :align)
       (quote 1)
       (return 1)
@@ -111,6 +112,8 @@ $print-escape and $print-base.
     (cond
         ((cons? expr)
             (pprint-cons expr))
+        ((and (vector? expr) (not $print-vector-with-brackets))
+            (pprint-sequence expr "#v(" ")"))
         ((ilist? expr)
             (pprint-sequence expr "[" "]"))
         ((prototype? expr)
@@ -224,11 +227,17 @@ $print-escape and $print-base.
     (write expr :force false))
 
 (defun pprint-prototype (expr)
-    (pprint-formatted-list expr "{ " " }"))
+    (let types (.get-type-specifier expr))
+    (let suffix (if types (write-to-string types)))
+    (cond
+        ($print-prototype-with-braces
+            (pprint-formatted-list expr "{${suffix} " " }"))
+        (true
+            (pprint-formatted-list expr "#s(${suffix} " " )"))))
 
 (defun pprint-formatted-list (seq leftpar rightpar)
     (print leftpar)
-    (with-indent (1)
+    (with-indent ((length leftpar))
         (pprint-items-vertically seq false))
     (print rightpar))
 
@@ -304,6 +313,33 @@ $print-escape and $print-base.
                             (pprint (second case))))))
             (print ")")))
     (print ")"))
+
+(defun pprint-new (expr)
+    (let seq (rest expr))
+    (let len (length seq))
+    (cond
+        ((odd? len)
+            (print "(new ")
+            (with-indent (5)
+                (pprint (first seq))
+                (pprint-new-kv (rest seq) true)))
+        (true
+            (print "(new ")
+            (with-indent (5)
+                (pprint-new-kv seq false))))
+    (print ")"))
+
+(defun pprint-new-kv (seq newline)
+    (loop
+        (for kv in (partition 2 seq))
+        (when newline
+            (print-line)
+            (pprint-left-margin))
+        (let key (write-to-string (first kv)))
+        (print key " ")
+        (with-indent ((inc (length key)))
+            (pprint (second kv)))           
+        (setf newline true)))
 
 (defun pprint-formatted-code (expr config)
     (let num-items (first config))

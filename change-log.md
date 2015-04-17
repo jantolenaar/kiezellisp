@@ -1,5 +1,15 @@
 # Change Log
 
+## 2015/04/17
+
+*   Changed `#"..."` regex literal to `#/.../`.
+*   Added `defclass` and `defstruct` macros.
+*   Added `#s(...)` reader macro.
+*   Added `#v(...)` reader macro.
+*   Fixed (rare) bug in `loop` macro expansion.
+*   Added `$print-vector-with-brackets`.
+*   Added `$print-prototype-with-braces`.
+
 ## 2015/03/16
 
 *   Added `assoc` and `assoc-if` functions.

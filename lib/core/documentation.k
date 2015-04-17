@@ -215,11 +215,31 @@ The REPL sets this to false. By default: false.
 
 ;------------------------------------------------------------------------------
 
+($print-prototype-with-braces
+"""
+When true, prototypes are printed like `{...}` otherwise like `#s(...)`.
+"""
+(do (let $print-prototype-with-braces true) (write-line (new :a 1 :b 2)))
+(do (let $print-prototype-with-braces false) (write-line (new :a 1 :b 2)))
+)
+
+;------------------------------------------------------------------------------
+
 ($print-short-symbol-names 
 """
 When true, symbol names are never printed with their package names.
 """
 $print-short-symbol-names
+)
+
+;------------------------------------------------------------------------------
+
+($print-vector-with-brackets
+"""
+When true, vectors are printed like `[...]` otherwise like `#v(...)`.
+"""
+(do (let $print-vector-with-brackets true) (write-line (vector 'a 'b 'c)))
+(do (let $print-vector-with-brackets false) (write-line (vector 'a 'b 'c)))
 )
 
 ;------------------------------------------------------------------------------
@@ -1383,6 +1403,13 @@ Defines a global variable `name` in the current package with initial value `valu
 
 ;------------------------------------------------------------------------------
 
+(defclass (name \[doc-string\] prototype-object)
+"""
+"""
+)
+
+;------------------------------------------------------------------------------
+
 (defconstant (name value \[doc-string\])
 """
 Defines a global constant `name` in the current package with initial value `value`.
@@ -1456,6 +1483,12 @@ See also: [Packages](packages.html)
 Defines `func` as a setter for an expression of the form: `(setf (name ...) value)`.
 `func` takes parameters corresponding to `...` and `value`. 
 See also the file `setf.k`.
+"""
+)
+
+;------------------------------------------------------------------------------
+(defstruct (name \[doc-string\] slot*)
+"""
 """
 )
 
@@ -3174,17 +3207,19 @@ Returns the list of parent objects of the prototype object `object`.
 
 ;------------------------------------------------------------------------------
 
-(prototype:get-superclasses (obj)
+(prototype:get-type-specifier (obj)
 """
-Returns a list of the superclasses of the prototype object `obj`.
+Returns a type name or a list of the type names of the prototype object `obj`.
 """
 (deftype a1 (new :city "leiden"))
 (deftype a2 (new :country "netherlands"))
-(def b (new '(a1 a2)
+(def b (new 'a1))
+(.get-type-specifier b)
+(def c (new '(a1 a2)
             :name
             "mies"))
-b
-(.get-superclasses b)
+c
+(.get-type-specifier c)
 )
 
 ;------------------------------------------------------------------------------

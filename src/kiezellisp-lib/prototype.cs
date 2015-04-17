@@ -22,7 +22,7 @@ namespace Kiezel
         [Lisp]
         public Prototype( params object[] args )
         {
-            Create( false, args );
+            Create( args );
         }
 
         public Symbol ClassName
@@ -92,11 +92,25 @@ namespace Kiezel
         }
 
         [Lisp]
-        public Cons GetSuperclasses()
+        public object GetTypeSpecifier()
         {
             var result = new Vector();
-            GetSuperclasses( result );
-            return Runtime.AsList( result );
+            GetTypeNames( result );
+            switch ( result.Count )
+            {
+                case 0:
+                {
+                    return null;
+                }
+                case 1:
+                {
+                    return result[ 0 ];
+                }
+                default:
+                {
+                    return Runtime.AsList( result );
+                }
+            }
         }
 
         [Lisp]
@@ -306,55 +320,64 @@ namespace Kiezel
             }
         }
 
-        internal void Create( bool literal, object[] args )
+        internal void Create( object[] args )
         {
             if ( args == null )
             {
                 return;
             }
 
-            for ( var i = 0; i < args.Length; ++i )
+            int offset = 0;
+
+            if ( ( args.Length & 1 ) != 0 )
             {
-                if ( !literal && i == 0 )
+                offset = 1;
+
+                // Odd length: first item is type specification
+                var a = args[ 0 ];
+
+                if ( Runtime.Listp( a ) )
                 {
-                    var a = args[ 0 ];
-                    if ( a is Prototype )
+                    foreach ( var b in Runtime.ToIter( a ) )
                     {
-                        AddParent( ( Prototype ) a );
-                        continue;
-                    }
-                    else if ( a is Symbol && !Runtime.Keywordp( a ) )
-                    {
-                        var type = Runtime.GetType( ( Symbol ) a ) as Prototype;
-                        if ( type == null )
-                        {
-                            throw new LispException( "Not a prototype class: {0}", type );
-                        }
-                        AddParent( type );
-                        continue;
-                    }
-                    else if ( Runtime.Listp( a ) )
-                    {
-                        foreach ( Symbol b in Runtime.ToIter( a ) )
-                        {
-                            var type = Runtime.GetType( b ) as Prototype;
-                            if ( type == null )
-                            {
-                                throw new LispException( "Not a prototype class: {0}", type );
-                            }
-                            AddParent( type );
-                        }
-                        continue;
+                        ProcessTypeArg( b );
                     }
                 }
-
-                if ( i + 1 < args.Length )
+                else
                 {
-                    var key = GetKey( args[ i ] );
+                    ProcessTypeArg( a );
+                }
+            }
+
+            for ( var i = offset; i + 1 < args.Length; i += 2 )
+            {
+                var key = GetKey( args[ i ] );
+                if ( key != null )
+                {
                     var value = args[ i + 1 ];
                     Dict[ key ] = value;
-                    ++i;
                 }
+            }
+        }
+
+        internal void ProcessTypeArg( object a )
+        {
+            if ( a is Prototype )
+            {
+                AddParent( ( Prototype ) a );
+            }
+            else if ( a is Symbol )
+            {
+                var type = Runtime.GetType( ( Symbol ) a ) as Prototype;
+                if ( type == null )
+                {
+                    throw new LispException( "Type not found or not a prototype/structure: {0}", a );
+                }
+                AddParent( type );
+            }
+            else
+            {
+                throw new LispException( "Invalid type specifier in prototype constructor: {0}", a );
             }
         }
 
@@ -382,16 +405,18 @@ namespace Kiezel
             }
         }
 
-        internal void GetSuperclasses( Vector result )
+        internal void GetTypeNames( Vector result )
         {
             if ( ClassName != null )
             {
                 result.Add( ClassName );
             }
-
-            foreach ( var parent in Parents )
+            else
             {
-                parent.GetSuperclasses( result );
+                foreach ( var parent in Parents )
+                {
+                    parent.GetTypeNames( result );
+                }
             }
         }
 
@@ -449,6 +474,7 @@ namespace Kiezel
 
             return false;
         }
+
         internal void MergeInto( Prototype original, PrototypeDictionary dict )
         {
             foreach ( var item in Dict )

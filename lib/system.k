@@ -15,6 +15,7 @@
 (load "core/macros")
 (load "core/setf")
 (load "core/loop")
+(load "core/struct")
 (load "core/match")
 (load "core/threading")
 (load "core/pprint")

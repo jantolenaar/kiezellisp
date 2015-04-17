@@ -236,6 +236,15 @@ namespace Kiezel
             return Read( Symbols.Stream, parser, Symbols.EofValue, eofValue );
         }
 
+        [Lisp( "scan-all-from-string" )]
+        public static Cons ScanAllFromString( string text, params object[] kwargs )        
+        {
+            var args = ParseKwargs( kwargs, new string[] { "eof-value" }, null );
+            var eofValue = args[ 0 ];
+            var parser = new LispReader( text );
+            return AsList( parser.ScanAll( eofValue ) );
+        }
+
         [Lisp( "require" )]
         public static void Require( object filespec, params object[] args )
         {
@@ -541,7 +550,9 @@ namespace Kiezel
 
                 if ( escape )
                 {
-                    return "#\"" + rx.ToString() + "\""
+                    var str = rx.ToString().Replace( "/", "//" );
+                    
+                    return "#/" + str + "/"
                                  + ( ( rx.Options & RegexOptions.IgnoreCase ) != 0 ? "i" : "" )
                                  + ( ( rx.Options & RegexOptions.Multiline ) != 0 ? "m" : "" )
                                  + ( ( rx.Options & RegexOptions.Singleline ) != 0 ? "s" : "" );
@@ -617,6 +628,21 @@ namespace Kiezel
             {
                 return obj.ToString();
             }
+            else if ( obj is Vector )
+            {
+                var brackets = ToBool( GetDynamic( Symbols.PrintVectorWithBrackets ) );
+                var buf = new StringWriter();
+                buf.Write( brackets ? "[" : "#v(" );
+                var space = "";
+                foreach ( object item in ( IList ) obj )
+                {
+                    buf.Write( space );
+                    buf.Write( ToPrintString( item, escape, radix ) );
+                    space = " ";
+                }
+                buf.Write( brackets ? "]" : ")" );
+                return buf.ToString();
+            }
             else if ( obj is IList )
             {
                 var buf = new StringWriter();
@@ -633,10 +659,17 @@ namespace Kiezel
             }
             else if ( obj is Prototype )
             {
+                var braces = ToBool( GetDynamic( Symbols.PrintPrototypeWithBraces ) );
                 var proto = ( Prototype ) obj;
                 var buf = new StringWriter();
-                buf.Write( "{ " );
                 var space = "";
+                buf.Write( braces ? "{ " : "#( " );
+                var supers = proto.GetTypeSpecifier();
+                if ( supers != null )
+                {
+                    buf.Write( ToPrintString( supers ) );
+                    space = " ";
+                }
                 foreach ( string key in ToIter( proto.Keys ) )
                 {
                     buf.Write( space );
@@ -649,7 +682,7 @@ namespace Kiezel
                     buf.Write( ToPrintString( proto.GetValue( key ), escape, radix ) );
                     space = " ";
                 }
-                buf.Write( " }" );
+                buf.Write( braces ? " }" : " )" );
                 return buf.ToString();
             }
             else if ( obj is System.Type )

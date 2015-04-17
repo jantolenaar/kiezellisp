@@ -26,13 +26,19 @@
             `(setq ,place ,value))
         ((list? place)
             (cond
+                ;; standard expansion handles macros and defsetf registered functions.
                 ((symbol? (first place))
-                    (if-let (update-fn (elt expanders (first place)))
-                          `(,update-fn ,@(cdr place) ,value)
-                        (throw (lisp-exception:new "Undefined handler for: {0}" (first place)))))
+                    (multiple-let (new-place flag) (macroexpand-1 place))
+                    (if flag
+                          `(setf ,new-place ,value)
+                        (if-let (update-fn (elt expanders (first place)))
+                              `(,update-fn ,@(cdr place) ,value)
+                            (throw (lisp-exception:new "Undefined handler for: {0}" (first place))))))
+                ;; next part handles (setf (.name obj) x) which is (setf ((. name) obj) x)
                 ((and (list? (first place))
                       (= '. (first (first place))))
                     `(set-attr ,(second place) ,(second (first place)) ,value))
+                ;; otherwise error
                 (true (throw (lisp-exception:new "Undefined handler for: {0}" (first place))))))))
 
 (defmacro defsetf (name func)
