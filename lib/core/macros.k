@@ -89,12 +89,12 @@
 
 (defmacro if-let ((sym val) then &optional else)
     `(do
-        (var ,sym ,val)
+        (let ,sym ,val)
         (if ,sym ,then ,else)))
 
 (defmacro when-let ((sym val) &body forms)
     `(do
-        (var ,sym ,val)
+        (let ,sym ,val)
         (when ,sym ,@forms)))
 
 (defun cond-compiler (forms)
