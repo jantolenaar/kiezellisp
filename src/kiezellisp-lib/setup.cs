@@ -271,6 +271,11 @@ namespace Kiezel
 
             AddFeature( "kiezellisp" );
             AddFeature( ConsoleMode ? "console-mode" : "graphical-mode" );
+            
+            if ( DebugMode )
+            {
+                AddFeature( "debug" );
+            }
 
             Symbols.Features.VariableValue = AsList( Sort( ( Cons ) Symbols.Features.Value ) );
         }
