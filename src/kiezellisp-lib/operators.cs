@@ -1267,7 +1267,8 @@ namespace Kiezel
             }
         }
 
-        internal static object Neg( object a1 )
+        [Lisp( "neg" )]
+        public static object Neg( object a1 )
         {
             if ( a1 is Int32 )
             {

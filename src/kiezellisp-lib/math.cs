@@ -174,6 +174,19 @@ namespace Kiezel
             }
         }
 
+        [Pure, Lisp( "math:exp10" )]
+        public static object Exp10( object a )
+        {
+            if ( a is Complex )
+            {
+                return Complex.Pow( 10, (  Complex ) a );
+            }
+            else
+            {
+                return Math.Pow( 10, AsDouble( a ) );
+            }
+        }
+
         [Pure, Lisp( "math:floor" )]
         public static object Floor( object a )
         {
