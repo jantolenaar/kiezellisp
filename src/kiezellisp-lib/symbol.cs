@@ -49,42 +49,12 @@ namespace Kiezel
             return val;
         }
 
-        [Lisp( "set-symbol-documentation" )]
-        public static object SetSymbolDocumentation( object target, object value )
-        {
-            var sym = CheckSymbol( target );
-            sym.Documentation = value;
-            return value;
-        }
-
-        [Lisp( "set-symbol-function-syntax" )]
-        public static object SetSymbolFunctionSyntax( object target, object value )
-        {
-            var sym = CheckSymbol( target );
-            sym.FunctionSyntax = value;
-            return value;
-        }
-
         [Lisp( "set-symbol-value" )]
         public static object SetSymbolValue( object target, object value )
         {
             var sym = CheckSymbol( target );
             sym.Value = value;
             return value;
-        }
-
-        [Lisp( "symbol-documentation" )]
-        public static Cons SymbolDocumentation( object target )
-        {
-            var sym = CheckSymbol( target );
-            return AsList( ( IEnumerable ) sym.Documentation );
-        }
-
-        [Lisp( "symbol-function-syntax" )]
-        public static Cons SymbolFunctionSyntax( object target )
-        {
-            var sym = CheckSymbol( target );
-            return AsList( ( IEnumerable ) sym.FunctionSyntax );
         }
 
         [Lisp( "symbol-name" )]
@@ -111,21 +81,21 @@ namespace Kiezel
         internal static object DefineConstant( Symbol sym, object value, string doc )
         {
             sym.ConstantValue = value;
-            sym.Documentation = String.IsNullOrWhiteSpace( doc ) ? null : MakeList( doc );
+            sym.Documentation = doc;
             return sym;
         }
 
         internal static object DefineFunction( Symbol sym, object value, string doc )
         {
             sym.FunctionValue = value;
-            sym.Documentation = String.IsNullOrWhiteSpace( doc ) ? null : MakeList( doc );
+            sym.Documentation = doc;
             return sym;
         }
 
         internal static object DefineVariable( Symbol sym, object value, string doc )
         {
             sym.VariableValue = value;
-            sym.Documentation = String.IsNullOrWhiteSpace( doc ) ? null : MakeList( doc );
+            sym.Documentation = doc;
             return sym;
         }
     }
@@ -133,8 +103,7 @@ namespace Kiezel
     public class Symbol : IPrintsValue, IApply
     {
         internal object _value;
-        internal object /*Cons*/ Documentation;
-        internal object /*Cons*/ FunctionSyntax;
+        internal string Documentation;
         internal string Name;
         internal Package Package;
         internal Cons PropList;
@@ -575,8 +544,6 @@ namespace Kiezel
 
         internal static Symbol GreekLambda;
 
-        internal static Symbol HelpHook;
-
         internal static Symbol HiddenVar;
 
         internal static Symbol I;
@@ -886,7 +853,6 @@ namespace Kiezel
             GetLexicalOrEnvironmentVariable = Runtime.MakeSymbol( "get-lexical-or-environment-variable", Runtime.SystemPackage );
             Goto = MakeSymbol( "goto" );
             GreekLambda = MakeSymbol( "\u03bb" );
-            HelpHook = MakeSymbol( "$help-hook" );
             HiddenVar = MakeSymbol( "hidden-var" );
             I = Runtime.MakeSymbol( "I", Runtime.MathPackage );
             If = MakeSymbol( "if" );

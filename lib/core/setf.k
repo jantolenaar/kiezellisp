@@ -57,8 +57,6 @@
 (defsetf elt set-elt)
 (defsetf attr set-attr)
 (defsetf symbol-value set-symbol-value)
-(defsetf symbol-documentation set-symbol-documentation)
-(defsetf symbol-function-syntax set-symbol-function-syntax)
 (defsetf find-type set-find-type)
 
 ;;;

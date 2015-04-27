@@ -134,15 +134,11 @@ namespace Kiezel
                     }
                 }
 
-                if ( !Emptyp( sym.Documentation ) )
+                if ( String.IsNullOrWhiteSpace( sym.Documentation ) )
                 {
-                    z[ "documentation" ] = AsList( ( IEnumerable ) sym.Documentation );
+                    z[ "documentation" ] = sym.Documentation;
                 }
 
-                if ( !Emptyp( sym.FunctionSyntax ) )
-                {
-                    z[ "function-syntax" ] = AsList( ( IEnumerable ) sym.FunctionSyntax );
-                }
             }
 
             if ( !( a is ICollection ) || ( a is IList ) )
@@ -163,7 +159,7 @@ namespace Kiezel
 
             if ( !isVariable )
             {
-                if ( a is ISyntax && !z.ContainsKey( "function-syntax" ) )
+                if ( a is ISyntax )
                 {
                     var b = ( ( ISyntax ) a ).GetSyntax( obj as Symbol );
                     if ( b != null )

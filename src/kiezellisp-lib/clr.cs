@@ -334,7 +334,7 @@ namespace Kiezel
             Symbol sym = package.InternNoInherit( "T" );
             sym.ConstantValue = type;
             sym.Package.Export( sym.Name );
-            sym.Documentation = MakeList( String.Format( "The .NET type <{0}> imported in this package.", type ) );
+            sym.Documentation = String.Format( "The .NET type <{0}> imported in this package.", type );
 
             if ( !ToBool( Symbols.LazyImport.Value ) )
             {

@@ -302,7 +302,6 @@ namespace Kiezel
             Symbols.EnableWarnings.VariableValue = true;
             Symbols.Exception.ReadonlyValue = null;
             Symbols.Features.VariableValue = null;
-            Symbols.HelpHook.VariableValue = null;
             Symbols.I.ConstantValue = Complex.ImaginaryOne;
             Symbols.InteractiveMode.ConstantValue = InteractiveMode;
             Symbols.It.VariableValue = null;

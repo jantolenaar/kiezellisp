@@ -100,7 +100,7 @@
 (def $my-documents
     (get-special-folder :my-documents))
 
-(defun run-windows-command (cmd)
+(defun run-windows-command (cmd &rest arguments)
     (let proc (process:new))
     (let info (.start-info proc))
     (setf (.file-name info) cmd)
@@ -108,6 +108,7 @@
     (setf (.redirect-standard-error info) false)
     (setf (.redirect-standard-input info) false)
     (setf (.use-shell-execute info) true)
+    (setf (.arguments info) (make-safe-argument-string arguments))
     (.start proc)
     (void))
 

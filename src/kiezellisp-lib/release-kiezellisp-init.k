@@ -12,4 +12,5 @@
 (require "system")
 (require "shell")
 
+(set-online-help-url "http://www.kiezellisp.nl")
 

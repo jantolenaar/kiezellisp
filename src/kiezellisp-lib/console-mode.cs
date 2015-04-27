@@ -427,12 +427,6 @@ namespace Kiezel
                         break;
                     }
 
-                    case ":help":
-                    case "?":
-                    {
-                        ShowManual( Second( code ) as Symbol );
-                        break;
-                    }
                     case ":describe":
                     {
                         RunCommand( x =>
@@ -442,6 +436,7 @@ namespace Kiezel
                         }, Cdr( code ) );
                         break;
                     }
+
                     case ":reset":
                     {
                         while ( state.Count > 1 )
@@ -451,6 +446,7 @@ namespace Kiezel
                         Reset( false );
                         break;
                     }
+
                     case ":Reset":
                     {
                         while ( state.Count > 1 )
@@ -711,24 +707,11 @@ namespace Kiezel
                 var fileVersion = FileVersionInfo.GetVersionInfo( assembly.Location );
                 Console.WriteLine( GetVersion() );
                 Console.WriteLine( fileVersion.LegalCopyright );
-                Console.WriteLine( "Type :help or ? for help on top-level commands" );
+                Console.WriteLine( "Type `help` for help on top-level commands" );
                 ReadEvalPrintLoop( commandOptionArgument: expr2, initialized: false );
             }
         }
 
-
-        internal static void ShowManual( Symbol target )
-        {
-            var helper = GetClosure( GetDynamic( Symbols.HelpHook ) );
-            if ( helper != null )
-            {
-                helper.Apply( MakeArray( target ) );
-            }
-            else
-            {
-                Console.WriteLine( "See lib/help.h" );
-            }
-        }
         internal static Exception UnwindException( Exception ex )
         {
             while ( ex.InnerException != null && ex is System.Reflection.TargetInvocationException )

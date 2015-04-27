@@ -235,7 +235,7 @@ namespace Kiezel
         {
             var func = new MultiMethod( signature );
             sym.FunctionValue = func;
-            sym.Documentation = String.IsNullOrWhiteSpace( doc ) ? null : MakeList( doc );
+            sym.Documentation = doc;
             return func;
         }
     }

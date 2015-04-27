@@ -36,7 +36,7 @@ namespace Kiezel
         }
 
         [Extends( typeof( File ) )]
-        public static string ReadLogAllText( string path )
+        public static string ReadSharedAllText( string path )
         {
             using ( var stream = File.Open( path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite ) )
             {
@@ -49,9 +49,9 @@ namespace Kiezel
         }
 
         [Extends( typeof( File ) )]
-        public static string[] ReadLogAllLines( string path )
+        public static string[] ReadSharedAllLines( string path )
         {
-            var contents = ReadLogAllText( path );
+            var contents = ReadSharedAllText( path );
             return contents.Split( '\n' );
         }
     }

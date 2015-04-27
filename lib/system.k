@@ -22,7 +22,6 @@
 (load "core/help")
 
 (when $interactive-mode
-    (load "core/documentation")
     (set-console-key-binding 'f12 '() (λx x "(λ")))
 
 

@@ -1,5 +1,9 @@
 # Change Log
 
+## 2015/04/26
+
+*   Changed implementation of documentation functions.
+
 ## 2015/04/17
 
 *   Changed `#"..."` regex literal to `#/.../`.

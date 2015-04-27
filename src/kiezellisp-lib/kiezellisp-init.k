@@ -33,3 +33,4 @@
 (require "shell")
 (require "unit-test")
 
+(set-online-help-url "http://localhost:8802")

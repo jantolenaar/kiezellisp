@@ -3,252 +3,114 @@
 
 (defpackage "lisp"
     (:export 
-        "export-documentation"
+        "documentation"
         "help"
-        "import-documentation"
+        "set-online-help-url"
     ))
 
 (in-package "lisp")
 
-(defun help (topic)
-"""
-Prints information attached to the global symbol `topic`.
-"""    
-    (ignore-errors
-        (let $package (get-package "example"))
-        (if topic
-            (do
-                (let descr (get-description topic))
-                (let syntax-list (.function-syntax descr))
-                ;; make clusters of text and examples so that examples can be eval-ed in a DO block.
-                (let doc-list (partition-by string? (.documentation descr)))
-                (let type (.usage descr))
-                (print-line (.to-upper (string type)))
-                (print-line)
-                (when (find type '(variable readonly-variable constant special-variable special-readonly-variable special-constant))
-                    (print-line "    " (.name descr))
-                    (print-line))
-                (when syntax-list
-                    (each show-syntax syntax-list)
-                    (print-line))
-                (when doc-list
-                    ;;(print-line "DESCRIPTION")
-                    ;;(print-line)
-                    (each show-doc doc-list))
-                )
-            (do
-                (show-console-help)))))
+(def website "http://www.kiezellisp.nl")
 
-(setq $help-hook help)
+(defun set-online-help-url (str)
+    (setf website str))
 
-(defun show-syntax (syn)
+(defun help (&optional topic)
+    (if topic
+          (print-online-help topic)
+        (print-console-help))
+    (void))
+
+(defun print-online-help (topic)
+    (assert (symbol? topic))
+    (let $package (find-package "lisp"))
+    (let url (path:combine website (string "api.html?#" topic)))
+    (help-run-windows-command url)
+    (void))
+
+(defun documentation (&optional topic)
+    (if topic
+          (print-topic-documentation topic)
+        (print-console-help))
+    (void))
+
+(def usage-list-for-variables '(
+    variable 
+    readonly-variable 
+    constant 
+    special-variable 
+    special-readonly-variable 
+    special-constant))
+
+(defun print-topic-documentation (topic)
+    (let descr (get-description topic))
+    (let syntax-list (.function-syntax descr))
+    (let documentation (.documentation descr))
+    (let usage (.usage descr))
+    (when usage
+        (print-line "USAGE")
+        (print-line "    " usage))
+    (when (find usage usage-list-for-variables)
+        (print-line "SYNTAX")
+        (print-line "    " (.name descr)))
+    (when syntax-list
+        (print-line "SYNTAX")
+        (each print-syntax syntax-list))
+    (when documentation
+        (print-line "DESCRIPTION")
+        (print-documentation-item documentation))
+    (print-line))
+
+(defun help-run-windows-command (cmd &rest arguments)
+    (let proc (process:new))
+    (let info (.start-info proc))
+    (setf (.file-name info) cmd)
+    (setf (.redirect-standard-output info) false)
+    (setf (.redirect-standard-error info) false)
+    (setf (.redirect-standard-input info) false)
+    (setf (.use-shell-execute info) true)
+    (setf (.arguments info) (make-safe-argument-string arguments))
+    (.start proc)
+    (void))
+
+(defun enclose-in-quotes (arg)
+    (cond
+        ((null? arg)
+            "")
+        ((find #\double-quote arg)
+            (string "\"" arg "\""))
+        ((find #\space arg)
+            (string "\"" arg "\""))
+        (true
+            arg)))
+
+(defun make-safe-argument-string (args)
+    (string:join " " (map enclose-in-quotes args)))
+
+(defun print-syntax (syn)
     (print "    ")
     (write-line syn :escape false))
 
-(defun show-doc (doc)
-    (if (string? (first doc))
-        (show-strings doc)
-        (show-examples doc)))
-
-(defun show-strings (items)
-    (each show-string items))
-
-(defun show-string (item)
+(defun print-documentation-item (item)
     ; rewrite markdown html links []() and [][]
     (let item1 (.trim item "\r\n"))
     (let item2 (.regex-replace item1 #/\[(.*?)\]\(.*?\)" @"`\1`/))
     (let item3 (.regex-replace item2 #/\[(.*?)\]\[.*?\]" @"`\1`/))
-    #;(loop 
-        (for part :in (.split item3 "`"))
-        (with standout :initially false :then (not standout))
-        (write part :escape false 
-                    :color (if standout $standout-color)
-                    :background-color (if standout $standout-background-color)))
-    (write item3 :escape false)
-    (print-line)
-    (print-line))
+    (write-line item3 :escape false))
 
-(defun make-prompt (prompt-nr dbglevel)
-    (with-output-to-string ($stdout)
-        (print (.name $package) " " prompt-nr)
-        (if (> dbglevel 0)
-            (print " " dbglevel))
-        (print " > ")))
 
-(defun show-examples (examples &key add-terminating-prompt)
-    (let content (print-examples-to-string examples 
-                                        :add-terminating-prompt add-terminating-prompt
-                                        :examples-in-string false))
-    (print-line (.indent content "    ")))
+(defun print-console-help ()
+    (print console-help))
 
-(defun print-examples-to-string (examples &key add-terminating-prompt example-in-string)
-    (var $package $package)
-    (let env (make-extended-environment))
-    (var prompt-nr 1)
-    (var dbglevel 0)
-    (var catch-exceptions false)
-    (with-output-to-string ($stdout)
-        (loop
-            (for example :in examples)
-            (when (and example-in-string 
-                       (= example "throws:"))
-                (setf catch-exceptions true)
-                (continue))
-            (let prompt (make-prompt prompt-nr dbglevel))
-            (print prompt)
-            (var example-code null)
-            (cond 
-                (example-in-string
-                    (let code example)
-                    (let $print-escape false)
-                    (pprint code :left (length prompt))
-                    (setf example-code (delay (read-from-string code))))
-                ((and (cons? example)
-                      (= (string (first example)) "EXAMPLE"))
-                    (let code (apply string (rest example)))
-                    (let $print-escape false)
-                    (pprint code :left (length prompt))
-                    (setf example-code (delay (read-from-string code))))
-                ((and (cons? example)
-                      (= (string (first example)) "EXCEPTION-EXAMPLE"))
-                    (let code (apply string (rest example)))
-                    (let $print-escape false)
-                    (pprint code :left (length prompt))
-                    (setf catch-exceptions true)
-                    (setf example-code (delay (read-from-string code))))
-                (true
-                    (pprint example :left (length prompt))
-                    (setf example-code (delay example))))
-            (print-line)
-            (case example
-                ((:a ":a")
-                    (assert (< 0 dbglevel))
-                    (decf dbglevel))
-                ((:t ":t")
-                    (assert (< 0 dbglevel))
-                    (setf dbglevel 0))
-                ((:d  ":d")
-                    (describe it))
-                (true
-                    (incf prompt-nr)
-                    (let result (do
-                                    (let $enable-warnings false)
-                                    (let $stdlog $stdout)
-                                    (if catch-exceptions
-                                          (try-and-catch
-                                              (force (eval (force example-code) env)))
-                                        (force (eval (force example-code) env)))))
-                    (cond
-                        ((exception? result)
-                            (print-line (.message (.inner-exception result)))
-                            (incf dbglevel))
-                        (true
-                            (setf it result)
-                            (print "it: ")
-                            (pprint result :left 4))))
-                )
-            (setf catch-exceptions false)
-            (print-line))
-        (if add-terminating-prompt
-            (print (make-prompt prompt-nr dbglevel)))))
-
-(defun import-documentation (topics)
-    (each import-symbol-documentation topics))
-
-(defun import-symbol-documentation (topic)
-    (let name (first topic))
-    (let syntax-list (vector))
-    (var doc-list null)
-    (loop 
-        (for parts :on-list (rest topic))
-        (let part (first parts))
-        (cond
-            ((string? part)
-                (setf doc-list parts)
-                (break))
-            (true 
-                (.add syntax-list (cons name part)))))
-    (setf (symbol-function-syntax name) syntax-list)
-    (setf (symbol-documentation name) doc-list))
-
-(def exportable-usage-list '(
-    special-variable
-    special-readonly-variable
-    special-constant
-    function
-    special-form
-    macro
-    method
-    generic-function
-    builtin-function
-    builtin-constructor
-    ))
-
-(def exportable-symbol-list '(
-    recur
-    ))
-
-(defun exportable (descr)
-    (or
-        (find (.usage descr) exportable-usage-list)
-        (find (.symbol descr) exportable-symbol-list)))
-
-(defun export-documentation (file-name &rest package-names)
-    ;(let $print-short-symbol-names true)
-    (let data (with-output-to-string ($stdout)
-        (print-line)
-        (print-line "(in-package \"lisp\")")
-        (print-line)
-        (print-line "(import-documentation '(")
-        (print-line)
-        (map list-exported-symbols package-names)
-        (flatten ~)
-        (sort ~)
-        (map get-description ~)
-        (filter exportable ~)
-        (each export-symbol-documentation ~)
-        (print-line "))")
-        (print-line)))
-    (file:write-all-text file-name data))
-
-(defun readable-list (x)
-    (if x
-        (write-to-string x :escape true)
-        "()"))
-
-(defun export-symbol-documentation (description)
-    ;(let name (.name description))
-    ;(let type (.usage description))
-    (let sym (.symbol description))
-    (let doc (or (.documentation description)
-                 (list "\nTO DO\n")))
-    (let syntax (.function-syntax description))
-    (let leading (string "(" sym " "))
-    (print leading)
-    (when syntax
-        (print (readable-list (rest (car syntax))))
-        (foreach (item (cdr syntax))
-            (print-line)
-            (write "" :escape false :width (.length leading))
-            (print (readable-list (rest item)))))
-    (print-line)   
-    (foreach (item doc)
-        (if (string? item)
-            (do
-                (let str (.trim item))
-                (print-line "\"\"\"")
-                (print-line str)
-                (print-line "\"\"\""))
-            (do
-                (write-line item :pretty true :escape true))))
-    (print-line ")")
-    (print-line)
-    (print-line #\semicolon "------------------------------------------------------------------------------" )
-    (print-line))
-
-(defun show-console-help ()
-    (print
+(def console-help        
 """
+Help examples:
+
+    help                Shows this help text.
+    help 'car           Shows online help for the symbol `car`.
+    documentation       Shows this help text.
+    documentation 'car  Shows summary description for the symbol `car`.
+
 Command line options:
 
 -c --command <exprs>    Evaluates <exprs> as a DO block and exits.
@@ -269,12 +131,10 @@ General top-level commands:
 :clear                  Clear screen and history.
 :describe [expr]        Describe expression or last result.
 :force [expr]           Force lazy expression or last result.
-? [symbol]              Show general help or specific syntax and documentation.
-:help [symbol]          Show general help or specific syntax and documentation.
 :globals [pattern]      Show global variables that contain the pattern.
 :history                Show current history.
-:init                   Restart the interpreter.
-:Init                   Restart the interpreter (verbose).
+:reset                  Restart the interpreter.
+:Reset                  Restart the interpreter (verbose).
 :time expr              Show elapsed time (compilation+execution).
 :quit                   Quit program.
 
@@ -303,5 +163,5 @@ Ctrl+Delete             Delete right word.
 Ctrl+Shift+C            Copy the pretty printed value of <it> to the clipboard.
 UpArrow                 Move up in history.
 DownArrow               Move down in history.
-"""))
+""")
 
