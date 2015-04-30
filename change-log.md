@@ -1,5 +1,10 @@
 # Change Log
 
+## 2015/04/27
+
+*   Fixed bug in `merging-do` compilation.
+*   Separated namespaces for specialforms/macros and functions/variables.
+
 ## 2015/04/26
 
 *   Changed implementation of documentation functions.

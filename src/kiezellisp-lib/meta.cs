@@ -216,15 +216,8 @@ namespace Kiezel
         {
             var form = expr;
 
-            while ( true )
+            while ( TryMacroExpand( form, env, out form ) )
             {
-                var result = MacroExpand1( form, env );
-                form = First( result );
-                var flag = Second( result );
-                if ( !ToBool( flag ) )
-                {
-                    break;
-                }
             }
 
             return form;
@@ -351,6 +344,7 @@ namespace Kiezel
                 return sym;
             }
         }
+
         internal static bool TryMacroExpand( object expr, AnalysisScope env, out object result )
         {
             result = expr;
@@ -373,7 +367,7 @@ namespace Kiezel
                 return false;
             }
 
-            var macro = head.Value as LambdaClosure;
+            var macro = head.MacroValue;
 
             if ( macro == null || macro.Kind != LambdaKind.Macro )
             {
@@ -382,9 +376,9 @@ namespace Kiezel
 
             var args = AsArray( Cdr( form ) );
 
-            result = macro.ApplyLambdaBind( null, args, false, new AnalysisScope( env, "try-macroexpand" ) );
+            result = macro.ApplyLambdaBind( null, args, false, new AnalysisScope( env, "try-macroexpand" ), form );
 
-            return true;
+            return result != form;
         }
     }
 }

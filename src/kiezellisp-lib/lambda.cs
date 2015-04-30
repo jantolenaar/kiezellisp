@@ -57,7 +57,7 @@ namespace Kiezel
         public object ApplyLambdaFast( object[] args )
         {
             // Entrypoint used by compiler after rearranging args.
-            return ApplyLambdaBind( null, args, true, null );
+            return ApplyLambdaBind( null, args, true, null, null );
         }
 
         object IApply.Apply( object[] args )
@@ -67,7 +67,7 @@ namespace Kiezel
             {
                 throw new LispException( "Macros must be defined before use." );
             }
-            return ApplyLambdaBind( null, args, false, null );
+            return ApplyLambdaBind( null, args, false, null, null );
         }
 
         DynamicMetaObject IDynamicMetaObjectProvider.GetMetaObject( Expression parameter )
@@ -100,7 +100,7 @@ namespace Kiezel
             }
         }
 
-        internal object ApplyLambdaBind( Cons lambdaList, object[] args, bool bound, object env )
+        internal object ApplyLambdaBind( Cons lambdaList, object[] args, bool bound, object env, Cons wholeMacroForm )
         {
             var context = Runtime.CurrentThreadContext;
             var saved = context.Frame;
@@ -109,7 +109,7 @@ namespace Kiezel
 
             if ( !bound )
             {
-                args = MakeArgumentFrame( args, env );
+                args = MakeArgumentFrame( args, env, wholeMacroForm );
             }
 
             if ( Runtime.DebugMode )
@@ -133,7 +133,7 @@ namespace Kiezel
             return result;
         }
 
-        internal Exception FillDataFrame( LambdaSignature signature, object[] input, object[] output, int offsetOutput, object env )
+        internal Exception FillDataFrame( LambdaSignature signature, object[] input, object[] output, int offsetOutput, object env, Cons wholeMacroForm )
         {
             var offset = 0;
             var firstKey = -1;
@@ -245,7 +245,7 @@ namespace Kiezel
                 {
                     // required macro parameter
                     var nestedInput = Runtime.AsArray( ( IEnumerable ) val );
-                    FillDataFrame( arg.NestedParameters, nestedInput, output, offsetOutput, env );
+                    FillDataFrame( arg.NestedParameters, nestedInput, output, offsetOutput, env, null );
                     offsetOutput += arg.NestedParameters.Names.Count;
                 }
                 else
@@ -256,10 +256,13 @@ namespace Kiezel
 
             if ( signature.WholeArg != null )
             {
-                Cons list = null;
-                for ( int i = input.Length - 1; i >= 0; --i )
+                Cons list = wholeMacroForm;
+                if ( list == null )
                 {
-                    list = new Cons( input[ i ], list );
+                    for ( int i = input.Length - 1; i >= 0; --i )
+                    {
+                        list = new Cons( input[ i ], list );
+                    }
                 }
                 output[ output.Length - 1 ] = list;
             }
@@ -277,7 +280,7 @@ namespace Kiezel
             return null;
         }
 
-        internal object[] MakeArgumentFrame( object[] input, object env )
+        internal object[] MakeArgumentFrame( object[] input, object env, Cons wholeMacroForm )
         {
             var sig = Definition.Signature;
 
@@ -288,7 +291,7 @@ namespace Kiezel
             }
 
             var output = new object[ sig.Names.Count + ( sig.WholeArg == null ? 0 : 1 ) + ( sig.EnvArg == null ? 0 : 1 ) ];
-            FillDataFrame( sig, input, output, 0, env );
+            FillDataFrame( sig, input, output, 0, env, wholeMacroForm );
             return output;
         }
     }

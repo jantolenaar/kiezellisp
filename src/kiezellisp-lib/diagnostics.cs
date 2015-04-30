@@ -78,11 +78,40 @@ namespace Kiezel
 
                 a = sym.Value;
 
+                switch ( sym.CompilerUsage )
+                {
+                    case SymbolUsage.Macro:
+                    {
+                        z[ "compiler-usage" ] = Symbols.Macro;
+                        z[ "compiler-value" ] = sym.MacroValue;
+                        break;
+                    }
+                    case SymbolUsage.SpecialForm:
+                    {
+                        z[ "compiler-usage" ] = Symbols.SpecialForm;
+                        z[ "compiler-value" ] = sym.SpecialFormValue;
+                        break;
+                    }
+                }
+
+                if ( sym.MacroValue != null )
+                {
+                    var b = ( ( ISyntax ) sym.MacroValue ).GetSyntax( sym );
+                    if ( b != null )
+                    {
+                        z[ "compiler-syntax" ] = b;
+                    }
+                }
+
+                if ( !String.IsNullOrWhiteSpace( sym.CompilerDocumentation ) )
+                {
+                    z[ "compiler-documentation" ] = sym.CompilerDocumentation;
+                }
+
                 switch ( sym.Usage )
                 {
                     case SymbolUsage.None:
                     {
-                        z[ "usage" ] = Symbols.Undefined;
                         return result;
                     }
                     case SymbolUsage.Constant:
@@ -134,7 +163,7 @@ namespace Kiezel
                     }
                 }
 
-                if ( String.IsNullOrWhiteSpace( sym.Documentation ) )
+                if ( !String.IsNullOrWhiteSpace( sym.Documentation ) )
                 {
                     z[ "documentation" ] = sym.Documentation;
                 }
@@ -182,23 +211,14 @@ namespace Kiezel
                     var kiezel = ( ( ImportedFunction ) a ).HasKiezelMethods;
                     usage = kiezel ? Symbols.BuiltinFunction : Symbols.ImportedFunction;
                 }
-                else if ( a is SpecialForm )
-                {
-                    usage = Symbols.SpecialForm;
-                }
                 else if ( a is LambdaClosure )
                 {
                     var l = ( LambdaClosure ) a;
 
-                    z[ "function-source" ] = l.Definition.Source;
+                    //z[ "function-source" ] = l.Definition.Source;
 
                     switch ( l.Kind )
                     {
-                        case LambdaKind.Macro:
-                        {
-                            usage = Symbols.Macro;
-                            break;
-                        }
                         case LambdaKind.Method:
                         {
                             usage = Symbols.Method;

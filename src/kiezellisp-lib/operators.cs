@@ -476,7 +476,7 @@ namespace Kiezel
             return IterateBinaryTestOperator( Less, args );
         }
 
-        [Pure, Lisp( "%and" )]
+        [Pure, Lisp( "and" )]
         public static object LogicalAnd( object a1, object a2 )
         {
             if ( ToBool( a1 ) )
@@ -489,7 +489,22 @@ namespace Kiezel
             }
         }
 
-        [Pure, Lisp( "%or" )]
+        [Pure, Lisp( "and" )]
+        public static object LogicalAnd( params object[] args )
+        {
+            object result = true;
+            foreach ( var a in args )
+            {
+                result = a;
+                if ( !ToBool( result ) )
+                {
+                    break;
+                }
+            }
+            return result;
+        }
+
+        [Pure, Lisp( "or" )]
         public static object LogicalOr( object a1, object a2 )
         {
             if ( ToBool( a1 ) )
@@ -499,6 +514,40 @@ namespace Kiezel
             else
             {
                 return a2;
+            }
+        }
+
+        [Pure, Lisp( "or" )]
+        public static object LogicalOr( params object[] args )
+        {
+            object result = false;
+            foreach ( var a in args )
+            {
+                result = a;
+                if ( ToBool( result ) )
+                {
+                    break;
+                }
+            }
+            return result;
+        }
+
+        [Pure, Lisp( "if" )]
+        public static object LogicalIf( object a1, object a2 )
+        {
+            return LogicalIf( a1, a2, null );
+        }
+
+        [Pure, Lisp( "if" )]
+        public static object LogicalIf( object a1, object a2, object a3 )
+        {
+            if ( ToBool( a1 ) )
+            {
+                return a2;
+            }
+            else
+            {
+                return a3;
             }
         }
 
@@ -1191,6 +1240,7 @@ namespace Kiezel
             }
             return true;
         }
+
         internal static object Mul( object a1, object a2 )
         {
             // commonest case first

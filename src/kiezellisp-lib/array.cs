@@ -10,7 +10,7 @@ namespace Kiezel
 {
     public partial class Runtime
     {
-        [Lisp( "%elt" )]
+        [Lisp( "elt" )]
         public static object Elt( object target, params object[] indexes )
         {
             if ( target == null )
@@ -62,7 +62,7 @@ namespace Kiezel
             return result;
         }
 
-        [Lisp( "%set-elt" )]
+        [Lisp( "set-elt" )]
         public static object SetElt( object target, params object[] indexesAndValue )
         {
             if ( target is Prototype )

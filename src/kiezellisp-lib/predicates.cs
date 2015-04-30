@@ -77,7 +77,7 @@ namespace Kiezel
         [Pure, Lisp( "function?" )]
         public static bool Functionp( object expr )
         {
-            return expr is IApply && !Macrop( expr );
+            return expr is IApply;
         }
 
         [Pure, Lisp( "ilist?" )]
@@ -119,10 +119,9 @@ namespace Kiezel
         }
 
         [Pure, Lisp( "macro?" )]
-        public static bool Macrop( object expr )
+        public static bool Macrop( Symbol sym )
         {
-            var func = expr as LambdaClosure;
-            return func != null && func.Kind == LambdaKind.Macro;
+            return sym.MacroValue != null;
         }
 
         [Pure, Lisp( "minus?" )]
@@ -205,9 +204,9 @@ namespace Kiezel
         }
 
         [Pure, Lisp( "special-form?" )]
-        public static bool SpecialFormp( object expr )
+        public static bool SpecialFormp( Symbol sym )
         {
-            return expr is SpecialForm;
+            return sym.SpecialFormValue != null;
         }
 
         [Pure, Lisp( "special-symbol?" )]

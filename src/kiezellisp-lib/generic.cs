@@ -61,7 +61,7 @@ namespace Kiezel
                 throw new LispException( "No matching multi-method found" );
             }
             var method = ( LambdaClosure ) methods.Car;
-            var newargs = method.MakeArgumentFrame( args, null );
+            var newargs = method.MakeArgumentFrame( args, null, null );
             return Runtime.CallNextMethod( methods, newargs );
         }
 
@@ -117,7 +117,7 @@ namespace Kiezel
                 return null;
             }
             var lambda = ( LambdaClosure ) nextLambdas.Car;
-            return lambda.ApplyLambdaBind( nextLambdas.Cdr, args, true, null );
+            return lambda.ApplyLambdaBind( nextLambdas.Cdr, args, true, null, null );
         }
 
         internal static CompareClassResult CompareClass( object left, object right )

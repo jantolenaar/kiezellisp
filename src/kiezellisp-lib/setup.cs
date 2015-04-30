@@ -184,7 +184,7 @@ namespace Kiezel
                     foreach ( string symbolName in ( ( LispAttribute ) attrs[ 0 ] ).Names )
                     {
                         var sym = FindSymbol( symbolName, creating: true );
-                        if ( !sym.IsUndefined || sym.SpecialFormValue != null )
+                        if ( !sym.IsUndefined )
                         {
                             PrintWarning( "Duplicate builtin name: ", sym.Name );
                         }

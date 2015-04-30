@@ -33,6 +33,8 @@ namespace Kiezel
         internal static MethodInfo DefineConstantMethod = RuntimeMethod( "DefineConstant" );
 
         internal static MethodInfo DefineFunctionMethod = RuntimeMethod( "DefineFunction" );
+        
+        internal static MethodInfo DefineMacroMethod = RuntimeMethod( "DefineMacro" );
 
         internal static MethodInfo DefineMethodMethod = RuntimeMethod( "DefineMethod" );
 
@@ -448,7 +450,7 @@ namespace Kiezel
             }
             string doc;
             var lambda = CompileLambdaDef( sym, Cddr( form ), scope, LambdaKind.Macro, out doc );
-            return Expression.Call( DefineFunctionMethod, Expression.Constant( sym ), lambda, Expression.Constant( doc, typeof( string ) ) );
+            return Expression.Call( DefineMacroMethod, Expression.Constant( sym ), lambda, Expression.Constant( doc, typeof( string ) ) );
         }
 
         internal static Expression CompileDefMethod( Cons form, AnalysisScope scope )
@@ -797,7 +799,7 @@ namespace Kiezel
             else
             {
                 // not a constant name
-                var newform = MakeCons( Symbols.GetAttrFunc, Cdr( form ) );
+                var newform = MakeCons( Symbols.Funcall, form );
                 return CompileFunctionCall( newform, scope );
             }
         }
@@ -1213,7 +1215,7 @@ namespace Kiezel
             if ( scope.IsBlockScope )
             {
                 // merge
-                var expressions = CompileBodyExpressions( forms, scope );
+                var expressions = CompileBodyExpressions( Cdr( forms ), scope );
                 Expression block = Expression.Block( typeof( object ), expressions );
                 return block;
             }
@@ -1315,7 +1317,8 @@ namespace Kiezel
             else
             {
                 // not a constant name
-                return CompileFunctionCall( MakeCons( Symbols.SetAttrFunc, Cdr( form ) ), scope );
+                var newform = MakeCons( Symbols.Funcall, form );
+                return CompileFunctionCall( newform, scope );
             }
         }
 
@@ -1546,8 +1549,13 @@ namespace Kiezel
             }
         }
 
-        internal static Expression CompileWrapped( object expr, AnalysisScope scope )
+        internal static Expression CompileWrapped( object expr1, AnalysisScope scope )
         {
+            var expr = MacroExpand( expr1, scope );
+
+            // At this point expr is either not a macro call, or it is a macro call 
+            // that refused to expand by returning the &whole parameter.
+
             if ( expr is Symbol )
             {
                 var sym = ( Symbol ) expr;
@@ -1582,11 +1590,18 @@ namespace Kiezel
                         return head.SpecialFormValue.Helper( form, scope );
                     }
 
-                    if ( Macrop( head.Value ) )
-                    {
-                        var expansion = MacroExpand( form, scope );
-                        return Compile( expansion, scope );
-                    }
+                    //if ( head.MacroValue != null )
+                    //{
+                    //    var expansion = MacroExpand( form, scope );
+                    //    if ( form == expansion )
+                    //    {
+                    //        return CompileFunctionCall( form, scope );
+                    //    }
+                    //    else
+                    //    {
+                    //        return Compile( expansion, scope );
+                    //    }
+                    //}
 
                     if ( head == Symbols.Catch || head == Symbols.Finally )
                     {
@@ -1669,43 +1684,49 @@ namespace Kiezel
             return null;
         }
 
+        internal static ImportedFunction GetBuiltinFunction( string name )
+        {
+            var sym = FindSymbol( name );
+            return (ImportedFunction) sym.Value;
+        }
+
         internal static void RestartCompiler()
         {
-            Symbols.And.FunctionValue = new SpecialForm( CompileAnd );
-            Symbols.Quote.FunctionValue = new SpecialForm( CompileQuote );
-            Symbols.Declare.FunctionValue = new SpecialForm( CompileDeclare );
-            Symbols.Def.FunctionValue = new SpecialForm( CompileDef );
-            Symbols.DefConstant.FunctionValue = new SpecialForm( CompileDefConstant );
-            Symbols.DefMacro.FunctionValue = new SpecialForm( CompileDefMacro );
-            Symbols.DefMethod.FunctionValue = new SpecialForm( CompileDefMethod );
-            Symbols.DefMulti.FunctionValue = new SpecialForm( CompileDefMulti );
-            Symbols.Defun.FunctionValue = new SpecialForm( CompileDefun );
-            Symbols.DefunStar.FunctionValue = new SpecialForm( CompileDefunStar );
-            Symbols.Do.FunctionValue = new SpecialForm( CompileDo );
-            Symbols.FutureVar.FunctionValue = new SpecialForm( CompileFutureVar );
-            Symbols.GetAttr.FunctionValue = new SpecialForm( CompileGetMember );
-            Symbols.GetElt.FunctionValue = new SpecialForm( CompileGetElt );
-            Symbols.GetLexicalOrEnvironmentVariable.FunctionValue = new SpecialForm( CompileGetLexicalOrEnvironmentVariable );
-            Symbols.Goto.FunctionValue = new SpecialForm( CompileGoto );
-            Symbols.GreekLambda.FunctionValue = new SpecialForm( CompileLambda );
-            Symbols.HiddenVar.FunctionValue = new SpecialForm( CompileHiddenVar );
-            Symbols.If.FunctionValue = new SpecialForm( CompileIf );
-            Symbols.Label.FunctionValue = new SpecialForm( CompileLabel );
-            Symbols.Lambda.FunctionValue = new SpecialForm( CompileLambda );
-            Symbols.LambdaStar.FunctionValue = new SpecialForm( CompileLambdaStar );
-            Symbols.LazyVar.FunctionValue = new SpecialForm( CompileLazyVar );
-            Symbols.Let.FunctionValue = new SpecialForm( CompileLet );
-            Symbols.LetFun.FunctionValue = new SpecialForm( CompileLetFun );
-            Symbols.MergingDo.FunctionValue = new SpecialForm( CompileMergingDo );
-            Symbols.Or.FunctionValue = new SpecialForm( CompileOr );
-            Symbols.Quote.FunctionValue = new SpecialForm( CompileQuote );
-            Symbols.Return.FunctionValue = new SpecialForm( CompileReturn );
-            Symbols.SetAttr.FunctionValue = new SpecialForm( CompileSetMember );
-            Symbols.SetElt.FunctionValue = new SpecialForm( CompileSetElt );
-            Symbols.Setq.FunctionValue = new SpecialForm( CompileSetq );
-            Symbols.Throw.FunctionValue = new SpecialForm( CompileThrow );
-            Symbols.Try.FunctionValue = new SpecialForm( CompileTry );
-            Symbols.Var.FunctionValue = new SpecialForm( CompileVar );
+            Symbols.And.SpecialFormValue = new SpecialForm( CompileAnd );
+            Symbols.Quote.SpecialFormValue = new SpecialForm( CompileQuote );
+            Symbols.Declare.SpecialFormValue = new SpecialForm( CompileDeclare );
+            Symbols.Def.SpecialFormValue = new SpecialForm( CompileDef );
+            Symbols.DefConstant.SpecialFormValue = new SpecialForm( CompileDefConstant );
+            Symbols.DefMacro.SpecialFormValue = new SpecialForm( CompileDefMacro );
+            Symbols.DefMethod.SpecialFormValue = new SpecialForm( CompileDefMethod );
+            Symbols.DefMulti.SpecialFormValue = new SpecialForm( CompileDefMulti );
+            Symbols.Defun.SpecialFormValue = new SpecialForm( CompileDefun );
+            Symbols.DefunStar.SpecialFormValue = new SpecialForm( CompileDefunStar );
+            Symbols.Do.SpecialFormValue = new SpecialForm( CompileDo );
+            Symbols.FutureVar.SpecialFormValue = new SpecialForm( CompileFutureVar );
+            Symbols.GetAttr.SpecialFormValue = new SpecialForm( CompileGetMember );
+            Symbols.GetElt.SpecialFormValue = new SpecialForm( CompileGetElt );
+            Symbols.GetLexicalOrEnvironmentVariable.SpecialFormValue = new SpecialForm( CompileGetLexicalOrEnvironmentVariable );
+            Symbols.Goto.SpecialFormValue = new SpecialForm( CompileGoto );
+            Symbols.GreekLambda.SpecialFormValue = new SpecialForm( CompileLambda );
+            Symbols.HiddenVar.SpecialFormValue = new SpecialForm( CompileHiddenVar );
+            Symbols.If.SpecialFormValue = new SpecialForm( CompileIf );
+            Symbols.Label.SpecialFormValue = new SpecialForm( CompileLabel );
+            Symbols.Lambda.SpecialFormValue = new SpecialForm( CompileLambda );
+            Symbols.LambdaStar.SpecialFormValue = new SpecialForm( CompileLambdaStar );
+            Symbols.LazyVar.SpecialFormValue = new SpecialForm( CompileLazyVar );
+            Symbols.Let.SpecialFormValue = new SpecialForm( CompileLet );
+            Symbols.LetFun.SpecialFormValue = new SpecialForm( CompileLetFun );
+            Symbols.MergingDo.SpecialFormValue = new SpecialForm( CompileMergingDo );
+            Symbols.Or.SpecialFormValue = new SpecialForm( CompileOr );
+            Symbols.Quote.SpecialFormValue = new SpecialForm( CompileQuote );
+            Symbols.Return.SpecialFormValue = new SpecialForm( CompileReturn );
+            Symbols.SetAttr.SpecialFormValue = new SpecialForm( CompileSetMember );
+            Symbols.SetElt.SpecialFormValue = new SpecialForm( CompileSetElt );
+            Symbols.Setq.SpecialFormValue = new SpecialForm( CompileSetq );
+            Symbols.Throw.SpecialFormValue = new SpecialForm( CompileThrow );
+            Symbols.Try.SpecialFormValue = new SpecialForm( CompileTry );
+            Symbols.Var.SpecialFormValue = new SpecialForm( CompileVar );
         }
 
         internal static MethodInfo RuntimeMethod( string name )

@@ -6,7 +6,7 @@ namespace Kiezel
 {
     public partial class Runtime
     {
-        [Lisp( "%attr" )]
+        [Lisp( "attr" )]
         public static object Attr( object target, object attr )
         {
             if ( target is Prototype )
@@ -38,7 +38,8 @@ namespace Kiezel
         {
             return new AccessorLambda( true, members );
         }
-        [Lisp( "%set-attr" )]
+
+        [Lisp( "set-attr" )]
         public static object SetAttr( object target, object attr, object value )
         {
             if ( target is Prototype )

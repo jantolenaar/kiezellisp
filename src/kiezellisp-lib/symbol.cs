@@ -12,7 +12,9 @@ namespace Kiezel
         Variable,
         Constant,
         ReadonlyVariable,
-        Function
+        Function,
+        SpecialForm,
+        Macro
     }
 
     public partial class Runtime
@@ -92,6 +94,13 @@ namespace Kiezel
             return sym;
         }
 
+        internal static object DefineMacro( Symbol sym, LambdaClosure value, string doc )
+        {
+            sym.MacroValue = value;
+            sym.CompilerDocumentation = doc;
+            return sym;
+        }
+
         internal static object DefineVariable( Symbol sym, object value, string doc )
         {
             sym.VariableValue = value;
@@ -108,6 +117,10 @@ namespace Kiezel
         internal Package Package;
         internal Cons PropList;
         internal SymbolUsage Usage;
+
+        internal object _compilerValue;
+        internal string CompilerDocumentation;
+        internal SymbolUsage CompilerUsage;
 
         internal Symbol( string name, Package package = null )
         {
@@ -340,7 +353,27 @@ namespace Kiezel
         {
             get
             {
-                return _value as SpecialForm;
+                return _compilerValue as SpecialForm;
+            }
+
+            set
+            {
+                _compilerValue = value;
+                CompilerUsage = SymbolUsage.SpecialForm;
+            }
+        }
+
+        internal LambdaClosure MacroValue
+        {
+            get
+            {
+                return _compilerValue as LambdaClosure;
+            }
+
+            set
+            {
+                _compilerValue = value;
+                CompilerUsage = SymbolUsage.Macro;
             }
         }
 
@@ -370,6 +403,7 @@ namespace Kiezel
                 Usage = SymbolUsage.Variable;
             }
         }
+
         public string ToString( bool escape )
         {
             var s = ContextualName;
@@ -520,6 +554,8 @@ namespace Kiezel
 
         internal static Symbol Force;
 
+        internal static Symbol Funcall;
+        
         internal static Symbol Function;
 
         internal static Symbol FunctionExitLabel;
@@ -533,8 +569,6 @@ namespace Kiezel
         internal static Symbol GetArgumentOrDefault;
 
         internal static Symbol GetAttr;
-
-        internal static Symbol GetAttrFunc;
 
         internal static Symbol GetElt;
 
@@ -704,8 +738,6 @@ namespace Kiezel
 
         internal static Symbol SetAttr;
 
-        internal static Symbol SetAttrFunc;
-
         internal static Symbol SetElt;
 
         internal static Symbol Setf;
@@ -841,6 +873,7 @@ namespace Kiezel
             Features = MakeSymbol( "$features" );
             Finally = MakeSymbol( "finally" );
             Force = MakeSymbol( "force" );
+            Funcall = MakeSymbol( "funcall" );
             Function = MakeSymbol( "function" );
             FunctionExitLabel = MakeSymbol( "function-exit" );
             FunctionKeyword = Runtime.MakeSymbol( "function", Runtime.KeywordPackage );
@@ -848,7 +881,6 @@ namespace Kiezel
             GenericFunction = MakeSymbol( "generic-function" );
             GetArgumentOrDefault = MakeSymbol( "get-argument-or-default" );
             GetAttr = MakeSymbol( "attr" );
-            GetAttrFunc = MakeSymbol( "%attr" );
             GetElt = MakeSymbol( "elt" );
             GetLexicalOrEnvironmentVariable = Runtime.MakeSymbol( "get-lexical-or-environment-variable", Runtime.SystemPackage );
             Goto = MakeSymbol( "goto" );
@@ -930,7 +962,6 @@ namespace Kiezel
             ScriptName = MakeSymbol( "$script-name" );
             Set = MakeSymbol( "set" );
             SetAttr = MakeSymbol( "set-attr" );
-            SetAttrFunc = MakeSymbol( "%set-attr" );
             SetElt = MakeSymbol( "set-elt" );
             Setf = MakeSymbol( "setf" );
             Setq = MakeSymbol( "setq" );

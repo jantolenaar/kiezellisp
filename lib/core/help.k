@@ -44,9 +44,21 @@
 
 (defun print-topic-documentation (topic)
     (let descr (get-description topic))
-    (let syntax-list (.function-syntax descr))
+    (let compiler-documentation (.compiler-documentation descr))
+    (let compiler-usage (.compiler-usage descr))
+    (let compiler-syntax-list (.compiler-syntax descr))
+    (when compiler-usage
+        (print-line "COMPILER-USAGE")
+        (print-line "    " compiler-usage))
+    (when compiler-syntax-list
+        (print-line "COMPILER-SYNTAX")
+        (each print-syntax compiler-syntax-list))
+    (when compiler-documentation
+        (print-line "COMPILER-DESCRIPTION")
+        (print-documentation-item compiler-documentation))
     (let documentation (.documentation descr))
     (let usage (.usage descr))
+    (let syntax-list (.function-syntax descr))
     (when usage
         (print-line "USAGE")
         (print-line "    " usage))
