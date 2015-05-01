@@ -1,5 +1,9 @@
 # Change Log
 
+## 2015/05/01
+
+*   Changed application of `UnwindException`.
+
 ## 2015/04/27
 
 *   Fixed bug in `merging-do` compilation.

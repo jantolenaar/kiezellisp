@@ -257,17 +257,30 @@ namespace Kiezel
             return result;
         }
 
+        internal static Exception UnwindException( Exception ex )
+        {
+            while ( ex.InnerException != null && ex is System.Reflection.TargetInvocationException )
+            {
+                ex = ex.InnerException;
+            }
+            return ex;
+        }
+
+        internal static Exception UnwindExceptionIntoNewException( Exception ex )
+        {
+            var ex2 = UnwindException( ex );
+            string str = GetDiagnostics( ex2 ).Indent( ">>> " );
+            var ex3 = new LispException( str, ex2 );
+            return ex3;
+        }
+
         [Lisp( "get-diagnostics" )]
         public static string GetDiagnostics( Exception exception )
         {
             var buf = new StringWriter();
             if ( exception != null )
             {
-                var ex2 = exception;
-                while ( ex2.InnerException != null && ex2 is System.Reflection.TargetInvocationException )
-                {
-                    ex2 = ex2.InnerException;
-                }
+                var ex2 = UnwindException( exception );
                 buf.WriteLine( "EXCEPTION" );
                 buf.WriteLine( new string( '=', 80 ) );
                 buf.WriteLine( ex2.Message );

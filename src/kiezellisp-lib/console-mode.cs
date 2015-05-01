@@ -712,22 +712,7 @@ namespace Kiezel
             }
         }
 
-        internal static Exception UnwindException( Exception ex )
-        {
-            while ( ex.InnerException != null && ex is System.Reflection.TargetInvocationException )
-            {
-                ex = ex.InnerException;
-            }
-            return ex;
-        }
-
-        internal static Exception UnwindExceptionIntoNewException( Exception ex )
-        {
-            var ex2 = UnwindException( ex );
-            string str = GetDiagnostics( ex2 ).Indent( ">>> " );
-            var ex3 = new LispException( str, ex2 );
-            return ex3;
-        }
+ 
     }
 
 }

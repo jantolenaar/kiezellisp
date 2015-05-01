@@ -82,7 +82,7 @@ namespace Kiezel
 
         internal static MethodInfo ToBoolMethod = RuntimeMethod( "ToBool" );
 
-        internal static MethodInfo UnwindExceptionIntoNewExceptionMethod = RuntimeMethod( "UnwindExceptionIntoNewException" );
+        internal static MethodInfo UnwindExceptionMethod = RuntimeMethod( "UnwindException" );
 
         [Lisp( "system:optimizer" )]
         public static object Optimizer( object expr )
@@ -360,7 +360,8 @@ namespace Kiezel
                                     Expression.Block( typeof( object ),
                                                       new ParameterExpression[] { var2 },
                                                       CallRuntime( RestoreFrameMethod, saved ),
-                                                      Expression.Assign( var2, CallRuntime( UnwindExceptionIntoNewExceptionMethod, var1 ) ),
+                                                      //Expression.Assign( var2, var1 ),
+                                                      Expression.Assign( var2, CallRuntime( UnwindExceptionMethod, var1 ) ),
                                                       CompileBody( forms, catchScope ) ) );
                 return code;
             }
