@@ -107,6 +107,15 @@ namespace Kiezel
             sym.Documentation = doc;
             return sym;
         }
+
+        internal static void WarnWhenShadowing( Symbol sym )
+        {
+            var package = CurrentPackage();
+            if ( sym.Package != package )
+            {
+                PrintWarning( "defining symbol ", sym.Name, " shadows ", sym.LongName );
+            }
+        }
     }
 
     public class Symbol : IPrintsValue, IApply

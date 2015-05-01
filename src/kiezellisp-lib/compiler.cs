@@ -424,6 +424,7 @@ namespace Kiezel
             CheckMinLength( form, 3 );
             CheckMaxLength( form, 4 );
             var sym = CheckSymbol( Second( form ) );
+            WarnWhenShadowing( sym );
             var value = Compile( Third( form ), scope );
             var doc = ( string ) Fourth( form );
             return Expression.Call( DefineVariableMethod, Expression.Constant( sym ), value, Expression.Constant( doc, typeof( string ) ) );
@@ -435,6 +436,7 @@ namespace Kiezel
             CheckMinLength( form, 3 );
             CheckMaxLength( form, 4 );
             var sym = CheckSymbol( Second( form ) );
+            WarnWhenShadowing( sym );
             var value = Compile( Third( form ), scope );
             var doc = ( string ) Fourth( form );
             return Expression.Call( DefineConstantMethod, Expression.Constant( sym ), value, Expression.Constant( doc, typeof( string ) ) );
@@ -449,6 +451,7 @@ namespace Kiezel
             {
                 throw new LispException( "Invalid macro name: {0}", sym );
             }
+            WarnWhenShadowing( sym );
             string doc;
             var lambda = CompileLambdaDef( sym, Cddr( form ), scope, LambdaKind.Macro, out doc );
             return Expression.Call( DefineMacroMethod, Expression.Constant( sym ), lambda, Expression.Constant( doc, typeof( string ) ) );
@@ -463,6 +466,7 @@ namespace Kiezel
             {
                 throw new LispException( "Invalid method name: {0}", sym );
             }
+            WarnWhenShadowing( sym );
             string doc;
             var lambda = CompileLambdaDef( sym, Cddr( form ), scope, LambdaKind.Method, out doc );
             return CallRuntime( DefineMethodMethod, Expression.Constant( sym ), lambda );
@@ -477,6 +481,7 @@ namespace Kiezel
             {
                 throw new LispException( "Invalid method name: {0}", sym );
             }
+            WarnWhenShadowing( sym );
             var args = ( Cons ) Third( form );
             var body = Cdr( Cddr( form ) );
             var lispParams = CompileFormalArgs( args, new AnalysisScope(), LambdaKind.Function );
@@ -497,6 +502,7 @@ namespace Kiezel
             {
                 throw new LispException( "Invalid function name: {0}", sym );
             }
+            WarnWhenShadowing( sym );
             string doc;
             var lambda = CompileLambdaDef( sym, Cddr( form ), scope, LambdaKind.Function, out doc );
             return CallRuntime( DefineFunctionMethod, Expression.Constant( sym ), lambda, Expression.Constant( doc, typeof( string ) ) );
@@ -511,6 +517,7 @@ namespace Kiezel
             {
                 throw new LispException( "Invalid function name: {0}", sym );
             }
+            WarnWhenShadowing( sym );
             string doc;
             var lambda = CompileMultiArityLambdaDef( sym, Cddr( form ), scope, out doc );
             return CallRuntime( DefineFunctionMethod, Expression.Constant( sym ), lambda, Expression.Constant( doc, typeof( string ) ) );

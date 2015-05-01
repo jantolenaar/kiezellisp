@@ -2,6 +2,7 @@
 
 ## 2015/05/01
 
+*   Added warning when shadowing symbol from inherited package.
 *   Changed application of `UnwindException`.
 
 ## 2015/04/27
