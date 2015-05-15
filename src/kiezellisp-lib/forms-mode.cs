@@ -49,8 +49,7 @@ namespace Kiezel
                 DebugMode = parser.GetOption( "d" ) == null;
                 OptimizerEnabled = !DebugMode;
                 Reset( false );
-                var code = ReadFromString( "(do " + expr1 + ")" );
-                Eval( code );
+                TryLoadText( expr1, null, null, false, false, false );
             }
             catch ( Exception ex )
             {

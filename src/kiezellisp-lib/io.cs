@@ -694,6 +694,7 @@ namespace Kiezel
                 return "#<" + obj.ToString() + ">";
             }
         }
+
         internal static bool TryLoad( string file, params object[] args )
         {
             object[] kwargs = ParseKwargs( args, new string[] { "verbose", "print" }, DefaultValue.Value, DefaultValue.Value );
@@ -717,17 +718,23 @@ namespace Kiezel
             }
 
             var content = File.ReadAllText( path );
-            var reader = new LispReader( content );
-            var newDir = NormalizePath( Path.GetDirectoryName( path ) );
+            var scriptDirectory = NormalizePath( Path.GetDirectoryName( path ) );
             var scriptName = Path.GetFileName( path );
 
-            var saved = SaveStackAndFrame();
+            TryLoadText( content, scriptDirectory, scriptName, loadDebug, loadVerbose, loadPrint );
 
+            return true;
+        }
+    
+        internal static void TryLoadText( string text, string newDir, string scriptName, bool loadDebug, bool loadVerbose, bool loadPrint )
+        {
+            var reader = new LispReader( text );
+            var saved = SaveStackAndFrame();
             var env = MakeExtendedEnvironment();
             var scope = env.Scope;
             CurrentThreadContext.Frame = env.Frame;
 
-            DefDynamic( Symbols.ScriptDirectory, newDir );
+            DefDynamic( Symbols.ScriptDirectory, newDir ?? GetDynamic( Symbols.ScriptDirectory ) );
             DefDynamic( Symbols.ScriptName, scriptName );
             DefDynamic( Symbols.CommandLineArguments, null );
             DefDynamic( Symbols.Package, GetDynamic( Symbols.Package ) );
@@ -739,7 +746,10 @@ namespace Kiezel
                 DefDynamic( Symbols.LoadVerbose, true );
             }
             var oldDir = Environment.CurrentDirectory;
-            Environment.CurrentDirectory = newDir;
+            if ( newDir != null )
+            {
+                Environment.CurrentDirectory = newDir;
+            }
 
             try
             {
@@ -769,8 +779,6 @@ namespace Kiezel
             }
 
             RestoreStackAndFrame( saved );
-
-            return true;
         }
 
         internal static char UnescapeCharacter( char ch )
