@@ -22,6 +22,13 @@ namespace Kiezel
             return expr is char;
         }
 
+        [Pure, Lisp( "compiler-macro?" )]
+        public static bool CompilerMacrop( Symbol sym )
+        {
+            return sym.CompilerUsage == SymbolUsage.CompilerMacro;
+        }
+
+
         [Pure, Lisp( "complex?" )]
         public static bool Complexp( object expr )
         {
@@ -121,7 +128,7 @@ namespace Kiezel
         [Pure, Lisp( "macro?" )]
         public static bool Macrop( Symbol sym )
         {
-            return sym.MacroValue != null;
+            return sym.CompilerUsage == SymbolUsage.Macro;
         }
 
         [Pure, Lisp( "minus?" )]
@@ -206,7 +213,7 @@ namespace Kiezel
         [Pure, Lisp( "special-form?" )]
         public static bool SpecialFormp( Symbol sym )
         {
-            return sym.SpecialFormValue != null;
+            return sym.CompilerUsage == SymbolUsage.SpecialForm;
         }
 
         [Pure, Lisp( "special-symbol?" )]

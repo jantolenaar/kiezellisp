@@ -30,6 +30,8 @@ namespace Kiezel
 
         internal static MethodInfo DefDynamicMethod = RuntimeMethod( "DefDynamic" );
 
+        internal static MethodInfo DefineCompilerMacroMethod = RuntimeMethod( "DefineCompilerMacro" );
+        
         internal static MethodInfo DefineConstantMethod = RuntimeMethod( "DefineConstant" );
 
         internal static MethodInfo DefineFunctionMethod = RuntimeMethod( "DefineFunction" );
@@ -440,6 +442,21 @@ namespace Kiezel
             var value = Compile( Third( form ), scope );
             var doc = ( string ) Fourth( form );
             return Expression.Call( DefineConstantMethod, Expression.Constant( sym ), value, Expression.Constant( doc, typeof( string ) ) );
+        }
+
+        internal static Expression CompileDefineCompilerMacro( Cons form, AnalysisScope scope )
+        {
+            // defmacro name args body
+            CheckMinLength( form, 3 );
+            var sym = CheckSymbol( Second( form ) );
+            if ( sym.IsDynamic )
+            {
+                throw new LispException( "Invalid macro name: {0}", sym );
+            }
+            WarnWhenShadowing( sym );
+            string doc;
+            var lambda = CompileLambdaDef( sym, Cddr( form ), scope, LambdaKind.Macro, out doc );
+            return Expression.Call( DefineCompilerMacroMethod, Expression.Constant( sym ), lambda, Expression.Constant( doc, typeof( string ) ) );
         }
 
         internal static Expression CompileDefMacro( Cons form, AnalysisScope scope )
@@ -1705,6 +1722,7 @@ namespace Kiezel
             Symbols.Declare.SpecialFormValue = new SpecialForm( CompileDeclare );
             Symbols.Def.SpecialFormValue = new SpecialForm( CompileDef );
             Symbols.DefConstant.SpecialFormValue = new SpecialForm( CompileDefConstant );
+            Symbols.DefineCompilerMacro.SpecialFormValue = new SpecialForm( CompileDefineCompilerMacro );
             Symbols.DefMacro.SpecialFormValue = new SpecialForm( CompileDefMacro );
             Symbols.DefMethod.SpecialFormValue = new SpecialForm( CompileDefMethod );
             Symbols.DefMulti.SpecialFormValue = new SpecialForm( CompileDefMulti );

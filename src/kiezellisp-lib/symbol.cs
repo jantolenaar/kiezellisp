@@ -14,7 +14,8 @@ namespace Kiezel
         ReadonlyVariable,
         Function,
         SpecialForm,
-        Macro
+        Macro,
+        CompilerMacro
     }
 
     public partial class Runtime
@@ -36,16 +37,55 @@ namespace Kiezel
             }
         }
 
+        internal static Symbol CheckReadVariable( object target )
+        {
+            var sym = CheckSymbol( target );
+            if ( sym.Usage == SymbolUsage.None )
+            {
+                ThrowError( "Undefined variable: ", sym.ContextualName );
+            }
+            return sym;
+        }
+
+        internal static Symbol CheckWriteVariable( object target )
+        {
+            var sym = CheckReadVariable( target );
+            if ( sym.Usage != SymbolUsage.Variable )
+            {
+                switch ( sym.Usage )
+                {
+                    case SymbolUsage.Constant:
+                    {
+                        ThrowError( "Cannot assign to constant: ", sym.ContextualName );
+                        break;
+                    }
+                    case SymbolUsage.Function:
+                    {
+                        ThrowError( "Cannot assign to function: ", sym.ContextualName );
+                        break;
+                    }
+                    case SymbolUsage.ReadonlyVariable:
+                    {
+                        ThrowError( "Cannot assign to readonly variable: ", sym.ContextualName );
+                        break;
+                    }
+
+                }
+            }
+            return sym;
+        }
+
         [Lisp( "set" )]
         public static object Set( object var, object val )
         {
-            var sym = CheckSymbol( var );
+            var sym = CheckWriteVariable( var );
             if ( sym.IsDynamic )
             {
                 SetDynamic( sym, val );
             }
             else
             {
+                EraseCompilerValue( sym );
                 sym.CheckedValue = val;
             }
             return val;
@@ -54,7 +94,8 @@ namespace Kiezel
         [Lisp( "set-symbol-value" )]
         public static object SetSymbolValue( object target, object value )
         {
-            var sym = CheckSymbol( target );
+            var sym = CheckWriteVariable( target );
+            EraseCompilerValue( sym );
             sym.Value = value;
             return value;
         }
@@ -76,26 +117,54 @@ namespace Kiezel
         [Lisp( "symbol-value" )]
         public static object SymbolValue( object target )
         {
-            var sym = CheckSymbol( target );
+            var sym = CheckReadVariable( target );
             return sym.CheckedValue;
         }
 
         internal static object DefineConstant( Symbol sym, object value, string doc )
         {
+            EraseCompilerValue( sym );
             sym.ConstantValue = value;
             sym.Documentation = doc;
             return sym;
         }
 
+        internal static void EraseCompilerValue( Symbol sym )
+        {
+            sym.CompilerMacroValue = null;
+            sym.CompilerDocumentation = null;
+            sym.CompilerUsage = SymbolUsage.None;
+        }
+
+        internal static void EraseVariable( Symbol sym )
+        {
+            sym.Value = null;
+            sym.Documentation = null;
+            sym.Usage = SymbolUsage.None;
+        }
+
         internal static object DefineFunction( Symbol sym, object value, string doc )
         {
+            EraseCompilerValue( sym );
             sym.FunctionValue = value;
             sym.Documentation = doc;
             return sym;
         }
 
+        internal static object DefineCompilerMacro( Symbol sym, LambdaClosure value, string doc )
+        {
+            if ( !Functionp( sym.Value ) )
+            {
+                ThrowError( "Cannot define compiler macro for non-function {0}", sym );
+            }
+            sym.CompilerMacroValue = value;
+            sym.CompilerDocumentation = doc;
+            return sym;
+        }
+
         internal static object DefineMacro( Symbol sym, LambdaClosure value, string doc )
         {
+            EraseVariable( sym );
             sym.MacroValue = value;
             sym.CompilerDocumentation = doc;
             return sym;
@@ -103,6 +172,7 @@ namespace Kiezel
 
         internal static object DefineVariable( Symbol sym, object value, string doc )
         {
+            EraseCompilerValue( sym );
             sym.VariableValue = value;
             sym.Documentation = doc;
             return sym;
@@ -184,26 +254,13 @@ namespace Kiezel
         {
             get
             {
-                if ( IsUndefined )
-                {
-                    throw new LispException( "Undefined variable: {0}", LongName );
-                }
-
+                Runtime.CheckReadVariable( this );
                 return _value;
             }
 
             set
             {
-                if ( IsUndefined )
-                {
-                    throw new LispException( "Undefined variable: {0}", LongName );
-                }
-
-                if ( !IsVariable )
-                {
-                    throw new LispException( "Cannot assign to constant or function: {0}", LongName );
-                }
-
+                Runtime.CheckWriteVariable( this );
                 _value = value;
             }
         }
@@ -230,6 +287,7 @@ namespace Kiezel
 
             }
         }
+
         internal object ConstantValue
         {
             set
@@ -303,15 +361,12 @@ namespace Kiezel
                 return Usage == SymbolUsage.Variable;
             }
         }
+
         internal object LessCheckedValue
         {
             get
             {
-                if ( IsUndefined )
-                {
-                    throw new LispException( "Undefined variable: {0}", ContextualName );
-                }
-
+                Runtime.CheckReadVariable( this );
                 return _value;
             }
 
@@ -321,11 +376,7 @@ namespace Kiezel
                 {
                     Usage = SymbolUsage.Variable;
                 }
-                else if ( !IsVariable )
-                {
-                    throw new LispException( "Cannot assign to constant or function: {0}", ContextualName );
-                }
-
+                Runtime.CheckWriteVariable(this);
                 _value = value;
             }
         }
@@ -369,6 +420,15 @@ namespace Kiezel
             {
                 _compilerValue = value;
                 CompilerUsage = SymbolUsage.SpecialForm;
+            }
+        }
+
+        internal LambdaClosure CompilerMacroValue
+        {
+            set
+            {
+                _compilerValue = value;
+                CompilerUsage = SymbolUsage.CompilerMacro;
             }
         }
 
@@ -516,6 +576,8 @@ namespace Kiezel
         internal static Symbol Default;
 
         internal static Symbol DefConstant;
+
+        internal static Symbol DefineCompilerMacro;
 
         internal static Symbol DefMacro;
 
@@ -859,6 +921,7 @@ namespace Kiezel
             Declare = MakeSymbol( "declare" );
             Def = MakeSymbol( "def" );
             DefConstant = MakeSymbol( "defconstant" );
+            DefineCompilerMacro = MakeSymbol( "define-compiler-macro" );
             DefMacro = MakeSymbol( "defmacro" );
             DefMethod = MakeSymbol( "defmethod" );
             DefMulti = MakeSymbol( "defmulti" );

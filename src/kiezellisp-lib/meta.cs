@@ -367,7 +367,7 @@ namespace Kiezel
                 return false;
             }
 
-            var macro = head.MacroValue;
+            var macro = head.MacroValue ?? ( head.Value as LambdaClosure );
 
             if ( macro == null || macro.Kind != LambdaKind.Macro )
             {
