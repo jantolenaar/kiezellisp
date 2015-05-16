@@ -19,7 +19,10 @@
 (load "core/help")
 
 (when $interactive-mode
-    (set-console-key-binding 'f12 '() (λx x "(λ")))
+    (set-console-key-binding 'f9 '() (λx x "("))
+    (set-console-key-binding 'f10 '() (λx x ")"))
+    (set-console-key-binding 'f12 '() (λx x "λ"))
+    )
 
 
 

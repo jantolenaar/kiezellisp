@@ -118,10 +118,10 @@
 """
 Help examples:
 
-    help                Shows this help text.
-    help 'car           Shows online help for the symbol `car`.
-    documentation       Shows this help text.
-    documentation 'car  Shows summary description for the symbol `car`.
+   (help)               Shows this help text.
+   (help 'car)          Shows online help for the symbol `car`.
+   (documentation)      Shows this help text.
+   (documentation 'car) Shows summary description for the symbol `car`.
 
 Command line options:
 

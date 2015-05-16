@@ -28,7 +28,6 @@ namespace Kiezel
 
         internal static string[] ReplCommands = new string[]
         {
-            "?", ":help",
             ":clear", ":continue", ":globals", ":history", ":quit",
             ":abort", ":backtrace", ":variables", ":$variables",
             ":top", ":exception", ":Exception", ":force",
@@ -609,15 +608,6 @@ namespace Kiezel
             if ( lispCode != null )
             {
                 var head = First( lispCode ) as Symbol;
-                if ( head != null )
-                {
-                    if ( ( Functionp( head.Value ) || head.SpecialFormValue != null || head.MacroValue != null ) && !Prototypep( head.Value ) )
-                    {
-                        // Symbol and Parameters: assume function call.
-                        lispCode = MakeCons( lispCode, ( Cons ) null );
-                    }
-                }
-
                 var scope = ReconstructAnalysisScope( CurrentThreadContext.Frame );
 
                 timer.Reset();
@@ -706,7 +696,7 @@ namespace Kiezel
                 var fileVersion = FileVersionInfo.GetVersionInfo( assembly.Location );
                 Console.WriteLine( GetVersion() );
                 Console.WriteLine( fileVersion.LegalCopyright );
-                Console.WriteLine( "Type `help` for help on top-level commands" );
+                Console.WriteLine( "Type `(help)` for help on top-level commands" );
                 ReadEvalPrintLoop( commandOptionArgument: expr2, initialized: false );
             }
         }

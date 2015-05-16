@@ -1,5 +1,10 @@
 # Change Log
 
+## 2015/05/16
+
+*   Added `define-compiler-macro`.
+*   Removed REPL smart parentheses feature.
+
 ## 2015/05/01
 
 *   Added warning when shadowing symbol from inherited package.
