@@ -31,53 +31,44 @@ namespace Kiezel
             return arg is DynamicMetaObject ? ( ( DynamicMetaObject ) arg ).Value : arg;
         }
 
+        internal static TypeCode[] TypeCodes =
+        {
+            TypeCode.Int16, TypeCode.Int32,
+            TypeCode.Int16, TypeCode.Int64,
+            TypeCode.Int16, TypeCode.Single,
+            TypeCode.Int16, TypeCode.Double,
+            TypeCode.Int16, TypeCode.Decimal,
+            TypeCode.Int32, TypeCode.Int64,
+            TypeCode.Int32, TypeCode.Single,
+            TypeCode.Int32, TypeCode.Double,
+            TypeCode.Int32, TypeCode.Decimal,
+            TypeCode.Int64, TypeCode.Single,
+            TypeCode.Int64, TypeCode.Double,
+            TypeCode.Int64, TypeCode.Decimal,
+            TypeCode.Single, TypeCode.Double,
+            TypeCode.Single, TypeCode.Decimal,
+            TypeCode.Decimal, TypeCode.Double,
+        };
+
         internal static bool CanConvertFrom( Type type1, Type type2 )
         {
-            if (type1.IsPrimitive && type2.IsPrimitive) {
-                TypeCode typeCode1 = Type.GetTypeCode (type1);
-                TypeCode typeCode2 = Type.GetTypeCode (type2);
-                // If both type1 and type2 have the same type, return true.
-                if (typeCode1 == typeCode2) {
+            if ( type1.IsPrimitive && type2.IsPrimitive )
+            {
+                TypeCode typeCode1 = Type.GetTypeCode( type1 );
+                TypeCode typeCode2 = Type.GetTypeCode( type2 );
+
+                if ( typeCode1 == typeCode2 )
+                {
                     return true;
                 }
-                // Allow all numeric conversions in principle.
-                switch (typeCode1) {
-                case TypeCode.Boolean:
-                case TypeCode.Char:
-                case TypeCode.Byte:
-                case TypeCode.SByte:
-                case TypeCode.UInt16:
-                case TypeCode.UInt32:
-                case TypeCode.UInt64:
-                case TypeCode.Int16:
-                case TypeCode.Int32:
-                case TypeCode.Int64:
-                case TypeCode.Single:
-                case TypeCode.Double:
-                case TypeCode.Decimal:
-                    break;
-                default:
-                    return false;
+
+                for ( int i = 0; i < TypeCodes.Length; i += 2 )
+                {
+                    if ( typeCode1 == TypeCodes[ i ] && typeCode2 == TypeCodes[ i + 1 ] )
+                    {
+                        return true;
+                    }
                 }
-                switch (typeCode2) {
-                case TypeCode.Boolean:
-                case TypeCode.Char:
-                case TypeCode.Byte:
-                case TypeCode.SByte:
-                case TypeCode.UInt16:
-                case TypeCode.UInt32:
-                case TypeCode.UInt64:
-                case TypeCode.Int16:
-                case TypeCode.Int32:
-                case TypeCode.Int64:
-                case TypeCode.Single:
-                case TypeCode.Double:
-                case TypeCode.Decimal:
-                    break;
-                default:
-                    return false;
-                }
-                return true;
             }
             return false;
         }
@@ -158,6 +149,16 @@ namespace Kiezel
                 {
                     // prefer param1
                     cmp = -1;
+                }
+                else if ( CanConvertFrom( type1, type2 ) )
+                {
+                    // prefer param1
+                    cmp = -1;
+                }
+                else if ( CanConvertFrom( type2, type1 ) )
+                {
+                    // prefer param2
+                    cmp = 1;
                 }
                 else
                 {

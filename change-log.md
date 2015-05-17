@@ -1,5 +1,10 @@
 # Change Log
 
+## 2015/05/17
+
+*   Fixed implicit conversion bug.
+*   Modified `describe` for compiler macro feature.
+
 ## 2015/05/16
 
 *   Added `define-compiler-macro`.
