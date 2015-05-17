@@ -561,6 +561,8 @@ namespace Kiezel
 
         internal static Symbol CommandLineArguments;
 
+        internal static Symbol CompilerMacro;
+        
         internal static Symbol Compiling;
 
         internal static Symbol Constant;
@@ -914,6 +916,7 @@ namespace Kiezel
             Catch = MakeSymbol( "catch" );
             Color = Runtime.MakeSymbol( "color", Runtime.KeywordPackage );
             CommandLineArguments = MakeSymbol( "$command-line-arguments" );
+            CompilerMacro = MakeSymbol( "compiler-macro" );
             Compiling = MakeSymbol( "compiling" );
             Constant = MakeSymbol( "constant" );
             CreateTask = Runtime.MakeSymbol( "create-task", Runtime.SystemPackage );

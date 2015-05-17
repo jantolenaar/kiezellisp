@@ -66,24 +66,44 @@ namespace Kiezel
         {
             var result = new Prototype();
             var z = result.Dict;
-            object a = obj;
-            var sym = a as Symbol;
+            var sym = obj as Symbol;
             var isVariable = false;
+            object runtimeValue;
 
-            if ( sym != null )
+            if ( sym == null )
             {
+                runtimeValue = obj;
+            }
+            else
+            {
+                runtimeValue = sym.Value;
+
                 z[ "symbol" ] = sym;
                 z[ "name" ] = sym.Name;
                 z[ "package" ] = sym.Package == null ? null : sym.Package.Name;
 
-                a = sym.Value;
-
                 switch ( sym.CompilerUsage )
                 {
+                    case SymbolUsage.CompilerMacro:
+                    {
+                        z[ "compiler-usage" ] = Symbols.CompilerMacro;
+                        z[ "compiler-value" ] = sym.MacroValue;
+                        var b = ( ( ISyntax ) sym.MacroValue ).GetSyntax( sym );
+                        if ( b != null )
+                        {
+                            z[ "compiler-syntax" ] = b;
+                        }
+                        break;
+                    }
                     case SymbolUsage.Macro:
                     {
                         z[ "compiler-usage" ] = Symbols.Macro;
                         z[ "compiler-value" ] = sym.MacroValue;
+                        var b = ( ( ISyntax ) sym.MacroValue ).GetSyntax( sym );
+                        if ( b != null )
+                        {
+                            z[ "compiler-syntax" ] = b;
+                        }
                         break;
                     }
                     case SymbolUsage.SpecialForm:
@@ -91,15 +111,6 @@ namespace Kiezel
                         z[ "compiler-usage" ] = Symbols.SpecialForm;
                         z[ "compiler-value" ] = sym.SpecialFormValue;
                         break;
-                    }
-                }
-
-                if ( sym.MacroValue != null )
-                {
-                    var b = ( ( ISyntax ) sym.MacroValue ).GetSyntax( sym );
-                    if ( b != null )
-                    {
-                        z[ "compiler-syntax" ] = b;
                     }
                 }
 
@@ -170,50 +181,50 @@ namespace Kiezel
 
             }
 
-            if ( !( a is ICollection ) || ( a is IList ) )
+            if ( !( runtimeValue is ICollection ) || ( runtimeValue is IList ) )
             {
-                z[ "value" ] = a;
+                z[ "value" ] = runtimeValue;
             }
 
-            if ( Nullp( a ) )
+            if ( Nullp( runtimeValue ) )
             {
                 return result;
             }
-            else if ( !( a is ICollection ) || ( a is IList ) )
+            else if ( !( runtimeValue is ICollection ) || ( runtimeValue is IList ) )
             {
-                z[ "type" ] = a.GetType().ToString();
+                z[ "type" ] = runtimeValue.GetType().ToString();
             }
 
             Symbol usage = null;
 
             if ( !isVariable )
             {
-                if ( a is ISyntax )
+                if ( runtimeValue is ISyntax )
                 {
-                    var b = ( ( ISyntax ) a ).GetSyntax( obj as Symbol );
+                    var b = ( ( ISyntax ) runtimeValue ).GetSyntax( obj as Symbol );
                     if ( b != null )
                     {
                         z[ "function-syntax" ] = b;
                     }
                 }
 
-                if ( a is MultiMethod )
+                if ( runtimeValue is MultiMethod )
                 {
                     usage = Symbols.GenericFunction;
                 }
-                else if ( a is ImportedConstructor )
+                else if ( runtimeValue is ImportedConstructor )
                 {
-                    var kiezel = ( ( ImportedConstructor ) a ).HasKiezelMethods;
+                    var kiezel = ( ( ImportedConstructor ) runtimeValue ).HasKiezelMethods;
                     usage = kiezel ? Symbols.BuiltinConstructor : Symbols.ImportedConstructor;
                 }
-                else if ( a is ImportedFunction )
+                else if ( runtimeValue is ImportedFunction )
                 {
-                    var kiezel = ( ( ImportedFunction ) a ).HasKiezelMethods;
+                    var kiezel = ( ( ImportedFunction ) runtimeValue ).HasKiezelMethods;
                     usage = kiezel ? Symbols.BuiltinFunction : Symbols.ImportedFunction;
                 }
-                else if ( a is LambdaClosure )
+                else if ( runtimeValue is LambdaClosure )
                 {
-                    var l = ( LambdaClosure ) a;
+                    var l = ( LambdaClosure ) runtimeValue;
 
                     //z[ "function-source" ] = l.Definition.Source;
 
@@ -239,14 +250,14 @@ namespace Kiezel
                 z[ "usage" ] = usage;
             }
 
-            if ( a is Prototype )
+            if ( runtimeValue is Prototype )
             {
-                var p = ( Prototype ) a;
+                var p = ( Prototype ) runtimeValue;
                 z[ "type-specifier" ] = p.GetTypeSpecifier();
             }
             else
             {
-                var dict = AsPrototype( a );
+                var dict = AsPrototype( runtimeValue );
 
                 if ( dict.Dict.Count != 0 )
                 {
