@@ -1,5 +1,13 @@
 # Change Log
 
+## 2015/05/20
+
+*   Removed `--listener` command line option.
+*   Added `start-listener` function.
+*   Undid removal of REPL smart parentheses feature.
+*   Modified Ctrl+Enter to suppress REPL smart parentheses feature.
+*   Removed function `unuse-package`.
+
 ## 2015/05/17
 
 *   Fixed implicit conversion bug.

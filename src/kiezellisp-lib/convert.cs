@@ -104,6 +104,29 @@ namespace Kiezel
             }
         }
 
+        [Lisp( "as-single" )]
+        public static float AsSingle( object a )
+        {
+            if ( a is float )
+            {
+                return ( float ) a;
+            }
+            else if ( a is BigInteger )
+            {
+                var n = ( BigInteger ) a;
+                return ( float ) n;
+            }
+            else if ( a is BigRational )
+            {
+                var n = ( BigRational ) a;
+                return ( float ) n;
+            }
+            else
+            {
+                return Convert.ToSingle( a );
+            }
+        }
+
         [Lisp( "as-double" )]
         public static double AsDouble( object a )
         {

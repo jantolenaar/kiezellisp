@@ -192,6 +192,7 @@ namespace Kiezel
 
             return context;
         }
+
         internal static void Listener( object state )
         {
             var data = new byte[ 60000 ];
@@ -239,7 +240,15 @@ namespace Kiezel
             }
         }
 
-        private static void CreateCommandListener( int port )
+        [Lisp( "start-listener" )]
+        public static void CreateCommandListener()
+        {
+            var port = ( int ) GetDynamic( Symbols.ReplListenerPort );
+            CreateCommandListener( port );
+        }
+
+        [Lisp("start-listener")]
+        public static void CreateCommandListener( int port )
         {
             Task.Factory.StartNew( Listener, port );
         }

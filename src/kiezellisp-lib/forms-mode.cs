@@ -34,7 +34,6 @@ namespace Kiezel
 
             ConsoleMode = false;
             InteractiveMode = false;
-            ListenerEnabled = false;
 
             string expr1 = parser.GetOption( "c" );
             UserArguments = AsList( parser.GetArgumentArray( 0 ) );

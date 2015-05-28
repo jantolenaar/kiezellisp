@@ -20,7 +20,6 @@ namespace Kiezel
             Runtime.ConsoleMode = consoleMode;
             Runtime.InteractiveMode = false;
             Runtime.OptimizerEnabled = !Runtime.DebugMode;
-            Runtime.ListenerEnabled = false;
 
             Runtime.Reset( false );
         }

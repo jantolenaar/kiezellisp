@@ -109,7 +109,7 @@ namespace Kiezel
 				new Handler(ConsoleKey.PageDown,   0,                          CmdPageDown),
 				new Handler(ConsoleKey.UpArrow,    0,                          CmdHistoryPrev),
 				new Handler(ConsoleKey.DownArrow,  0,                          CmdHistoryNext),
-				new Handler(ConsoleKey.Enter,      0,                          CmdDone),
+				new Handler(ConsoleKey.Enter,      0,                          CmdEnter),
 				new Handler(ConsoleKey.Backspace,  0,                          CmdBackspace),
 				new Handler(ConsoleKey.Delete,     0,                          CmdDeleteChar),
 				new Handler(ConsoleKey.Tab,        0,                          CmdTab),
@@ -119,7 +119,7 @@ namespace Kiezel
 				new Handler(ConsoleKey.End,        ConsoleModifiers.Control,   CmdEndBuffer),
 				new Handler(ConsoleKey.UpArrow,    ConsoleModifiers.Control,   CmdScrollUp),
 				new Handler(ConsoleKey.DownArrow,  ConsoleModifiers.Control,   CmdScrollDown),
-				new Handler(ConsoleKey.Enter,      ConsoleModifiers.Control,   CmdCloseParens),
+				new Handler(ConsoleKey.Enter,      ConsoleModifiers.Control,   CmdControlEnter),
 				new Handler(ConsoleKey.X,          ConsoleModifiers.Control,   CmdCut),
 				new Handler(ConsoleKey.C,          ConsoleModifiers.Control,   CmdCopy),
 				new Handler(ConsoleKey.C,          ConsoleModifiers.Control|ConsoleModifiers.Shift,   CmdCopyIt),
@@ -189,6 +189,12 @@ namespace Kiezel
             }
         }
 
+        public bool ControlEnterPressed
+        {
+            get;
+            set;
+        }
+
         public bool ReadingFromREPL
         {
             get;
@@ -220,7 +226,7 @@ namespace Kiezel
             history.Clear();
         }
 
-        public string Edit( string prompt, string initial, out bool isExternalInput )
+        public string Edit( string prompt, string initial, out bool isExternalInput, out bool controlEnterPressed )
         {
             done = false;
             history.CursorToEnd();
@@ -232,6 +238,7 @@ namespace Kiezel
             history.Append( initial );
 
             isExternalInput = false;
+            ControlEnterPressed = false;
 
             do
             {
@@ -249,6 +256,7 @@ namespace Kiezel
             } while ( !done );
 
             isExternalInput = externalInputInserted;
+            controlEnterPressed = ControlEnterPressed;
 
             Console.WriteLine();
 
@@ -354,53 +362,11 @@ namespace Kiezel
             UpdateCursor( p );
         }
 
-        private void CmdCloseParens()
+        private void CmdControlEnter()
         {
-            var parens = 0;
-            var errors = 0;
-            var str = text.ToString();
-
-            foreach ( char ch in str )
-            {
-                if ( ch == '(' )
-                {
-                    ++parens;
-                }
-                else if ( ch == ')' )
-                {
-                    --parens;
-                    if ( parens < 0 )
-                    {
-                        ++errors;
-                    }
-                }
-            }
-
-            CmdEnd();
-
-            if ( errors != 0 )
-            {
-                Console.Beep();
-                return;
-            }
-
-            if ( parens > 0 )
-            {
-                while ( parens-- > 0 )
-                {
-                    text.Append( ')' );
-                    Console.Write( ')' );
-                }
-            }
-
-            var cleanText = str.TrimStart();
-            if ( !cleanText.StartsWith( "(" ) )
-            {
-                text.Insert( 0, "(" );
-                text.Append( ")" );
-            }
-
-            done = true;
+            CmdEnter();
+            ControlEnterPressed = true;
+            return;
         }
 
         private void CmdCopy()
@@ -492,10 +458,11 @@ namespace Kiezel
             RenderAfter( cursor );
         }
 
-        private void CmdDone()
+        private void CmdEnter()
         {
             if ( !ReadingFromREPL || AcceptReturnAsCommand == null || AcceptReturnAsCommand( text.ToString() ) )
             {
+                ControlEnterPressed = false;
                 done = true;
             }
             else
@@ -763,6 +730,7 @@ namespace Kiezel
                         externalInput = "";
                         externalInputInserted = true;
                         done = true;
+                        ControlEnterPressed = false;
                         return;
                     }
                     Runtime.Sleep( 10 );

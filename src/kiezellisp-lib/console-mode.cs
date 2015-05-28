@@ -85,7 +85,8 @@ namespace Kiezel
         {
             le.ReadingFromREPL = false;
             bool isExternalInput;
-            return le.Edit( "", "", out isExternalInput );
+            bool controlEnterPressed;
+            return le.Edit( "", "", out isExternalInput, out controlEnterPressed );
         }
 
         [Lisp( "set-console-key-binding" )]
@@ -274,7 +275,7 @@ namespace Kiezel
             }
         }
 
-        internal static void EvalPrintCommand( string data, bool debugging )
+        internal static void EvalPrintCommand( string data, bool debugging, bool controlEnterPressed )
         {
             Cons code = ReadAllFromString( data );
 
@@ -369,7 +370,6 @@ namespace Kiezel
                     case ":quit":
                     {
                         le.SaveHistory();
-                        AbortListeners();
                         Environment.Exit( 0 );
                         break;
                     }
@@ -422,7 +422,7 @@ namespace Kiezel
                     case ":time":
                     {
                         var expr = ( object ) Second( code ) ?? Symbols.It;
-                        RunCommand( null, MakeList( expr ), true );
+                        RunCommand( null, MakeList( expr ), showTime: true );
                         break;
                     }
 
@@ -459,7 +459,7 @@ namespace Kiezel
             }
             else
             {
-                RunCommand( null, code );
+                RunCommand( null, code, smartParens: !controlEnterPressed );
             }
         }
 
@@ -507,10 +507,12 @@ namespace Kiezel
                 return !ex.Message.Contains( "EOF:" );
             }
         }
-        internal static string ReadCommand( bool debugging = false )
+
+        internal static string ReadCommand( out bool controlEnterPressed, bool debugging = false )
         {
             var data = "";
             bool isExternalInput = false;
+            controlEnterPressed = false;
 
             while ( String.IsNullOrWhiteSpace( data ) )
             {
@@ -531,7 +533,7 @@ namespace Kiezel
 
                 le.ReadingFromREPL = true;
 
-                data = le.Edit( prompt, clipboard, out isExternalInput );
+                data = le.Edit( prompt, clipboard, out isExternalInput, out controlEnterPressed );
                 clipboard = "";
             }
 
@@ -557,7 +559,6 @@ namespace Kiezel
                         timer.Reset();
                         timer.Start();
                         Reset( false );
-                        RestartListeners();
                         timer.Stop();
                         var time = timer.ElapsedMilliseconds;
                         Console.WriteLine( "Startup time: {0} ms", time );
@@ -565,13 +566,14 @@ namespace Kiezel
 
                     if ( String.IsNullOrWhiteSpace( commandOptionArgument ) )
                     {
-                        EvalPrintCommand( ReadCommand( debugging ), debugging );
+                        bool controlEnterPressed;
+                        EvalPrintCommand( ReadCommand( out controlEnterPressed, debugging ), debugging, controlEnterPressed );
                     }
                     else
                     {
                         var s = commandOptionArgument;
                         commandOptionArgument = "";
-                        EvalPrintCommand( s, debugging );
+                        EvalPrintCommand( s, debugging, false );
                     }
                 }
                 catch ( ContinueFromBreakpointException )
@@ -603,12 +605,21 @@ namespace Kiezel
             }
         }
 
-        internal static void RunCommand( Action<object> func, Cons lispCode, bool showTime = false )
+        internal static void RunCommand( Action<object> func, Cons lispCode, bool showTime = false, bool smartParens = false )
         {
             if ( lispCode != null )
             {
                 var head = First( lispCode ) as Symbol;
                 var scope = ReconstructAnalysisScope( CurrentThreadContext.Frame );
+
+                if ( smartParens && head != null )
+                {
+                    if ( ( Functionp( head.Value ) || head.SpecialFormValue != null || head.MacroValue != null ) && !Prototypep( head.Value ) )
+                    {
+                        // Symbol and Parameters: assume function call.
+                        lispCode = MakeCons( lispCode, ( Cons ) null );
+                    }
+                }
 
                 timer.Reset();
 
@@ -654,7 +665,6 @@ namespace Kiezel
             parser.AddOption( "-d", "--debug" );
             parser.AddOption( "-n", "--nodebug" );
             parser.AddOption( "-o", "--optimize" );
-            parser.AddOption( "-l", "--listener" );
 
             parser.Parse( args );
 
@@ -690,7 +700,6 @@ namespace Kiezel
                 DebugMode = parser.GetOption( "n" ) == null;
                 OptimizerEnabled = !DebugMode && parser.GetOption( "o" ) != null;
                 InteractiveMode = true;
-                ListenerEnabled = parser.GetOption( "l" ) != null;
 
                 var assembly = Assembly.GetExecutingAssembly();
                 var fileVersion = FileVersionInfo.GetVersionInfo( assembly.Location );

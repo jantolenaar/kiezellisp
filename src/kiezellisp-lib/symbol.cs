@@ -519,10 +519,6 @@ namespace Kiezel
 
         internal static Symbol Args;
 
-        internal static Symbol AsLazyList;
-
-        internal static Symbol AsMultipleElements;
-
         internal static Symbol AsVector;
 
         internal static Symbol BackgroundColor;
@@ -897,8 +893,6 @@ namespace Kiezel
             Append = MakeSymbol( "append" );
             Apply = MakeSymbol( "apply" );
             Args = MakeSymbol( "__args__" );
-            AsLazyList = MakeSymbol( "as-lazy-list" );
-            AsMultipleElements = MakeSymbol( "as-multiple-elements" );
             AsVector = MakeSymbol( "as-vector" );
             BackgroundColor = Runtime.MakeSymbol( "background-color", Runtime.KeywordPackage );
             Base = Runtime.MakeSymbol( "base", Runtime.KeywordPackage );

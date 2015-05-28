@@ -118,10 +118,10 @@
 """
 Help examples:
 
-   (help)               Shows this help text.
-   (help 'car)          Shows online help for the symbol `car`.
-   (documentation)      Shows this help text.
-   (documentation 'car) Shows summary description for the symbol `car`.
+    help               Shows this help text.
+    help 'car          Shows online help for the symbol `car`.
+    documentation      Shows this help text.
+    documentation 'car Shows summary description for the symbol `car`.
 
 Command line options:
 
@@ -130,8 +130,6 @@ Command line options:
 -d --debug              Slower code and better debugging.
 -n --nodebug            Faster code and worse debugging.
 -o --optimize           Optimize expressions with constants.
--l --listener           Starts a listener to receive commands from an editor 
-                        See also `$repl-listener-port`.
 
 REPL input:
 
@@ -167,7 +165,7 @@ Enter                   Execute input when it is a complete lisp expression, oth
                         continue editing.
 Tab                     Autocomplete symbol.
 Escape                  Cancels input or tab completion.
-Ctrl+Enter              Make a complete function call and execute.
+Ctrl+Enter              Execute without adding smart parentheses.
 Ctrl+LeftArrow          Move to left word.
 Ctrl+RightArrow         Move to right word.
 Ctrl+BackSpace          Delete left word.

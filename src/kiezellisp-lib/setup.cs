@@ -31,7 +31,6 @@ namespace Kiezel
         internal static char LambdaCharacter = ( char ) 0x3bb;
         internal static Package LispDocPackage;
         internal static Package LispPackage;
-        internal static bool ListenerEnabled;
         internal static Package MathPackage;
         internal static bool OptimizerEnabled;
         internal static bool ReadDecimalNumbers;
@@ -74,14 +73,6 @@ namespace Kiezel
         public static void SetReadDecimalNumbers( bool flag )
         {
             ReadDecimalNumbers = flag;
-        }
-
-        internal static void AbortListeners()
-        {
-            if ( ListenerEnabled )
-            {
-                AbortCommandListener();
-            }
         }
 
         internal static void AddFeature( string name )
@@ -206,14 +197,6 @@ namespace Kiezel
             };
 
             return temp;
-        }
-
-        internal static void RestartListeners()
-        {
-            if ( ListenerEnabled )
-            {
-                CreateCommandListener( Convert.ToInt32( Symbols.ReplListenerPort.Value ) );
-            }
         }
 
         internal static void RestartLoadFiles( bool loadDebug )

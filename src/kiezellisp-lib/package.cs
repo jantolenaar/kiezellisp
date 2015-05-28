@@ -424,14 +424,6 @@ namespace Kiezel
             CurrentPackage().InternNoInherit( descr.SymbolName );
         }
 
-        [Lisp( "unuse-package" )]
-        public static Package UnusePackage( object name )
-        {
-            var package = GetPackage( name );
-            CurrentPackage().RemoveUsePackage( package );
-            return package;
-        }
-
         [Lisp( "use-package" )]
         public static Package UsePackage( object name )
         {

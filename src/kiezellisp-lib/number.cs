@@ -15,6 +15,7 @@ namespace Kiezel
         private static int z = ( int ) 'z';
         private static int Z = ( int ) 'Z';
         private static int zero = ( int ) '0';
+
         static internal bool CanShrink( BigRational d )
         {
             return ( d.Denominator == 1 );
