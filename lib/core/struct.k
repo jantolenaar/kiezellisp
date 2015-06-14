@@ -51,6 +51,6 @@
         ,@(loop 
             (for slot in slots)
             (let field (make-symbol (string name "-" slot)))
-            (collect `(defun ,field (obj) (elt obj ,slot)))
-            (collect `(defsetf ,field (lambda (obj value) (setf (elt obj ,slot) value)))))
+            (collect `(defun ,field (obj) ((. ,slot) obj)))
+            (collect `(define-compiler-macro ,field (obj) `((. ,,slot) ,obj))))
         ',name))

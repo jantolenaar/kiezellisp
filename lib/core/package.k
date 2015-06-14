@@ -6,11 +6,6 @@
 
 (in-package "lisp")
 
-(export-symbol "quasi-quote")
-
-(defmacro quasi-quote (form)
-    (system:quasi-quote-expand form))
-
 (export-symbol "defpackage")
 
 (defmacro defpackage (name &rest options)

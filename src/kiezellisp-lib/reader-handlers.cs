@@ -191,15 +191,11 @@ namespace Kiezel
         {
             var code = stream.PeekChar();
 
-            if ( code == '@' )
+            if ( code == '@' || code == '.' )
             {
+                // Destructive splicing is handled as ordinary splicing
                 stream.ReadChar();
                 return MakeList( Symbols.UnquoteSplicing, stream.Read() );
-            }
-            else if ( code == '.' )
-            {
-                stream.ReadChar();
-                return MakeList( Symbols.UnquoteNSplicing, stream.Read() );
             }
             else
             {
@@ -360,7 +356,7 @@ namespace Kiezel
         internal static object ReadQuasiQuoteHandler( LispReader stream, char ch )
         {
             var exp1 = stream.Read();
-            var exp2 = MakeList( Symbols.QuasiQuote, exp1 );
+            var exp2 = QuasiQuoteExpandRest( exp1 );
             return exp2;
         }
 

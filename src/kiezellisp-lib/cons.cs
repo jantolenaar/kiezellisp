@@ -208,22 +208,6 @@ namespace Kiezel
                     {
                         return System.String.Format( "'{0}", second );
                     }
-                    else if ( first == Symbols.QuasiQuote && third == null )
-                    {
-                        return System.String.Format( "`{0}", second );
-                    }
-                    else if ( first == Symbols.Unquote && third == null )
-                    {
-                        return System.String.Format( ",{0}", second );
-                    }
-                    else if ( first == Symbols.UnquoteSplicing && third == null )
-                    {
-                        return System.String.Format( ",@{0}", second );
-                    }
-                    else if ( first == Symbols.UnquoteNSplicing && third == null )
-                    {
-                        return System.String.Format( ",.{0}", second );
-                    }
                     else if ( first == Symbols.PrettyReader )
                     {
                         switch ( ( string ) second )
@@ -363,13 +347,13 @@ namespace Kiezel
         {
             return new Cons( item, delayedExpression );
         }
-        [Lisp( "list" )]
+        [Lisp( "list", "bq:list" )]
         public static Cons MakeList( params object[] items )
         {
             return AsList( items );
         }
 
-        [Lisp( "list*" )]
+        [Lisp( "list*", "bq:list*" )]
         public static Cons MakeListStar( params object[] items )
         {
             if ( items.Length == 0 )

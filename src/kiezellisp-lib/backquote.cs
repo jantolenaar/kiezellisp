@@ -8,13 +8,7 @@ namespace Kiezel
 {
     public partial class Runtime
     {
-        public static object QuasiQuoteExpand( Cons expr )
-        {
-            return QuasiQuoteExpandRest( Second( expr ) );
-        }
-            
-        [Lisp("system:quasi-quote-expand")]
-        public static object QuasiQuoteExpandRest( object expr )
+        internal static object QuasiQuoteExpandRest( object expr )
         {
             Cons list = expr as Cons;
 
@@ -23,7 +17,7 @@ namespace Kiezel
                 // not a list or empty
                 if ( Symbolp( expr ) && !Keywordp( expr ) )
                 {
-                    return MakeList( Symbols.Quote, expr );
+                    return MakeList( Symbols.bqQuote, expr );
                 }
                 else
                 {
@@ -41,15 +35,10 @@ namespace Kiezel
                 throw new LispException( "`,@args is illegal syntax" );
             }
 
-            if ( First( list ) == Symbols.UnquoteNSplicing )
-            {
-                throw new LispException( "`,.args is illegal syntax" );
-            }
-
             return QuasiQuoteExpandList( list );
         }
 
-        internal static object QuasiQuoteExpandList(Cons list)
+        internal static object QuasiQuoteExpandList( Cons list )
         {
             Stack stack = new Stack();
 
@@ -63,7 +52,7 @@ namespace Kiezel
                     var item2 = ( Cons ) item1;
                     if ( First( item2 ) == Symbols.Unquote )
                     {
-                        stack.Push( new Cons( Symbols.List, Cdr( item2 ) ) );
+                        stack.Push( new Cons( Symbols.bqList, Cdr( item2 ) ) );
                         continue;
                     }
                     else if ( First( item2 ) == Symbols.UnquoteSplicing )
@@ -71,44 +60,29 @@ namespace Kiezel
                         stack.Push( Second( item2 ) );
                         continue;
                     }
-                    else if ( First( item2 ) == Symbols.UnquoteNSplicing )
-                    {
-                        stack.Push( new Cons( Symbols.bqClobberable, Cdr( item2 ) ) );
-                        continue;
-                    }
                 }
 
                 object expansion = QuasiQuoteExpandRest( item1 );
-                stack.Push( MakeList( Symbols.List, expansion ) );
+                stack.Push( MakeList( Symbols.bqList, expansion ) );
             }
 
             Cons code = null;
             list = null;
-            var listFunction = Symbols.List;
 
             while ( stack.Count > 0 )
             {
                 var expr2 = stack.Pop();
                 var temp = expr2 as Cons;
 
-                if ( temp != null && First( temp ) == Symbols.List )
+                if ( temp != null && First( temp ) == Symbols.bqList )
                 {
-                    list = new Cons( Second( temp ), list );
-                }
-                else if ( temp != null && First( temp ) == Symbols.bqClobberable )
-                {
-                    if ( list != null )
-                    {
-                        throw new LispException( ",.-expression must be at the end" );
-                    }
-                    listFunction = Symbols.ListStar;
                     list = new Cons( Second( temp ), list );
                 }
                 else
                 {
                     if ( list != null )
                     {
-                        code = new Cons( new Cons( Symbols.List, list ), code );
+                        code = new Cons( new Cons( Symbols.bqList, list ), code );
                         list = null;
                     }
                     code = new Cons( expr2, code );
@@ -117,7 +91,7 @@ namespace Kiezel
 
             if ( list != null )
             {
-                code = new Cons( new Cons( listFunction, list ), code );
+                code = new Cons( new Cons( Symbols.bqList, list ), code );
                 list = null;
             }
 
@@ -128,7 +102,7 @@ namespace Kiezel
             }
             else
             {
-                return new Cons( Symbols.ForceAppend, code );
+                return new Cons( Symbols.bqAppend, code );
             }
         }
 

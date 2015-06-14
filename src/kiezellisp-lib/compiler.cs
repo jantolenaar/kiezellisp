@@ -1746,6 +1746,7 @@ namespace Kiezel
             Symbols.MergingDo.SpecialFormValue = new SpecialForm( CompileMergingDo );
             Symbols.Or.SpecialFormValue = new SpecialForm( CompileOr );
             Symbols.Quote.SpecialFormValue = new SpecialForm( CompileQuote );
+            Symbols.bqQuote.SpecialFormValue = new SpecialForm( CompileQuote );
             Symbols.Return.SpecialFormValue = new SpecialForm( CompileReturn );
             Symbols.SetAttr.SpecialFormValue = new SpecialForm( CompileSetMember );
             Symbols.SetElt.SpecialFormValue = new SpecialForm( CompileSetElt );

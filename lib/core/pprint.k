@@ -45,6 +45,7 @@
       (continue-if 0)
       (def 2)
       (defconstant 2)
+      (define-compiler-macro 2)
       (defmacro 2)
       (defmethod 2)
       (defmulti 2)
@@ -52,6 +53,7 @@
       (defpackage 1)
       (defun 2)
       (defun* 1)
+      (defsetf 1)
       (do 0)
       (merging-do 0)
       (ecase pprint-case)
@@ -179,12 +181,6 @@ $print-escape and $print-base.
 
     (when (eq a 'system:unquote-splicing)
         (print ",@")
-        (with-indent (2)
-            (pprint-expr b))
-        (return true))
-
-    (when (eq a 'system:unquote-nsplicing)
-        (print ",.")
         (with-indent (2)
             (pprint-expr b))
         (return true))

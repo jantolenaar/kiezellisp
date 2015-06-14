@@ -221,7 +221,7 @@ namespace Kiezel
             return AsLazyList( SeqBase.Flatten( seq, depth ) );
         }
 
-        [Lisp( "force-append" )]
+        [Lisp( "bq:append" )]
         public static Cons ForceAppend( params IEnumerable[] seqs )
         {
             return ( Cons ) Force( AsLazyList( SeqBase.Append( seqs ) ) );

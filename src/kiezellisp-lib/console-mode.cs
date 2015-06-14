@@ -628,6 +628,10 @@ namespace Kiezel
                     var expr2 = Compile( expr, scope );
                     timer.Start();
                     object val = Execute( expr2 );
+                    if (ToBool( GetDynamic( Symbols.ReplForceIt ) ) )
+                    {
+                        val = Force( val );
+                    }
                     timer.Stop();
                     if ( func == null )
                     {
@@ -705,7 +709,7 @@ namespace Kiezel
                 var fileVersion = FileVersionInfo.GetVersionInfo( assembly.Location );
                 Console.WriteLine( GetVersion() );
                 Console.WriteLine( fileVersion.LegalCopyright );
-                Console.WriteLine( "Type `(help)` for help on top-level commands" );
+                Console.WriteLine( "Type `help` for help on top-level commands" );
                 ReadEvalPrintLoop( commandOptionArgument: expr2, initialized: false );
             }
         }

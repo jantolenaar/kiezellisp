@@ -28,6 +28,7 @@
                 "app" )))
 
 (setq $load-verbose $interactive-mode)
+(setq $repl-force-it true)
 
 (require "system")
 (require "shell")

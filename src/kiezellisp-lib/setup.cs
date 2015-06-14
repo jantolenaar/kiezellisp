@@ -32,6 +32,7 @@ namespace Kiezel
         internal static Package LispDocPackage;
         internal static Package LispPackage;
         internal static Package MathPackage;
+        internal static Package BqPackage;
         internal static bool OptimizerEnabled;
         internal static bool ReadDecimalNumbers;
         internal static bool SetupMode;
@@ -265,16 +266,17 @@ namespace Kiezel
 
         internal static void RestartSymbols()
         {
-            // these two do not use lisp package
+            // these packages do not use lisp package
             KeywordPackage = MakePackage( "keyword", false );
             TempPackage = MakePackage( "temp", true );
+            SystemPackage = MakePackage( "system", true );
+            MathPackage = MakePackage( "math", true );
+            BqPackage = MakePackage( "bq", true );
 
             LispPackage = MakePackage( "lisp", true );
 
             UserPackage = MakePackage( "user", true );
             LispDocPackage = MakePackage( "example", true );
-            SystemPackage = MakePackage( "system", true );
-            MathPackage = MakePackage( "math", true );
 
             Symbols.Create();
 
@@ -309,6 +311,7 @@ namespace Kiezel
             Symbols.ReadEval.VariableValue = null;
             Symbols.Readtable.VariableValue = GetStandardReadtable();
             Symbols.Recur.ReadonlyValue = null;
+            Symbols.ReplForceIt.VariableValue = false;
             Symbols.ReplListenerPort.VariableValue = 8080;
             Symbols.ScriptDirectory.ReadonlyValue = NormalizePath( HomeDirectory );
             Symbols.ScriptName.ReadonlyValue = null;

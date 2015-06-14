@@ -539,6 +539,7 @@ namespace Kiezel
             var names = Packages.Keys.Cast<string>();
             return aliases.Concat( names ).ToList();
         }
+
         internal static Package MakePackage( object name, bool reserved )
         {
             var n = GetDesignatedString( name );
@@ -561,6 +562,7 @@ namespace Kiezel
             }
             return package;
         }
+
         public /*internal*/ class SymbolDescriptor
         {
             public bool Internal;

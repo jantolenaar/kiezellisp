@@ -541,10 +541,12 @@ namespace Kiezel
 
         internal static Symbol Bool;
 
-        internal static Symbol ForceAppend;
+        internal static Symbol bqAppend;
 
-        internal static Symbol bqClobberable;
+        internal static Symbol bqList;
 
+        internal static Symbol bqQuote;
+        
         internal static Symbol BuiltinConstructor;
 
         internal static Symbol BuiltinFunction;
@@ -783,6 +785,8 @@ namespace Kiezel
 
         internal static Symbol Recur;
 
+        internal static Symbol ReplForceIt;
+
         internal static Symbol ReplListenerPort;
 
         internal static Symbol[] ReservedVariables;
@@ -868,8 +872,6 @@ namespace Kiezel
         internal static Symbol Unquote;
 
         internal static Symbol UnquoteSplicing;
-
-        internal static Symbol UnquoteNSplicing;
 
         internal static Symbol Values;
 
@@ -1020,6 +1022,7 @@ namespace Kiezel
             ReadonlyVariable = MakeSymbol( "readonly-variable" );
             Readtable = MakeSymbol( "$readtable" );
             Recur = MakeSymbol( "recur" );
+            ReplForceIt = MakeSymbol( "$repl-force-it" );
             ReplListenerPort = MakeSymbol( "$repl-listener-port" );
             Rest = MakeSymbol( "&rest" );
             Return = MakeSymbol( "return" );
@@ -1061,7 +1064,6 @@ namespace Kiezel
             Underscore = MakeSymbol( "_" );
             Unquote = Runtime.MakeSymbol( "unquote", Runtime.SystemPackage );
             UnquoteSplicing = Runtime.MakeSymbol( "unquote-splicing", Runtime.SystemPackage );
-            UnquoteNSplicing = Runtime.MakeSymbol( "unquote-nsplicing", Runtime.SystemPackage );
             Values = MakeSymbol( "values" );
             Var = MakeSymbol( "var" );
             Variable = MakeSymbol( "variable" );
@@ -1072,9 +1074,9 @@ namespace Kiezel
             WriteHook = MakeSymbol( "$write-hook" );
             kwForce = Runtime.MakeSymbol( "force", Runtime.KeywordPackage );
 
-            // Add bq- prefix when writing an optimizer
-            ForceAppend = MakeSymbol( "force-append" );
-            bqClobberable = MakeSymbol( "clobberable" );
+            bqAppend = Runtime.MakeSymbol( "append", Runtime.BqPackage );
+            bqList = Runtime.MakeSymbol( "list", Runtime.BqPackage );
+            bqQuote = Runtime.MakeSymbol( "quote", Runtime.BqPackage );
 
             NumberedVariables = new Symbol[]
 		    {

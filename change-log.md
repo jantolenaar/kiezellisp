@@ -1,5 +1,10 @@
 # Change Log
 
+## 2015/06/11
+
+*   Moved backquote/quasiquote expansion from compiler back to reader.
+*   Added `$repl-force-it` variable.
+
 ## 2015/05/20
 
 *   Removed `--listener` command line option.
