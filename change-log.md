@@ -1,5 +1,9 @@
 # Change Log
 
+## 2015/06/23
+
+*   Refactored symbol/package lookup/creation.
+
 ## 2015/06/11
 
 *   Moved backquote/quasiquote expansion from compiler back to reader.

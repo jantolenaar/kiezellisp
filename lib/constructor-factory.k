@@ -11,10 +11,9 @@
     (each make-constructor tags))
 
 (defun make-constructor (arg)
-    (let name (if (prototype? arg) (.name arg) arg))
+    (let package-name (if (prototype? arg) (.name arg) arg))
     (let alias (if (prototype? arg) (.alias arg) arg))
-    (let package (get-package name))
-    (let new-method (make-symbol "new" package))
+    (let new-method (make-symbol package-name ":new"))
     (let macro-name (.to-upper (string alias)))
     (let macro-sym (make-symbol macro-name))
     (eval `(defmacro ,macro-sym (&rest args)

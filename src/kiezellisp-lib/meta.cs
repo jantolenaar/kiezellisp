@@ -261,25 +261,6 @@ namespace Kiezel
             return new FrameAndScope();
         }
 
-        [Lisp( "make-symbol" )]
-        public static Symbol MakeSymbol( string key, string packageName )
-        {
-            return MakeSymbol( key, GetPackage( packageName ) );
-        }
-
-        [Lisp( "make-symbol" )]
-        public static Symbol MakeSymbol( string key, Package package )
-        {
-            return MakeSymbol( key, package, true );
-        }
-
-        [Lisp( "make-symbol" )]
-        public static Symbol MakeSymbol( string key )
-        {
-            var value = GetDynamic( Symbols.Package );
-            return MakeSymbol( key, ( Package ) value, false );
-        }
-
         internal static Cons CodeWalkListTry( Cons forms, Func<object, AnalysisScope, object> transform, AnalysisScope env )
         {
             if ( forms == null )
@@ -314,34 +295,6 @@ namespace Kiezel
                 }
 
                 return MakeCons( result, CodeWalkListTry( forms.Cdr, transform, env ) );
-            }
-        }
-
-        internal static Symbol MakeInitialSymbol( string key )
-        {
-            // bootstrapping...
-            return MakeSymbol( key, LispPackage, true );
-        }
-
-        internal static Symbol MakeSymbol( string key, Package package, bool export )
-        {
-            if ( String.IsNullOrWhiteSpace( key ) )
-            {
-                throw new LispException( "Symbol name cannot be null or blank" );
-            }
-
-            if ( package == null )
-            {
-                return new Symbol( key );
-            }
-            else
-            {
-                var sym = package.Intern( key, useMissing: true );
-                if ( export )
-                {
-                    sym.Package.Export( key );
-                }
-                return sym;
             }
         }
 

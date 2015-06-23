@@ -297,7 +297,7 @@ namespace Kiezel
                     continue;
                 }
 
-                Symbol sym = package.InternNoInherit( name.LispName(), useMissing: true );
+                var sym = package.FindOrCreate( name.LispName(), useMissing: true, excludeUseList: true, export: true );
                 var builtin = sym.Value as ImportedFunction;
 
                 if ( builtin == null )
@@ -319,7 +319,6 @@ namespace Kiezel
                     builtin.ExternalExtensionMembers = methods.Distinct().ToArray();
                 }
 
-                sym.Package.Export( sym.Name );
             }
         }
 
@@ -331,9 +330,8 @@ namespace Kiezel
 
             package.ImportedType = type;
             package.RestrictedImport = restrictedImport;
-            Symbol sym = package.InternNoInherit( "T" );
+            var sym = package.FindOrCreate( "T", excludeUseList: true, export: true );
             sym.ConstantValue = type;
-            sym.Package.Export( sym.Name );
             sym.Documentation = String.Format( "The .NET type <{0}> imported in this package.", type );
 
             if ( !ToBool( Symbols.LazyImport.Value ) )
@@ -370,32 +368,31 @@ namespace Kiezel
             }
 
             var field = members[ 0 ] as FieldInfo;
+            var ucName = members[ 0 ].Name.LispName().ToUpper();
+            var lcName = members[ 0 ].Name.LispName();
 
             if ( field != null )
             {
                 if ( field.IsLiteral || ( field.IsStatic && field.IsInitOnly ) )
                 {
-                    Symbol sym = package.InternNoInherit( members[ 0 ].Name.LispName().ToUpper() );
+                    var sym = package.FindOrCreate( ucName, excludeUseList: true, export: true );
                     sym.ConstantValue = field.GetValue( null );
-                    sym.Package.Export( sym.Name );
                 }
                 return;
             }
 
             if ( members[ 0 ] is EventInfo )
             {
-                Symbol sym = package.InternNoInherit( members[ 0 ].Name.LispName() );
+                var sym = package.FindOrCreate( lcName, excludeUseList: true, export: true );
                 sym.ConstantValue = members[ 0 ];
-                sym.Package.Export( sym.Name );
                 return;
             }
 
             if ( members[ 0 ] is ConstructorInfo )
             {
                 var builtin = new ImportedConstructor( members.Cast<ConstructorInfo>().ToArray() );
-                Symbol sym = package.InternNoInherit( "new" );
+                var sym = package.FindOrCreate( "new", excludeUseList: true, export: true );
                 sym.FunctionValue = builtin;
-                sym.Package.Export( sym.Name );
                 package.ImportedConstructor = builtin;
                 return;
             }
@@ -404,10 +401,9 @@ namespace Kiezel
             {
                 if ( !name.StartsWith( "get_" ) && !name.StartsWith( "set_" ) )
                 {
-                    var sym = package.InternNoInherit( members[ 0 ].Name.LispName() );
+                    var sym = package.FindOrCreate( lcName, excludeUseList: true, export: true );
 					var builtin = new ImportedFunction (members [0].Name, members [0].DeclaringType, members.Cast<MethodInfo> ().ToArray (), false);
 					sym.FunctionValue = builtin;
-					sym.Package.Export( sym.Name );
                 }
 
                 return;
@@ -421,19 +417,17 @@ namespace Kiezel
 
                 if ( getters.Length != 0 )
                 {
-                    Symbol sym = package.InternNoInherit( members[ 0 ].Name.LispName() );
+                    var sym = package.FindOrCreate( lcName, excludeUseList: true, export: true );
 					var builtin = new ImportedFunction (members [0].Name, members [0].DeclaringType, getters, false);
 					sym.FunctionValue = builtin;
-					sym.Package.Export( sym.Name );
                 }
 
                 if ( setters.Length != 0 )
                 {
                     // use set-xxx
-                    Symbol sym = package.InternNoInherit( "set-" + members[ 0 ].Name.LispName() );
+                    var sym = package.FindOrCreate( "set-" +lcName, excludeUseList: true, export: true );
                     var builtin = new ImportedFunction( members[ 0 ].Name, members[ 0 ].DeclaringType, setters, false );
                     sym.FunctionValue = builtin;
-                    sym.Package.Export( sym.Name );
                 }
                 return;
             }

@@ -118,60 +118,17 @@
 """
 Help examples:
 
-    help               Shows this help text.
-    help 'car          Shows online help for the symbol `car`.
-    documentation      Shows this help text.
-    documentation 'car Shows summary description for the symbol `car`.
-
-Command line options:
-
--c --command <exprs>    Evaluates <exprs> as a DO block and exits.
--i --init <exprs>       Evaluates <exprs> as a DO block then REPL.
--d --debug              Slower code and better debugging.
--n --nodebug            Faster code and worse debugging.
--o --optimize           Optimize expressions with constants.
-
-REPL input:
-
-Lines starting with a colon are top-level commands,
-which may be abbreviated. Other lines are lisp expressions.
-
-General top-level commands:
-
-:clear                  Clear screen and history.
-:describe [expr]        Describe expression or last result.
-:force [expr]           Force lazy expression or last result.
-:globals [pattern]      Show global variables that contain the pattern.
-:history                Show current history.
-:reset                  Restart the interpreter.
-:Reset                  Restart the interpreter (verbose).
-:time expr              Show elapsed time (compilation+execution).
-:quit                   Quit program.
-
-Debugger top-level commands:
-
-:abort                  Abort to previous level or abort after a breakpoint.
-:backtrace              Show evaluation stack.
-:continue               Continue the program after a breakpoint.
-:exception              Print latest exception without DLR stuff.
-:Exception              Print latest exception.
-:variables [n]          Print lexical variables at depth n of the evaluation stack.
-:$variables [n]         Print dynamic variables at depth n of the evaluation stack.
-:top                    Abort to top level.
-
-Non-trivial Editor Keys:
-
-Enter                   Execute input when it is a complete lisp expression, otherwise 
-                        continue editing.
-Tab                     Autocomplete symbol.
-Escape                  Cancels input or tab completion.
-Ctrl+Enter              Execute without adding smart parentheses.
-Ctrl+LeftArrow          Move to left word.
-Ctrl+RightArrow         Move to right word.
-Ctrl+BackSpace          Delete left word.
-Ctrl+Delete             Delete right word.
-Ctrl+Shift+C            Copy the pretty printed value of <it> to the clipboard.
-UpArrow                 Move up in history.
-DownArrow               Move down in history.
+    help                    Shows this help text.
+    help 'car               Shows online help for the symbol `car`.
+    help 'help              Shows online help for the symbol `help`.
+    help 'repl<TAB>         Shows online help for `repl` after TAB completion.
+    help 'kiezel<TAB>       Shows online help for `kiezellisp` after TAB completion.
+    documentation           Shows this help text.
+    documentation 'car      Shows summary description for the symbol `car`.
 """)
+
+(make-symbol "repl:commands")
+(make-symbol "keyboard-shortcuts")
+(make-symbol "kiezellisp:command-line-options")
+
 

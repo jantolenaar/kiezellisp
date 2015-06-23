@@ -29,19 +29,17 @@
 
 (defun slot-to-keyword-and-value (slot)
     (if (list? slot)
-          (list (make-symbol (symbol-name (first slot)) 
-                           (find-package "keyword"))
+          (list (make-symbol ":" (symbol-name (first slot)))
               (second slot))
-        (list (make-symbol (symbol-name slot)
-                           (find-package "keyword"))
+        (list (make-symbol ":" (symbol-name slot))
               null)))
 
 (defun define-class-functions (name descr prototype)
     (declare (ignore descr))
     (when (not (string? descr))
         (throw-error "Expected documentation string, not: " descr))
-    (let constructor-name (make-symbol (string "make-" name)))
-    (let predicate-name (make-symbol (string name "?")))
+    (let constructor-name (make-symbol "make-" name))
+    (let predicate-name (make-symbol name "?"))
     (let slots (.keys prototype))
     `(do 
         (deftype ,name ,prototype)
@@ -50,7 +48,7 @@
             (apply prototype:new ',name args))
         ,@(loop 
             (for slot in slots)
-            (let field (make-symbol (string name "-" slot)))
+            (let field (make-symbol name "-" slot))
             (collect `(defun ,field (obj) ((. ,slot) obj)))
             (collect `(define-compiler-macro ,field (obj) `((. ,,slot) ,obj))))
         ',name))

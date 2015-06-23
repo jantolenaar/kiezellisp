@@ -1193,7 +1193,7 @@ namespace Kiezel
                     // Wrap initializer in DELAY macro and wrap references to the variable in a
                     // FORCE call.
                     flags |= ScopeFlags.Lazy;
-                    val = Compile( MakeList( MakeSymbol( "create-delayed-expression", SystemPackage ), MakeList( Symbols.Lambda, null, initForm ) ), scope );
+                    val = Compile( MakeList( MakeSymbol( "system:create-delayed-expression" ), MakeList( Symbols.Lambda, null, initForm ) ), scope );
                 }
                 else if ( future )
                 {

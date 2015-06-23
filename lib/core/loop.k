@@ -296,8 +296,7 @@
     true)
 
 (defun prefix-symbol (prefix sym)
-    (make-symbol (string prefix "-" (if sym (symbol-name sym) "temp"))))
-
+    (make-symbol prefix "-" (if sym (symbol-name sym) "temp")))
 
 ;;;
 ;;; level 1 accumulator handlers

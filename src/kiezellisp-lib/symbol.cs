@@ -389,7 +389,7 @@ namespace Kiezel
                 {
                     return "#:" + Name;
                 }
-                else if ( Package.FindExternal( Name ) != null )
+                else if ( Package.FindExported( Name ) != null )
                 {
                     return Package.Name + ":" + Name;
                 }
@@ -566,6 +566,8 @@ namespace Kiezel
         internal static Symbol Constant;
 
         internal static Symbol CreateTask;
+
+        internal static Symbol CreateDelayedExpression;
 
         internal static Symbol DebugMode;
 
@@ -896,8 +898,8 @@ namespace Kiezel
             Apply = MakeSymbol( "apply" );
             Args = MakeSymbol( "__args__" );
             AsVector = MakeSymbol( "as-vector" );
-            BackgroundColor = Runtime.MakeSymbol( "background-color", Runtime.KeywordPackage );
-            Base = Runtime.MakeSymbol( "base", Runtime.KeywordPackage );
+            BackgroundColor = MakeSymbol( ":background-color" );
+            Base = MakeSymbol( ":base" );
             BitAnd = MakeSymbol( "bit-and" );
             BitNot = MakeSymbol( "bit-not" );
             BitOr = MakeSymbol( "bit-or" );
@@ -910,12 +912,13 @@ namespace Kiezel
             BuiltinFunction = MakeSymbol( "builtin-function" );
             Case = MakeSymbol( "case" );
             Catch = MakeSymbol( "catch" );
-            Color = Runtime.MakeSymbol( "color", Runtime.KeywordPackage );
+            Color = MakeSymbol( ":color" );
             CommandLineArguments = MakeSymbol( "$command-line-arguments" );
             CompilerMacro = MakeSymbol( "compiler-macro" );
             Compiling = MakeSymbol( "compiling" );
             Constant = MakeSymbol( "constant" );
-            CreateTask = Runtime.MakeSymbol( "create-task", Runtime.SystemPackage );
+            CreateDelayedExpression = MakeSymbol( "system:create-delayed-expression" );
+            CreateTask = MakeSymbol( "system:create-task" );
             DebugMode = MakeSymbol( "$debug-mode" );
             Declare = MakeSymbol( "declare" );
             Def = MakeSymbol( "def" );
@@ -931,13 +934,13 @@ namespace Kiezel
             Do = MakeSymbol( "do" );
             Documentation = MakeSymbol( "documentation" );
             Dot = MakeSymbol( "." );
-            E = Runtime.MakeSymbol( "E", Runtime.MathPackage );
+            E = MakeSymbol( "math:E" );
             EnableExternalDocumentation = MakeSymbol( "$enable-external-documentation" );
             EnableWarnings = MakeSymbol( "$enable-warnings" );
             Environment = MakeSymbol( "&environment" );
-            EofValue = Runtime.MakeSymbol( "eof-value", Runtime.KeywordPackage );
+            EofValue = MakeSymbol( ":eof-value" );
             Equality = MakeSymbol( "=" );
-            Escape = Runtime.MakeSymbol( "escape", Runtime.KeywordPackage );
+            Escape = MakeSymbol( ":escape" );
             Eval = MakeSymbol( "eval" );
             Exception = MakeSymbol( "$exception" );
             False = MakeSymbol( "false" );
@@ -947,23 +950,23 @@ namespace Kiezel
             Funcall = MakeSymbol( "funcall" );
             Function = MakeSymbol( "function" );
             FunctionExitLabel = MakeSymbol( "function-exit" );
-            FunctionKeyword = Runtime.MakeSymbol( "function", Runtime.KeywordPackage );
+            FunctionKeyword = MakeSymbol( ":function" );
             FutureVar = MakeSymbol( "future" );
             GenericFunction = MakeSymbol( "generic-function" );
             GetArgumentOrDefault = MakeSymbol( "get-argument-or-default" );
             GetAttr = MakeSymbol( "attr" );
             GetElt = MakeSymbol( "elt" );
-            GetLexicalOrEnvironmentVariable = Runtime.MakeSymbol( "get-lexical-or-environment-variable", Runtime.SystemPackage );
+            GetLexicalOrEnvironmentVariable = MakeSymbol( "system:get-lexical-or-environment-variable" );
             Goto = MakeSymbol( "goto" );
             GreekLambda = MakeSymbol( "\u03bb" );
             HiddenVar = MakeSymbol( "hidden-var" );
-            I = Runtime.MakeSymbol( "I", Runtime.MathPackage );
+            I = MakeSymbol( "math:I" );
             If = MakeSymbol( "if" );
             IfLet = MakeSymbol( "if-let" );
             Ignore = MakeSymbol( "ignore" );
             ImportedConstructor = MakeSymbol( "imported-constructor" );
             ImportedFunction = MakeSymbol( "imported-function" );
-            InitialValue = Runtime.MakeSymbol( "initial-value", Runtime.KeywordPackage );
+            InitialValue = MakeSymbol( ":initial-value" );
             InteractiveMode = MakeSymbol( "$interactive-mode" );
             It = MakeSymbol( "it" );
             Key = MakeSymbol( "&key" );
@@ -973,7 +976,7 @@ namespace Kiezel
             LambdaStar = MakeSymbol( "lambda*" );
             LazyImport = MakeSymbol( "$lazy-import" );
             LazyVar = MakeSymbol( "lazy" );
-            Left = Runtime.MakeSymbol( "left", Runtime.KeywordPackage );
+            Left = MakeSymbol( ":left" );
             Let = MakeSymbol( "let" );
             LetFun = MakeSymbol( "letfun" );
             List = MakeSymbol( "list" );
@@ -983,13 +986,13 @@ namespace Kiezel
             LoadVerbose = MakeSymbol( "$load-verbose" );
             Macro = MakeSymbol( "macro" );
             Macroexpand1 = MakeSymbol( "macroexpand-1" );
-            MacroKeyword = Runtime.MakeSymbol( "macro", Runtime.KeywordPackage );
-            Main = Runtime.MakeSymbol( "main", Runtime.UserPackage );
+            MacroKeyword = MakeSymbol( ":macro" );
+            Main = MakeSymbol( "user:main" );
             Math = MakeSymbol( "math" );
-            MaxElements = Runtime.MakeSymbol( "max-elements", Runtime.KeywordPackage );
+            MaxElements = MakeSymbol( ":max-elements" );
             MergingDo = MakeSymbol( "merging-do" );
             Method = MakeSymbol( "method" );
-            MethodKeyword = Runtime.MakeSymbol( "method", Runtime.KeywordPackage );
+            MethodKeyword = MakeSymbol( ":method" );
             Modules = MakeSymbol( "$modules" );
             New = MakeSymbol( "new" );
             Not = MakeSymbol( "not" );
@@ -997,15 +1000,15 @@ namespace Kiezel
             Null = MakeSymbol( "null" );
             NullableDot = MakeSymbol( "?" );
             Optional = MakeSymbol( "&optional" );
-            OptionalKeyword = Runtime.MakeSymbol( "optional", Runtime.KeywordPackage );
+            OptionalKeyword = MakeSymbol( ":optional" );
             Or = MakeSymbol( "or" );
-            PI = Runtime.MakeSymbol( "PI", Runtime.MathPackage );
+            PI = MakeSymbol( "math:PI" );
             Package = MakeSymbol( "$package" );
             PackageNamePrefix = MakeSymbol( "$package-name-prefix" );
-            Padding = Runtime.MakeSymbol( "padding", Runtime.KeywordPackage );
+            Padding = MakeSymbol( ":padding" );
             Params = MakeSymbol( "&params" );
-            Pow = Runtime.MakeSymbol( "pow", Runtime.MathPackage, true );
-            Pretty = Runtime.MakeSymbol( "pretty", Runtime.KeywordPackage );
+            Pow = MakeSymbol( "math:pow" );
+            Pretty = MakeSymbol( ":pretty" );
             PrettyPrintHook = MakeSymbol( "$pprint-hook" );
             PrintBackgroundColor = MakeSymbol( "$print-background-color" );
             PrintBase = MakeSymbol( "$print-base" );
@@ -1029,7 +1032,7 @@ namespace Kiezel
             ReturnFrom = MakeSymbol( "return-from" );
             ReturnFromLoad = MakeSymbol( "return-from-load" );
             Returns = MakeSymbol( "&returns" );
-            Right = Runtime.MakeSymbol( "right", Runtime.KeywordPackage );
+            Right = MakeSymbol( ":right" );
             ScriptDirectory = MakeSymbol( "$script-directory" );
             ScriptName = MakeSymbol( "$script-name" );
             Set = MakeSymbol( "set" );
@@ -1037,7 +1040,7 @@ namespace Kiezel
             SetElt = MakeSymbol( "set-elt" );
             Setf = MakeSymbol( "setf" );
             Setq = MakeSymbol( "setq" );
-            PrettyReader = Runtime.MakeSymbol( "pretty-reader", Runtime.SystemPackage );
+            PrettyReader = MakeSymbol( "system:pretty-reader" );
             SpecialConstant = MakeSymbol( "special-constant" );
             SpecialForm = MakeSymbol( "special-form" );
             SpecialReadonlyVariable = MakeSymbol( "special-readonly-variable" );
@@ -1049,7 +1052,7 @@ namespace Kiezel
             StdLog = MakeSymbol( "$stdlog" );
             StdOut = MakeSymbol( "$stdout" );
             Str = MakeSymbol( "string" );
-            Stream = Runtime.MakeSymbol( "stream", Runtime.KeywordPackage );
+            Stream = MakeSymbol( ":stream");
             StructurallyEqual = MakeSymbol( "structurally-equal" );
             TagBody = MakeSymbol( "tagbody" );
             TailCall = MakeSymbol( "tailcall" );
@@ -1062,21 +1065,21 @@ namespace Kiezel
             Try = MakeSymbol( "try" );
             Undefined = MakeSymbol( "undefined" );
             Underscore = MakeSymbol( "_" );
-            Unquote = Runtime.MakeSymbol( "unquote", Runtime.SystemPackage );
-            UnquoteSplicing = Runtime.MakeSymbol( "unquote-splicing", Runtime.SystemPackage );
+            Unquote = MakeSymbol( "system:unquote" );
+            UnquoteSplicing = MakeSymbol( "system:unquote-splicing" );
             Values = MakeSymbol( "values" );
             Var = MakeSymbol( "var" );
             Variable = MakeSymbol( "variable" );
             Vector = MakeSymbol( "&vector" );
             Verbose = MakeSymbol( "$verbose" );
             Whole = MakeSymbol( "&whole" );
-            Width = Runtime.MakeSymbol( "width", Runtime.KeywordPackage );
+            Width = MakeSymbol( ":width" );
             WriteHook = MakeSymbol( "$write-hook" );
-            kwForce = Runtime.MakeSymbol( "force", Runtime.KeywordPackage );
+            kwForce = MakeSymbol( ":force" );
 
-            bqAppend = Runtime.MakeSymbol( "append", Runtime.BqPackage );
-            bqList = Runtime.MakeSymbol( "list", Runtime.BqPackage );
-            bqQuote = Runtime.MakeSymbol( "quote", Runtime.BqPackage );
+            bqAppend = MakeSymbol( "bq:append" );
+            bqList = MakeSymbol( "bq:list" );
+            bqQuote = MakeSymbol( "bq:quote" );
 
             NumberedVariables = new Symbol[]
 		    {
@@ -1137,7 +1140,8 @@ namespace Kiezel
 
         internal static Symbol MakeSymbol( string name )
         {
-            return Runtime.MakeInitialSymbol( name );
+            return Runtime.MakeSymbol( name );
         }
+
     }
 }

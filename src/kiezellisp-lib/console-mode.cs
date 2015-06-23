@@ -160,7 +160,7 @@ namespace Kiezel
                 {
                     var s = sym.Name;
 
-                    if ( s.StartsWith( prefix ) && package.FindExternal( s ) != null )
+                    if ( s.StartsWith( prefix ) && package.FindExported( s ) != null )
                     {
                         nameset.Add( s.Substring( prefix.Length ) );
                     }
@@ -193,7 +193,7 @@ namespace Kiezel
                     // Show only internal symbols
                     foreach ( var sym in package.Dict.Values )
                     {
-                        if ( !package.ExternalSymbols.Contains( sym.Name ) )
+                        if ( !package.IsExported( sym.Name ) )
                         {
                             var s = name + "::" + sym.Name;
 
@@ -221,7 +221,7 @@ namespace Kiezel
                     // Show only external symbols
                     foreach ( var sym in package.Dict.Values )
                     {
-                        if ( package.FindExternal( sym.Name ) != null )
+                        if ( package.FindExported( sym.Name ) != null )
                         {
                             var s = name + ":" + sym.Name;
 

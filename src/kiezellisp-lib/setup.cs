@@ -31,13 +31,10 @@ namespace Kiezel
         internal static char LambdaCharacter = ( char ) 0x3bb;
         internal static Package LispDocPackage;
         internal static Package LispPackage;
-        internal static Package MathPackage;
-        internal static Package BqPackage;
         internal static bool OptimizerEnabled;
         internal static bool ReadDecimalNumbers;
         internal static bool SetupMode;
         internal static Stopwatch StopWatch = Stopwatch.StartNew();
-        internal static Package SystemPackage;
         internal static Package TempPackage;
         internal static bool UnicodeOutputEnable = true;
         internal static Cons UserArguments;
@@ -267,17 +264,15 @@ namespace Kiezel
         internal static void RestartSymbols()
         {
             // these packages do not use lisp package
-            KeywordPackage = MakePackage( "keyword", false );
-            TempPackage = MakePackage( "temp", true );
-            SystemPackage = MakePackage( "system", true );
-            MathPackage = MakePackage( "math", true );
-            BqPackage = MakePackage( "bq", true );
+            KeywordPackage = MakePackage( "keyword" );
+            TempPackage = MakePackage( "temp" );
+            LispPackage = MakePackage( "lisp" );
+            LispDocPackage = MakePackage( "example" );
 
-            LispPackage = MakePackage( "lisp", true );
-
-            UserPackage = MakePackage( "user", true );
-            LispDocPackage = MakePackage( "example", true );
-
+            SetupMode = false;
+            UserPackage = MakePackage( "user" );
+            SetupMode = true;
+            
             Symbols.Create();
 
             // standard set of variables
