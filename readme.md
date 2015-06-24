@@ -3,7 +3,7 @@
 **Kiezellisp** is a lisp compiler/interpreter running on .NET and using the
 Dynamic Language Runtime (DLR).
 
-Some features in alphabetic order:
+## Some features in alphabetic order:
 
 +   Big numbers
 +   Futures
@@ -17,9 +17,10 @@ Some features in alphabetic order:
 +   REPL
 +   Symbols and packages
 
+## Website
+
 [www.kiezellisp.nl](http://www.kiezellisp.nl)
 
-<a href='http://www.kiezellisp.nl'>link</a>
 
 
 
