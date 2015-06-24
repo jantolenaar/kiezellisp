@@ -6,9 +6,9 @@ Dynamic Language Runtime (DLR).
 Some features in alphabetic order:
 
 +   Big numbers
-+   Import of .NET classes into packages
 +   Futures
 +   Generic functions
++   Import of .NET classes into packages
 +   Lazy lists
 +   Macros and compiler macros
 +   Named and anonymous functions (lambdas)
@@ -17,7 +17,9 @@ Some features in alphabetic order:
 +   REPL
 +   Symbols and packages
 
-http://www.kiezellisp.nl
+[www.kiezellisp.nl](http://www.kiezellisp.nl)
+
+<a href='http://www.kiezellisp.nl'>link</a>
 
 
 
