@@ -617,7 +617,7 @@ namespace Kiezel
 
         internal Regex ParseRegexString( char terminator )
         {
-            // #"..."
+            // #/.../
 
             char ch;
             StringBuilder buf = new StringBuilder();
@@ -652,6 +652,7 @@ namespace Kiezel
             }
 
             var options = RegexOptions.None;
+            var wildcard = false;
 
             while ( true )
             {
@@ -678,6 +679,12 @@ namespace Kiezel
                             SkipChars( 1 );
                             break;
                         }
+                        case 'w':
+                        {
+                            wildcard = true;
+                            SkipChars( 1 );
+                            break;
+                        }
                         default:
                         {
                             throw MakeScannerException( "invalid regular expresssion option" );
@@ -690,7 +697,12 @@ namespace Kiezel
                 }
             }
 
-            return new Regex( buf.ToString(), options );
+            var pattern = buf.ToString();
+            if ( wildcard )
+            {
+                pattern = StringExtensions.MakeWildcardRegexString( pattern );
+            }
+            return new RegexPlus( pattern, options );
         }
 
         internal object ParseShortLambdaExpression( string delimiter )

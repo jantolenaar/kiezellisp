@@ -9,7 +9,6 @@ namespace Kiezel
     {
         internal static string[] StringPatterns = new string[]
         {
-            @"\``(.*?)``",
             @"\<\%(.*?)\%\>",
             @"\<\!(.*?)\!\>",
             @"\$\{(.*?)\}",
@@ -78,13 +77,21 @@ namespace Kiezel
 
                 if ( match.Groups[ 1 ].Success )
                 {
-                    // ``...``
-                    script = match.Groups[ 1 ].Value;
-                    sideEffect = false;
+                    // <%...%> or <%=...%>
+                    script = match.Groups[ 1 ].Value.Trim();
+                    if ( script.StartsWith( "=" ) )
+                    {
+                        script = script.Substring( 1 );
+                        sideEffect = false;
+                    }
+                    else
+                    {
+                        sideEffect = true;
+                    }
                 }
                 else if ( match.Groups[ 2 ].Success )
                 {
-                    // <%...%> or <%=...%>
+                    // <!...!> or <!=...!>
                     script = match.Groups[ 2 ].Value.Trim();
                     if ( script.StartsWith( "=" ) )
                     {
@@ -98,28 +105,14 @@ namespace Kiezel
                 }
                 else if ( match.Groups[ 3 ].Success )
                 {
-                    // <!...!> or <!=...!>
-                    script = match.Groups[ 3 ].Value.Trim();
-                    if ( script.StartsWith( "=" ) )
-                    {
-                        script = script.Substring( 1 );
-                        sideEffect = false;
-                    }
-                    else
-                    {
-                        sideEffect = true;
-                    }
+                    // ${...}
+                    script = match.Groups[ 3 ].Value;
+                    sideEffect = false;
                 }
                 else if ( match.Groups[ 4 ].Success )
                 {
-                    // ${...}
-                    script = match.Groups[ 4 ].Value;
-                    sideEffect = false;
-                }
-                else if ( match.Groups[ 5 ].Success )
-                {
                     // ~.../
-                    var name = match.Groups[ 5 ].Value;
+                    var name = match.Groups[ 4 ].Value;
                     if ( string.IsNullOrWhiteSpace( name ) )
                     {
                         name = "home";

@@ -86,6 +86,7 @@ namespace Kiezel
                 return null;
             }
         }
+
         public override string ToString()
         {
             var name = Definition.Name;

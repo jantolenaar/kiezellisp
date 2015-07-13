@@ -8,9 +8,35 @@ using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Web;
+using System.Dynamic;
+using System.Linq.Expressions;
 
 namespace Kiezel
 {
+    public class RegexPlus : Regex, IApply, IDynamicMetaObjectProvider
+    {
+        public RegexPlus( string pattern, RegexOptions options )
+            : base( pattern, options )
+        {
+        }
+
+        object IApply.Apply( object[] args )
+        {
+            if ( args == null || args.Length != 1 || !( args[ 0 ] is string ) )
+            {
+                throw new ArgumentException();
+            }
+            var str = ( string ) args[ 0 ];
+            return StringExtensions.RegexMatch( str, this );
+        }
+
+        DynamicMetaObject IDynamicMetaObjectProvider.GetMetaObject( Expression parameter )
+        {
+            return new GenericApplyMetaObject<RegexPlus>( parameter, this );
+        }
+
+    }
+
     public static class StringExtensions
     {
         public static string Capitalize( this string str )
@@ -499,7 +525,7 @@ namespace Kiezel
             return HttpUtility.UrlEncode( str );
         }
 
-        public static Cons WildcardMatch( this string str, string pattern )
+        internal static string MakeWildcardRegexString( string pattern )
         {
             var star = "<<sadaskdSTARadfgjkdlf>>";
             var qm = "<<sdkjlfQUESTIONMARKsdalwe>>";
@@ -511,7 +537,12 @@ namespace Kiezel
                                 .Replace( star, "(.*?)" )
                                 .Replace( qm, "(.*)" ) + "$";
 
-            return RegexMatch( str, pattern2 );
+            return pattern2;
+        }
+
+        public static Cons WildcardMatch( this string str, string pattern )
+        {
+            return RegexMatch( str, MakeWildcardRegexString( pattern ) );
         }
 
         internal static Regex GetRegex( object pattern )
@@ -525,6 +556,7 @@ namespace Kiezel
                 return ( Regex ) pattern;
             }
         }
+
         internal static Cons MakeMatchResult( Match match )
         {
             Cons result = null;
@@ -538,6 +570,7 @@ namespace Kiezel
             }
             return result;
         }
+
         internal static string Shorten( this string str, int maxLength, string insert = "..." )
         {
             int extra = insert == null ? 0 : insert.Length;

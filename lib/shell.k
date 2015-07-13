@@ -13,6 +13,7 @@
         "here"
         "cd"
         "dir"
+        "exec"
         "with-directory"
         "make-safe-argument-string"
         "pwd"
@@ -127,6 +128,9 @@
     (string:join " " (map enclose-in-quotes args)))
 
 (defun run (program &rest arguments)
+    (exec program :stdin null :return-stdout false :args arguments))
+
+(defun exec (program &key stdin return-stdout args)
     (let proc (process:new))
     (let info (.start-info proc))
     (setf (.file-name info) program)
@@ -134,31 +138,17 @@
     (setf (.redirect-standard-error info) true)
     (setf (.redirect-standard-input info) true)
     (setf (.use-shell-execute info) false)
-    (setf (.arguments info) (make-safe-argument-string arguments))
-    (.start proc)
-    (.close (.standard-input proc))
-    (let result (.read-to-end (.standard-output proc)))
-    (.wait-for-exit proc)
-    (print result)
-    (= 0 (.exit-code proc)))
-
-(defun run-with-input (cmd &key stdin)
-    (let proc (process:new))
-    (let info (.start-info proc))
-    (setf (.file-name info) "cmd.exe")
-    (setf (.redirect-standard-output info) true)
-    (setf (.redirect-standard-error info) true)
-    (setf (.redirect-standard-input info) true)
-    (setf (.use-shell-execute info) false)
-    (setf (.arguments info) (string "/c \"" cmd "\""))
+    (setf (.arguments info) (make-safe-argument-string args))
     (.start proc)
     (when stdin
         (.write (.standard-input proc) stdin))
     (.close (.standard-input proc))
     (let result (.read-to-end (.standard-output proc)))
     (.wait-for-exit proc)
-    (print result)
-    (= 0 (.exit-code proc)))
+    (let ok (zero? (.exit-code proc)))
+    (if return-stdout 
+        (if ok result)
+          (if ok (do (print result) true))))
 
 #+windows
 (defun robocopy-mirror (source destination)

@@ -1,5 +1,16 @@
 # Change Log
 
+## 2015/07/13
+
+*   Added `w` option to regular expression literal to support wildcard patterns.
+*   Regular expression literal is also a function.
+*   Removed double back tick string interpolation marker.
+*   Added `lib/pandoc.k` and `lib\commonmark.k`.
+
+## 2015/07/03
+
+*   Added `lisp` package to the use-list of the `csv` package.
+
 ## 2015/06/23
 
 *   Refactored symbol/package lookup/creation.

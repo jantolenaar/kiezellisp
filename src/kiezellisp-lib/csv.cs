@@ -110,6 +110,12 @@ namespace Kiezel
         }
 
         [Lisp( "csv:write-grid-to-string" )]
+        public static string CsvWriteGridToString( IEnumerable lines )
+        {
+            return CsvWriteGridToString( lines, null );
+        }
+
+        [Lisp( "csv:write-grid-to-string" )]
         public static string CsvWriteGridToString( IEnumerable lines, Prototype options )
         {
             options = options ?? new Prototype( null );

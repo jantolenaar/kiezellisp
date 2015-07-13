@@ -2,6 +2,8 @@
 
 
 (defpackage "csv"
+    (:use
+        "lisp")
 	(:export
         "$options"
         "convert-to-date"
@@ -19,6 +21,7 @@
         "write-records-to-string"
         "write-value-to-string"
     ))
+
 
 (in-package "csv")
 
