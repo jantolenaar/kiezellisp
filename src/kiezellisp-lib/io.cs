@@ -179,7 +179,7 @@ namespace Kiezel
             var args = ParseKwargs( kwargs, new string[] { "stream", "eof-value", "eof-error?" }, GetDynamic( Symbols.StdIn ), null, true );
             var stdin = args[ 0 ];
             var eofValue = args[ 1 ];
-            var eofError = ToBool( args[ 2 ] );
+            var eofError = ToBool( args[ 2 ] ); // not used
 
             if ( stdin as LispReader == null )
             {
@@ -204,7 +204,7 @@ namespace Kiezel
         }
 
         [Lisp( "read-all-from-string" )]
-        public static Cons ReadAllFromString( string text, params object[] kwargs )
+        public static Cons ReadAllFromString( string text )
         {
             var parser = new LispReader( text );
             return AsList( parser.ReadAll() );
@@ -213,10 +213,8 @@ namespace Kiezel
         [Lisp( "read-delimited-list" )]
         public static object ReadDelimitedList( string terminator, params object[] kwargs )
         {
-            var args = ParseKwargs( kwargs, new string[] { "stream", "eof-value", "eof-error?" }, GetDynamic( Symbols.StdIn ), null, true );
+            var args = ParseKwargs( kwargs, new string[] { "stream" }, GetDynamic( Symbols.StdIn ) );
             var stdin = args[ 0 ];
-            var eofValue = args[ 1 ];
-            var eofError = ToBool( args[ 2 ] );
 
             if ( stdin as LispReader == null )
             {
@@ -237,12 +235,10 @@ namespace Kiezel
         }
 
         [Lisp( "scan-all-from-string" )]
-        public static Cons ScanAllFromString( string text, params object[] kwargs )        
+        public static Cons ScanAllFromString( string text )        
         {
-            var args = ParseKwargs( kwargs, new string[] { "eof-value" }, null );
-            var eofValue = args[ 0 ];
             var parser = new LispReader( text );
-            return AsList( parser.ScanAll( eofValue ) );
+            return AsList( parser.ScanAll() );
         }
 
         [Lisp( "require" )]
@@ -266,7 +262,7 @@ namespace Kiezel
             }
         }
 
-        [Lisp( "return-from-load" )]
+        [Lisp( "system:return-from-load" )]
         public static void ReturnFromLoad()
         {
             throw new ReturnFromLoadException();

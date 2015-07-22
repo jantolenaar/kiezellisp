@@ -9,8 +9,6 @@
         "$pprint-left-margin"
         "$pprint-right-margin"
         "pprint"    
-        "with-indent"
-        "with-default-indent"
     ))
 
 (in-package "lisp")

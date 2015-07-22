@@ -34,4 +34,8 @@
 (require "shell")
 (require "unit-test")
 
-(set-online-help-url "http://localhost:8802")
+#+windows
+(set-online-help null "http://dev:8802")
+
+#+unix
+(set-online-help "firefox" "http://dev:8802")

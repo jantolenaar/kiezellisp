@@ -343,8 +343,7 @@ namespace Kiezel
             return ( Cons ) Force( Sort( package.ListExportedSymbols() ) );
         }
 
-        [Lisp( "parse-symbol" )]
-        public static SymbolDescriptor ParseSymbol( string name )
+        internal static SymbolDescriptor ParseSymbol( string name )
         {
             var descr = new SymbolDescriptor();
             var index = name.LastIndexOf( PackageSymbolSeparator );

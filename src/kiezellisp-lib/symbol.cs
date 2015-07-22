@@ -1030,7 +1030,7 @@ namespace Kiezel
             Rest = MakeSymbol( "&rest" );
             Return = MakeSymbol( "return" );
             ReturnFrom = MakeSymbol( "return-from" );
-            ReturnFromLoad = MakeSymbol( "return-from-load" );
+            ReturnFromLoad = MakeSymbol( "system:return-from-load" );
             Returns = MakeSymbol( "&returns" );
             Right = MakeSymbol( ":right" );
             ScriptDirectory = MakeSymbol( "$script-directory" );

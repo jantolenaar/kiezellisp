@@ -5,15 +5,23 @@
     (:export 
         "documentation"
         "help"
-        "set-online-help-url"
+        "set-online-help"
     ))
 
 (in-package "lisp")
 
-(def website "http://www.kiezellisp.nl")
+(def $website "http://www.kiezellisp.nl")
 
-(defun set-online-help-url (str)
-    (setf website str))
+#+windows
+(def $browser null)
+
+#+unix
+(def $browser "firefox")
+
+(defun set-online-help (browser url)
+    (setf $browser browser)
+    (setf $website url))
+
 
 (defun help (&optional topic)
     (if topic
@@ -24,8 +32,8 @@
 (defun print-online-help (topic)
     (assert (symbol? topic))
     (let $package (find-package "lisp"))
-    (let url (path:combine website (string "api.html?#" topic)))
-    (help-run-windows-command url)
+    (let url (path:combine $website (string "api.html?#" topic)))
+    (help-run-browser url)
     (void))
 
 (defun documentation (&optional topic)
@@ -73,15 +81,24 @@
         (print-documentation-item documentation))
     (print-line))
 
-(defun help-run-windows-command (cmd &rest arguments)
+(defun help-run-browser (url)
     (let proc (process:new))
     (let info (.start-info proc))
-    (setf (.file-name info) cmd)
-    (setf (.redirect-standard-output info) false)
-    (setf (.redirect-standard-error info) false)
-    (setf (.redirect-standard-input info) false)
-    (setf (.use-shell-execute info) true)
-    (setf (.arguments info) (make-safe-argument-string arguments))
+    (cond 
+        ($browser
+            (setf (.file-name info) $browser)
+            (setf (.redirect-standard-output info) true)
+            (setf (.redirect-standard-error info) true)
+            (setf (.redirect-standard-input info) true)
+            (setf (.use-shell-execute info) false)
+            (setf (.arguments info) (enclose-in-quotes url)))
+        (true
+            (setf (.file-name info) url)
+            (setf (.redirect-standard-output info) false)
+            (setf (.redirect-standard-error info) false)
+            (setf (.redirect-standard-input info) false)
+            (setf (.arguments info) "")
+            (setf (.use-shell-execute info) true)))
     (.start proc)
     (void))
 

@@ -12,5 +12,9 @@
 (require "system")
 (require "shell")
 
-(set-online-help-url "http://www.kiezellisp.nl")
+#+windows
+(set-online-help null "http://www.kiezellisp.nl")
 
+#+unix
+(set-online-help "firefox" "http://www.kiezellisp.nl")
+ 

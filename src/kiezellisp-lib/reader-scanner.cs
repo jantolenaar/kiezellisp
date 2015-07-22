@@ -111,8 +111,10 @@ namespace Kiezel
         }
 
         [Lisp]
-        public Vector ScanAll( object eofValue = null )
+        public Vector ScanAll()
         {
+            var eofValue = new object[ 0 ];
+
             try
             {
                 ++symbolSuppression;

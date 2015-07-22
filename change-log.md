@@ -1,5 +1,15 @@
 # Change Log
 
+## 2015/07/22
+
+*   Fixed online help on linux/windows.
+
+
+## 2015/07/15
+
+*   Fixed bug in `ImportMissingSymbol` caused by some underscored names.
+*   Added unsigned integer support.
+
 ## 2015/07/13
 
 *   Added `w` option to regular expression literal to support wildcard patterns.
