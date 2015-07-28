@@ -342,11 +342,6 @@ namespace Kiezel
 
         internal static void ImportMissingSymbol( string key, Package package )
         {
-            if ( key == "key-f" )
-            {
-                int n = 37;
-            }
-
             var name = key.LispToPascalCaseName();
 
             if ( key == "new" )
@@ -448,7 +443,7 @@ namespace Kiezel
                 if ( setters.Length != 0 )
                 {
                     // create getter symbol for setf/setq
-                    var sym2 = package.FindOrCreate( lcName, excludeUseList: true, export: true );
+                    package.FindOrCreate( lcName, excludeUseList: true, export: true );
                     // use set-xxx
                     var sym = package.FindOrCreate( "set-" +lcName, excludeUseList: true, export: true );
                     var builtin = new ImportedFunction( members[ 0 ].Name, members[ 0 ].DeclaringType, setters, false );

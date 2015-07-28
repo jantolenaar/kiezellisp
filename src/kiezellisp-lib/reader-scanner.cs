@@ -2,6 +2,7 @@
 
 using System;
 using System.Collections;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -12,7 +13,7 @@ namespace Kiezel
     [RestrictedImport]
     public class LispReader : IEnumerable, IEnumerator
     {
-        public static char EofChar = Convert.ToChar( 0 );
+        public static char EofChar = (char)0;
 
         private string buffer;
         private int col;
@@ -50,7 +51,6 @@ namespace Kiezel
             }
         }
 
-        
         object IEnumerator.Current
         {
             get
@@ -82,6 +82,12 @@ namespace Kiezel
         }
 
         [Lisp]
+        public void InsertForms( IEnumerable forms )
+        {
+            insertedForms = Runtime.ForceAppend( forms, insertedForms );
+        }
+
+        [Lisp]
         public char PeekChar( int offset = 0 )
         {
             if ( pos + offset >= buffer.Length )
@@ -97,7 +103,12 @@ namespace Kiezel
         [Lisp]
         public object Read()
         {
-            return Read( null );
+            var obj = Read(EOF.Value);
+            if (obj == EOF.Value)
+            {
+                throw MakeScannerException("EOF: unexpected end");
+            }
+            return obj;
         }
 
         [Lisp]
@@ -160,14 +171,17 @@ namespace Kiezel
         {
             while ( true )
             {
-                ReadWhitespace();
-                if ( PeekChar( 0 ) == EofChar )
+                if (insertedForms == null)
                 {
-                    throw MakeScannerException( "Unexpected EOF: '{0}' expected", terminator );
-                }
-                if ( TryTakeChars( terminator ) )
-                {
-                    return null;
+                    ReadWhitespace();
+                    if (PeekChar(0) == EofChar)
+                    {
+                        throw MakeScannerException("Unexpected EOF: '{0}' expected", terminator);
+                    }
+                    if (TryTakeChars(terminator))
+                    {
+                        return null;
+                    }
                 }
                 var first = MaybeRead();
                 if ( first != VOID.Value )
@@ -396,16 +410,24 @@ namespace Kiezel
                 {
                     SkipChars( 1 );
                     var arg = ReadDecimalArg();
-                    var subcode = PeekChar();
-                    var subitem = item.DispatchReadtable.GetEntry( subcode );
-                    if ( subitem.Handler2 != null )
+                    string key = null;
+                    ReadtableHandler2 handler2 = null;
+                    foreach ( var pair in item.DispatchReadtable )
                     {
-                        SkipChars( 1 );
-                        return subitem.Handler2( this, subcode, arg );
+                        if (TryTakeChars(pair.Key))
+                        {
+                            key = pair.Key;
+                            handler2 = pair.Value;
+                            break;
+                        }
+                    }
+                    if ( handler2 != null )
+                    {
+                        return handler2( this, key, arg );
                     }
                     else
                     {
-                        throw MakeScannerException( "Invalid character combination: '{0}{1}'", code, subcode );
+                        throw MakeScannerException("Invalid character combination: '{0}{1}'", code, PeekChar(1));
                     }
                 }
             }
@@ -709,14 +731,11 @@ namespace Kiezel
 
         internal object ParseShortLambdaExpression( string delimiter )
         {
-            var body = ReadDelimitedList( delimiter );
-            if ( !Runtime.Consp( Runtime.First( body ) ) )
-            {
-                body = Runtime.MakeList( body );
-            }
-            var lastIndex = GrepShortLambdaParameters( body );
+            // The list is treated as a form!
+            var form = ReadDelimitedList( delimiter );
+            var lastIndex = GrepShortLambdaParameters( form );
             var args = Runtime.AsList( Symbols.ShortLambdaVariables.Skip( 1 ).Take( lastIndex ) );
-            var code = Runtime.MakeListStar( Symbols.Lambda, args, body );
+            var code = Runtime.MakeList( Symbols.Lambda, args, form );
             return code;
         }
 
@@ -1051,12 +1070,12 @@ namespace Kiezel
             return buf.ToString();
         }
 
-        internal void ReadSuppressed()
+        internal object ReadSuppressed()
         {
             try
             {
                 ++symbolSuppression;
-                Read();
+                return Read();
             }
             finally
             {

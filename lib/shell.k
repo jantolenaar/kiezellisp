@@ -183,5 +183,5 @@
     `(with-output-to-string ($stdout)
         (shell:run ,@seq)))
 
-(set-dispatch-macro-character #\# #\` back-tick-readhandler)
+(set-dispatch-macro-character "#" "`" back-tick-readhandler)
 

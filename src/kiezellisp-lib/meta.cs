@@ -70,12 +70,12 @@ namespace Kiezel
                     case "lambda":
                     {
                         return form;
-                        throw new LispException( "lambda not supported by code walker" );
+                        //throw new LispException( "lambda not supported by code walker" );
                     }
                     case "letfun":
                     {
                         return form;
-                        throw new LispException( "letfun not supported by code walker" );
+                        //throw new LispException( "letfun not supported by code walker" );
                     }
                     case "try":
                     {
@@ -88,7 +88,7 @@ namespace Kiezel
                     case "defmethod":
                     {
                         return form;
-                        throw new LispException( "defun, defmacro, defmulti and defmethod not supported by code walker" );
+                        //throw new LispException( "defun, defmacro, defmulti and defmethod not supported by code walker" );
                     }
                     case "do":
                     {

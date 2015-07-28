@@ -1,5 +1,10 @@
 # Change Log
 
+## 2015/07/28
+
+*   Added #if, #elif, #else #endif conditional feature to lisp reader.
+*   Added #ignore to lisp reader.
+
 ## 2015/07/22
 
 *   Fixed online help on linux/windows.

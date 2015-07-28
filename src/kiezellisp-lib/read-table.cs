@@ -7,7 +7,7 @@ namespace Kiezel
 {
     public delegate object ReadtableHandler( LispReader stream, char ch );
 
-    public delegate object ReadtableHandler2( LispReader stream, char ch, int arg );
+    public delegate object ReadtableHandler2( LispReader stream, string ch, int arg );
 
     public enum CharacterType
     {
@@ -24,6 +24,21 @@ namespace Kiezel
     public class EOF
     {
         public static EOF Value = new EOF();
+    }
+
+    internal class ReverseOrder: IComparer<string>
+    {
+        #region IComparer implementation
+
+        public int Compare(string x, string y)
+        {
+            return string.Compare(y, x);
+        }
+
+        #endregion
+
+
+
     }
 
     public class Readtable
@@ -50,17 +65,17 @@ namespace Kiezel
             OtherItems = new Dictionary<char, ReadtableEntry>();
         }
 
-        internal void DefineMacro( char ch, CharacterType type = CharacterType.TerminatingMacro )
+        internal void DefineMacro( string ch, CharacterType type = CharacterType.TerminatingMacro )
         {
-            var item = GetEntry( ch, true );
+            var item = GetEntry( ch[0], true );
             item.Handler = null;
             item.Handler2 = null;
             item.Type = type;
         }
 
-        internal void DefineMacro( char ch, ReadtableHandler2 handler2, CharacterType type = CharacterType.TerminatingMacro )
+        internal void DefineMacro( string ch, ReadtableHandler2 handler2, CharacterType type = CharacterType.TerminatingMacro )
         {
-            var item = GetEntry( ch, true );
+            var item = GetEntry( ch[0], true );
             item.Handler = null;
             item.Handler2 = handler2;
             item.Type = type;
@@ -106,60 +121,66 @@ namespace Kiezel
                 Items[ i ].DispatchReadtable = null;
             }
 
-            DefineMacro( LispReader.EofChar, CharacterType.EOF );
-            DefineMacro( '\\', CharacterType.SingleEscape );
-            DefineMacro( '|', CharacterType.MultipleEscape );
+            DefineMacro( "\x00", CharacterType.EOF );
+            DefineMacro( "\\", CharacterType.SingleEscape );
+            DefineMacro( "|", CharacterType.MultipleEscape );
 
             SetMacroCharacter( Runtime.LambdaCharacter, Runtime.ReadLambdaCharacterHandler, CharacterType.NonTerminatingMacro );
-            SetMacroCharacter( '(', Runtime.ReadListHandler );
-            DefineMacro( ')' );
-            SetMacroCharacter( '\'', Runtime.ReadQuoteHandler );
-            DefineMacro( '@', CharacterType.NonTerminatingMacro );
-            DefineMacro( '#', CharacterType.NonTerminatingMacro );
-            SetMacroCharacter( ',', Runtime.ReadCommaHandler );
-            SetMacroCharacter( ';', Runtime.ReadLineCommentHandler );
-            SetMacroCharacter( '`', Runtime.ReadQuasiQuoteHandler );
-            SetMacroCharacter( '{', Runtime.ReadPrototypeHandler );
-            DefineMacro( '}' );
-            SetMacroCharacter( '[', Runtime.ReadVectorHandler );
-            DefineMacro( ']' );
-            SetMacroCharacter( '"', Runtime.ReadStringHandler );
+            SetMacroCharacter( "(", Runtime.ReadListHandler );
+            DefineMacro( ")" );
+            SetMacroCharacter( "\'", Runtime.ReadQuoteHandler );
+            DefineMacro( "@", CharacterType.NonTerminatingMacro );
+            DefineMacro( "#", CharacterType.NonTerminatingMacro );
+            SetMacroCharacter( ",", Runtime.ReadCommaHandler );
+            SetMacroCharacter( ";", Runtime.ReadLineCommentHandler );
+            SetMacroCharacter( "`", Runtime.ReadQuasiQuoteHandler );
+            SetMacroCharacter( "{", Runtime.ReadPrototypeHandler );
+            DefineMacro( "}" );
+            SetMacroCharacter( "[", Runtime.ReadVectorHandler );
+            DefineMacro( "]" );
+            SetMacroCharacter( "\"", Runtime.ReadStringHandler );
 
-            SetDispatchMacroCharacter( '@', '"', Runtime.ReadStringHandler2 );
-            SetDispatchMacroCharacter( '#', '(', Runtime.ReadShortLambdaExpressionHandler );
-            SetDispatchMacroCharacter( '#', '|', Runtime.ReadBlockCommentHandler );
-            SetDispatchMacroCharacter( '#', 'r', Runtime.ReadNumberHandler );
-            SetDispatchMacroCharacter( '#', 'x', Runtime.ReadNumberHandler );
-            SetDispatchMacroCharacter( '#', 'o', Runtime.ReadNumberHandler );
-            SetDispatchMacroCharacter( '#', 'b', Runtime.ReadNumberHandler );
-            SetDispatchMacroCharacter( '#', 'q', Runtime.ReadSpecialStringHandler );
-            SetDispatchMacroCharacter( '#', 'v', Runtime.ReadVectorHandler2 );
-            SetDispatchMacroCharacter( '#', 's', Runtime.ReadStructHandler );
-            SetDispatchMacroCharacter( '#', '/', Runtime.ReadRegexHandler );
-            SetDispatchMacroCharacter( '#', '.', Runtime.ReadExecuteHandler );
-            SetDispatchMacroCharacter( '#', '!', Runtime.ReadLineCommentHandler2 );
-            SetDispatchMacroCharacter( '#', ';', Runtime.ReadExprCommentHandler );
-            SetDispatchMacroCharacter( '#', '+', Runtime.ReadPlusExprHandler );
-            SetDispatchMacroCharacter( '#', '-', Runtime.ReadMinusExprHandler );
-            SetDispatchMacroCharacter( '#', '\\', Runtime.ReadCharacterHandler );
-            SetDispatchMacroCharacter( '#', 'c', Runtime.ReadComplexNumberHandler );
-            SetDispatchMacroCharacter( '#', 'i', Runtime.ReadInfixHandler );
-            SetDispatchMacroCharacter( '#', ':', Runtime.ReadUninternedSymbolHandler );
+            SetDispatchMacroCharacter( "@", "\"", Runtime.ReadStringHandler2 );
+            SetDispatchMacroCharacter( "#", "(", Runtime.ReadShortLambdaExpressionHandler );
+            SetDispatchMacroCharacter( "#", "|", Runtime.ReadBlockCommentHandler );
+            SetDispatchMacroCharacter( "#", "r", Runtime.ReadNumberHandler );
+            SetDispatchMacroCharacter( "#", "x", Runtime.ReadNumberHandler );
+            SetDispatchMacroCharacter( "#", "o", Runtime.ReadNumberHandler );
+            SetDispatchMacroCharacter( "#", "b", Runtime.ReadNumberHandler );
+            SetDispatchMacroCharacter( "#", "q", Runtime.ReadSpecialStringHandler );
+            SetDispatchMacroCharacter( "#", "v", Runtime.ReadVectorHandler2 );
+            SetDispatchMacroCharacter( "#", "s", Runtime.ReadStructHandler );
+            SetDispatchMacroCharacter( "#", "/", Runtime.ReadRegexHandler );
+            SetDispatchMacroCharacter( "#", ".", Runtime.ReadExecuteHandler );
+            SetDispatchMacroCharacter( "#", "!", Runtime.ReadLineCommentHandler2 );
+            SetDispatchMacroCharacter( "#", ";", Runtime.ReadExprCommentHandler );
+            SetDispatchMacroCharacter( "#", "ignore", Runtime.ReadExprCommentHandler );
+            SetDispatchMacroCharacter( "#", "+", Runtime.ReadPlusExprHandler );
+            SetDispatchMacroCharacter( "#", "-", Runtime.ReadMinusExprHandler );
+            SetDispatchMacroCharacter( "#", "if", Runtime.ReadIfExprHandler );
+            SetDispatchMacroCharacter( "#", "elif", Runtime.ReadElifExprHandler );
+            SetDispatchMacroCharacter( "#", "else", Runtime.ReadElseExprHandler );
+            SetDispatchMacroCharacter( "#", "endif", Runtime.ReadEndifExprHandler );
+            SetDispatchMacroCharacter( "#", "\\", Runtime.ReadCharacterHandler );
+            SetDispatchMacroCharacter( "#", "c", Runtime.ReadComplexNumberHandler );
+            SetDispatchMacroCharacter( "#", "i", Runtime.ReadInfixHandler );
+            SetDispatchMacroCharacter( "#", ":", Runtime.ReadUninternedSymbolHandler );
         }
-        internal void SetDispatchMacroCharacter( char ch1, char ch2, ReadtableHandler2 handler2, CharacterType type = CharacterType.TerminatingMacro )
+
+        internal void SetDispatchMacroCharacter( string ch1, string str2, ReadtableHandler2 handler2 )
         {
-            var item = GetEntry( ch1, true );
+            var item = GetEntry( ch1[0], true );
             if ( item.DispatchReadtable == null )
             {
-                item.DispatchReadtable = new Readtable();
+                item.DispatchReadtable = new SortedList<string, ReadtableHandler2>( new ReverseOrder() );
             }
-            item.Type = type;
-            item.DispatchReadtable.DefineMacro( ch2, handler2 );
+            item.Type = CharacterType.TerminatingMacro;
+            item.DispatchReadtable.Add( str2, handler2 );
         }
 
-        internal void SetMacroCharacter( char ch, ReadtableHandler handler, CharacterType type = CharacterType.TerminatingMacro )
+        internal void SetMacroCharacter( string ch, ReadtableHandler handler, CharacterType type = CharacterType.TerminatingMacro )
         {
-            var item = GetEntry( ch, true );
+            var item = GetEntry( ch[0], true );
             item.Handler = handler;
             item.Handler2 = null;
             item.Type = type;
@@ -169,10 +190,11 @@ namespace Kiezel
     public class ReadtableEntry
     {
         public char Character;
-        public Readtable DispatchReadtable;
+        public SortedList<string,ReadtableHandler2> DispatchReadtable;
         public ReadtableHandler Handler;
         public ReadtableHandler2 Handler2;
         public CharacterType Type;
+
         public ReadtableEntry Clone()
         {
             var dest = new ReadtableEntry();
@@ -180,7 +202,14 @@ namespace Kiezel
             dest.Type = Type;
             dest.Handler = Handler;
             dest.Handler2 = Handler2;
-            dest.DispatchReadtable = DispatchReadtable == null ? null : Runtime.CopyReadtable( DispatchReadtable );
+            if (DispatchReadtable != null)
+            {
+                dest.DispatchReadtable = new SortedList<string,ReadtableHandler2>();
+                foreach (var pair in DispatchReadtable)
+                {
+                    dest.DispatchReadtable.Add(pair.Key, pair.Value);
+                }
+            }
             return dest;
         }
     }
@@ -213,7 +242,7 @@ namespace Kiezel
         }
 
         [Lisp( "set-dispatch-macro-character" )]
-        public static void SetDispatchMacroCharacter( char dispatchChar, char subChar, ReadtableHandler2 handler, params object[] kwargs )
+        public static void SetDispatchMacroCharacter( string dispatchChar, string subChar, ReadtableHandler2 handler, params object[] kwargs )
         {
             var args = ParseKwargs( kwargs, new string[] { "readtable" }, GetReadtable() );
             var readtable = ( Readtable ) args[ 0 ];
@@ -221,7 +250,7 @@ namespace Kiezel
         }
 
         [Lisp( "set-macro-character" )]
-        public static void SetMacroCharacter( char dispatchChar, ReadtableHandler handler, params object[] kwargs )
+        public static void SetMacroCharacter( string dispatchChar, ReadtableHandler handler, params object[] kwargs )
         {
             var args = ParseKwargs( kwargs, new string[] { "non-terminating?", "readtable" }, false, GetReadtable() );
             var nonTerminating = ToBool( args[ 0 ] );
@@ -252,20 +281,20 @@ namespace Kiezel
         {
             var table = new Readtable();
             table.Init();
-            table.SetMacroCharacter( '"', PrettyPrinting.ReadStringHandler );
-            table.SetMacroCharacter( ';', PrettyPrinting.ReadLineCommentHandler );
-            table.SetDispatchMacroCharacter( '@', '"', PrettyPrinting.ReadStringHandler2 );
-            table.SetDispatchMacroCharacter( '#', '(', PrettyPrinting.ReadShortLambdaExpressionHandler );
-            table.SetDispatchMacroCharacter( '#', '!', PrettyPrinting.ReadLineCommentHandler2 );
-            table.SetDispatchMacroCharacter( '#', '|', PrettyPrinting.ReadBlockCommentHandler );
-            table.SetDispatchMacroCharacter( '#', 'r', PrettyPrinting.ReadNumberHandler );
-            table.SetDispatchMacroCharacter( '#', 'x', PrettyPrinting.ReadNumberHandler );
-            table.SetDispatchMacroCharacter( '#', 'o', PrettyPrinting.ReadNumberHandler );
-            table.SetDispatchMacroCharacter( '#', 'b', PrettyPrinting.ReadNumberHandler );
-            table.SetDispatchMacroCharacter( '#', '+', PrettyPrinting.ReadPlusMinusExprHandler );
-            table.SetDispatchMacroCharacter( '#', '-', PrettyPrinting.ReadPlusMinusExprHandler );
-            table.SetDispatchMacroCharacter( '#', 'q', PrettyPrinting.ReadSpecialStringHandler );
-            table.SetDispatchMacroCharacter( '#', 's', PrettyPrinting.ReadStructHandler );
+            table.SetMacroCharacter( "\"", PrettyPrinting.ReadStringHandler );
+            table.SetMacroCharacter( ";", PrettyPrinting.ReadLineCommentHandler );
+            table.SetDispatchMacroCharacter( "@", "\"", PrettyPrinting.ReadStringHandler2 );
+            table.SetDispatchMacroCharacter( "#", "(", PrettyPrinting.ReadShortLambdaExpressionHandler );
+            table.SetDispatchMacroCharacter( "#", "!", PrettyPrinting.ReadLineCommentHandler2 );
+            table.SetDispatchMacroCharacter( "#", "|", PrettyPrinting.ReadBlockCommentHandler );
+            table.SetDispatchMacroCharacter( "#", "r", PrettyPrinting.ReadNumberHandler );
+            table.SetDispatchMacroCharacter( "#", "x", PrettyPrinting.ReadNumberHandler );
+            table.SetDispatchMacroCharacter( "#", "o", PrettyPrinting.ReadNumberHandler );
+            table.SetDispatchMacroCharacter( "#", "b", PrettyPrinting.ReadNumberHandler );
+            table.SetDispatchMacroCharacter( "#", "+", PrettyPrinting.ReadPlusMinusExprHandler );
+            table.SetDispatchMacroCharacter( "#", "-", PrettyPrinting.ReadPlusMinusExprHandler );
+            table.SetDispatchMacroCharacter( "#", "q", PrettyPrinting.ReadSpecialStringHandler );
+            table.SetDispatchMacroCharacter( "#", "s", PrettyPrinting.ReadStructHandler );
             return table;
         }
 

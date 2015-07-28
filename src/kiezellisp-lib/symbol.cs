@@ -651,6 +651,12 @@ namespace Kiezel
 
         internal static Symbol GreekLambda;
 
+        internal static Symbol HashElif;
+
+        internal static Symbol HashElse;
+
+        internal static Symbol HashEndif;
+
         internal static Symbol HiddenVar;
 
         internal static Symbol I;
@@ -959,6 +965,9 @@ namespace Kiezel
             GetLexicalOrEnvironmentVariable = MakeSymbol( "system:get-lexical-or-environment-variable" );
             Goto = MakeSymbol( "goto" );
             GreekLambda = MakeSymbol( "\u03bb" );
+            HashElif = MakeSymbol("#elif");
+            HashElse = MakeSymbol("#else");
+            HashEndif = MakeSymbol("#endif");
             HiddenVar = MakeSymbol( "hidden-var" );
             I = MakeSymbol( "math:I" );
             If = MakeSymbol( "if" );

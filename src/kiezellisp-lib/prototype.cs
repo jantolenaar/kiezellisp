@@ -11,7 +11,7 @@ using System.Linq.Expressions;
 namespace Kiezel
 {
     [RestrictedImport]
-    public class Prototype : DynamicObject, IEnumerable, ICustomTypeDescriptor, IApply
+    public class Prototype : DynamicObject, IEnumerable, /*ICustomTypeDescriptor, */ IApply
     {
         internal static Prototype Dummy = new Prototype();
 
@@ -158,6 +158,7 @@ namespace Kiezel
             return GetValue( args[ 0 ] );
         }
 
+        /*
         AttributeCollection ICustomTypeDescriptor.GetAttributes()
         {
             return new AttributeCollection();
@@ -220,7 +221,7 @@ namespace Kiezel
         {
             return this;
         }
-
+*/
         [Lisp]
         public void SetParents( IEnumerable parents )
         {
@@ -513,6 +514,7 @@ namespace Kiezel
         }
     }
 
+    /*
     public class StringPropertyDescriptor : PropertyDescriptor
     {
         private readonly string m_Name;
@@ -556,6 +558,7 @@ namespace Kiezel
 
         public override bool Equals( object obj )
         {
+
             if ( obj is StringPropertyDescriptor )
             {
                 return ( ( StringPropertyDescriptor ) obj ).m_Name == m_Name;
@@ -589,7 +592,7 @@ namespace Kiezel
             return false;
         }
     }
-
+*/
     internal class CaseInsensitiveEqualityComparer : IEqualityComparer<object>
     {
         private CaseInsensitiveComparer comparer = CaseInsensitiveComparer.DefaultInvariant;

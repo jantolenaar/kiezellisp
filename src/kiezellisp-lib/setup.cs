@@ -28,7 +28,7 @@ namespace Kiezel
         internal static string HomeDirectory = Directory.GetCurrentDirectory();
         internal static bool InteractiveMode;
         internal static Package KeywordPackage;
-        internal static char LambdaCharacter = ( char ) 0x3bb;
+        internal static string LambdaCharacter = "\u03bb";
         internal static Package LispDocPackage;
         internal static Package LispPackage;
         internal static bool OptimizerEnabled;
@@ -227,9 +227,13 @@ namespace Kiezel
                 AddFeature( "macosx" );
             }
 
-            if ( Type.GetType( "Mono.Runtime" ) != null )
+            if (Type.GetType("Mono.Runtime") != null)
             {
-                AddFeature( "mono" );
+                AddFeature("mono");
+            }
+            else
+            {
+                AddFeature("microsoft");
             }
 
             if ( Environment.Is64BitProcess )
