@@ -7,22 +7,22 @@ namespace Kiezel
 {
     public class Frame : IEnumerable
     {
-        internal Frame Link;
-        internal List<Symbol> Names;
-        internal List<object> Values;
+        public Frame Link;
+        public List<Symbol> Names;
+        public List<object> Values;
 
-        internal Frame()
+        public Frame()
         {
         }
 
-        internal Frame( List<Symbol> names )
+        public Frame(List<Symbol> names)
         {
             Link = null;
             Names = names ?? new List<Symbol>();
             Values = null;
         }
 
-        internal Frame( Frame template, List<object> args )
+        public Frame(Frame template, List<object> args)
         {
             Link = template.Link;
             Names = template.Names;
@@ -31,71 +31,72 @@ namespace Kiezel
 
         public IEnumerator GetEnumerator()
         {
-            for ( int i = 0; i < Names.Count; ++i )
+            for (int i = 0; i < Names.Count; ++i)
             {
-                if ( Values != null && i < Values.Count )
+                if (Values != null && i < Values.Count)
                 {
-                    yield return new KeyValuePair<Symbol, object>( Names[ i ], Values[ i ] );
+                    yield return new KeyValuePair<Symbol, object>(Names[i], Values[i]);
                 }
                 else
                 {
-                    yield return new KeyValuePair<Symbol, object>( Names[ i ], null );
+                    yield return new KeyValuePair<Symbol, object>(Names[i], null);
                 }
             }
         }
 
-        internal object GetValueAt( int depth, int index )
+        public object GetValueAt(int depth, int index)
         {
             int d = depth;
-            for ( Frame frame = this; frame != null; frame = frame.Link, --d )
+            for (Frame frame = this; frame != null; frame = frame.Link, --d)
             {
-                if ( d == 0 )
+                if (d == 0)
                 {
-                    if ( frame.Values == null || index >= frame.Values.Count )
+                    if (frame.Values == null || index >= frame.Values.Count)
                     {
                         return null;
                         //throw new LispException( "Undefined lexical variable: ({0},{1})", depth, index );
                     }
 
-                    return frame.Values[ index ];
+                    return frame.Values[index];
                 }
             }
 
-            throw new LispException( "No lexical variable at ({0},{1})", depth, index );
+            throw new LispException("No lexical variable at ({0},{1})", depth, index);
         }
 
-        internal object SetValueAt( int depth, int index, object val )
+        public object SetValueAt(int depth, int index, object val)
         {
             int d = depth;
-            for ( Frame frame = this; frame != null; frame = frame.Link, --d )
+            for (Frame frame = this; frame != null; frame = frame.Link, --d)
             {
-                if ( d == 0 )
+                if (d == 0)
                 {
-                    if ( frame.Values == null )
+                    if (frame.Values == null)
                     {
                         frame.Values = new List<object>();
                     }
-                    while ( frame.Values.Count <= index )
+                    while (frame.Values.Count <= index)
                     {
-                        frame.Values.Add( null );
+                        frame.Values.Add(null);
                     }
-                    frame.Values[ index ] = val;
+                    frame.Values[index] = val;
                     return val;
                 }
             }
 
-            throw new LispException( "No lexical variable at ({0},{1})", depth, index );
+            throw new LispException("No lexical variable at ({0},{1})", depth, index);
         }
-        internal object TryGetValue( Symbol sym )
+
+        public object TryGetValue(Symbol sym)
         {
-            for ( Frame frame = this; frame != null; frame = frame.Link )
+            for (Frame frame = this; frame != null; frame = frame.Link)
             {
-                if ( frame.Names != null )
+                if (frame.Names != null)
                 {
-                    int index = frame.Names.IndexOf( sym );
-                    if ( index != -1 )
+                    int index = frame.Names.IndexOf(sym);
+                    if (index != -1)
                     {
-                        return frame.Values[ index ];
+                        return frame.Values[index];
                     }
                 }
             }
@@ -106,8 +107,8 @@ namespace Kiezel
 
     public class FrameAndScope
     {
-        internal Frame Frame;
-        internal AnalysisScope Scope;
+        public Frame Frame;
+        public AnalysisScope Scope;
 
         public FrameAndScope()
         {

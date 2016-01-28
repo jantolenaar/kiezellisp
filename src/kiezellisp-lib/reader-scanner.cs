@@ -27,12 +27,12 @@ namespace Kiezel
         private bool scanning = false;
 
         [Lisp]
-        public LispReader( string sourceCode )
-            : this( sourceCode, false )
+        public LispReader(string sourceCode)
+            : this(sourceCode, false)
         {
         }
 
-        internal LispReader( string sourceCode, bool prettyPrinting )
+        public LispReader(string sourceCode, bool prettyPrinting)
         {
             // When parsing source code for subsequent pretty printing,
             // packages and symbols are handled in more relaxed way.
@@ -66,7 +66,7 @@ namespace Kiezel
 
         bool IEnumerator.MoveNext()
         {
-            currentExpression = Read( EOF.Value );
+            currentExpression = Read(EOF.Value);
             return currentExpression != EOF.Value;
         }
 
@@ -76,27 +76,27 @@ namespace Kiezel
         }
 
         [Lisp]
-        public void InsertForm( object form )
+        public void InsertForm(object form)
         {
-            insertedForms = Runtime.MakeCons( form, insertedForms );
+            insertedForms = Runtime.MakeCons(form, insertedForms);
         }
 
         [Lisp]
-        public void InsertForms( IEnumerable forms )
+        public void InsertForms(IEnumerable forms)
         {
-            insertedForms = Runtime.ForceAppend( forms, insertedForms );
+            insertedForms = Runtime.ForceAppend(forms, insertedForms);
         }
 
         [Lisp]
-        public char PeekChar( int offset = 0 )
+        public char PeekChar(int offset = 0)
         {
-            if ( pos + offset >= buffer.Length )
+            if (pos + offset >= buffer.Length)
             {
                 return EofChar;
             }
             else
             {
-                return buffer[ pos + offset ];
+                return buffer[pos + offset];
             }
         }
 
@@ -112,10 +112,10 @@ namespace Kiezel
         }
 
         [Lisp]
-        public object Read( object eofValue = null )
+        public object Read(object eofValue = null)
         {
             object obj;
-            while ( ( obj = MaybeRead( eofValue ) ) == VOID.Value )
+            while ((obj = MaybeRead(eofValue)) == VOID.Value)
             {
             }
             return obj;
@@ -132,16 +132,16 @@ namespace Kiezel
                 scanning = true;
 
                 var v = new Vector();
-                while ( true )
+                while (true)
                 {
                     var start = pos;
-                    object obj = MaybeRead( eofValue );
-                    if ( obj == eofValue )
+                    object obj = MaybeRead(eofValue);
+                    if (obj == eofValue)
                     {
                         break;
                     }
                     var end = pos;
-                    v.Add( buffer.Substring( start, end - start ).Trim() );
+                    v.Add(buffer.Substring(start, end - start).Trim());
                 }
                 return v;
             }
@@ -155,21 +155,21 @@ namespace Kiezel
         [Lisp]
         public Vector ReadAll()
         {
-            return Runtime.AsVector( this );
+            return Runtime.AsVector(this);
         }
 
         [Lisp]
         public char ReadChar()
         {
             var chr = PeekChar();
-            SkipChars( 1 );
+            SkipChars(1);
             return chr;
         }
 
         [Lisp]
-        public Cons ReadDelimitedList( string terminator )
+        public Cons ReadDelimitedList(string terminator)
         {
-            while ( true )
+            while (true)
             {
                 if (insertedForms == null)
                 {
@@ -184,10 +184,10 @@ namespace Kiezel
                     }
                 }
                 var first = MaybeRead();
-                if ( first != VOID.Value )
+                if (first != VOID.Value)
                 {
-                    var rest = ( Cons ) ReadDelimitedList( terminator );
-                    return Runtime.MakeCons( first, rest );
+                    var rest = (Cons)ReadDelimitedList(terminator);
+                    return Runtime.MakeCons(first, rest);
                 }
             }
         }
@@ -198,14 +198,14 @@ namespace Kiezel
             var start = pos;
             char code;
 
-            while ( ( code = ReadChar() ) != EofChar )
+            while ((code = ReadChar()) != EofChar)
             {
-                if ( code == '\n' )
+                if (code == '\n')
                 {
-                    return buffer.Substring( start, pos - 1 - start );
+                    return buffer.Substring(start, pos - 1 - start);
                 }
             }
-            return buffer.Substring( start, pos - start );
+            return buffer.Substring(start, pos - start);
         }
 
         [Lisp]
@@ -213,43 +213,43 @@ namespace Kiezel
         {
             var buf = new StringBuilder();
 
-            while ( true )
+            while (true)
             {
                 var code = PeekChar();
-                var item = GetEntry( code );
+                var item = GetEntry(code);
 
-                if ( item.Type == CharacterType.SingleEscape )
+                if (item.Type == CharacterType.SingleEscape)
                 {
-                    if ( PeekChar( 1 ) == EofChar )
+                    if (PeekChar(1) == EofChar)
                     {
-                        throw MakeScannerException( "EOF: expected character after '{0}'", item.Character );
+                        throw MakeScannerException("EOF: expected character after '{0}'", item.Character);
                     }
 
-                    buf.Append( PeekChar( 1 ) );
-                    SkipChars( 2 );
+                    buf.Append(PeekChar(1));
+                    SkipChars(2);
                 }
-                else if ( item.Type == CharacterType.MultipleEscape )
+                else if (item.Type == CharacterType.MultipleEscape)
                 {
-                    while ( true )
+                    while (true)
                     {
-                        SkipChars( 1 );
+                        SkipChars(1);
                         var code2 = PeekChar();
-                        if ( code2 == EofChar )
+                        if (code2 == EofChar)
                         {
-                            throw MakeScannerException( "EOF: expected character '{0}'", item.Character );
+                            throw MakeScannerException("EOF: expected character '{0}'", item.Character);
                         }
-                        if ( code2 == code )
+                        if (code2 == code)
                         {
-                            SkipChars( 1 );
+                            SkipChars(1);
                             break;
                         }
-                        buf.Append( code2 );
+                        buf.Append(code2);
                     }
                 }
-                else if ( item.Type == CharacterType.Constituent || item.Type == CharacterType.NonTerminatingMacro )
+                else if (item.Type == CharacterType.Constituent || item.Type == CharacterType.NonTerminatingMacro)
                 {
-                    buf.Append( code );
-                    SkipChars( 1 );
+                    buf.Append(code);
+                    SkipChars(1);
                 }
                 else
                 {
@@ -259,9 +259,9 @@ namespace Kiezel
 
             var token = buf.ToString();
 
-            if ( token == "" )
+            if (token == "")
             {
-                throw MakeScannerException( "Empty token???" );
+                throw MakeScannerException("Empty token???");
             }
 
             return token;
@@ -271,28 +271,28 @@ namespace Kiezel
         public string ReadWhitespace()
         {
             var start = pos;
-            while ( true )
+            while (true)
             {
                 var code = PeekChar();
-                var item = GetEntry( code );
-                if ( item.Type != CharacterType.Whitespace )
+                var item = GetEntry(code);
+                if (item.Type != CharacterType.Whitespace)
                 {
                     break;
                 }
-                SkipChars( 1 );
+                SkipChars(1);
             }
-            return buffer.Substring( start, pos - start );
+            return buffer.Substring(start, pos - start);
         }
 
         [Lisp]
-        public void SkipChars( int count )
+        public void SkipChars(int count)
         {
-            while ( count-- > 0 && pos < buffer.Length )
+            while (count-- > 0 && pos < buffer.Length)
             {
                 ++pos;
                 ++col;
 
-                if ( buffer[ pos - 1 ] == '\n' )
+                if (buffer[pos - 1] == '\n')
                 {
                     ++line;
                     linePos = pos;
@@ -302,53 +302,53 @@ namespace Kiezel
         }
 
         [Lisp]
-        public bool TryTakeChars( string str )
+        public bool TryTakeChars(string str)
         {
-            for ( int i = 0; i < str.Length; ++i )
+            for (int i = 0; i < str.Length; ++i)
             {
-                if ( PeekChar( i ) != str[ i ] )
+                if (PeekChar(i) != str[i])
                 {
                     return false;
                 }
             }
 
-            SkipChars( str.Length );
+            SkipChars(str.Length);
             return true;
         }
 
-        internal int GrepShortLambdaParameters( Cons form )
+        public int GrepShortLambdaParameters(Cons form)
         {
             var last = 0;
 
-            if ( form != null )
+            if (form != null)
             {
-                for ( var head = form; head != null; head = head.Cdr )
+                for (var head = form; head != null; head = head.Cdr)
                 {
                     var sym = head.Car as Symbol;
                     var seq = head.Car as Cons;
                     var index = -1;
 
-                    if ( sym != null )
+                    if (sym != null)
                     {
-                        var position = Runtime.Position( sym, Symbols.ShortLambdaVariables );
-                        if ( position != null )
+                        var position = Runtime.Position(sym, Symbols.ShortLambdaVariables);
+                        if (position != null)
                         {
-                            index = ( int ) position;
-                            if ( index == 0 )
+                            index = (int)position;
+                            if (index == 0)
                             {
                                 index = 1;
-                                head.Car = Symbols.ShortLambdaVariables[ index ];
+                                head.Car = Symbols.ShortLambdaVariables[index];
                             }
                         }
                     }
-                    else if ( seq != null )
+                    else if (seq != null)
                     {
-                        index = GrepShortLambdaParameters( seq );
+                        index = GrepShortLambdaParameters(seq);
                     }
 
-                    if ( index != -1 )
+                    if (index != -1)
                     {
-                        last = ( last < index ) ? index : last;
+                        last = (last < index) ? index : last;
                     }
                 }
             }
@@ -356,26 +356,26 @@ namespace Kiezel
             return last;
         }
 
-        internal LispException MakeScannerException( string message )
+        public LispException MakeScannerException(string message)
         {
             int lineStart = linePos;
             int lineEnd = linePos;
-            while ( lineEnd < buffer.Length && buffer[ lineEnd ] != '\n' )
+            while (lineEnd < buffer.Length && buffer[lineEnd] != '\n')
             {
                 ++lineEnd;
             }
-            string lineData = buffer.Substring( lineStart, lineEnd - lineStart );
-            return new LispException( "Line {0} column {1}: {2}\n{3}", line + 1, col, lineData, message );
+            string lineData = buffer.Substring(lineStart, lineEnd - lineStart);
+            return new LispException("Line {0} column {1}: {2}\n{3}", line + 1, col, lineData, message);
         }
 
-        internal LispException MakeScannerException( string fmt, params object[] args )
+        public LispException MakeScannerException(string fmt, params object[] args)
         {
-            return MakeScannerException( string.Format( fmt, args ) );
+            return MakeScannerException(string.Format(fmt, args));
         }
 
-        internal object MaybeRead( object eofValue = null )
+        public object MaybeRead(object eofValue = null)
         {
-            if ( insertedForms != null )
+            if (insertedForms != null)
             {
                 var obj = insertedForms.Car;
                 insertedForms = insertedForms.Cdr;
@@ -385,34 +385,34 @@ namespace Kiezel
             ReadWhitespace();
 
             var code = PeekChar();
-            var item = GetEntry( code );
+            var item = GetEntry(code);
 
-            if ( item.Type == CharacterType.EOF )
+            if (item.Type == CharacterType.EOF)
             {
                 return eofValue;
             }
 
-            if ( item.Type == CharacterType.TerminatingMacro || item.Type == CharacterType.NonTerminatingMacro )
+            if (item.Type == CharacterType.TerminatingMacro || item.Type == CharacterType.NonTerminatingMacro)
             {
-                if ( item.DispatchReadtable == null )
+                if (item.DispatchReadtable == null)
                 {
-                    if ( item.Handler == null )
+                    if (item.Handler == null)
                     {
-                        throw MakeScannerException( "Invalid character: '{0}'", code );
+                        throw MakeScannerException("Invalid character: '{0}'", code);
                     }
                     else
                     {
-                        SkipChars( 1 );
-                        return item.Handler( this, code );
+                        SkipChars(1);
+                        return item.Handler(this, code);
                     }
                 }
                 else
                 {
-                    SkipChars( 1 );
+                    SkipChars(1);
                     var arg = ReadDecimalArg();
                     string key = null;
                     ReadtableHandler2 handler2 = null;
-                    foreach ( var pair in item.DispatchReadtable )
+                    foreach (var pair in item.DispatchReadtable)
                     {
                         if (TryTakeChars(pair.Key))
                         {
@@ -421,9 +421,9 @@ namespace Kiezel
                             break;
                         }
                     }
-                    if ( handler2 != null )
+                    if (handler2 != null)
                     {
-                        return handler2( this, key, arg );
+                        return handler2(this, key, arg);
                     }
                     else
                     {
@@ -437,126 +437,126 @@ namespace Kiezel
             object numberValue;
             object timespan;
 
-            if ( scanning || symbolSuppression > 0 )
+            if (scanning || symbolSuppression > 0)
             {
                 return null;
             }
-            else if ( ( numberValue = token.TryParseNumber() ) != null )
+            else if ((numberValue = token.TryParseNumber()) != null)
             {
                 return numberValue;
             }
-            else if ( ( timespan = token.TryParseTime() ) != null )
+            else if ((timespan = token.TryParseTime()) != null)
             {
                 return timespan;
             }
-            else if ( token == "true" )
+            else if (token == "true")
             {
                 return true;
             }
-            else if ( token == "false" )
+            else if (token == "false")
             {
                 return false;
             }
-            else if ( token == "null" )
+            else if (token == "null")
             {
                 return null;
             }
-            else if ( token.Length > 1 && token[ 0 ] == '.' )
+            else if (token.Length > 1 && token[0] == '.')
             {
                 // .a.b.c maps to ( . "a" "b" "c" )
-                return Runtime.MakeList( Symbols.Dot, token.Substring( 1 ) );
+                return Runtime.MakeList(Symbols.Dot, token.Substring(1));
             }
-            else if ( token.Length > 1 && token[ 0 ] == '?' )
+            else if (token.Length > 1 && token[0] == '?')
             {
                 // ?a.b.c maps to ( ? "a" "b" "c" )
-                return Runtime.MakeList( Symbols.NullableDot, token.Substring( 1 ) );
+                return Runtime.MakeList(Symbols.NullableDot, token.Substring(1));
             }
             else
             {
-                return Runtime.FindSymbol( token, prettyPrinting: prettyPrinting );
+                return Runtime.FindSymbol(token, prettyPrinting: prettyPrinting);
             }
         }
 
-        internal string ParseDocString( string terminator )
+        public string ParseDocString(string terminator)
         {
             // """..."""
             char ch;
             var buf = new StringWriter();
 
-            while ( true )
+            while (true)
             {
-                ch = PeekChar( 0 );
+                ch = PeekChar(0);
 
-                if ( ch == EofChar )
+                if (ch == EofChar)
                 {
-                    throw MakeScannerException( "EOF: Unterminated string" );
+                    throw MakeScannerException("EOF: Unterminated string");
                 }
 
                 bool haveSeparator = true;
 
-                for ( int i = 0; i < terminator.Length; ++i )
+                for (int i = 0; i < terminator.Length; ++i)
                 {
-                    if ( PeekChar( i ) != terminator[ i ] )
+                    if (PeekChar(i) != terminator[i])
                     {
                         haveSeparator = false;
                         break;
                     }
                 }
 
-                if ( haveSeparator )
+                if (haveSeparator)
                 {
-                    SkipChars( terminator.Length );
+                    SkipChars(terminator.Length);
                     break;
                 }
                 else
                 {
-                    buf.Write( ch );
-                    SkipChars( 1 );
+                    buf.Write(ch);
+                    SkipChars(1);
                 }
             }
 
             return buf.ToString();
         }
 
-        internal object ParseInfixExpression()
+        public object ParseInfixExpression()
         {
             var str = ReadInfixExpressionString();
-            var code = Infix.CompileString( str );
-            InsertForm( code );
+            var code = Infix.CompileString(str);
+            InsertForm(code);
             return VOID.Value;
         }
 
-        internal object ParseLambdaCharacter()
+        public object ParseLambdaCharacter()
         {
             var buf = new Vector();
 
-            while ( Char.IsLetter( PeekChar() ) )
+            while (Char.IsLetter(PeekChar()))
             {
-                buf.Add( Runtime.FindSymbol( new string( PeekChar(), 1 ) ) );
-                SkipChars( 1 );
+                buf.Add(Runtime.FindSymbol(new string(PeekChar(), 1)));
+                SkipChars(1);
             }
 
             var lastChar = PeekChar();
-            var item = GetEntry( lastChar );
+            var item = GetEntry(lastChar);
 
-            if ( lastChar == '.' )
+            if (lastChar == '.')
             {
-                SkipChars( 1 );
-                InsertForm( Runtime.AsList( buf ) );
+                SkipChars(1);
+                InsertForm(Runtime.AsList(buf));
             }
-            else if ( item.Type == CharacterType.Constituent || item.Type == CharacterType.NonTerminatingMacro )
+            else if (item.Type == CharacterType.Constituent || item.Type == CharacterType.NonTerminatingMacro)
             {
-                throw MakeScannerException( "Invalid single-letter variable name in {0}: {1}", Runtime.LambdaCharacter, lastChar );
+                throw MakeScannerException("Invalid single-letter variable name in {0}: {1}", Runtime.LambdaCharacter, lastChar);
             }
-            else if ( buf.Count != 0 )
+            else if (buf.Count != 0)
             {
-                InsertForm( Runtime.AsList( buf ) );
+                InsertForm(Runtime.AsList(buf));
             }
 
             return Symbols.GreekLambda;
         }
 
-        internal string ParseMultiLineString()
+        public string ParseMultiLineString()
         {
             // @"..."
             // supports double double quote escape
@@ -565,39 +565,39 @@ namespace Kiezel
             char ch;
             StringBuilder buf = new StringBuilder();
 
-            while ( true )
+            while (true)
             {
-                ch = PeekChar( 0 );
+                ch = PeekChar(0);
 
-                if ( ch == EofChar )
+                if (ch == EofChar)
                 {
-                    throw MakeScannerException( "EOF: Unterminated string" );
+                    throw MakeScannerException("EOF: Unterminated string");
                 }
 
-                if ( ch == '"' )
+                if (ch == '"')
                 {
-                    if ( PeekChar( 1 ) == '"' )
+                    if (PeekChar(1) == '"')
                     {
-                        buf.Append( ch );
-                        SkipChars( 2 );
+                        buf.Append(ch);
+                        SkipChars(2);
                     }
                     else
                     {
-                        SkipChars( 1 );
+                        SkipChars(1);
                         break;
                     }
                 }
                 else
                 {
-                    buf.Append( ch );
-                    SkipChars( 1 );
+                    buf.Append(ch);
+                    SkipChars(1);
                 }
             }
 
             return buf.ToString();
         }
 
-        internal string ExtractMultiLineStringForm()
+        public string ExtractMultiLineStringForm()
         {
             // @"..."
             // supports double double quote escape
@@ -606,112 +606,112 @@ namespace Kiezel
             char ch;
             StringBuilder buf = new StringBuilder();
 
-            while ( true )
+            while (true)
             {
-                ch = PeekChar( 0 );
+                ch = PeekChar(0);
 
-                if ( ch == EofChar )
+                if (ch == EofChar)
                 {
-                    throw MakeScannerException( "EOF: Unterminated string" );
+                    throw MakeScannerException("EOF: Unterminated string");
                 }
 
-                if ( ch == '"' )
+                if (ch == '"')
                 {
-                    if ( PeekChar( 1 ) == '"' )
+                    if (PeekChar(1) == '"')
                     {
-                        buf.Append( ch );
-                        buf.Append( ch );
-                        SkipChars( 2 );
+                        buf.Append(ch);
+                        buf.Append(ch);
+                        SkipChars(2);
                     }
                     else
                     {
-                        SkipChars( 1 );
+                        SkipChars(1);
                         break;
                     }
                 }
                 else
                 {
-                    buf.Append( ch );
-                    SkipChars( 1 );
+                    buf.Append(ch);
+                    SkipChars(1);
                 }
             }
 
             return "@\"" + buf.ToString() + "\"";
         }
 
-        internal Regex ParseRegexString( char terminator )
+        public Regex ParseRegexString(char terminator)
         {
             // #/.../
 
             char ch;
             StringBuilder buf = new StringBuilder();
 
-            while ( true )
+            while (true)
             {
-                ch = PeekChar( 0 );
+                ch = PeekChar(0);
 
-                if ( ch == '\n' || ch == EofChar )
+                if (ch == '\n' || ch == EofChar)
                 {
-                    throw MakeScannerException( "EOF: Unterminated string" );
+                    throw MakeScannerException("EOF: Unterminated string");
                 }
 
-                if ( ch == terminator )
+                if (ch == terminator)
                 {
-                    if ( PeekChar( 1 ) == terminator )
+                    if (PeekChar(1) == terminator)
                     {
-                        buf.Append( ch );
-                        SkipChars( 2 );
+                        buf.Append(ch);
+                        SkipChars(2);
                     }
                     else
                     {
-                        SkipChars( 1 );
+                        SkipChars(1);
                         break;
                     }
                 }
                 else
                 {
-                    buf.Append( ch );
-                    SkipChars( 1 );
+                    buf.Append(ch);
+                    SkipChars(1);
                 }
             }
 
             var options = RegexOptions.None;
             var wildcard = false;
 
-            while ( true )
+            while (true)
             {
-                ch = PeekChar( 0 );
-                if ( Char.IsLetter( ch ) )
+                ch = PeekChar(0);
+                if (Char.IsLetter(ch))
                 {
-                    switch ( ch )
+                    switch (ch)
                     {
                         case 'i':
                         {
                             options |= RegexOptions.IgnoreCase;
-                            SkipChars( 1 );
+                            SkipChars(1);
                             break;
                         }
                         case 's':
                         {
                             options |= RegexOptions.Singleline;
-                            SkipChars( 1 );
+                            SkipChars(1);
                             break;
                         }
                         case 'm':
                         {
                             options |= RegexOptions.Multiline;
-                            SkipChars( 1 );
+                            SkipChars(1);
                             break;
                         }
                         case 'w':
                         {
                             wildcard = true;
-                            SkipChars( 1 );
+                            SkipChars(1);
                             break;
                         }
                         default:
                         {
-                            throw MakeScannerException( "invalid regular expresssion option" );
+                            throw MakeScannerException("invalid regular expresssion option");
                         }
                     }
                 }
@@ -722,24 +722,24 @@ namespace Kiezel
             }
 
             var pattern = buf.ToString();
-            if ( wildcard )
+            if (wildcard)
             {
-                pattern = StringExtensions.MakeWildcardRegexString( pattern );
+                pattern = StringExtensions.MakeWildcardRegexString(pattern);
             }
-            return new RegexPlus( pattern, options );
+            return new RegexPlus(pattern, options);
         }
 
-        internal object ParseShortLambdaExpression( string delimiter )
+        public object ParseShortLambdaExpression(string delimiter)
         {
             // The list is treated as a form!
-            var form = ReadDelimitedList( delimiter );
-            var lastIndex = GrepShortLambdaParameters( form );
-            var args = Runtime.AsList( Symbols.ShortLambdaVariables.Skip( 1 ).Take( lastIndex ) );
-            var code = Runtime.MakeList( Symbols.Lambda, args, form );
+            var form = ReadDelimitedList(delimiter);
+            var lastIndex = GrepShortLambdaParameters(form);
+            var args = Runtime.AsList(Symbols.ShortLambdaVariables.Skip(1).Take(lastIndex));
+            var code = Runtime.MakeList(Symbols.Lambda, args, form);
             return code;
         }
 
-        internal string ParseSingleLineString()
+        public string ParseSingleLineString()
         {
             // supports backsslash escapes
             // single line
@@ -747,72 +747,72 @@ namespace Kiezel
             char ch;
             StringBuilder buf = new StringBuilder();
 
-            while ( true )
+            while (true)
             {
-                ch = PeekChar( 0 );
+                ch = PeekChar(0);
 
-                if ( ch == '\n' || ch == EofChar )
+                if (ch == '\n' || ch == EofChar)
                 {
-                    throw MakeScannerException( "EOF: Unterminated string" );
+                    throw MakeScannerException("EOF: Unterminated string");
                 }
 
-                if ( ch == '"' )
+                if (ch == '"')
                 {
-                    SkipChars( 1 );
+                    SkipChars(1);
                     break;
                 }
 
-                if ( ch == '\\' )
+                if (ch == '\\')
                 {
-                    SkipChars( 1 );
-                    ch = PeekChar( 0 );
+                    SkipChars(1);
+                    ch = PeekChar(0);
 
-                    if ( ch == EofChar )
+                    if (ch == EofChar)
                     {
-                        throw MakeScannerException( "EOF: Unterminated string" );
+                        throw MakeScannerException("EOF: Unterminated string");
                     }
 
-                    switch ( ch )
+                    switch (ch)
                     {
                         case 'x':
                         {
-                            char ch1 = PeekChar( 1 );
-                            char ch2 = PeekChar( 2 );
-                            SkipChars( 1 + 2 );
-                            int n = ( int ) Number.ParseNumberBase( new string( new char[] { ch1, ch2 } ), 16 );
-                            buf.Append( Convert.ToChar( n ) );
+                            char ch1 = PeekChar(1);
+                            char ch2 = PeekChar(2);
+                            SkipChars(1 + 2);
+                            int n = (int)Number.ParseNumberBase(new string(new char[] { ch1, ch2 }), 16);
+                            buf.Append(Convert.ToChar(n));
                             break;
                         }
                         case 'u':
                         {
-                            char ch1 = PeekChar( 1 );
-                            char ch2 = PeekChar( 2 );
-                            char ch3 = PeekChar( 3 );
-                            char ch4 = PeekChar( 4 );
-                            SkipChars( 1 + 4 );
-                            int n = ( int ) Number.ParseNumberBase( new string( new char[] { ch1, ch2, ch3, ch4 } ), 16 );
-                            buf.Append( Convert.ToChar( n ) );
+                            char ch1 = PeekChar(1);
+                            char ch2 = PeekChar(2);
+                            char ch3 = PeekChar(3);
+                            char ch4 = PeekChar(4);
+                            SkipChars(1 + 4);
+                            int n = (int)Number.ParseNumberBase(new string(new char[] { ch1, ch2, ch3, ch4 }), 16);
+                            buf.Append(Convert.ToChar(n));
                             break;
                         }
                         default:
                         {
-                            buf.Append( Runtime.UnescapeCharacter( ch ) );
-                            SkipChars( 1 );
+                            buf.Append(Runtime.UnescapeCharacter(ch));
+                            SkipChars(1);
                             break;
                         }
                     }
                 }
                 else
                 {
-                    buf.Append( ch );
-                    SkipChars( 1 );
+                    buf.Append(ch);
+                    SkipChars(1);
                 }
             }
 
             return buf.ToString();
         }
 
-        internal string ExtractSingleLineStringForm()
+        public string ExtractSingleLineStringForm()
         {
             // supports backsslash escapes
             // single line
@@ -820,127 +820,127 @@ namespace Kiezel
             char ch;
             StringBuilder buf = new StringBuilder();
 
-            while ( true )
+            while (true)
             {
-                ch = PeekChar( 0 );
+                ch = PeekChar(0);
 
-                if ( ch == '\n' || ch == EofChar )
+                if (ch == '\n' || ch == EofChar)
                 {
-                    throw MakeScannerException( "EOF: Unterminated string" );
+                    throw MakeScannerException("EOF: Unterminated string");
                 }
 
-                if ( ch == '"' )
+                if (ch == '"')
                 {
-                    SkipChars( 1 );
+                    SkipChars(1);
                     break;
                 }
 
-                if ( ch == '\\' )
+                if (ch == '\\')
                 {
-                    buf.Append( ch );
-                    SkipChars( 1 );
-                    ch = PeekChar( 0 );
+                    buf.Append(ch);
+                    SkipChars(1);
+                    ch = PeekChar(0);
 
-                    if ( ch == EofChar )
+                    if (ch == EofChar)
                     {
-                        throw MakeScannerException( "EOF: Unterminated string" );
+                        throw MakeScannerException("EOF: Unterminated string");
                     }
 
-                    switch ( ch )
+                    switch (ch)
                     {
                         case 'x':
                         {
-                            char ch1 = PeekChar( 1 );
-                            char ch2 = PeekChar( 2 );
-                            SkipChars( 1 + 2 );
-                            buf.Append( ch );
-                            buf.Append( ch1 );
-                            buf.Append( ch2 );
+                            char ch1 = PeekChar(1);
+                            char ch2 = PeekChar(2);
+                            SkipChars(1 + 2);
+                            buf.Append(ch);
+                            buf.Append(ch1);
+                            buf.Append(ch2);
                             break;
                         }
                         case 'u':
                         {
-                            char ch1 = PeekChar( 1 );
-                            char ch2 = PeekChar( 2 );
-                            char ch3 = PeekChar( 3 );
-                            char ch4 = PeekChar( 4 );
-                            SkipChars( 1 + 4 );
-                            buf.Append( ch );
-                            buf.Append( ch1 );
-                            buf.Append( ch2 );
-                            buf.Append( ch3 );
-                            buf.Append( ch4 );
+                            char ch1 = PeekChar(1);
+                            char ch2 = PeekChar(2);
+                            char ch3 = PeekChar(3);
+                            char ch4 = PeekChar(4);
+                            SkipChars(1 + 4);
+                            buf.Append(ch);
+                            buf.Append(ch1);
+                            buf.Append(ch2);
+                            buf.Append(ch3);
+                            buf.Append(ch4);
                             break;
                         }
                         default:
                         {
-                            buf.Append( ch );
-                            SkipChars( 1 );
+                            buf.Append(ch);
+                            SkipChars(1);
                             break;
                         }
                     }
                 }
                 else
                 {
-                    buf.Append( ch );
-                    SkipChars( 1 );
+                    buf.Append(ch);
+                    SkipChars(1);
                 }
             }
 
             return buf.ToString();
         }
 
-        internal string ParseSpecialString()
+        public string ParseSpecialString()
         {
             var begin = PeekChar();
             var terminator = "";
 
-            switch ( begin )
+            switch (begin)
             {
                 case '(':
                 {
-                    SkipChars( 1 );
+                    SkipChars(1);
                     terminator = ")";
                     break;
                 }
                 case '{':
                 {
-                    SkipChars( 1 );
+                    SkipChars(1);
                     terminator = "}";
                     break;
                 }
                 case '[':
                 {
-                    SkipChars( 1 );
+                    SkipChars(1);
                     terminator = "]";
                     break;
                 }
                 case '<':
                 {
-                    SkipChars( 1 );
+                    SkipChars(1);
                     terminator = ">";
                     break;
                 }
                 default:
                 {
                     terminator = ReadLine().Trim();
-                    if ( terminator == "" )
+                    if (terminator == "")
                     {
-                        MakeScannerException( "No terminator after #q expression" );
+                        MakeScannerException("No terminator after #q expression");
                     }
                     break;
                 }
             }
 
-            return ParseDocString( terminator );
+            return ParseDocString(terminator);
         }
 
-        internal string ExtractSpecialStringForm()
+        public string ExtractSpecialStringForm()
         {
             var begin = ReadChar();
             var end = ' ';
 
-            switch ( begin )
+            switch (begin)
             {
                 case '(':
                 {
@@ -969,14 +969,14 @@ namespace Kiezel
                 }
             }
 
-            return begin + ParseDocString( new string( end, 1 ) ) + end;
+            return begin + ParseDocString(new string(end, 1)) + end;
         }
 
-        internal string ParseString()
+        public string ParseString()
         {
-            if ( TryTakeChars( "\"\"" ) )
+            if (TryTakeChars("\"\""))
             {
-                return ParseDocString( "\"\"\"" );
+                return ParseDocString("\"\"\"");
             }
             else
             {
@@ -984,51 +984,51 @@ namespace Kiezel
             }
         }
 
-        internal string ExtractStringForm()
+        public string ExtractStringForm()
         {
-            if ( TryTakeChars( "\"\"" ) )
+            if (TryTakeChars("\"\""))
             {
-                return "\"\"\"" + ParseDocString( "\"\"\"" ) + "\"\"\"";
+                return "\"\"\"" + ParseDocString("\"\"\"") + "\"\"\"";
             }
             else
             {
-                return "\""+ ExtractSingleLineStringForm() + "\"";
+                return "\"" + ExtractSingleLineStringForm() + "\"";
             }
         }
 
-        internal string ReadBlockComment( string startDelimiter, string endDelimiter )
+        public string ReadBlockComment(string startDelimiter, string endDelimiter)
         {
             var start = pos - startDelimiter.Length;
             var nesting = 1;
 
-            while ( PeekChar() != EofChar )
+            while (PeekChar() != EofChar)
             {
-                if ( TryTakeChars( startDelimiter ) )
+                if (TryTakeChars(startDelimiter))
                 {
                     ++nesting;
                 }
-                else if ( TryTakeChars( endDelimiter ) )
+                else if (TryTakeChars(endDelimiter))
                 {
-                    if ( --nesting == 0 )
+                    if (--nesting == 0)
                     {
                         break;
                     }
                 }
                 else
                 {
-                    SkipChars( 1 );
+                    SkipChars(1);
                 }
             }
 
-            if ( nesting != 0 )
+            if (nesting != 0)
             {
-                throw MakeScannerException( "EOF: Unterminated comment" );
+                throw MakeScannerException("EOF: Unterminated comment");
             }
 
-            return buffer.Substring( start, pos - start );
+            return buffer.Substring(start, pos - start);
         }
 
-        internal string ReadInfixExpressionString()
+        public string ReadInfixExpressionString()
         {
             char ch;
             StringBuilder buf = new StringBuilder();
@@ -1040,27 +1040,27 @@ namespace Kiezel
             //   throw MakeScannerException( "EOF: infix expression must begin with a '('" );
             //}
 
-            while ( true )
+            while (true)
             {
-                ch = PeekChar( 0 );
+                ch = PeekChar(0);
 
-                if ( ch == EofChar )
+                if (ch == EofChar)
                 {
-                    throw MakeScannerException( "EOF: Unterminated infix expression" );
+                    throw MakeScannerException("EOF: Unterminated infix expression");
                 }
 
-                SkipChars( 1 );
+                SkipChars(1);
 
-                buf.Append( ch );
+                buf.Append(ch);
 
-                if ( ch == '(' )
+                if (ch == '(')
                 {
                     ++count;
                 }
-                else if ( ch == ')' )
+                else if (ch == ')')
                 {
                     --count;
-                    if ( count == 0 )
+                    if (count == 0)
                     {
                         break;
                     }
@@ -1070,7 +1070,7 @@ namespace Kiezel
             return buf.ToString();
         }
 
-        internal object ReadSuppressed()
+        public object ReadSuppressed()
         {
             try
             {
@@ -1083,41 +1083,41 @@ namespace Kiezel
             }
         }
 
-        internal void SkipLineComment()
+        public void SkipLineComment()
         {
             ReadLine();
         }
 
-        internal void UnreadChar()
+        public void UnreadChar()
         {
-            if ( pos > 0 )
+            if (pos > 0)
             {
                 --pos;
             }
         }
 
-        private ReadtableEntry GetEntry( char ch )
+        private ReadtableEntry GetEntry(char ch)
         {
-            var readTable = ( Readtable ) Runtime.GetDynamic( Symbols.Readtable );
-            return readTable.GetEntry( ch );
+            var readTable = (Readtable)Runtime.GetDynamic(Symbols.Readtable);
+            return readTable.GetEntry(ch);
         }
 
         private int ReadDecimalArg()
         {
             int arg = -1;
-            while ( true )
+            while (true)
             {
                 var ch = PeekChar();
-                if ( ch == EofChar || !char.IsDigit( ( char ) ch ) )
+                if (ch == EofChar || !char.IsDigit((char)ch))
                 {
                     break;
                 }
-                if ( arg == -1 )
+                if (arg == -1)
                 {
                     arg = 0;
                 }
-                arg = 10 * arg + ( ch - '0' );
-                SkipChars( 1 );
+                arg = 10 * arg + (ch - '0');
+                SkipChars(1);
             }
             return arg;
         }

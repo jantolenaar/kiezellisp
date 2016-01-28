@@ -6,19 +6,23 @@
 ;;;
 
 #+(and unix graphical-mode)
-(setq $stdlog "/tmp/stdlog")
+(setq $stderr "/tmp/stdlog")
 
 #+(and windows graphical-mode)
-(setq $stdlog "d:/temp/stdlog")
+(setq $stderr "d:/temp/stdlog")
 
-#+unix
+#if unix
 (let project-path "/home/jan/projects/kiezellisp/")
-
-#+windows
+#elif wine
+(let project-path "z:/home/jan/projects/kiezellisp/")
+#elif windows
 (let project-path "d:/projects/kiezellisp/")
+#endif
 
 (letfun make-path (x)
-    (string project-path x))
+    (if (.starts-with x "/")
+          x
+        (string project-path x)))
 
 (apply set-load-path (map make-path (list
                 "private/lib"
@@ -27,15 +31,13 @@
                 "lib"
                 "app" )))
 
-(setq $load-verbose $interactive-mode)
 (setq $repl-force-it true)
 
 (require "system")
 (require "shell")
 (require "unit-test")
 
-#+windows
-(set-online-help null "http://dev:8802")
+(apply set-help-path (map make-path (list
+                "help" 
+                "/home/jan/documents/help")))
 
-#+unix
-(set-online-help "firefox" "http://dev:8802")

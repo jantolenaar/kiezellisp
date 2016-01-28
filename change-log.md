@@ -1,14 +1,24 @@
 # Change Log
 
+## 2016/01/28
+
+*   Changed most files due to conversion to monodevelop syntax formatter.
+*   Changed `case` and `ecase` macros to evaluate the the cases.
+*   Fixed pretty printing of `case` and `cond` forms.
+*   REPL smart parentheses feature for lines **not** starting with a space.
+*   Redesign of REPL.
+*   Redesign of `man` and `help` functions.
+*   Added `terminal` package with curses like window functions.
+*   Added `about` package with additional help topics.
+
 ## 2015/07/28
 
-*   Added #if, #elif, #else #endif conditional feature to lisp reader.
-*   Added #ignore to lisp reader.
+*   Added `#if`, `#elif`, `#else` and `#endif` conditional feature to lisp reader.
+*   Added `#ignore` to lisp reader.
 
 ## 2015/07/22
 
 *   Fixed online help on linux/windows.
-
 
 ## 2015/07/15
 

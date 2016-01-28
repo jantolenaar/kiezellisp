@@ -8,26 +8,27 @@ namespace Kiezel
 {
     public class Cons : IEnumerable, IPrintsValue
     {
-        internal static Cons EMPTY = new Cons();
+        public static Cons EMPTY = new Cons();
         internal object car;
         internal object cdr;
-        internal Cons()
+
+        public Cons()
         {
             car = null;
             cdr = this;
         }
 
-        internal Cons( object first, object second )
+        public Cons(object first, object second)
         {
             car = first;
             cdr = second;
         }
 
-        internal object Car
+        public object Car
         {
             get
             {
-                if ( this == Cons.EMPTY )
+                if (this == Cons.EMPTY)
                 {
                     return null;
                 }
@@ -38,9 +39,9 @@ namespace Kiezel
             }
             set
             {
-                if ( this == Cons.EMPTY )
+                if (this == Cons.EMPTY)
                 {
-                    throw new LispException( "Cannot set car of empty list" );
+                    throw new LispException("Cannot set car of empty list");
                 }
                 else
                 {
@@ -49,33 +50,33 @@ namespace Kiezel
             }
         }
 
-        internal Cons Cdr
+        public Cons Cdr
         {
             get
             {
-                if ( this == Cons.EMPTY )
+                if (this == Cons.EMPTY)
                 {
                     return this;
                 }
 
-                if ( cdr is IEnumerator )
+                if (cdr is IEnumerator)
                 {
-                    cdr = Runtime.MakeCons( ( IEnumerator ) cdr );
+                    cdr = Runtime.MakeCons((IEnumerator)cdr);
                 }
-                else if ( cdr is DelayedExpression )
+                else if (cdr is DelayedExpression)
                 {
-                    cdr = Runtime.Force( cdr );
+                    cdr = Runtime.Force(cdr);
                 }
 
-                return ( Cons ) cdr;
+                return (Cons)cdr;
             }
             set
             {
-                if ( this == Cons.EMPTY )
+                if (this == Cons.EMPTY)
                 {
-                    throw new LispException( "Cannot set cdr of empty list" );
+                    throw new LispException("Cannot set cdr of empty list");
                 }
-                else if ( value == Cons.EMPTY )
+                else if (value == Cons.EMPTY)
                 {
                     cdr = null;
                 }
@@ -86,13 +87,13 @@ namespace Kiezel
             }
         }
 
-        internal int Count
+        public int Count
         {
             get
             {
                 int count = 0;
                 Cons list = this;
-                while ( list != null )
+                while (list != null)
                 {
                     ++count;
                     list = list.Cdr;
@@ -101,7 +102,7 @@ namespace Kiezel
             }
         }
 
-        internal bool Forced
+        public bool Forced
         {
             get
             {
@@ -109,21 +110,21 @@ namespace Kiezel
             }
         }
 
-        public object this[ int index ]
+        public object this [int index]
         {
             get
             {
                 int n = index;
                 Cons list = this;
 
-                if ( n < 0 )
+                if (n < 0)
                 {
                     throw new IndexOutOfRangeException();
                 }
 
-                while ( n-- > 0 )
+                while (n-- > 0)
                 {
-                    if ( list == null )
+                    if (list == null)
                     {
                         return null;
                     }
@@ -131,7 +132,7 @@ namespace Kiezel
                     list = list.Cdr;
                 }
 
-                if ( list == null )
+                if (list == null)
                 {
                     return null;
                 }
@@ -146,14 +147,14 @@ namespace Kiezel
                 int n = index;
                 Cons list = this;
 
-                if ( n < 0 )
+                if (n < 0)
                 {
                     throw new IndexOutOfRangeException();
                 }
 
-                while ( n-- > 0 )
+                while (n-- > 0)
                 {
-                    if ( list == null )
+                    if (list == null)
                     {
                         throw new IndexOutOfRangeException();
                     }
@@ -161,7 +162,7 @@ namespace Kiezel
                     list = list.Cdr;
                 }
 
-                if ( list == null )
+                if (list == null)
                 {
                     throw new IndexOutOfRangeException();
                 }
@@ -174,55 +175,55 @@ namespace Kiezel
 
         IEnumerator IEnumerable.GetEnumerator()
         {
-            return new ListEnumerator( this );
+            return new ListEnumerator(this);
         }
 
         public override string ToString()
         {
-            return ToString( true );
+            return ToString(true);
         }
 
-        //internal static bool printCompact = true;
-        public string ToString( bool escape, int radix = -1 )
+        //public static bool printCompact = true;
+        public string ToString(bool escape, int radix = -1)
         {
-            if ( !( cdr is IEnumerator || cdr is DelayedExpression ) )
+            if (!(cdr is IEnumerator || cdr is DelayedExpression))
             {
-                bool printCompact = Runtime.ToBool( Runtime.GetDynamic( Symbols.PrintCompact ) );
+                bool printCompact = Runtime.ToBool(Runtime.GetDynamic(Symbols.PrintCompact));
 
-                if ( printCompact )
+                if (printCompact)
                 {
-                    var first = Runtime.First( this );
-                    var second = Runtime.Second( this );
-                    var third = Runtime.Third( this );
-                    var fourth = Runtime.Fourth( this );
+                    var first = Runtime.First(this);
+                    var second = Runtime.Second(this);
+                    var third = Runtime.Third(this);
+                    var fourth = Runtime.Fourth(this);
 
-                    if ( first == Symbols.Dot && second is string && third == null )
+                    if (first == Symbols.Dot && second is string && third == null)
                     {
-                        return System.String.Format( ".{0}", second );
+                        return System.String.Format(".{0}", second);
                     }
-                    else if ( first == Symbols.NullableDot && second is string && third == null )
+                    else if (first == Symbols.NullableDot && second is string && third == null)
                     {
-                        return System.String.Format( "?{0}", second );
+                        return System.String.Format("?{0}", second);
                     }
-                    else if ( first == Symbols.Quote && third == null )
+                    else if (first == Symbols.Quote && third == null)
                     {
-                        return System.String.Format( "'{0}", second );
+                        return System.String.Format("'{0}", second);
                     }
-                    else if ( first == Symbols.PrettyReader )
+                    else if (first == Symbols.PrettyReader)
                     {
-                        switch ( ( string ) second )
+                        switch ((string)second)
                         {
                             case "#+":
                             case "#-":
                             {
-                                return System.String.Format( "{0}{1}{2}", second, third, fourth );
+                                return System.String.Format("{0}{1}{2}", second, third, fourth);
                             }
                             case "literally":
                             case "line-comment":
                             case "block-comment":
                             case "string":
                             {
-                                return ( string ) third;
+                                return (string)third;
                             }
                         }
                     }
@@ -231,22 +232,22 @@ namespace Kiezel
 
             var buf = new StringWriter();
 
-            buf.Write( "(" );
+            buf.Write("(");
             Cons list = this;
             bool needcomma = false;
 
-            while ( list != null )
+            while (list != null)
             {
-                if ( needcomma )
+                if (needcomma)
                 {
-                    buf.Write( " " );
+                    buf.Write(" ");
                 }
 
-                buf.Write( Runtime.ToPrintString( list.Car, escape, radix ) );
+                buf.Write(Runtime.ToPrintString(list.Car, escape, radix));
 
-                if ( list.cdr is IEnumerator || list.cdr is DelayedExpression )
+                if (list.cdr is IEnumerator || list.cdr is DelayedExpression)
                 {
-                    buf.Write( " ..." );
+                    buf.Write(" ...");
                     break;
                 }
 
@@ -255,16 +256,16 @@ namespace Kiezel
                 list = list.Cdr;
             }
 
-            buf.Write( ")" );
+            buf.Write(")");
 
             return buf.ToString();
         }
 
-        internal bool Contains( object value )
+        public bool Contains(object value)
         {
-            foreach ( object item in this )
+            foreach (object item in this)
             {
-                if ( Runtime.Equal( item, value ) )
+                if (Runtime.Equal(item, value))
                 {
                     return true;
                 }
@@ -278,7 +279,8 @@ namespace Kiezel
 
             public bool initialized = false;
             public Cons list;
-            public ListEnumerator( Cons list )
+
+            public ListEnumerator(Cons list)
             {
                 this.list = list;
             }
@@ -293,9 +295,9 @@ namespace Kiezel
 
             public bool MoveNext()
             {
-                if ( initialized )
+                if (initialized)
                 {
-                    if ( list == null )
+                    if (list == null)
                     {
                         return false;
                     }
@@ -322,13 +324,13 @@ namespace Kiezel
     public partial class Runtime
     {
  
-        [Lisp( "copy-tree" )]
-        public static object CopyTree( object a )
+        [Lisp("copy-tree")]
+        public static object CopyTree(object a)
         {
-            if ( Consp( a ) )
+            if (Consp(a))
             {
-                var tree = ( Cons ) a;
-                return Runtime.MakeCons( CopyTree( tree.Car ), ( Cons ) CopyTree( tree.Cdr ) );
+                var tree = (Cons)a;
+                return Runtime.MakeCons(CopyTree(tree.Car), (Cons)CopyTree(tree.Cdr));
             }
             else
             {
@@ -336,51 +338,52 @@ namespace Kiezel
             }
         }
 
-        [Lisp( "cons" )]
-        public static Cons MakeCons( object item, Cons list )
+        [Lisp("cons")]
+        public static Cons MakeCons(object item, Cons list)
         {
-            return new Cons( item, list );
+            return new Cons(item, list);
         }
 
-        [Lisp( "cons" )]
-        public static Cons MakeCons( object item, DelayedExpression delayedExpression )
+        [Lisp("cons")]
+        public static Cons MakeCons(object item, DelayedExpression delayedExpression)
         {
-            return new Cons( item, delayedExpression );
-        }
-        [Lisp( "list", "bq:list" )]
-        public static Cons MakeList( params object[] items )
-        {
-            return AsList( items );
+            return new Cons(item, delayedExpression);
         }
 
-        [Lisp( "list*", "bq:list*" )]
-        public static Cons MakeListStar( params object[] items )
+        [Lisp("list", "bq:list")]
+        public static Cons MakeList(params object[] items)
         {
-            if ( items.Length == 0 )
+            return AsList(items);
+        }
+
+        [Lisp("list*", "bq:list*")]
+        public static Cons MakeListStar(params object[] items)
+        {
+            if (items.Length == 0)
             {
                 return null;
             }
 
-            var list = AsLazyList( ( IEnumerable ) items[ items.Length - 1 ] );
+            var list = AsLazyList((IEnumerable)items[items.Length - 1]);
 
-            for ( int i = items.Length - 2; i >= 0; --i )
+            for (int i = items.Length - 2; i >= 0; --i)
             {
-                list = new Cons( items[ i ], list );
+                list = new Cons(items[i], list);
             }
 
             return list;
         }
 
-        internal static Cons MakeCons( object a, IEnumerator seq )
+        public static Cons MakeCons(object a, IEnumerator seq)
         {
-            return new Cons( a, seq );
+            return new Cons(a, seq);
         }
 
-        internal static Cons MakeCons( IEnumerator seq )
+        public static Cons MakeCons(IEnumerator seq)
         {
-            if ( seq != null && seq.MoveNext() )
+            if (seq != null && seq.MoveNext())
             {
-                return new Cons( seq.Current, seq );
+                return new Cons(seq.Current, seq);
             }
             else
             {

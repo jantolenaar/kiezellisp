@@ -1,5 +1,4 @@
 // Copyright (C) Jan Tolenaar. See the file LICENSE for details.
-
 using System.Numerics;
 using System.Text.RegularExpressions;
 
@@ -7,51 +6,53 @@ namespace Kiezel
 {
     public partial class Runtime
     {
-        internal static string[] StringPatterns = new string[]
+        public static string[] StringPatterns = new string[]
         {
             @"\<\%(.*?)\%\>",
             @"\<\!(.*?)\!\>",
             @"\$\{(.*?)\}",
-            @"^~([a-zA-Z0-9-_]*)",
         };
+        public static Regex InterpolationStringPatterns = new Regex("|".Join(StringPatterns), RegexOptions.Singleline);
 
-        internal static Regex InterpolationStringPatterns = new Regex( "|".Join( StringPatterns ), RegexOptions.Singleline );
-
-        internal static bool EvalFeatureExpr( object expr )
+        public static bool EvalFeatureExpr(object expr)
         {
-            if ( expr == null )
+            if (expr == null)
             {
                 return false;
             }
-            else if ( expr is Symbol )
+            else if (expr is bool)
             {
-                return HasFeature( ( ( Symbol ) expr ).Name );
+                return (bool)expr;
             }
-            else if ( expr is Cons )
+            else if (expr is Symbol)
             {
-                var list = ( Cons ) expr;
-                var oper = First( list ) as Symbol;
-                if ( oper != null )
+                return HasFeature(((Symbol)expr).Name);
+            }
+            else if (expr is Cons)
+            {
+                var list = (Cons)expr;
+                var oper = First(list) as Symbol;
+                if (oper != null)
                 {
-                    if ( oper.Name == "and" )
+                    if (oper.Name == "and")
                     {
-                        return SeqBase.Every( EvalFeatureExpr, list.Cdr );
+                        return SeqBase.Every(EvalFeatureExpr, list.Cdr);
                     }
-                    else if ( oper.Name == "or" )
+                    else if (oper.Name == "or")
                     {
-                        return SeqBase.Any( EvalFeatureExpr, list.Cdr );
+                        return SeqBase.Any(EvalFeatureExpr, list.Cdr);
                     }
-                    else if ( oper.Name == "not" )
+                    else if (oper.Name == "not")
                     {
-                        return !EvalFeatureExpr( Second( ( Cons ) expr ) );
+                        return !EvalFeatureExpr(Second((Cons)expr));
                     }
                 }
             }
 
-            throw new LispException( "Invalid feature expression" );
+            throw new LispException("Invalid feature expression");
         }
 
-        internal static object ParseInterpolateString( string s )
+        public static object ParseInterpolateString(string s)
         {
             int pos = 0;
             Vector code = new Vector();
@@ -62,26 +63,26 @@ namespace Kiezel
 //                pos = 1;
 //            }
 
-            for ( var match = InterpolationStringPatterns.Match( s, pos ); match.Success; match = match.NextMatch() )
+            for (var match = InterpolationStringPatterns.Match(s, pos); match.Success; match = match.NextMatch())
             {
                 var left = match.Index;
                 var sideEffect = false;
                 var script = "";
 
-                if ( left != pos )
+                if (left != pos)
                 {
-                    code.Add( s.Substring( pos, left - pos ) );
+                    code.Add(s.Substring(pos, left - pos));
                 }
 
                 pos = match.Index + match.Length;
 
-                if ( match.Groups[ 1 ].Success )
+                if (match.Groups[1].Success)
                 {
                     // <%...%> or <%=...%>
-                    script = match.Groups[ 1 ].Value.Trim();
-                    if ( script.StartsWith( "=" ) )
+                    script = match.Groups[1].Value.Trim();
+                    if (script.StartsWith("="))
                     {
-                        script = script.Substring( 1 );
+                        script = script.Substring(1);
                         sideEffect = false;
                     }
                     else
@@ -89,13 +90,13 @@ namespace Kiezel
                         sideEffect = true;
                     }
                 }
-                else if ( match.Groups[ 2 ].Success )
+                else if (match.Groups[2].Success)
                 {
                     // <!...!> or <!=...!>
-                    script = match.Groups[ 2 ].Value.Trim();
-                    if ( script.StartsWith( "=" ) )
+                    script = match.Groups[2].Value.Trim();
+                    if (script.StartsWith("="))
                     {
-                        script = script.Substring( 1 );
+                        script = script.Substring(1);
                         sideEffect = false;
                     }
                     else
@@ -103,31 +104,20 @@ namespace Kiezel
                         sideEffect = true;
                     }
                 }
-                else if ( match.Groups[ 3 ].Success )
+                else if (match.Groups[3].Success)
                 {
                     // ${...}
-                    script = match.Groups[ 3 ].Value;
-                    sideEffect = false;
-                }
-                else if ( match.Groups[ 4 ].Success )
-                {
-                    // ~.../
-                    var name = match.Groups[ 4 ].Value;
-                    if ( string.IsNullOrWhiteSpace( name ) )
-                    {
-                        name = "home";
-                    }
-                    script = string.Format( "({0} {1})", Symbols.GetLexicalOrEnvironmentVariable.LongName, name );
+                    script = match.Groups[3].Value;
                     sideEffect = false;
                 }
 
                 script = script.Trim();
 
-                if ( script.Length > 0 )
+                if (script.Length > 0)
                 {
-                    if ( sideEffect )
+                    if (sideEffect)
                     {
-                        if ( script[ 0 ] != '(' )
+                        if (script[0] != '(')
                         {
                             // must have function call to have side effect
                             script = "(with-output-to-string ($stdout) (" + script + "))";
@@ -137,143 +127,143 @@ namespace Kiezel
                             script = "(with-output-to-string ($stdout) " + script + ")";
                         }
                     }
-                    var statements = new LispReader( script ).ReadAll();
+                    var statements = new LispReader(script).ReadAll();
 
-                    if ( statements.Count > 1 )
+                    if (statements.Count > 1)
                     {
-                        code.Add( new Cons( Symbols.Do, Runtime.AsList( statements ) ) );
+                        code.Add(new Cons(Symbols.Do, Runtime.AsList(statements)));
                     }
                     else
                     {
-                        code.AddRange( statements );
+                        code.AddRange(statements);
                     }
                 }
             }
 
-            if ( code.Count == 0 )
+            if (code.Count == 0)
             {
                 return s;
             }
             else
             {
-                if ( pos < s.Length )
+                if (pos < s.Length)
                 {
-                    code.Add( s.Substring( pos, s.Length - pos ) );
+                    code.Add(s.Substring(pos, s.Length - pos));
                 }
 
-                return new Cons( Symbols.Str, Runtime.AsList( code ) );
+                return new Cons(Symbols.Str, Runtime.AsList(code));
             }
         }
 
-        internal static object ReadBlockCommentHandler( LispReader stream, string ch, int arg )
+        public static object ReadBlockCommentHandler(LispReader stream, string ch, int arg)
         {
             // Nested comments are allowed.
-            stream.ReadBlockComment( "#|", "|#" );
+            stream.ReadBlockComment("#|", "|#");
             return VOID.Value;
         }
 
-        internal static object ReadCharacterHandler( LispReader stream, string ch, int arg )
+        public static object ReadCharacterHandler(LispReader stream, string ch, int arg)
         {
             stream.UnreadChar();
-            var name = Runtime.MakeString( stream.Read() );
-            var chr = Runtime.DecodeCharacterName( name );
+            var name = Runtime.MakeString(stream.Read());
+            var chr = Runtime.DecodeCharacterName(name);
             return chr;
         }
 
-        internal static object ReadCommaHandler( LispReader stream, char ch )
+        public static object ReadCommaHandler(LispReader stream, char ch)
         {
             var code = stream.PeekChar();
 
-            if ( code == '@' || code == '.' )
+            if (code == '@' || code == '.')
             {
                 // Destructive splicing is handled as ordinary splicing
                 stream.ReadChar();
-                return MakeList( Symbols.UnquoteSplicing, stream.Read() );
+                return MakeList(Symbols.UnquoteSplicing, stream.Read());
             }
             else
             {
-                return MakeList( Symbols.Unquote, stream.Read() );
+                return MakeList(Symbols.Unquote, stream.Read());
             }
         }
 
-        internal static object ReadComplexNumberHandler( LispReader stream, string ch, int arg )
+        public static object ReadComplexNumberHandler(LispReader stream, string ch, int arg)
         {
-            if ( stream.ReadChar() != '(' )
+            if (stream.ReadChar() != '(')
             {
-                throw stream.MakeScannerException( "Invalid #c expression" );
+                throw stream.MakeScannerException("Invalid #c expression");
             }
-            var nums = stream.ReadDelimitedList( ")" );
-            int count = Runtime.Length( nums );
-            double real = count >= 1 ? Runtime.AsDouble( nums.Car ) : 0;
-            double imag = count >= 2 ? Runtime.AsDouble( nums.Cdr.Car ) : 0;
-            return new Complex( real, imag );
+            var nums = stream.ReadDelimitedList(")");
+            int count = Runtime.Length(nums);
+            double real = count >= 1 ? Runtime.AsDouble(nums.Car) : 0;
+            double imag = count >= 2 ? Runtime.AsDouble(nums.Cdr.Car) : 0;
+            return new Complex(real, imag);
         }
 
-        internal static object ReadExecuteHandler( LispReader stream, string ch, int arg )
+        public static object ReadExecuteHandler(LispReader stream, string ch, int arg)
         {
             var expr = stream.Read();
-            if ( stream.Scanning )
+            if (stream.Scanning)
             {
                 return expr;
             }
-            var readEval = Runtime.GetDynamic( Symbols.ReadEval );
-            if ( readEval == null )
+            var readEval = Runtime.GetDynamic(Symbols.ReadEval);
+            if (readEval == null)
             {
                 readEval = false; //stream.loading;
             }
-            if ( !Runtime.ToBool( readEval ) )
+            if (!Runtime.ToBool(readEval))
             {
-                throw stream.MakeScannerException( "Invalid use of '#.' (prohibited by $read-eval variable)" );
+                throw stream.MakeScannerException("Invalid use of '#.' (prohibited by $read-eval variable)");
             }
-            var value = Eval( expr );
+            var value = Eval(expr);
             return value;
         }
 
-        internal static object ReadExprCommentHandler( LispReader stream, string ch, int arg )
+        public static object ReadExprCommentHandler(LispReader stream, string ch, int arg)
         {
             stream.ReadSuppressed();
             return VOID.Value;
         }
 
-        internal static object ReadInfixHandler( LispReader stream, string ch, int arg )
+        public static object ReadInfixHandler(LispReader stream, string ch, int arg)
         {
             return stream.ParseInfixExpression();
         }
 
-        internal static object ReadLambdaCharacterHandler( LispReader stream, char ch )
+        public static object ReadLambdaCharacterHandler(LispReader stream, char ch)
         {
             return stream.ParseLambdaCharacter();
         }
 
-        internal static object ReadLineCommentHandler( LispReader stream, char ch )
+        public static object ReadLineCommentHandler(LispReader stream, char ch)
         {
             // ;
             stream.ReadLine();
             return VOID.Value;
         }
 
-        internal static object ReadLineCommentHandler2( LispReader stream, string ch, int arg )
+        public static object ReadLineCommentHandler2(LispReader stream, string ch, int arg)
         {
             // #!
             stream.ReadLine();
             return VOID.Value;
         }
 
-        internal static object ReadListHandler( LispReader stream, char ch )
+        public static object ReadListHandler(LispReader stream, char ch)
         {
-            return stream.ReadDelimitedList( ")" );
+            return stream.ReadDelimitedList(")");
         }
 
-        internal static object ReadMinusExprHandler( LispReader stream, string ch, int arg )
+        public static object ReadMinusExprHandler(LispReader stream, string ch, int arg)
         {
             object test = stream.Read();
-            if ( stream.Scanning )
+            if (stream.Scanning)
             {
                 //scanning
                 return stream.Read();
             }
-            bool haveFeatures = EvalFeatureExpr( test );
-            if ( haveFeatures )
+            bool haveFeatures = EvalFeatureExpr(test);
+            if (haveFeatures)
             {
                 stream.ReadSuppressed();
                 return VOID.Value;
@@ -284,27 +274,27 @@ namespace Kiezel
             }
         }
 
-        internal static object ReadNumberHandler( LispReader stream, string ch, int arg )
+        public static object ReadNumberHandler(LispReader stream, string ch, int arg)
         {
             var token = stream.ReadToken();
 
-            switch ( ch )
+            switch (ch)
             {
                 case "r":
                 {
-                    return Number.ParseNumberBase( token, arg );
+                    return Number.ParseNumberBase(token, arg);
                 }
                 case "o":
                 {
-                    return Number.ParseNumberBase( token, 8 );
+                    return Number.ParseNumberBase(token, 8);
                 }
                 case "b":
                 {
-                    return Number.ParseNumberBase( token, 2 );
+                    return Number.ParseNumberBase(token, 2);
                 }
                 case "x":
                 {
-                    return Number.ParseNumberBase( token, 16 );
+                    return Number.ParseNumberBase(token, 16);
                 }
                 default:
                 {
@@ -314,16 +304,16 @@ namespace Kiezel
             }
         }
 
-        internal static object ReadPlusExprHandler( LispReader stream, string ch, int arg )
+        public static object ReadPlusExprHandler(LispReader stream, string ch, int arg)
         {
             object test = stream.Read();
-            if ( stream.Scanning )
+            if (stream.Scanning)
             {
                 //scanning
                 return stream.Read();
             }
-            bool haveFeatures = EvalFeatureExpr( test );
-            if ( !haveFeatures )
+            bool haveFeatures = EvalFeatureExpr(test);
+            if (!haveFeatures)
             {
                 stream.ReadSuppressed();
                 return VOID.Value;
@@ -334,14 +324,14 @@ namespace Kiezel
             }
         }
 
-        internal enum BranchMode
+        public enum BranchMode
         {
             False = 0,
             True = 1,
             Eval = 2
         }
 
-        internal static object ReadIfExprHandler( LispReader stream, string ch, int arg )
+        public static object ReadIfExprHandler(LispReader stream, string ch, int arg)
         {
             if (stream.Scanning)
             {
@@ -351,7 +341,7 @@ namespace Kiezel
 
             Vector branch = null;
             var term = ReadBranch(stream, true, BranchMode.Eval, ref branch);
-            while (term==Symbols.HashElif)
+            while (term == Symbols.HashElif)
             {
                 var haveBranch = branch != null;
                 term = ReadBranch(stream, true, haveBranch ? BranchMode.False : BranchMode.Eval, ref branch);
@@ -371,7 +361,7 @@ namespace Kiezel
             // Returns the first element of the branch eventually
         }
 
-        internal static Symbol ReadBranch( LispReader stream, bool hasTest, BranchMode mode, ref Vector branch )
+        public static Symbol ReadBranch(LispReader stream, bool hasTest, BranchMode mode, ref Vector branch)
         {
             var haveFeatures = false;
 
@@ -412,11 +402,11 @@ namespace Kiezel
             {
                 var obj = haveFeatures ? stream.Read() : stream.ReadSuppressed();
 
-                if (obj == Symbols.HashElif || obj == Symbols.HashElse || obj == Symbols.HashEndif )
+                if (obj == Symbols.HashElif || obj == Symbols.HashElse || obj == Symbols.HashEndif)
                 {
-                    return (Symbol) obj;
+                    return (Symbol)obj;
                 }
-                else if ( haveFeatures )
+                else if (haveFeatures)
                 {
                     branch.Add(obj);
                 }
@@ -424,195 +414,193 @@ namespace Kiezel
 
         }
 
-        internal static object ReadElifExprHandler( LispReader stream, string ch, int arg )
+        public static object ReadElifExprHandler(LispReader stream, string ch, int arg)
         {
             return Symbols.HashElif;
         }
 
-        internal static object ReadElseExprHandler( LispReader stream, string ch, int arg )
+        public static object ReadElseExprHandler(LispReader stream, string ch, int arg)
         {
             return Symbols.HashElse;
         }
 
-        internal static object ReadEndifExprHandler( LispReader stream, string ch, int arg )
+        public static object ReadEndifExprHandler(LispReader stream, string ch, int arg)
         {
             return Symbols.HashEndif;
         }
 
-        internal static object ReadPrototypeHandler( LispReader stream, char ch )
+        public static object ReadPrototypeHandler(LispReader stream, char ch)
         {
-            var list = stream.ReadDelimitedList( "}" );
-            if ( stream.Scanning )
+            var list = stream.ReadDelimitedList("}");
+            if (stream.Scanning)
             {
                 //scanning
                 return list;
             }
-            var obj = new Prototype( Runtime.AsArray( list ) );
+            var obj = new Prototype(Runtime.AsArray(list));
             return obj;
         }
 
-        internal static object ReadQuasiQuoteHandler( LispReader stream, char ch )
+        public static object ReadQuasiQuoteHandler(LispReader stream, char ch)
         {
             var exp1 = stream.Read();
-            var exp2 = QuasiQuoteExpandRest( exp1 );
+            var exp2 = QuasiQuoteExpandRest(exp1);
             return exp2;
         }
 
-        internal static object ReadQuoteHandler( LispReader stream, char ch )
+        public static object ReadQuoteHandler(LispReader stream, char ch)
         {
-            return MakeList( Symbols.Quote, stream.Read() );
+            return MakeList(Symbols.Quote, stream.Read());
         }
 
-        internal static object ReadRegexHandler( LispReader stream, string ch, int arg )
+        public static object ReadRegexHandler(LispReader stream, string ch, int arg)
         {
-            var rx = stream.ParseRegexString( ch[0] );
+            var rx = stream.ParseRegexString(ch[0]);
             return rx;
         }
 
-        internal static object ReadShortLambdaExpressionHandler( LispReader stream, string ch, int arg )
+        public static object ReadShortLambdaExpressionHandler(LispReader stream, string ch, int arg)
         {
-            return stream.ParseShortLambdaExpression( ")" );
+            return stream.ParseShortLambdaExpression(")");
         }
 
-        internal static object ReadSpecialStringHandler( LispReader stream, string ch, int arg )
+        public static object ReadSpecialStringHandler(LispReader stream, string ch, int arg)
         {
             var str = stream.ParseSpecialString();
             return str;
         }
 
-        internal static object ReadStringHandler( LispReader stream, char ch )
+        public static object ReadStringHandler(LispReader stream, char ch)
         {
             // C# string "...."
-            return ParseInterpolateString( stream.ParseString() );
+            return ParseInterpolateString(stream.ParseString());
         }
 
-        internal static object ReadStringHandler2( LispReader stream, string ch, int arg )
+        public static object ReadStringHandler2(LispReader stream, string ch, int arg)
         {
             // C# string @"..."
-            return ParseInterpolateString( stream.ParseMultiLineString() );
+            return ParseInterpolateString(stream.ParseMultiLineString());
         }
 
-        internal static object ReadUninternedSymbolHandler( LispReader stream, string ch, int arg )
+        public static object ReadUninternedSymbolHandler(LispReader stream, string ch, int arg)
         {
-            throw stream.MakeScannerException( "Uninterned symbols are not supported." );
+            throw stream.MakeScannerException("Uninterned symbols are not supported.");
         }
 
-        internal static object ReadVectorHandler( LispReader stream, char ch )
+        public static object ReadVectorHandler(LispReader stream, char ch)
         {
-            var list = stream.ReadDelimitedList( "]" );
+            var list = stream.ReadDelimitedList("]");
             var obj = new Vector();
-            obj.AddRange( list );
+            obj.AddRange(list);
             return obj;
         }
 
-        internal static object ReadVectorHandler2( LispReader stream, string ch, int arg )
+        public static object ReadVectorHandler2(LispReader stream, string ch, int arg)
         {
-            if ( stream.ReadChar() != '(' )
+            if (stream.ReadChar() != '(')
             {
-                throw stream.MakeScannerException( "Invalid #() expression" );
+                throw stream.MakeScannerException("Invalid #() expression");
             }
-            var list = stream.ReadDelimitedList( ")" );
+            var list = stream.ReadDelimitedList(")");
             var obj = new Vector();
-            obj.AddRange( list );
-            if ( arg == -1 )
+            obj.AddRange(list);
+            if (arg == -1)
             {
                 // default no action
             }
-            else if ( arg < obj.Count )
+            else if (arg < obj.Count)
             {
-                throw new LispException( "Vector {0} contains more than {1} items", ToPrintString( obj ), arg );
+                throw new LispException("Vector {0} contains more than {1} items", ToPrintString(obj), arg);
             }
-            else if ( arg > obj.Count )
+            else if (arg > obj.Count)
             {
-                var filler = obj.Count == 0 ? ( object ) null : obj[ obj.Count - 1 ];
-                while ( obj.Count < arg )
+                var filler = obj.Count == 0 ? (object)null : obj[obj.Count - 1];
+                while (obj.Count < arg)
                 {
-                    obj.Add( filler );
+                    obj.Add(filler);
                 }
             }
             return obj;
         }
 
-        internal static object ReadStructHandler( LispReader stream, string ch, int arg )
+        public static object ReadStructHandler(LispReader stream, string ch, int arg)
         {
-            if ( stream.ReadChar() != '(' )
+            if (stream.ReadChar() != '(')
             {
-                throw stream.MakeScannerException( "Invalid #s() expression" );
+                throw stream.MakeScannerException("Invalid #s() expression");
             }
-            var list = stream.ReadDelimitedList( ")" );
-            var obj = new Prototype( AsArray( list ) );
+            var list = stream.ReadDelimitedList(")");
+            var obj = new Prototype(AsArray(list));
             return obj;
         }
 
-        internal class PrettyPrinting
+        public class PrettyPrinting
         {
-            internal static object ReadBlockCommentHandler( LispReader stream, string ch, int arg )
+            public static object ReadBlockCommentHandler(LispReader stream, string ch, int arg)
             {
                 // Nested comments are allowed.
-                var s = stream.ReadBlockComment( "#|", "|#" );
-                return MakeList( Symbols.PrettyReader, "block-comment", s );
+                var s = stream.ReadBlockComment("#|", "|#");
+                return MakeList(Symbols.PrettyReader, "block-comment", s);
             }
 
-            internal static object ReadLineCommentHandler( LispReader stream, char ch )
+            public static object ReadLineCommentHandler(LispReader stream, char ch)
             {
                 // ;
                 var s = stream.ReadLine();
-                return MakeList( Symbols.PrettyReader, "line-comment", ";" + s );
+                return MakeList(Symbols.PrettyReader, "line-comment", ";" + s);
             }
 
-            internal static object ReadLineCommentHandler2( LispReader stream, string ch, int arg )
+            public static object ReadLineCommentHandler2(LispReader stream, string ch, int arg)
             {
                 // #!
                 var s = stream.ReadLine();
-                return MakeList( Symbols.PrettyReader, "line-comment", "#!" + s );
+                return MakeList(Symbols.PrettyReader, "line-comment", "#!" + s);
             }
 
-            internal static object ReadNumberHandler( LispReader stream, string ch, int arg )
+            public static object ReadNumberHandler(LispReader stream, string ch, int arg)
             {
                 var token = stream.ReadToken();
-                return MakeList( Symbols.PrettyReader, "literally", "#" + ch + token );
+                return MakeList(Symbols.PrettyReader, "literally", "#" + ch + token);
             }
 
-            internal static object ReadPlusMinusExprHandler( LispReader stream, string ch, int arg )
+            public static object ReadPlusMinusExprHandler(LispReader stream, string ch, int arg)
             {
                 object test = stream.Read();
                 object expr = stream.Read();
-                return MakeList( Symbols.PrettyReader, "#" + ch, test, expr );
+                return MakeList(Symbols.PrettyReader, "#" + ch, test, expr);
             }
 
-            internal static object ReadSpecialStringHandler( LispReader stream, string ch, int arg )
+            public static object ReadSpecialStringHandler(LispReader stream, string ch, int arg)
             {
-                return MakeList( Symbols.PrettyReader, "string", stream.ExtractSpecialStringForm() );
+                return MakeList(Symbols.PrettyReader, "string", stream.ExtractSpecialStringForm());
             }
 
-            internal static object ReadStringHandler( LispReader stream, char ch )
+            public static object ReadStringHandler(LispReader stream, char ch)
             {
                 // C# string "...."
-                return MakeList( Symbols.PrettyReader, "string", stream.ExtractStringForm() );
+                return MakeList(Symbols.PrettyReader, "string", stream.ExtractStringForm());
             }
 
-            internal static object ReadStringHandler2( LispReader stream, string ch, int arg )
+            public static object ReadStringHandler2(LispReader stream, string ch, int arg)
             {
                 // C# string @"..."
-                return MakeList( Symbols.PrettyReader, "string", stream.ExtractMultiLineStringForm() );
+                return MakeList(Symbols.PrettyReader, "string", stream.ExtractMultiLineStringForm());
             }
 
-            internal static object ReadShortLambdaExpressionHandler( LispReader stream, string ch, int arg )
+            public static object ReadShortLambdaExpressionHandler(LispReader stream, string ch, int arg)
             {
-                return stream.ReadDelimitedList( ")" );
+                return stream.ReadDelimitedList(")");
             }
 
-            internal static object ReadStructHandler( LispReader stream, string ch, int arg )
+            public static object ReadStructHandler(LispReader stream, string ch, int arg)
             {
                 // #s(...)
-                if ( stream.ReadChar() != '(' )
+                if (stream.ReadChar() != '(')
                 {
-                    throw stream.MakeScannerException( "Invalid #s expression" );
+                    throw stream.MakeScannerException("Invalid #s expression");
                 }
-                return MakeList( Symbols.PrettyReader, "struct", stream.ReadDelimitedList( ")" ) );
+                return MakeList(Symbols.PrettyReader, "struct", stream.ReadDelimitedList(")"));
             }
-
         }
-
     }
 }

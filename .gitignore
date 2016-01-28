@@ -3,6 +3,8 @@ obj/
 github.git/
 grammar/
 private/
+man/
+help/
 *~
 *.user
 *.suo

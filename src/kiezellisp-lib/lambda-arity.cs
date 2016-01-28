@@ -11,90 +11,90 @@ namespace Kiezel
 {
     public class MultiArityLambda : IDynamicMetaObjectProvider, IApply, ISyntax
     {
-        internal List<LambdaClosure> Lambdas = new List<LambdaClosure>();
+        public List<LambdaClosure> Lambdas = new List<LambdaClosure>();
 
-        internal MultiArityLambda( params LambdaClosure[] lambdas ) 
+        public MultiArityLambda(params LambdaClosure[] lambdas)
         {
             foreach (var lambda in lambdas)
             {
                 lambda.Owner = this;
-                Lambdas.Add( lambda );
+                Lambdas.Add(lambda);
             }
         }
 
-        object IApply.Apply( object[] args )
+        object IApply.Apply(object[] args)
         {
-            var methods = Match( args );
-            if ( methods == null )
+            var methods = Match(args);
+            if (methods == null)
             {
-                throw new LispException( "No matching multi-arity-lambda found" );
+                throw new LispException("No matching multi-arity-lambda found");
             }
-            var lambda = ( LambdaClosure ) methods.Car;
-            return lambda.ApplyLambdaFast( args );
+            var lambda = (LambdaClosure)methods.Car;
+            return lambda.ApplyLambdaFast(args);
         }
 
-        DynamicMetaObject IDynamicMetaObjectProvider.GetMetaObject( Expression parameter )
+        DynamicMetaObject IDynamicMetaObjectProvider.GetMetaObject(Expression parameter)
         {
-            return new MultiArityLambdaApplyMetaObject( parameter, this );
+            return new MultiArityLambdaApplyMetaObject(parameter, this);
         }
 
-        Cons ISyntax.GetSyntax( Symbol context )
+        Cons ISyntax.GetSyntax(Symbol context)
         {
-            return Runtime.AsList( Lambdas.Select( Runtime.GetSyntax ).Distinct() );
+            return Runtime.AsList(Lambdas.Select(Runtime.GetSyntax).Distinct());
         }
 
-        public Cons Match( object[] args )
+        public Cons Match(object[] args)
         {
-            return Runtime.AsList( Lambdas.Where( x => x.Definition.Signature.RequiredArgsCount == args.Length ) );
+            return Runtime.AsList(Lambdas.Where(x => x.Definition.Signature.RequiredArgsCount == args.Length));
         }
 
     }
 
     public partial class Runtime
     {
-        internal static MultiArityLambda MakeMultiArityLambda( LambdaClosure[] lambdas)
+        public static MultiArityLambda MakeMultiArityLambda(LambdaClosure[] lambdas)
         {
-            var multilambda = new MultiArityLambda( lambdas );
+            var multilambda = new MultiArityLambda(lambdas);
             return multilambda;
         }
     }
 
 
-    internal class MultiArityLambdaApplyMetaObject : DynamicMetaObject
+    public class MultiArityLambdaApplyMetaObject : DynamicMetaObject
     {
-        internal MultiArityLambda Parent;
+        public MultiArityLambda Parent;
 
-        public MultiArityLambdaApplyMetaObject( Expression objParam, MultiArityLambda parent )
-            : base( objParam, BindingRestrictions.Empty, parent )
+        public MultiArityLambdaApplyMetaObject(Expression objParam, MultiArityLambda parent)
+            : base(objParam, BindingRestrictions.Empty, parent)
         {
             this.Parent = parent;
         }
 
-        public override DynamicMetaObject BindInvoke( InvokeBinder binder, DynamicMetaObject[] args )
+        public override DynamicMetaObject BindInvoke(InvokeBinder binder, DynamicMetaObject[] args)
         {
-            var methods = Match( args );
-            if ( methods == null )
+            var methods = Match(args);
+            if (methods == null)
             {
-                throw new LispException( "No matching multi-lambda found" );
+                throw new LispException("No matching multi-lambda found");
             }
-            var lambda = ( LambdaClosure ) methods.Car;
+            var lambda = (LambdaClosure)methods.Car;
             var restrictions = BindingRestrictions.Empty;
-            MethodInfo method = typeof( LambdaClosure ).GetMethod( "ApplyLambdaFast", BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance );
+            MethodInfo method = typeof(LambdaClosure).GetMethod("ApplyLambdaFast", BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
             var list = new List<Expression>();
-            foreach ( var arg in args )
+            foreach (var arg in args)
             {
-                list.Add( RuntimeHelpers.ConvertArgument( arg, typeof( object ) ) );
+                list.Add(RuntimeHelpers.ConvertArgument(arg, typeof(object)));
             }
-            var callArgs = Expression.NewArrayInit( typeof( object ), list );
-            var expr = Expression.Call( Expression.Constant( lambda, typeof( LambdaClosure ) ), method, callArgs );
-            restrictions = BindingRestrictions.GetInstanceRestriction( this.Expression, this.Value ).Merge( restrictions );
-            return new DynamicMetaObject( RuntimeHelpers.EnsureObjectResult( expr ), restrictions );
+            var callArgs = Expression.NewArrayInit(typeof(object), list);
+            var expr = Expression.Call(Expression.Constant(lambda, typeof(LambdaClosure)), method, callArgs);
+            restrictions = BindingRestrictions.GetInstanceRestriction(this.Expression, this.Value).Merge(restrictions);
+            return new DynamicMetaObject(RuntimeHelpers.EnsureObjectResult(expr), restrictions);
 
         }
 
-        public Cons Match( DynamicMetaObject[] args )
+        public Cons Match(DynamicMetaObject[] args)
         {
-            return Runtime.AsList( Parent.Lambdas.Where( x => x.Definition.Signature.RequiredArgsCount == args.Length ) );
+            return Runtime.AsList(Parent.Lambdas.Where(x => x.Definition.Signature.RequiredArgsCount == args.Length));
         }
     }
 }

@@ -6,13 +6,13 @@ namespace Kiezel
 {
     public class AssertFailedException : Exception
     {
-        public AssertFailedException( string msg )
-            : base( msg )
+        public AssertFailedException(string msg)
+            : base(msg)
         {
         }
 
-        public AssertFailedException( string fmt, params object[] args )
-            : base( String.Format( fmt, args ) )
+        public AssertFailedException(string fmt, params object[] args)
+            : base(String.Format(fmt, args))
         {
         }
     }
@@ -24,34 +24,35 @@ namespace Kiezel
 
     public class LispException : Exception
     {
-        public LispException( string msg )
-            : base( msg )
+        public LispException(string msg)
+            : base(msg)
         {
         }
 
-        public LispException( string msg, Exception innerException )
-            : base( msg, innerException )
+        public LispException(string msg, Exception innerException)
+            : base(msg, innerException)
         {
         }
 
-        public LispException( string fmt, params object[] args )
-            : base( String.Format( fmt, args ) )
+        public LispException(string fmt, params object[] args)
+            : base(String.Format(fmt, args))
         {
         }
     }
-    internal class AbortedDebuggerException : Exception
+
+    public class AbortedDebuggerException : Exception
     {
     }
 
-    internal class AbortingDebuggerException : Exception
+    public class AbortingDebuggerException : Exception
     {
     }
 
-    internal class ContinueFromBreakpointException : Exception
+    public class ContinueFromBreakpointException : Exception
     {
     }
 
-    internal class ReturnFromLoadException : Exception
+    public class ReturnFromLoadException : Exception
     {
     }
 }

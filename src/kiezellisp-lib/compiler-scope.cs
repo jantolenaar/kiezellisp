@@ -55,17 +55,18 @@ namespace Kiezel
         {
         }
 
-        public AnalysisScope( AnalysisScope parent, string name )
+        public AnalysisScope(AnalysisScope parent, string name)
             : this()
         {
             Parent = parent;
             Name = name;
         }
+
         public List<ParameterExpression> Parameters
         {
             get
             {
-                return Variables.Where( x => x.Parameter != null ).Select( x => x.Parameter ).ToList();
+                return Variables.Where(x => x.Parameter != null).Select(x => x.Parameter).ToList();
             }
         }
 
@@ -76,76 +77,91 @@ namespace Kiezel
                 return Tags.Count != 0;
             }
         }
+
         public void CheckVariables()
         {
             string context = null;
 
-            for ( AnalysisScope sc = this; sc != null; sc = sc.Parent )
+            for (AnalysisScope sc = this; sc != null; sc = sc.Parent)
             {
-                if ( sc.IsLambda && sc.Name != null )
+                if (sc.IsLambda && sc.Name != null)
                 {
                     context = sc.Name;
                     break;
                 }
             }
 
-            foreach ( var v in Variables )
+            foreach (var v in Variables)
             {
-                if ( v.Ignorable )
+                if (v.Ignorable)
                 {
                 }
-                else if ( !v.Referenced )
+                else if (!v.Referenced)
                 {
-                    if ( !v.Key.Name.StartsWith( "_" ) && !v.Key.Name.StartsWith( "~" ) && !v.Key.Name.StartsWith( "%" ) && !v.Ignore )
+                    if (!v.Key.Name.StartsWith("_") && !v.Key.Name.StartsWith("~") && !v.Key.Name.StartsWith("%") && !v.Ignore)
                     {
-                        PrintWarning( context, "unreferenced variable", v.Key );
+                        PrintWarning(context, "unreferenced variable", v.Key);
                     }
                 }
-                else if ( !v.Initialized && !v.Assigned )
+                else if (!v.Initialized && !v.Assigned)
                 {
-                    PrintWarning( context, "uninitialized variable", v.Key );
+                    PrintWarning(context, "uninitialized variable", v.Key);
                 }
             }
         }
 
-        public int DefineFrameLocal( Symbol sym, ScopeFlags flags )
+        public int DefineFrameLocal(Symbol sym, ScopeFlags flags)
         {
-            if ( Names == null )
+            if (Names == null)
             {
                 Names = new List<Symbol>();
             }
 
             UsesFramedVariables = true;
-            Names.Add( sym );
-            Variables.Add( new ScopeEntry( sym, Names.Count - 1, flags ) );
+            Names.Add(sym);
+            Variables.Add(new ScopeEntry(sym, Names.Count - 1, flags));
 
             return Names.Count - 1;
         }
 
-        public ParameterExpression DefineNativeLocal( Symbol sym, ScopeFlags flags, Type type = null )
+        public ParameterExpression DefineNativeLocal(Symbol sym, ScopeFlags flags, Type type = null)
         {
-            var parameter = Expression.Parameter( type ?? typeof( object ), sym.Name );
-            Variables.Add( new ScopeEntry( sym, parameter, flags ) );
+            var parameter = Expression.Parameter(type ?? typeof(object), sym.Name);
+            Variables.Add(new ScopeEntry(sym, parameter, flags));
 
             return parameter;
         }
-        public bool FindLocal( Symbol sym, ScopeFlags reason )
+
+        public bool FindLocal(Symbol sym, ScopeFlags reason)
         {
             int depth;
             int index;
             ParameterExpression parameter;
             ScopeFlags flags;
             int realDepth;
-            return FindLocal( sym, reason, out realDepth, out depth, out index, out parameter, out flags );
+            return FindLocal(sym, reason, out realDepth, out depth, out index, out parameter, out flags);
         }
 
-        public bool FindLocal( Symbol sym, ScopeFlags reason, out int depth, out int index, out ParameterExpression parameter, out ScopeFlags flags )
+        public bool FindLocal(Symbol sym, ScopeFlags reason, out int depth, out int index, out ParameterExpression parameter, out ScopeFlags flags)
         {
             int realDepth;
-            return FindLocal( sym, reason, out realDepth, out depth, out index, out parameter, out flags );
+            return FindLocal(sym, reason, out realDepth, out depth, out index, out parameter, out flags);
         }
 
-        public bool FindLocal( Symbol sym, ScopeFlags reason, out int realDepth, out int depth, out int index, out ParameterExpression parameter, out ScopeFlags flags )
+        bool LexicalSymEqual(Symbol sym1, Symbol sym2)
+        {
+            if (sym1 == sym2)
+            {
+                return true;
+            }
+            else if (sym1.Name == sym2.Name)
+            {
+                return true;
+            }
+            return false;
+        }
+
+        public bool FindLocal(Symbol sym, ScopeFlags reason, out int realDepth, out int depth, out int index, out ParameterExpression parameter, out ScopeFlags flags)
         {
             bool noCapturedNativeParametersBeyondThisPoint = false;
 
@@ -155,28 +171,28 @@ namespace Kiezel
             parameter = null;
             flags = 0;
 
-            for ( AnalysisScope sc = this; sc != null; sc = sc.Parent )
+            for (AnalysisScope sc = this; sc != null; sc = sc.Parent)
             {
                 ScopeEntry item;
 
-                for ( int i = sc.Variables.Count - 1; i >= 0; --i )
+                for (int i = sc.Variables.Count - 1; i >= 0; --i)
                 {
-                    item = sc.Variables[ i ];
+                    item = sc.Variables[i];
 
                     // Looking for exact match
-                    if ( item.Key == sym )
+                    if (LexicalSymEqual(item.Key, sym))
                     {
-                        if ( sym == Symbols.Tilde )
+                        if (LexicalSymEqual(sym, Symbols.Tilde))
                         {
                             UsesTilde = true;
                         }
 
-                        if ( item.Index != -1 )
+                        if (item.Index != -1)
                         {
                             index = item.Index;
                             item.Flags |= reason;
                         }
-                        else if ( reason != 0 && noCapturedNativeParametersBeyondThisPoint && sym != Symbols.Tilde )
+                        else if (reason != 0 && noCapturedNativeParametersBeyondThisPoint && !LexicalSymEqual(sym, Symbols.Tilde))
                         {
                             // Linq.Expression closures do not support native variables defined
                             // outside the LambdaExpression. Whenever we encounter such a variable
@@ -184,8 +200,8 @@ namespace Kiezel
                             // to keep the compiler happy.
                             // The recompile that comes later uses the list of free variables to
                             // choose the correct implementation scheme.
-                            sc.FreeVariables.Add( sym );
-                            index = sc.DefineFrameLocal( sym, reason );
+                            sc.FreeVariables.Add(sym);
+                            index = sc.DefineFrameLocal(sym, reason);
                         }
                         else
                         {
@@ -199,19 +215,19 @@ namespace Kiezel
                     }
                 }
 
-                if ( sc.IsBlockScope && sym == Symbols.Tilde )
+                if (sc.IsBlockScope && sym == Symbols.Tilde)
                 {
                     // boundary for ~ variable which is tightly coupled to its DO block.
                     break;
                 }
 
-                if ( sc.IsLambda )
+                if (sc.IsLambda)
                 {
                     // boundary for native variables in closures.
                     noCapturedNativeParametersBeyondThisPoint = true;
                 }
 
-                if ( sc.Names != null )
+                if (sc.Names != null)
                 {
                     ++depth;
                 }
@@ -225,25 +241,25 @@ namespace Kiezel
             return false;
         }
 
-        public bool HasLocalVariable( Symbol name, int maxDepth )
+        public bool HasLocalVariable(Symbol name, int maxDepth)
         {
             int realDepth;
             int depth;
             int index;
             ParameterExpression parameter;
             ScopeFlags flags;
-            return FindLocal( name, 0, out realDepth, out depth, out index, out parameter, out flags ) && realDepth <= maxDepth;
+            return FindLocal(name, 0, out realDepth, out depth, out index, out parameter, out flags) && realDepth <= maxDepth;
         }
 
-        internal void PrintWarning( string context, string error, Symbol sym )
+        public void PrintWarning(string context, string error, Symbol sym)
         {
-            if ( context == null )
+            if (context == null)
             {
-                Runtime.PrintWarning( error, " ", sym.Name );
+                Runtime.PrintWarning(error, " ", sym.Name);
             }
             else
             {
-                Runtime.PrintWarning( error, " ", sym.Name, " in ", context );
+                Runtime.PrintWarning(error, " ", sym.Name, " in ", context);
             }
         }
     }
@@ -254,7 +270,8 @@ namespace Kiezel
         public int Index;
         public Symbol Key;
         public ParameterExpression Parameter;
-        public ScopeEntry( Symbol key, int index, ScopeFlags flags )
+
+        public ScopeEntry(Symbol key, int index, ScopeFlags flags)
         {
             Key = key;
             Index = index;
@@ -262,7 +279,7 @@ namespace Kiezel
             Flags = flags;
         }
 
-        public ScopeEntry( Symbol key, ParameterExpression parameter, ScopeFlags flags )
+        public ScopeEntry(Symbol key, ParameterExpression parameter, ScopeFlags flags)
         {
             Key = key;
             Index = -1;
@@ -274,7 +291,7 @@ namespace Kiezel
         {
             get
             {
-                return ( Flags & ScopeFlags.Assigned ) != 0;
+                return (Flags & ScopeFlags.Assigned) != 0;
             }
         }
 
@@ -282,7 +299,7 @@ namespace Kiezel
         {
             get
             {
-                return ( Flags & ScopeFlags.Ignorable ) != 0;
+                return (Flags & ScopeFlags.Ignorable) != 0;
             }
         }
 
@@ -290,7 +307,7 @@ namespace Kiezel
         {
             get
             {
-                return ( Flags & ScopeFlags.Ignore ) != 0;
+                return (Flags & ScopeFlags.Ignore) != 0;
             }
         }
 
@@ -298,7 +315,7 @@ namespace Kiezel
         {
             get
             {
-                return ( Flags & ScopeFlags.Initialized ) != 0;
+                return (Flags & ScopeFlags.Initialized) != 0;
             }
         }
 
@@ -306,7 +323,7 @@ namespace Kiezel
         {
             get
             {
-                return ( Flags & ScopeFlags.Referenced ) != 0;
+                return (Flags & ScopeFlags.Referenced) != 0;
             }
         }
     }

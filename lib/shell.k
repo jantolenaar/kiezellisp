@@ -55,15 +55,19 @@
             ,@forms
             (finally (cd old-path)))))
 
-#+windows
+#if windows
+
 (defun dir ()
     (run "cmd.exe" "/c" "dir")
     (void))
 
-#+unix
+#elif unix
+
 (defun dir ()
     (run "ls")
     (void))
+
+#endif
 
 (defun env ()
     (as-prototype-ci (environment:get-environment-variables)))
@@ -89,8 +93,7 @@
             (true
                 special-folder)))))
 
-(def $home
-    (get-special-folder :home))
+(def $home (get-special-folder :home))
 
 (def $local-application-data
     (get-special-folder :local-application-data))
@@ -150,22 +153,26 @@
         (if ok result)
           (if ok (do (print result) true))))
 
-#+windows
+#if windows
+
 (defun robocopy-mirror (source destination)
     ;(let $stdout null)
     (let source (path:get-windows-name source))
     (let destination (path:get-windows-name destination))
     (run "robocopy.exe" source destination "/MIR" "/MT" "/NS" "/NC" "/NDL" "/NP" "/NJH" "/NJS"))
 
-#+unix
+#elif unix
+
 (defun robocopy-mirror (source destination)
     ;;; TODO handle appending of slash???
     (run "rsync" "-av" (string source "/") destination))
 
+#endif 
+
 (defun expand-path-name (path)
-    (if (.starts-with path "~")
-          (do
-            (let parts (as-list (.split path "/")))
+    (if (.starts-with path "~")       
+          (do         
+            (let parts (as-list (.split (path:get-unix-name path) "/")))
             (string:join "/" (cons (replace-head (first parts)) (rest parts))))
         path))
 

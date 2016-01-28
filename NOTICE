@@ -1,10 +1,7 @@
 
-Kiezellisp:			Copyright (C) 2012-2015 Jan Tolenaar
+Kiezellisp:			Copyright (C) 2012-2016 Jan Tolenaar
 					MIT/X11 license.
 
 BigRational.cs:		Copyright (C) Microsoft Corporation
 					Microsoft Public License.
-
-getline.cs:			Copyright 2008 Novell, Inc.
-					MIT/X11 license or Apache License 2.0
 

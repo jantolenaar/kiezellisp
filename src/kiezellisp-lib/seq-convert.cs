@@ -8,207 +8,207 @@ namespace Kiezel
 {
     public partial class Runtime
     {
-        [Lisp( "as-array" )]
-        public static Array AsArray( IEnumerable seq, Symbol type )
+        [Lisp("as-array")]
+        public static Array AsArray(IEnumerable seq, Symbol type)
         {
-            var a = AsArray( seq );
-            var t = ( Type ) GetType( type );
-            Array b = Array.CreateInstance( t, a.Length );
-            for ( int i = 0; i < a.Length; ++i )
+            var a = AsArray(seq);
+            var t = (Type)GetType(type);
+            Array b = Array.CreateInstance(t, a.Length);
+            for (int i = 0; i < a.Length; ++i)
             {
-                b.SetValue( a[ i ], i );
+                b.SetValue(a[i], i);
             }
             return b;
         }
 
-        [Lisp( "as-array" )]
-        public static object[] AsArray( IEnumerable seq )
+        [Lisp("as-array")]
+        public static object[] AsArray(IEnumerable seq)
         {
-            if ( seq == null )
+            if (seq == null)
             {
                 return new object[ 0 ];
             }
-            else if ( seq is object[] )
+            else if (seq is object[])
             {
-                return ( object[] ) seq;
+                return (object[])seq;
             }
 
-            return new List<object>( ConvertToEnumerableObject( seq ) ).ToArray();
+            return new List<object>(ConvertToEnumerableObject(seq)).ToArray();
         }
 
-        [Lisp( "as-lazy-list" )]
-        public static Cons AsLazyList( IEnumerable seq )
+        [Lisp("as-lazy-list")]
+        public static Cons AsLazyList(IEnumerable seq)
         {
-            if ( seq == null )
+            if (seq == null)
             {
                 return null;
             }
-            else if ( seq is Cons )
+            else if (seq is Cons)
             {
-                return ( Cons ) seq;
+                return (Cons)seq;
             }
             else
             {
-                return MakeCons( seq.GetEnumerator() );
+                return MakeCons(seq.GetEnumerator());
             }
         }
 
-        [Lisp( "as-list" )]
-        public static Cons AsList( IEnumerable seq )
+        [Lisp("as-list")]
+        public static Cons AsList(IEnumerable seq)
         {
-            if ( seq == null )
+            if (seq == null)
             {
                 return null;
             }
 
             var v = seq as Cons;
 
-            if ( v != null )
+            if (v != null)
             {
-                return ( Cons ) Force( v );
+                return (Cons)Force(v);
             }
 
             Cons head = null;
             Cons tail = null;
 
-            foreach ( var item in seq )
+            foreach (var item in seq)
             {
-                if ( head == null )
+                if (head == null)
                 {
-                    tail = head = new Cons( item, null );
+                    tail = head = new Cons(item, null);
                 }
                 else
                 {
-                    tail = tail.Cdr = new Cons( item, null );
+                    tail = tail.Cdr = new Cons(item, null);
                 }
             }
 
             return head;
         }
 
-        [Lisp( "as-multiple-elements" )]
-        public static object[] AsMultipleElements( object seq, int size )
+        [Lisp("as-multiple-elements")]
+        public static object[] AsMultipleElements(object seq, int size)
         {
-            if ( seq is DictionaryEntry )
+            if (seq is DictionaryEntry)
             {
-                size = ( size < 0 ) ? 2 : size;
+                size = (size < 0) ? 2 : size;
                 var v = new object[ size ];
-                var de = ( DictionaryEntry ) seq;
-                if ( size > 0 )
+                var de = (DictionaryEntry)seq;
+                if (size > 0)
                 {
-                    v[ 0 ] = de.Key;
+                    v[0] = de.Key;
                 }
-                if ( size > 1 )
+                if (size > 1)
                 {
-                    v[ 1 ] = de.Value;
+                    v[1] = de.Value;
                 }
                 return v;
             }
-            else if ( seq is KeyValuePair<object, object> )
+            else if (seq is KeyValuePair<object, object>)
             {
-                size = ( size < 0 ) ? 2 : size;
+                size = (size < 0) ? 2 : size;
                 var v = new object[ size ];
-                var de = ( KeyValuePair<object, object> ) seq;
-                if ( size > 0 )
+                var de = (KeyValuePair<object, object>)seq;
+                if (size > 0)
                 {
-                    v[ 0 ] = de.Key;
+                    v[0] = de.Key;
                 }
-                if ( size > 1 )
+                if (size > 1)
                 {
-                    v[ 1 ] = de.Value;
+                    v[1] = de.Value;
                 }
                 return v;
             }
             else
             {
-                if ( size < 0 )
+                if (size < 0)
                 {
-                    var v = AsArray( ToIter( seq ) );
+                    var v = AsArray(ToIter(seq));
                     return v;
                 }
                 else
                 {
                     var v = new object[ size ];
                     var i = 0;
-                    foreach ( var item in ToIter( seq ) )
+                    foreach (var item in ToIter( seq ))
                     {
-                        if ( i == size )
+                        if (i == size)
                         {
                             break;
                         }
-                        v[ i++ ] = item;
+                        v[i++] = item;
                     }
                     return v;
                 }
             }
         }
 
-        [Lisp( "as-multiple-elements" )]
-        public static object[] AsMultipleElements( object seq )
+        [Lisp("as-multiple-elements")]
+        public static object[] AsMultipleElements(object seq)
         {
-            return AsMultipleElements( seq, -1 );
+            return AsMultipleElements(seq, -1);
         }
 
-        [Lisp( "as-vector" )]
-        public static Vector AsVector( IEnumerable seq )
+        [Lisp("as-vector")]
+        public static Vector AsVector(IEnumerable seq)
         {
-            if ( seq == null )
+            if (seq == null)
             {
                 return new Vector();
             }
 
             var v = seq as Vector;
 
-            if ( v != null )
+            if (v != null)
             {
                 return v;
             }
 
             v = new Vector();
 
-            foreach ( var item in seq )
+            foreach (var item in seq)
             {
-                v.Add( item );
+                v.Add(item);
             }
 
             return v;
         }
 
-        [Lisp( "as-vector" )]
-        public static object AsVector( IEnumerable seq, Symbol type )
+        [Lisp("as-vector")]
+        public static object AsVector(IEnumerable seq, Symbol type)
         {
-            var t1 = ( Type ) GetType( type );
-            var t2 = GenericListType.MakeGenericType( t1 );
+            var t1 = (Type)GetType(type);
+            var t2 = GenericListType.MakeGenericType(t1);
             var c = t2.GetConstructors();
-            var x = c[ 2 ].Invoke( new object[] { AsArray( seq, type ) } );
+            var x = c[2].Invoke(new object[] { AsArray(seq, type) });
             return x;
         }
 
-        [Lisp( "as-enumerable" )]
-        public static IEnumerable<object> ConvertToEnumerableObject( IEnumerable seq )
+        [Lisp("as-enumerable")]
+        public static IEnumerable<object> ConvertToEnumerableObject(IEnumerable seq)
         {
-            return ToIter( seq ).Cast<object>();
+            return ToIter(seq).Cast<object>();
         }
 
-        [Lisp( "as-enumerable" )]
-        public static object ConvertToEnumerableObject( IEnumerable seq, Symbol type )
+        [Lisp("as-enumerable")]
+        public static object ConvertToEnumerableObject(IEnumerable seq, Symbol type)
         {
-            var t = ( Type ) GetType( type );
-            var m2 = CastMethod.MakeGenericMethod( t );
-            var seq2 = m2.Invoke( null, new object[] { ToIter( seq ) } );
+            var t = (Type)GetType(type);
+            var m2 = CastMethod.MakeGenericMethod(t);
+            var seq2 = m2.Invoke(null, new object[] { ToIter(seq) });
             return seq2;
         }
 
-        [Lisp( "system:get-safe-enumerator" )]
-        public static IEnumerator GetSafeEnumerator( object list )
+        [Lisp("system:get-safe-enumerator")]
+        public static IEnumerator GetSafeEnumerator(object list)
         {
             // Some enumerables use a struct enumerator instead of class.
             // e.g. System.Data.InternalDataCollectionBase.
-            var e = ToIter( ( IEnumerable ) list ).GetEnumerator();
+            var e = ToIter((IEnumerable)list).GetEnumerator();
 
-            if ( e.GetType().IsValueType )
+            if (e.GetType().IsValueType)
             {
-                return new EnumeratorProxy( e );
+                return new EnumeratorProxy(e);
                 //return ConvertToVector( (IEnumerable) list ).GetEnumerator();
             }
             else
@@ -217,49 +217,49 @@ namespace Kiezel
             }
         }
 
-        [Lisp( "on-list-enumerator" )]
-        public static IEnumerable OnListEnumerator( Cons seq, IApply step )
+        [Lisp("on-list-enumerator")]
+        public static IEnumerable OnListEnumerator(Cons seq, IApply step)
         {
-            while ( seq != null )
+            while (seq != null)
             {
                 yield return seq;
-                seq = ( Cons ) Funcall( step, seq );
+                seq = (Cons)Funcall(step, seq);
             }
         }
 
-        [Lisp( "range-enumerator" )]
-        public static IEnumerable RangeEnumerator( int start, int end, int step )
+        [Lisp("range-enumerator")]
+        public static IEnumerable RangeEnumerator(int start, int end, int step)
         {
-            return SeqBase.Range( start, end, step );
+            return SeqBase.Range(start, end, step);
         }
 
-        [Lisp( "series-enumerator" )]
-        public static IEnumerable SeriesEnumerator( int start, int end, int step )
+        [Lisp("series-enumerator")]
+        public static IEnumerable SeriesEnumerator(int start, int end, int step)
         {
-            return SeqBase.Range( start, end + step, step );
+            return SeqBase.Range(start, end + step, step);
         }
 
 
-        internal static IEnumerable ConvertToEnumerable( IEnumerable<object> seq )
+        public static IEnumerable ConvertToEnumerable(IEnumerable<object> seq)
         {
-            if ( seq != null )
+            if (seq != null)
             {
-                foreach ( object item in seq )
+                foreach (object item in seq)
                 {
                     yield return item;
                 }
             }
         }
 
-        [Lisp( "as-prototype" )]
-        public static Prototype AsPrototype( IEnumerable seq, IApply keyFunc, IApply valueFunc )
+        [Lisp("as-prototype")]
+        public static Prototype AsPrototype(IEnumerable seq, IApply keyFunc, IApply valueFunc)
         {
             var dict = new Prototype();
-            foreach ( var item in ToIter( seq ) )
+            foreach (var item in ToIter( seq ))
             {
-                var k = Funcall( keyFunc, item );
-                var v = Funcall( valueFunc, item );
-                dict.SetValue( k, v );
+                var k = Funcall(keyFunc, item);
+                var v = Funcall(valueFunc, item);
+                dict.SetValue(k, v);
             }
             return dict;
         }

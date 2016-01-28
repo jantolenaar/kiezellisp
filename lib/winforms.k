@@ -48,6 +48,7 @@
 (import "System.Windows.Forms.MessageBoxIcon")
 (import "System.Windows.Forms.OpenFileDialog")
 (import "System.Windows.Forms.Orientation")
+(import "System.Windows.Forms.Padding")
 (import "System.Windows.Forms.RichTextBox")
 (import "System.Windows.Forms.SaveFileDialog")
 (import "System.Windows.Forms.SplitContainer")

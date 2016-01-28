@@ -1,14 +1,16 @@
+// Copyright (C) Jan Tolenaar. See the file LICENSE for details.
+
 using System;
 using System.Collections;
 using System.Collections.Generic;
 
 namespace Kiezel
 {
-    internal class EnumeratorProxy : IEnumerator
+    public class EnumeratorProxy : IEnumerator
     {
-        internal IEnumerator Iter;
+        public IEnumerator Iter;
 
-        internal EnumeratorProxy( IEnumerator iter )
+        public EnumeratorProxy(IEnumerator iter)
         {
             Iter = iter;
         }
@@ -32,11 +34,11 @@ namespace Kiezel
         }
     }
 
-    internal class UnisonEnumerator : IEnumerable<Vector>
+    public class UnisonEnumerator : IEnumerable<Vector>
     {
         private IEnumerable[] sequences;
 
-        public UnisonEnumerator( IEnumerable[] sequences )
+        public UnisonEnumerator(IEnumerable[] sequences)
         {
             this.sequences = sequences ?? new IEnumerable[ 0 ];
         }
@@ -50,33 +52,33 @@ namespace Kiezel
         {
             List<IEnumerator> iterators = new List<IEnumerator>();
 
-            foreach ( object seq in sequences )
+            foreach (object seq in sequences)
             {
-                if ( seq is IEnumerable )
+                if (seq is IEnumerable)
                 {
-                    iterators.Add( ( ( IEnumerable ) seq ).GetEnumerator() );
+                    iterators.Add(((IEnumerable)seq).GetEnumerator());
                 }
                 else
                 {
-                    iterators.Add( null );
+                    iterators.Add(null);
                 }
             }
 
-            while ( true )
+            while (true)
             {
                 var data = new Vector();
                 int count = 0;
 
-                for ( int i = 0; i < iterators.Count; ++i )
+                for (int i = 0; i < iterators.Count; ++i)
                 {
-                    if ( iterators[ i ] == null )
+                    if (iterators[i] == null)
                     {
                         break;
                     }
-                    else if ( iterators[ i ].MoveNext() )
+                    else if (iterators[i].MoveNext())
                     {
                         ++count;
-                        data.Add( iterators[ i ].Current );
+                        data.Add(iterators[i].Current);
                     }
                     else
                     {
@@ -84,7 +86,7 @@ namespace Kiezel
                     }
                 }
 
-                if ( count != 0 && count == iterators.Count )
+                if (count != 0 && count == iterators.Count)
                 {
                     // full set
                     yield return data;

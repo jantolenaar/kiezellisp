@@ -4,67 +4,68 @@ using System;
 
 namespace Kiezel
 {
-    internal class Infix
+    public class Infix
     {
-        internal int Index;
+        public int Index;
 
-        internal string InfixStr;
+        public string InfixStr;
 
-        internal string[] Opers =
-        {
-            "(",
-            ")",
-            "[",
-            "]",
-            ",",
+        public string[] Opers =
+            {
+                "(",
+                ")",
+                "[",
+                "]",
+                ",",
 
-            "?",
-            ":",
+                "?",
+                ":",
 
-            "+",
-            "-",
-            "*",
-            "/",
-            "%",
-            "**",
+                "+",
+                "-",
+                "*",
+                "/",
+                "%",
+                "**",
 
-            "&",
-            "|",
-            "^",
-            "~",
-            ">>",
-            "<<",
+                "&",
+                "|",
+                "^",
+                "~",
+                ">>",
+                "<<",
 
-            "&&",
-            "||",
-            "!",
+                "&&",
+                "||",
+                "!",
 
-            "==",
-            "/=",
-            "<",
-            ">",
-            "<=",
-            ">=",
+                "==",
+                "/=",
+                "<",
+                ">",
+                "<=",
+                ">=",
 
-            "="
-        };
+                "="
+            };
 
-        internal Vector Tokens;
+        public Vector Tokens;
 
-        internal Infix( string str )
+        public Infix(string str)
         {
             InfixStr = str;
-            Tokens = Scanner( str );
+            Tokens = Scanner(str);
         }
+
         private delegate object CompileHelper();
 
         private object NextToken
         {
             get
             {
-                if ( Index + 1 < Tokens.Count )
+                if (Index + 1 < Tokens.Count)
                 {
-                    return Tokens[ Index + 1 ];
+                    return Tokens[Index + 1];
                 }
                 else
                 {
@@ -77,9 +78,9 @@ namespace Kiezel
         {
             get
             {
-                if ( Index < Tokens.Count )
+                if (Index < Tokens.Count)
                 {
-                    return Tokens[ Index ];
+                    return Tokens[Index];
                 }
                 else
                 {
@@ -87,54 +88,55 @@ namespace Kiezel
                 }
             }
         }
-        public static object CompileString( string str )
+
+        public static object CompileString(string str)
         {
-            var compiler = new Infix( str );
+            var compiler = new Infix(str);
             return compiler.Compile();
         }
 
-        internal Vector Scanner( string infix )
+        public Vector Scanner(string infix)
         {
             var v = new Vector();
             var index = 0;
-            while ( index < infix.Length )
+            while (index < infix.Length)
             {
                 int pos = index;
-                char ch = infix[ index ];
+                char ch = infix[index];
 
-                if ( Char.IsWhiteSpace( ch ) )
+                if (Char.IsWhiteSpace(ch))
                 {
                     // Skip white space
                     ++index;
                 }
-                else if ( Char.IsDigit( ch ) )
+                else if (Char.IsDigit(ch))
                 {
                     // Numbers can have decimal point.
                     // No commas allowed since this would break function parameter list syntax.
-                    while ( index < infix.Length )
+                    while (index < infix.Length)
                     {
-                        ch = infix[ index ];
+                        ch = infix[index];
 
                         // Same as below. If there are letters, this will give runtime error.
-                        if ( !( Char.IsLetterOrDigit( ch ) || ch == '.' || ch == '_' ) )
+                        if (!(Char.IsLetterOrDigit(ch) || ch == '.' || ch == '_'))
                         {
                             break;
                         }
 
                         ++index;
                     }
-                    var number = infix.Substring( pos, index - pos );
-                    v.Add( number.ParseNumber() );
+                    var number = infix.Substring(pos, index - pos);
+                    v.Add(number.ParseNumber());
                 }
-                else if ( Char.IsLetter( ch ) || ch == '_' )
+                else if (Char.IsLetter(ch) || ch == '_')
                 {
                     // ident
 
-                    while ( index < infix.Length )
+                    while (index < infix.Length)
                     {
-                        ch = infix[ index ];
+                        ch = infix[index];
 
-                        if ( !( Char.IsLetterOrDigit( ch ) || ch == '_' ) )
+                        if (!(Char.IsLetterOrDigit(ch) || ch == '_'))
                         {
                             break;
                         }
@@ -142,32 +144,32 @@ namespace Kiezel
                         ++index;
                     }
 
-                    var ident = infix.Substring( pos, index - pos );
-                    v.Add( Runtime.FindSymbol( ident ) );
+                    var ident = infix.Substring(pos, index - pos);
+                    v.Add(Runtime.FindSymbol(ident));
                 }
-                else if ( index + 1 < infix.Length )
+                else if (index + 1 < infix.Length)
                 {
-                    var oper = infix.Substring( index, 2 );
-                    if ( Runtime.Find( oper, Opers ) == null )
+                    var oper = infix.Substring(index, 2);
+                    if (Runtime.Find(oper, Opers) == null)
                     {
-                        oper = infix.Substring( index, 1 );
-                        if ( Runtime.Find( oper, Opers ) == null )
+                        oper = infix.Substring(index, 1);
+                        if (Runtime.Find(oper, Opers) == null)
                         {
-                            throw new LispException( "Invalid operator {0} in infix expression: {1}", oper, infix );
+                            throw new LispException("Invalid operator {0} in infix expression: {1}", oper, infix);
                         }
                     }
                     index += oper.Length;
-                    v.Add( oper );
+                    v.Add(oper);
                 }
                 else
                 {
-                    var oper = infix.Substring( index, 1 );
-                    if ( Runtime.Find( oper, Opers ) == null )
+                    var oper = infix.Substring(index, 1);
+                    if (Runtime.Find(oper, Opers) == null)
                     {
-                        throw new LispException( "Invalid operator {0} in infix expression: {1}", oper, infix );
+                        throw new LispException("Invalid operator {0} in infix expression: {1}", oper, infix);
                     }
                     index += oper.Length;
-                    v.Add( oper );
+                    v.Add(oper);
                 }
             }
 
@@ -178,6 +180,7 @@ namespace Kiezel
         {
             ++Index;
         }
+
         private object Compile()
         {
             return CompileAssignment();
@@ -189,33 +192,33 @@ namespace Kiezel
             // add-expr: add-expr add-op mul-expr
             // add-op: '+' | '-'
 
-            return CompileList( CompileMul, "+", "-" );
+            return CompileList(CompileMul, "+", "-");
         }
 
         private object CompileAnd()
         {
             // and-expr: not-expr
             // and-expr: and-expr 'and' not-expr
-            return CompileList( CompileBitOr, "&&" );
+            return CompileList(CompileBitOr, "&&");
         }
 
-        private Vector CompileArgs( string terminator )
+        private Vector CompileArgs(string terminator)
         {
             var args = new Vector();
 
-            while ( true )
+            while (true)
             {
-                args.Add( Compile() );
-                if ( !Runtime.Equal( Token, "," ) )
+                args.Add(Compile());
+                if (!Runtime.Equal(Token, ","))
                 {
                     break;
                 }
                 Accept();
             }
 
-            if ( !Runtime.Equal( Token, terminator ) )
+            if (!Runtime.Equal(Token, terminator))
             {
-                throw new LispException( "Missing {0} in infix expression: {1}", terminator, InfixStr );
+                throw new LispException("Missing {0} in infix expression: {1}", terminator, InfixStr);
             }
 
             Accept();
@@ -226,11 +229,11 @@ namespace Kiezel
         private object CompileAssignment()
         {
             var node1 = CompileTernary();
-            if ( Runtime.Equals( Token, "=" ) )
+            if (Runtime.Equals(Token, "="))
             {
                 Accept();
                 var node2 = CompileAssignment();
-                return Runtime.MakeList( Symbols.Setf, node1, node2 );
+                return Runtime.MakeList(Symbols.Setf, node1, node2);
             }
             else
             {
@@ -245,22 +248,22 @@ namespace Kiezel
             return x;
         }
 
-        private object CompileBinary( CompileHelper helper, params string[] opers )
+        private object CompileBinary(CompileHelper helper, params string[] opers)
         {
-            return CompileBinary( helper, helper, opers );
+            return CompileBinary(helper, helper, opers);
         }
 
-        private object CompileBinary( CompileHelper leftHelper, CompileHelper rightHelper, params string[] opers )
+        private object CompileBinary(CompileHelper leftHelper, CompileHelper rightHelper, params string[] opers)
         {
             var node1 = leftHelper();
 
-            var oper = Runtime.Find( Token, opers );
+            var oper = Runtime.Find(Token, opers);
 
-            if ( oper != null )
+            if (oper != null)
             {
                 Accept();
                 var node2 = rightHelper();
-                return Runtime.MakeList( GetLispOperator( oper ), node1, node2 );
+                return Runtime.MakeList(GetLispOperator(oper), node1, node2);
             }
 
             return node1;
@@ -268,17 +271,17 @@ namespace Kiezel
 
         private object CompileBitAnd()
         {
-            return CompileList( CompileEq, "&" );
+            return CompileList(CompileEq, "&");
         }
 
         private object CompileBitOr()
         {
-            return CompileList( CompileBitXor, "|" );
+            return CompileList(CompileBitXor, "|");
         }
 
         private object CompileBitXor()
         {
-            return CompileList( CompileBitAnd, "^" );
+            return CompileList(CompileBitAnd, "^");
         }
 
         private object CompileEq()
@@ -286,63 +289,63 @@ namespace Kiezel
             // eq-expr: add-expr
             // eq-expr: add-expr eq-op add-expr
             // eq-op: = '=' | '/=' | '>' | '<' | '<=' | '>='
-            return CompileTests( CompileUneq, "==", "/=" );
+            return CompileTests(CompileUneq, "==", "/=");
         }
 
-        private object CompileList( CompileHelper helper, params string[] opers )
+        private object CompileList(CompileHelper helper, params string[] opers)
         {
             var list = new Vector();
 
-            CompileList( list, helper, opers );
+            CompileList(list, helper, opers);
 
             // Return the shortest code.
-            if ( list.Count == 0 )
+            if (list.Count == 0)
             {
                 return null;
             }
-            else if ( list.Count == 1 )
+            else if (list.Count == 1)
             {
-                return list[ 0 ];
+                return list[0];
             }
             else
             {
-                object code = list[ 0 ];
-                for ( int i = 1; i < list.Count; i += 2 )
+                object code = list[0];
+                for (int i = 1; i < list.Count; i += 2)
                 {
-                    var lispOper = GetLispOperator( list[ i ] );
-                    if ( SupportsMany( lispOper ) && code is Cons && Runtime.First( code ) == lispOper )
+                    var lispOper = GetLispOperator(list[i]);
+                    if (SupportsMany(lispOper) && code is Cons && Runtime.First(code) == lispOper)
                     {
-                        code = Runtime.Append( ( Cons ) code, Runtime.MakeList( list[ i + 1 ] ) );
+                        code = Runtime.Append((Cons)code, Runtime.MakeList(list[i + 1]));
                     }
                     else
                     {
-                        code = Runtime.MakeList( lispOper, code, list[ i + 1 ] );
+                        code = Runtime.MakeList(lispOper, code, list[i + 1]);
                     }
                 }
                 return code;
             }
         }
 
-        private void CompileList( Vector list, CompileHelper helper, params string[] opers )
+        private void CompileList(Vector list, CompileHelper helper, params string[] opers)
         {
             var node1 = helper();
 
-            if ( node1 == null )
+            if (node1 == null)
             {
                 return;
             }
 
-            list.Add( node1 );
+            list.Add(node1);
 
-            if ( Tokens.Count != 0 )
+            if (Tokens.Count != 0)
             {
-                var oper = Runtime.Find( Token, opers );
+                var oper = Runtime.Find(Token, opers);
 
-                if ( oper != null )
+                if (oper != null)
                 {
                     Accept();
-                    list.Add( oper );
-                    CompileList( list, helper, opers );
+                    list.Add(oper);
+                    CompileList(list, helper, opers);
                 }
             }
         }
@@ -353,14 +356,14 @@ namespace Kiezel
             // mul-expr: mul-expr mul-op unary-expr
             // mul-op: '*' | '/' | '%'
 
-            return CompileList( CompileUnary, "*", "/", "%" );
+            return CompileList(CompileUnary, "*", "/", "%");
         }
 
         private object CompileOr()
         {
             // or-expr: and-expr
             // or-expr: or-expr 'or' and-expr
-            return CompileList( CompileAnd, "||" );
+            return CompileList(CompileAnd, "||");
         }
 
         private object CompilePostfix()
@@ -368,33 +371,33 @@ namespace Kiezel
             // postfix-expr: primary-expr
             // postfix-expr: identifier '(' expr-list ')'
             // postfix-expr: '(' expr ')'
-            if ( Token is Symbol && Runtime.Equal( NextToken, "(" ) )
+            if (Token is Symbol && Runtime.Equal(NextToken, "("))
             {
                 var func = Token;
                 Accept();
                 Accept();
-                var args = CompileArgs( ")" );
-                return Runtime.MakeListStar( func, args );
+                var args = CompileArgs(")");
+                return Runtime.MakeListStar(func, args);
             }
-            else if ( Token is Symbol && Runtime.Equal( NextToken, "[" ) )
+            else if (Token is Symbol && Runtime.Equal(NextToken, "["))
             {
                 var arr = Token;
                 Accept();
                 Accept();
-                var args = CompileArgs( "]" );
-                return Runtime.MakeListStar( Symbols.GetElt, arr, args );
+                var args = CompileArgs("]");
+                return Runtime.MakeListStar(Symbols.GetElt, arr, args);
             }
-            else if ( Runtime.Equal( Token, "(" ) )
+            else if (Runtime.Equal(Token, "("))
             {
                 Accept();
-                var args = CompileArgs( ")" );
-                if ( args.Count == 1 )
+                var args = CompileArgs(")");
+                if (args.Count == 1)
                 {
-                    return args[ 0 ];
+                    return args[0];
                 }
                 else
                 {
-                    return Runtime.MakeListStar( Symbols.Do, args );
+                    return Runtime.MakeListStar(Symbols.Do, args);
                 }
             }
             else
@@ -405,67 +408,68 @@ namespace Kiezel
 
         private object CompilePow()
         {
-            return CompileBinary( CompilePostfix, CompileUnary, "**" );
+            return CompileBinary(CompilePostfix, CompileUnary, "**");
         }
 
         private object CompileShift()
         {
-            return CompileBinary( CompileAdd, "<<", ">>" );
+            return CompileBinary(CompileAdd, "<<", ">>");
         }
 
         private object CompileTernary()
         {
             var node1 = CompileOr();
-            if ( Runtime.Equals( Token, "?" ) )
+            if (Runtime.Equals(Token, "?"))
             {
                 Accept();
                 var node2 = CompileTernary();
-                if ( !Runtime.Equals( Token, ":" ) )
+                if (!Runtime.Equals(Token, ":"))
                 {
-                    throw new LispException( "Invalid ternary expression in: {0}", InfixStr );
+                    throw new LispException("Invalid ternary expression in: {0}", InfixStr);
                 }
                 Accept();
                 var node3 = CompileTernary();
-                return Runtime.MakeList( Symbols.If, node1, node2, node3 );
+                return Runtime.MakeList(Symbols.If, node1, node2, node3);
             }
             else
             {
                 return node1;
             }
         }
-        private object CompileTests( CompileHelper helper, params string[] opers )
+
+        private object CompileTests(CompileHelper helper, params string[] opers)
         {
             var list = new Vector();
 
-            CompileList( list, helper, opers );
+            CompileList(list, helper, opers);
 
             // Return the shortest code.
-            if ( list.Count == 0 )
+            if (list.Count == 0)
             {
                 return null;
             }
-            else if ( list.Count == 1 )
+            else if (list.Count == 1)
             {
-                return list[ 0 ];
+                return list[0];
             }
             else
             {
                 // 3, 5, 8 etc: a==b==c becomes (and (= a b) (= b c))
                 var list2 = new Vector();
 
-                for ( int i = 0; i + 1 < list.Count; i += 2 )
+                for (int i = 0; i + 1 < list.Count; i += 2)
                 {
-                    var lispOper = GetLispOperator( list[ i + 1 ] );
-                    list2.Add( Runtime.MakeList( lispOper, list[ i ], list[ i + 2 ] ) );
+                    var lispOper = GetLispOperator(list[i + 1]);
+                    list2.Add(Runtime.MakeList(lispOper, list[i], list[i + 2]));
                 }
 
-                if ( list2.Count == 1 )
+                if (list2.Count == 1)
                 {
-                    return list2[ 0 ];
+                    return list2[0];
                 }
                 else
                 {
-                    return Runtime.MakeListStar( Symbols.And, list2 );
+                    return Runtime.MakeListStar(Symbols.And, list2);
                 }
             }
         }
@@ -478,9 +482,9 @@ namespace Kiezel
 
             var str = Token as string;
 
-            if ( str != null )
+            if (str != null)
             {
-                switch ( str )
+                switch (str)
                 {
                     case "(":
                     {
@@ -491,23 +495,23 @@ namespace Kiezel
                     {
                         Accept();
                         var node = CompileUnary();
-                        return Runtime.MakeList( Runtime.FindSymbol( "-" ), node );
+                        return Runtime.MakeList(Runtime.FindSymbol("-"), node);
                     }
                     case "~":
                     {
                         Accept();
                         var node = CompileUnary();
-                        return Runtime.MakeList( Runtime.FindSymbol( "bit-not" ), node );
+                        return Runtime.MakeList(Runtime.FindSymbol("bit-not"), node);
                     }
                     case "!":
                     {
                         Accept();
                         var node = CompileUnary();
-                        return Runtime.MakeList( Runtime.FindSymbol( "not" ), node );
+                        return Runtime.MakeList(Runtime.FindSymbol("not"), node);
                     }
                     default:
                     {
-                        throw new LispException( "Invalid operator {0} in infix expression: {1}", str, InfixStr );
+                        throw new LispException("Invalid operator {0} in infix expression: {1}", str, InfixStr);
                     }
                 }
             }
@@ -519,11 +523,12 @@ namespace Kiezel
         {
             // eq-expr: add-expr
             // eq-expr: add-expr eq-op add-expr
-            return CompileTests( CompileShift, "<", ">", ">=", "<=" );
+            return CompileTests(CompileShift, "<", ">", ">=", "<=");
         }
-        private Symbol GetLispOperator( object oper )
+
+        private Symbol GetLispOperator(object oper)
         {
-            switch ( ( string ) oper )
+            switch ((string)oper)
             {
                 case "==":
                 {
@@ -572,14 +577,14 @@ namespace Kiezel
 
                 default:
                 {
-                    return Runtime.FindSymbol( ( string ) oper );
+                    return Runtime.FindSymbol((string)oper);
                 }
             }
         }
 
-        private bool SupportsMany( Symbol oper )
+        private bool SupportsMany(Symbol oper)
         {
-            switch ( oper.Name )
+            switch (oper.Name)
             {
                 case "or":
                 case "and":

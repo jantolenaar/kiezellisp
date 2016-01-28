@@ -6,6 +6,7 @@ using System.Text.RegularExpressions;
 
 namespace Kiezel
 {
+
     public class CommandLineParser
     {
         private string[] args;
@@ -27,27 +28,27 @@ namespace Kiezel
             Short = 16,
         }
 
-        public void AddOption( string spec1, string spec2 )
+        public void AddOption(string spec1, string spec2)
         {
             Option option = new Option();
-            ParseOption( spec1, ref option );
-            ParseOption( spec2, ref option );
-            options.Add( option );
+            ParseOption(spec1, ref option);
+            ParseOption(spec2, ref option);
+            options.Add(option);
         }
 
-        public void AddOption( string spec )
+        public void AddOption(string spec)
         {
             Option option = new Option();
-            ParseOption( spec, ref option );
-            options.Add( option );
+            ParseOption(spec, ref option);
+            options.Add(option);
         }
 
-        public Option FindOption( bool longName, string arg, out string value )
+        public Option FindOption(bool longName, string arg, out string value)
         {
             value = null;
-            foreach ( Option option in options )
+            foreach (Option option in options)
             {
-                if ( option.Match( longName, arg, out value ) )
+                if (option.Match(longName, arg, out value))
                 {
                     return option;
                 }
@@ -55,11 +56,11 @@ namespace Kiezel
             return null;
         }
 
-        public string GetArgument( int pos )
+        public string GetArgument(int pos)
         {
-            if ( 0 <= pos && pos < args.Length - endOfOptions )
+            if (0 <= pos && pos < args.Length - endOfOptions)
             {
-                return args[ pos + endOfOptions ];
+                return args[pos + endOfOptions];
             }
             else
             {
@@ -67,12 +68,12 @@ namespace Kiezel
             }
         }
 
-        public string[] GetArgumentArray( int pos )
+        public string[] GetArgumentArray(int pos)
         {
-            if ( 0 <= pos && pos <= args.Length - endOfOptions )
+            if (0 <= pos && pos <= args.Length - endOfOptions)
             {
                 string[] dest = new string[ args.Length - endOfOptions - pos ];
-                Array.Copy( args, pos + endOfOptions, dest, 0, dest.Length );
+                Array.Copy(args, pos + endOfOptions, dest, 0, dest.Length);
                 return dest;
             }
             else
@@ -81,10 +82,10 @@ namespace Kiezel
             }
         }
 
-        public string GetOption( string name )
+        public string GetOption(string name)
         {
             string value;
-            if ( values.TryGetValue( name, out value ) )
+            if (values.TryGetValue(name, out value))
             {
                 return value;
             }
@@ -94,133 +95,133 @@ namespace Kiezel
             }
         }
 
-        public void Parse( string[] args )
+        public void Parse(string[] args)
         {
             this.args = args;
             values = new Dictionary<string, string>();
             int i = 0;
-            while ( i < args.Length && args[ i ].StartsWith( "-" ) )
+            while (i < args.Length && args[i].StartsWith("-"))
             {
-                string arg = args[ i++ ];
+                string arg = args[i++];
 
-                if ( arg == "--" )
+                if (arg == "--")
                 {
                     break;
                 }
 
-                bool isLong = arg.StartsWith( "--" );
-                string spec = isLong ? arg.Substring( 2 ) : arg.Substring( 1 );
+                bool isLong = arg.StartsWith("--");
+                string spec = isLong ? arg.Substring(2) : arg.Substring(1);
 
-            repeat:
+                repeat:
 
                 string value;
-                Option option = FindOption( isLong, spec, out value );
+                Option option = FindOption(isLong, spec, out value);
 
-                if ( option == null )
+                if (option == null)
                 {
-                    throw new LispException( "Invalid command line option: \"{0}\"", arg );
+                    throw new LispException("Invalid command line option: \"{0}\"", arg);
                 }
 
-                if ( ( option.Flags & Flags.Joined ) != 0 )
+                if ((option.Flags & Flags.Joined) != 0)
                 {
                     // value already calculated by FindOption
                 }
-                else if ( ( option.Flags & Flags.Placed ) != 0 )
+                else if ((option.Flags & Flags.Placed) != 0)
                 {
-                    if ( value != "" )
+                    if (value != "")
                     {
-                        throw new LispException( "Invalid command line option: \"{0}\"", arg );
+                        throw new LispException("Invalid command line option: \"{0}\"", arg);
                     }
 
-                    if ( i < args.Length && args[ i ].StartsWith( "-" ) == false )
+                    if (i < args.Length && args[i].StartsWith("-") == false)
                     {
-                        value = args[ i++ ];
+                        value = args[i++];
                     }
                 }
-                else if ( value != "" )
+                else if (value != "")
                 {
                     // concatenated options?
-                    if ( option.LongName != null )
+                    if (option.LongName != null)
                     {
-                        values[ option.LongName ] = "";
+                        values[option.LongName] = "";
                     }
-                    if ( option.ShortName != null )
+                    if (option.ShortName != null)
                     {
-                        values[ option.ShortName ] = "";
+                        values[option.ShortName] = "";
                     }
                     spec = value;
                     goto repeat;
                 }
 
-                if ( value == "" && ( option.Flags & Flags.Required ) != 0 )
+                if (value == "" && (option.Flags & Flags.Required) != 0)
                 {
-                    throw new LispException( "Command line option {0} must have a value", arg );
+                    throw new LispException("Command line option {0} must have a value", arg);
                 }
 
-                if ( option.LongName != null )
+                if (option.LongName != null)
                 {
-                    values[ option.LongName ] = value;
+                    values[option.LongName] = value;
                 }
 
-                if ( option.ShortName != null )
+                if (option.ShortName != null)
                 {
-                    values[ option.ShortName ] = value;
+                    values[option.ShortName] = value;
                 }
             }
 
             endOfOptions = i;
         }
 
-        public void ParseOption( string spec, ref Option option )
+        public void ParseOption(string spec, ref Option option)
         {
             var cases = new[]
-			{
-				new { Pattern = @"^--(\w+)[:=]\[\w+\]$",	Long=true,  Flags = Flags.Joined },
-				new { Pattern = @"^--(\w+)[:=]\w+\$",		Long=true,  Flags = Flags.Joined | Flags.Required },
-				new { Pattern = @"^--(\w+)\s+\[\w+\]$",		Long=true,  Flags = Flags.Placed },
-				new { Pattern = @"^--(\w+)\s+\w+$",			Long=true,  Flags = Flags.Placed | Flags.Required },
-				new { Pattern = @"^--(\w+)\s*$",			Long=true,  Flags = Flags.None },
-				new { Pattern = @"^-(\w)[:=]?\[\w+\]$",		Long=false, Flags = Flags.Joined },
-				new { Pattern = @"^-(\w)[:=]?\w+\$",		Long=false, Flags = Flags.Joined | Flags.Required },
-				new { Pattern = @"^-(\w)\s+\[\w+\]$",		Long=false, Flags = Flags.Placed },
-				new { Pattern = @"^-(\w)\s+\w+$",			Long=false, Flags = Flags.Placed | Flags.Required },
-				new { Pattern = @"^-(\w)\s*$",				Long=false, Flags = Flags.None },
-				new { Pattern = @"^-()\s*$",				Long=false, Flags = Flags.None }
-			};
-
-            foreach ( var item in cases )
             {
-                Match match = Regex.Match( spec, item.Pattern );
-                if ( match.Success )
+                new { Pattern = @"^--([\w|-]+)[:=]\[\w+\]$",	Long = true,  Flags = Flags.Joined },
+                new { Pattern = @"^--([\w|-]+)[:=]\w+\$",		Long = true,  Flags = Flags.Joined | Flags.Required },
+                new { Pattern = @"^--([\w|-]+)\s+\[\w+\]$",		Long = true,  Flags = Flags.Placed },
+                new { Pattern = @"^--([\w|-]+)\s+\w+$",			Long = true,  Flags = Flags.Placed | Flags.Required },
+                new { Pattern = @"^--([\w|-]+)\s*$",			Long = true,  Flags = Flags.None },
+                new { Pattern = @"^-(\w)[:=]?\[\w+\]$",		Long = false, Flags = Flags.Joined },
+                new { Pattern = @"^-(\w)[:=]?\w+\$",		Long = false, Flags = Flags.Joined | Flags.Required },
+                new { Pattern = @"^-(\w)\s+\[\w+\]$",		Long = false, Flags = Flags.Placed },
+                new { Pattern = @"^-(\w)\s+\w+$",			Long = false, Flags = Flags.Placed | Flags.Required },
+                new { Pattern = @"^-(\w)\s*$",				Long = false, Flags = Flags.None },
+                new { Pattern = @"^-()\s*$",				Long = false, Flags = Flags.None }
+            };
+
+            foreach (var item in cases)
+            {
+                Match match = Regex.Match(spec, item.Pattern);
+                if (match.Success)
                 {
-                    if ( item.Long )
+                    if (item.Long)
                     {
-                        option.LongName = match.Groups[ 1 ].Value;
+                        option.LongName = match.Groups[1].Value;
                     }
                     else
                     {
-                        option.ShortName = match.Groups[ 1 ].Value;
+                        option.ShortName = match.Groups[1].Value;
                     }
 
-                    if ( option.Flags == 0 )
+                    if (option.Flags == 0)
                     {
                         option.Flags = item.Flags;
                     }
-                    else if ( item.Flags != option.Flags )
+                    else if (item.Flags != option.Flags)
                     {
-                        throw new LispException( "Inconsistent command line option specification \"{0}\"", spec );
+                        throw new LispException("Inconsistent command line option specification \"{0}\"", spec);
                     }
 
                     return;
                 }
             }
 
-            throw new LispException( "Invalid command line option specification: \"{0}\"", spec );
+            throw new LispException("Invalid command line option specification: \"{0}\"", spec);
         }
 
-        private void AddOption( Option option )
+        private void AddOption(Option option)
         {
-            options.Add( option );
+            options.Add(option);
         }
 
         public class Option
@@ -228,22 +229,23 @@ namespace Kiezel
             public Flags Flags;
             public string LongName;
             public string ShortName;
+
             public Option()
             {
             }
 
-            public bool Match( bool longName, string str, out string value )
+            public bool Match(bool longName, string str, out string value)
             {
                 value = "";
-                if ( LongName != null && longName == true )
+                if (LongName != null && longName == true)
                 {
-                    if ( str == LongName )
+                    if (str == LongName)
                     {
                         return true;
                     }
-                    else if ( ( Flags & Flags.Joined ) != 0 && ( str.StartsWith( LongName + "=" ) || str.StartsWith( LongName + ":" ) ) )
+                    else if ((Flags & Flags.Joined) != 0 && (str.StartsWith(LongName + "=") || str.StartsWith(LongName + ":")))
                     {
-                        value = str.Substring( LongName.Length + 1 );
+                        value = str.Substring(LongName.Length + 1);
                         return true;
                     }
                     else
@@ -251,20 +253,20 @@ namespace Kiezel
                         return false;
                     }
                 }
-                else if ( ShortName != null && longName == false )
+                else if (ShortName != null && longName == false)
                 {
-                    if ( str == ShortName )
+                    if (str == ShortName)
                     {
                         return true;
                     }
-                    else if ( ( Flags & Flags.Joined ) != 0 && ( str.StartsWith( ShortName + "=" ) || str.StartsWith( ShortName + ":" ) ) )
+                    else if ((Flags & Flags.Joined) != 0 && (str.StartsWith(ShortName + "=") || str.StartsWith(ShortName + ":")))
                     {
-                        value = str.Substring( ShortName.Length + 1 );
+                        value = str.Substring(ShortName.Length + 1);
                         return true;
                     }
-                    else if ( str.StartsWith( ShortName ) )
+                    else if (str.StartsWith(ShortName))
                     {
-                        value = str.Substring( ShortName.Length );
+                        value = str.Substring(ShortName.Length);
                         return true;
                     }
                     else

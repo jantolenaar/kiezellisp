@@ -30,42 +30,26 @@
     <UseApplicationTrust>false</UseApplicationTrust>
     <BootstrapperEnabled>true</BootstrapperEnabled>
   </PropertyGroup>
-  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|x86' ">
-    <PlatformTarget>x86</PlatformTarget>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|AnyCPU'">
     <DebugSymbols>true</DebugSymbols>
-    <DebugType>pdbonly</DebugType>
-    <Optimize>false</Optimize>
     <OutputPath>bin\Debug\</OutputPath>
     <DefineConstants>TRACE;DEBUG;CLR45</DefineConstants>
+    <DebugType>pdbonly</DebugType>
+    <PlatformTarget>AnyCPU</PlatformTarget>
     <ErrorReport>prompt</ErrorReport>
-    <WarningLevel>4</WarningLevel>
-    <UseVSHostingProcess>true</UseVSHostingProcess>
-    <Prefer32Bit>false</Prefer32Bit>
-    <Externalconsole>true</Externalconsole>
+    <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
   </PropertyGroup>
-  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|x86' ">
-    <PlatformTarget>x86</PlatformTarget>
-    <Optimize>true</Optimize>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|AnyCPU'">
     <OutputPath>bin\Release\</OutputPath>
     <DefineConstants>TRACE;CLR45</DefineConstants>
+    <Optimize>true</Optimize>
+    <PlatformTarget>AnyCPU</PlatformTarget>
     <ErrorReport>prompt</ErrorReport>
-    <WarningLevel>4</WarningLevel>
-    <Prefer32Bit>false</Prefer32Bit>
-    <Externalconsole>true</Externalconsole>
+    <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="Microsoft.CSharp" />
     <Reference Include="System" />
-    <Reference Include="System.Core" />
-    <Reference Include="System.Drawing" />
-    <Reference Include="System.Management" />
     <Reference Include="System.Numerics" />
-    <Reference Include="System.Web" />
-    <Reference Include="System.Windows.Forms" />
-    <Reference Include="System.Xml.Linq" />
-    <Reference Include="System.Data.DataSetExtensions" />
-    <Reference Include="System.Data" />
-    <Reference Include="System.Xml" />
     <Reference Include="Microsoft.Dynamic">
       <HintPath>dlls\Microsoft.Dynamic.dll</HintPath>
     </Reference>
@@ -73,6 +57,11 @@
       <HintPath>dlls\Microsoft.Scripting.dll</HintPath>
     </Reference>
     <Reference Include="System.Configuration" />
+    <Reference Include="System.Data" />
+    <Reference Include="System.Xml" />
+    <Reference Include="Microsoft.CSharp" />
+    <Reference Include="System.Web" />
+    <Reference Include="System.Core" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="alist.cs" />
@@ -90,10 +79,7 @@
     <Compile Include="compiler-scope.cs" />
     <Compile Include="compiler.cs" />
     <Compile Include="cons.cs" />
-    <Compile Include="forms-mode.cs" />
     <Compile Include="embedded-mode.cs" />
-    <Compile Include="console-mode.cs" />
-    <Compile Include="constants.cs" />
     <Compile Include="convert.cs" />
     <Compile Include="csv.cs" />
     <Compile Include="delayedexpression.cs" />
@@ -105,7 +91,6 @@
     <Compile Include="functional.cs" />
     <Compile Include="lambda-arity.cs" />
     <Compile Include="generic.cs" />
-    <Compile Include="getline.cs" />
     <Compile Include="infix.cs" />
     <Compile Include="interfaces.cs" />
     <Compile Include="io.cs" />
@@ -137,6 +122,7 @@
     <Compile Include="symbol.cs" />
     <Compile Include="threading.cs" />
     <Compile Include="vector.cs" />
+    <Compile Include="repl.cs" />
   </ItemGroup>
   <ItemGroup>
     <BootstrapperPackage Include=".NETFramework,Version=v4.0,Profile=Client">
@@ -167,9 +153,6 @@
     <EmbeddedResource Include="lisp-icon.bmp" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="kiezellisp-init.k">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
     <None Include="release-kiezellisp-init.k" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
@@ -189,4 +172,9 @@
   <Target Name="AfterBuild">
   </Target>
   -->
+  <ItemGroup>
+    <Content Include="kiezellisp-init.k">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
 </Project>

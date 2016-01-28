@@ -35,15 +35,19 @@
         (let value (second head))
         (collect (init-obj-property obj name value))))
 
-#+gtk
+#if gtk
+
 (def verbs (as-list (map symbol-name '(
     add append pack-start pack-end
     ))))
 
-#+winforms
+#elif winforms
+
 (def verbs (as-list (map symbol-name '(
     add 
     ))))
+
+#endif
 
 (defun init-obj-property (obj kwname value)
     (let name (symbol-name kwname))

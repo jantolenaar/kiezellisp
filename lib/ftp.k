@@ -30,8 +30,9 @@
 (defun make-credentials (&key user password)
     (network-credential:new user password))
 
-(defun get-bytes (remote-filename host &key credentials (passive true))
+(defun get-bytes (remote-filename host &key credentials ssl (passive true))
     (let request (web-request:create (string "ftp://" host "/" remote-filename)))
+    (when ssl (setf (.enable-ssl request) ssl))
     (when credentials (setf (.credentials request) credentials))
     (setf (.method request) ftp-methods:DOWNLOAD-FILE)
     (when (not passive) (setf (.use-passive request) passive))
@@ -42,8 +43,9 @@
                 (.to-array stream-out)))))
 
 
-(defun get-file (local-filename remote-filename host &key credentials (passive true))
+(defun get-file (local-filename remote-filename host &key credentials ssl (passive true))
     (let request (web-request:create (string "ftp://" host "/" remote-filename)))
+    (when ssl (setf (.enable-ssl request) ssl))
     (when credentials (setf (.credentials request) credentials))
     (setf (.method request) ftp-methods:DOWNLOAD-FILE)
     (when (not passive) (setf (.use-passive request) passive))
@@ -53,8 +55,9 @@
                 (copy-stream stream-in stream-out)))
         (.status-description response)))
 
-(defun put-bytes (bytes remote-filename host &key credentials (passive true))
+(defun put-bytes (bytes remote-filename host &key credentials ssl (passive true))
     (let request (web-request:create (string "ftp://" host "/" remote-filename)))
+    (when ssl (setf (.enable-ssl request) ssl))
     (when credentials (setf (.credentials request) credentials))
     (setf (.method request) ftp-methods:UPLOAD-FILE)
     (when (not passive) (setf (.use-passive request) passive))
@@ -64,8 +67,9 @@
     (using (response (.get-response request))
         (.status-description response)))
 
-(defun put-file (local-filename remote-filename host &key credentials (passive true))
+(defun put-file (local-filename remote-filename host &key credentials ssl (passive true))
     (let request (web-request:create (string "ftp://" host "/" remote-filename)))
+    (when ssl (setf (.enable-ssl request) ssl))
     (when credentials (setf (.credentials request) credentials))
     (setf (.method request) ftp-methods:UPLOAD-FILE)
     (when (not passive) (setf (.use-passive request) passive))

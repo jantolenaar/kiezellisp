@@ -12,22 +12,22 @@ using ThreadFunc = System.Func<object>;
 
 namespace Kiezel
 {
-    internal struct ThreadContextState
+    public struct ThreadContextState
     {
-        internal Cons EvaluationStack;
-        internal Frame Frame;
-        internal int NestingDepth;
-        internal SpecialVariables SpecialStack;
+        public Cons EvaluationStack;
+        public Frame Frame;
+        public int NestingDepth;
+        public SpecialVariables SpecialStack;
     }
 
     public class GeneratorThreadContext : ThreadContext, IEnumerable
     {
-        internal BlockingCollection<object> list;
+        public BlockingCollection<object> list;
 
-        internal GeneratorThreadContext( int capacity ) :
-            base( Runtime.GetCurrentThread().SpecialStack )
+        public GeneratorThreadContext(int capacity) :
+            base(Runtime.GetCurrentThread().SpecialStack)
         {
-            list = new BlockingCollection<object>( capacity );
+            list = new BlockingCollection<object>(capacity);
         }
 
         IEnumerator IEnumerable.GetEnumerator()
@@ -35,19 +35,19 @@ namespace Kiezel
             return list.GetConsumingEnumerable().GetEnumerator();
         }
 
-        internal object Resume()
+        public object Resume()
         {
             // called by client of generator
             return list.Take();
         }
 
-        internal void Yield( object item )
+        public void Yield(object item)
         {
             // called by generator
-            list.Add( item );
+            list.Add(item);
         }
 
-        internal void YieldBreak()
+        public void YieldBreak()
         {
             list.CompleteAdding();
         }
@@ -55,14 +55,14 @@ namespace Kiezel
 
     public partial class Runtime
     {
-        internal static TcpListener CommandListenerSocket = null;
+        public static TcpListener CommandListenerSocket = null;
 
-        [Lisp( "system:create-generator" )]
-        public static object CreateGenerator( ThreadFunc code, params object[] kwargs )
+        [Lisp("system:create-generator")]
+        public static object CreateGenerator(ThreadFunc code, params object[] kwargs)
         {
-            object[] args = ParseKwargs( kwargs, new string[] { "capacity" }, 1 );
-            var capacity = Convert.ToInt32( args[ 0 ] );
-            var context = new GeneratorThreadContext( capacity );
+            object[] args = ParseKwargs(kwargs, new string[] { "capacity" }, 1);
+            var capacity = Convert.ToInt32(args[0]);
+            var context = new GeneratorThreadContext(capacity);
 
             ThreadFunc wrapper = () =>
             {
@@ -71,100 +71,101 @@ namespace Kiezel
                 return val;
             };
 
-            return CreateTaskWithContext( wrapper, context, true );
+            return CreateTaskWithContext(wrapper, context, true);
         }
 
-        [Lisp( "system:create-task" )]
-        public static object CreateTask( ThreadFunc code )
+        [Lisp("system:create-task")]
+        public static object CreateTask(ThreadFunc code)
         {
-            return CreateTask( code, true );
+            return CreateTask(code, true);
         }
 
-        [Lisp( "system:create-task" )]
-        public static object CreateTask( ThreadFunc code, bool start )
+        [Lisp("system:create-task")]
+        public static object CreateTask(ThreadFunc code, bool start)
         {
             var specials = GetCurrentThread().SpecialStack;
-            return CreateTaskWithContext( code, new ThreadContext( specials ), start );
+            return CreateTaskWithContext(code, new ThreadContext(specials), start);
         }
 
-        [Lisp( "system:enable-benchmark" )]
-        public static void EnableBenchmark( bool flag )
+        [Lisp("system:enable-benchmark")]
+        public static void EnableBenchmark(bool flag)
         {
-            if ( flag )
+            if (flag)
             {
-                Process.GetCurrentProcess().ProcessorAffinity = new IntPtr( 1 );
+                Process.GetCurrentProcess().ProcessorAffinity = new IntPtr(1);
                 Process.GetCurrentProcess().PriorityClass = ProcessPriorityClass.High;
                 Thread.CurrentThread.Priority = ThreadPriority.Highest;
             }
             else
             {
-                Process.GetCurrentProcess().ProcessorAffinity = new IntPtr( 0 );
+                Process.GetCurrentProcess().ProcessorAffinity = new IntPtr(0);
                 Process.GetCurrentProcess().PriorityClass = ProcessPriorityClass.Normal;
                 Thread.CurrentThread.Priority = ThreadPriority.Normal;
             }
         }
 
-        [Lisp( "system:get-current-thread" )]
+        [Lisp("system:get-current-thread")]
         public static ThreadContext GetCurrentThread()
         {
             return CurrentThreadContext;
         }
 
-        [Lisp( "system:get-task-result" )]
-        public static object GetTaskResult( ThreadContext task )
+        [Lisp("system:get-task-result")]
+        public static object GetTaskResult(ThreadContext task)
         {
             return task.GetResult();
         }
 
-        [Lisp( "resume" )]
-        public static object Resume( ThreadContext ctx )
+        [Lisp("resume")]
+        public static object Resume(ThreadContext ctx)
         {
-            var context = CheckGeneratorThreadContext( ctx );
+            var context = CheckGeneratorThreadContext(ctx);
             return context.Resume();
         }
 
         //[Lisp("send")]
-        public static int Send( string text )
+        public static int Send(string text)
         {
-            return Send( text, 8080 );
+            return Send(text, 8080);
         }
 
         //[Lisp( "send" )]
-        public static int Send( string text, int port )
+        public static int Send(string text, int port)
         {
-            using ( var socket = new Socket( AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp ) )
+            using (var socket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp))
             {
-                socket.Connect( new IPEndPoint( IPAddress.Loopback, port ) );
-                var data = System.Text.Encoding.ASCII.GetBytes( text );
-                return socket.Send( data );
+                socket.Connect(new IPEndPoint(IPAddress.Loopback, port));
+                var data = System.Text.Encoding.ASCII.GetBytes(text);
+                return socket.Send(data);
             }
         }
 
-        [Lisp( "sleep" )]
-        public static void Sleep( int msec )
+        [Lisp("sleep")]
+        public static void Sleep(int msec)
         {
-            System.Threading.Thread.Sleep( msec );
-        }
-        [Lisp( "yield" )]
-        public static void Yield( object item )
-        {
-            var context = CheckGeneratorThreadContext( CurrentThreadContext );
-            context.Yield( item );
+            System.Threading.Thread.Sleep(msec);
         }
 
-        internal static GeneratorThreadContext CheckGeneratorThreadContext( ThreadContext ctx )
+        [Lisp("yield")]
+        public static void Yield(object item)
+        {
+            var context = CheckGeneratorThreadContext(CurrentThreadContext);
+            context.Yield(item);
+        }
+
+        public static GeneratorThreadContext CheckGeneratorThreadContext(ThreadContext ctx)
         {
             var context = ctx as GeneratorThreadContext;
 
-            if ( context == null )
+            if (context == null)
             {
-                throw new LispException( "Thread is not a generator thread" );
+                throw new LispException("Thread is not a generator thread");
             }
 
-            return ( GeneratorThreadContext ) context;
+            return (GeneratorThreadContext)context;
         }
 
-        internal static object CreateTaskWithContext( ThreadFunc code, ThreadContext context, bool start )
+        public static object CreateTaskWithContext(ThreadFunc code, ThreadContext context, bool start)
         {
             Func<object> wrapper = () =>
             {
@@ -173,9 +174,9 @@ namespace Kiezel
                     CurrentThreadContext = context;
                     return code();
                 }
-                catch ( Exception ex )
+                catch (Exception ex)
                 {
-                    throw Runtime.UnwindExceptionIntoNewException( ex );
+                    throw Runtime.UnwindExceptionIntoNewException(ex);
                 }
                 finally
                 {
@@ -183,9 +184,9 @@ namespace Kiezel
                 }
             };
 
-            var task = new Task<object>( wrapper );
+            var task = new Task<object>(wrapper);
             context.Task = task;
-            if ( start )
+            if (start)
             {
                 context.Start();
             }
@@ -193,29 +194,30 @@ namespace Kiezel
             return context;
         }
 
-        internal static void Listener( object state )
+        public static void Listener(object state)
         {
             var data = new byte[ 60000 ];
 
-            while ( true )
+            while (true)
             {
                 try
                 {
-                    var port = ( int ) state;
-                    CommandListenerSocket = new TcpListener( IPAddress.Loopback, port );
+                    var port = (int)state;
+                    CommandListenerSocket = new TcpListener(IPAddress.Loopback, port);
                     CommandListenerSocket.Start();
 
-                    while ( true )
+                    while (true)
                     {
-                        using ( var socket = CommandListenerSocket.AcceptTcpClient() )
+                        using (var socket = CommandListenerSocket.AcceptTcpClient())
                         {
                             socket.NoDelay = true;
-                            socket.LingerState = new LingerOption( false, 0 );
-                            using ( var stream = socket.GetStream() )
+                            socket.LingerState = new LingerOption(false, 0);
+                            using (var stream = socket.GetStream())
                             {
-                                var count = stream.Read( data, 0, data.Length );
-                                var str = System.Text.Encoding.UTF8.GetString( data, 0, count );
-                                InsertExternalCommand( str );
+                                var count = stream.Read(data, 0, data.Length);
+                                var str = System.Text.Encoding.UTF8.GetString(data, 0, count);
+                                // TO DO
+                                InsertExternalCommand(str);
                             }
                         }
                     }
@@ -223,7 +225,7 @@ namespace Kiezel
                 catch
                 {
                     // Mono: long enough for program to exit before restarting listener
-                    Sleep( 1000 );
+                    Sleep(1000);
                 }
 
                 // no recovery
@@ -231,40 +233,44 @@ namespace Kiezel
             }
         }
 
+        static void InsertExternalCommand(string str)
+        {
+        }
+
         private static void AbortCommandListener()
         {
-            if ( CommandListenerSocket != null )
+            if (CommandListenerSocket != null)
             {
                 CommandListenerSocket.Stop();
                 CommandListenerSocket = null;
             }
         }
 
-        [Lisp( "start-listener" )]
+        [Lisp("start-listener")]
         public static void CreateCommandListener()
         {
-            var port = ( int ) GetDynamic( Symbols.ReplListenerPort );
-            CreateCommandListener( port );
+            var port = (int)GetDynamic(Symbols.ReplListenerPort);
+            CreateCommandListener(port);
         }
 
         [Lisp("start-listener")]
-        public static void CreateCommandListener( int port )
+        public static void CreateCommandListener(int port)
         {
-            Task.Factory.StartNew( Listener, port );
+            Task.Factory.StartNew(Listener, port);
         }
     }
 
     public class ThreadContext
     {
-        internal Frame _Frame = null;
-        internal Cons EvaluationStack = null;
-        internal int NestingDepth = 0;
-        internal SpecialVariables SpecialStack = null;
-        internal Task<object> Task;
+        public Frame _Frame = null;
+        public Cons EvaluationStack = null;
+        public int NestingDepth = 0;
+        public SpecialVariables SpecialStack = null;
+        public Task<object> Task;
 
-        internal ThreadContext( SpecialVariables specialStack )
+        public ThreadContext(SpecialVariables specialStack)
         {
-            this.SpecialStack = SpecialVariables.Clone( specialStack );
+            this.SpecialStack = SpecialVariables.Clone(specialStack);
         }
 
         public bool IsCompleted
@@ -275,11 +281,11 @@ namespace Kiezel
             }
         }
 
-        internal Frame Frame
+        public Frame Frame
         {
             get
             {
-                if ( _Frame == null )
+                if (_Frame == null)
                 {
                     _Frame = new Frame();
                 }
@@ -291,6 +297,7 @@ namespace Kiezel
                 _Frame = value;
             }
         }
+
         public object GetResult()
         {
             Start();
@@ -299,7 +306,7 @@ namespace Kiezel
 
         public void Start()
         {
-            if ( Task.Status == TaskStatus.Created )
+            if (Task.Status == TaskStatus.Created)
             {
                 try
                 {
@@ -310,12 +317,13 @@ namespace Kiezel
                 }
             }
         }
-        internal void RestoreFrame( ThreadContextState saved )
+
+        public void RestoreFrame(ThreadContextState saved)
         {
             Frame = saved.Frame;
         }
 
-        internal void RestoreStackAndFrame( ThreadContextState saved )
+        public void RestoreStackAndFrame(ThreadContextState saved)
         {
             Frame = saved.Frame;
             EvaluationStack = saved.EvaluationStack;
@@ -323,7 +331,7 @@ namespace Kiezel
             NestingDepth = saved.NestingDepth;
         }
 
-        internal ThreadContextState SaveStackAndFrame( Frame frame = null, Cons form = null )
+        public ThreadContextState SaveStackAndFrame(Frame frame = null, Cons form = null)
         {
             var saved = new ThreadContextState();
 
@@ -334,33 +342,34 @@ namespace Kiezel
 
             ++NestingDepth;
 
-            if ( NestingDepth == 10000 )
+            if (NestingDepth == 10000)
             {
                 System.Diagnostics.Debugger.Break();
             }
 
-            if ( frame != null )
+            if (frame != null)
             {
-                Frame = new Frame( frame, null );
+                Frame = new Frame(frame, null);
                 Frame.Link = saved.Frame;
             }
 
-            if ( form != null )
+            if (form != null)
             {
-                EvaluationStack = Runtime.MakeCons( form, EvaluationStack );
+                EvaluationStack = Runtime.MakeCons(form, EvaluationStack);
             }
 
             return saved;
         }
     }
 
-    internal class SpecialVariables
+    public class SpecialVariables
     {
-        internal object _value;
-        internal bool Constant;
-        internal SpecialVariables Link;
-        internal Symbol Sym;
-        internal SpecialVariables( Symbol sym, bool constant, object value, SpecialVariables link )
+        public object _value;
+        public bool Constant;
+        public SpecialVariables Link;
+        public Symbol Sym;
+
+        public SpecialVariables(Symbol sym, bool constant, object value, SpecialVariables link)
         {
             Sym = sym;
             Constant = constant;
@@ -368,20 +377,20 @@ namespace Kiezel
             Link = link;
         }
 
-        internal object CheckedValue
+        public object CheckedValue
         {
             set
             {
-                if ( Constant )
+                if (Constant)
                 {
-                    throw new LispException( "Cannot assign to constant: {0}", Sym );
+                    throw new LispException("Cannot assign to constant: {0}", Sym);
                 }
 
                 _value = value;
             }
         }
 
-        internal object Value
+        public object Value
         {
             get
             {
@@ -393,15 +402,15 @@ namespace Kiezel
             }
         }
 
-        internal static SpecialVariables Clone( SpecialVariables var )
+        public static SpecialVariables Clone(SpecialVariables var)
         {
-            if ( var == null )
+            if (var == null)
             {
                 return null;
             }
             else
             {
-                return new SpecialVariables( var.Sym, var.Constant, var.Value, Clone( var.Link ) );
+                return new SpecialVariables(var.Sym, var.Constant, var.Value, Clone(var.Link));
             }
         }
     }

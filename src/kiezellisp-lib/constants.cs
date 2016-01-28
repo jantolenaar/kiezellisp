@@ -2,9 +2,9 @@
 
 namespace Kiezel
 {
-    internal class DefaultValue : IPrintsValue
+    public class DefaultValue : IPrintsValue
     {
-        internal static readonly DefaultValue Value = new DefaultValue();
+        public static readonly DefaultValue Value = new DefaultValue();
 
         public override string ToString()
         {

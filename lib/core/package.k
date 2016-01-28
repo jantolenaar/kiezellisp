@@ -21,6 +21,7 @@
     (let $package (make-package name))
     (each (λx (set-doc $package (apply string x)))
           (get-option :documentation options))
+    (use-package "lisp")
     (each use-package (flatten (get-option :use options)))
     (each import-symbol (flatten (get-option :import options)))
     (each shadow-symbol (flatten (get-option :shadow options)))

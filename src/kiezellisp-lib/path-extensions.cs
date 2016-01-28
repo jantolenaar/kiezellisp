@@ -4,30 +4,36 @@ using System.IO;
 
 namespace Kiezel
 {
-    internal static class PathExtensions
+    public static class PathExtensions
     {
-        [Extends( typeof( Path ) )]
-        public static string Combine( string path1, string path2 )
+        [Extends(typeof(Path))]
+        public static string Combine(string path1, string path2)
         {
-            return GetUnixName( Path.Combine( path1, path2 ) );
+            return GetUnixName(Path.Combine(path1, path2));
         }
 
-        [Extends( typeof( Path ) )]
-        public static string GetDirectoryName( string path )
+        [Extends(typeof(Path))]
+        public static string GetFullPath(string path)
         {
-            return GetUnixName( Path.GetDirectoryName( path ) );
+            return GetUnixName(Path.GetFullPath(path));
         }
 
-        [Extends( typeof( Path ) )]
-        public static string GetUnixName( string name )
+        [Extends(typeof(Path))]
+        public static string GetDirectoryName(string path)
         {
-            return name.Replace( @"\", @"/" );
+            return GetUnixName(Path.GetDirectoryName(path));
         }
 
-        [Extends( typeof( Path ) )]
-        public static string GetWindowsName( string name )
+        [Extends(typeof(Path))]
+        public static string GetUnixName(string name)
         {
-            return name.Replace( "/", "\\" );
+            return name.Replace(@"\", @"/");
+        }
+
+        [Extends(typeof(Path))]
+        public static string GetWindowsName(string name)
+        {
+            return name.Replace("/", "\\");
         }
     }
 }

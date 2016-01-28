@@ -272,14 +272,8 @@ $print-escape and $print-base.
             (print "(")
             (with-indent (1)
                 (pprint (first cond-case))
-                (cond
-                    ((= (length cond-case) 1)
-                        (print ")"))
-                    (true
-                        (with-default-indent ()
-                            (print-line)
-                            (pprint-left-margin)
-                            (pprint (second cond-case))))))
+                (with-default-indent ()
+                    (pprint-items-vertically (rest cond-case) true)))
             (print ")")))
     (print ")"))
 
@@ -297,14 +291,8 @@ $print-escape and $print-base.
             (print "(")
             (with-indent (1)
                 (pprint (first case))
-                (cond
-                    ((= (length case) 1)
-                        (print ")"))
-                    (true
-                        (with-default-indent ()
-                            (print-line)
-                            (pprint-left-margin)
-                            (pprint (second case))))))
+                (with-default-indent ()
+                    (pprint-items-vertically (rest case) true)))
             (print ")")))
     (print ")"))
 
@@ -414,5 +402,19 @@ $print-escape and $print-base.
 
 (setq $pprint-hook pprint)
 
+;;;
+;;; Lisp Syntax Colors
+;;;
+
+(defconstant $syntax-color-builtin 		0x0000ff) 
+(defconstant $syntax-color-comment 		0xb22222)
+(defconstant $syntax-color-form 		0xda70d6)
+(defconstant $syntax-color-constant 	0x0000ff)
+(defconstant $syntax-color-special 		0x408080)
+(defconstant $syntax-color-keyword 		0xa020f0)
+(defconstant $syntax-color-ampersand 	0x228b22)
+(defconstant $syntax-color-string 		0xbc7711)
+(defconstant $syntax-color-conditional  0xb22222)
+(defconstant $syntax-color-debug        0x0000ff)
 
 

@@ -14,38 +14,41 @@ namespace Kiezel
     public partial class Runtime
     {
         [ThreadStatic]
-        internal static ThreadContext _Context = null;
+        public static ThreadContext _Context = null;
 
-        internal static Dictionary<Type, List<Type>> AbstractTypes;
-        internal static bool AdaptiveCompilation = true;
-        internal static int CompilationThreshold = 100;
-        internal static bool ConsoleMode;
-        internal static bool EmbeddedMode;
-        internal static bool DebugMode;
-        internal static Readtable DefaultReadtable;
-        internal static Dictionary<object, string> Documentation;
-        internal static long GentempCounter = 0;
-        internal static string HomeDirectory = Directory.GetCurrentDirectory();
-        internal static bool InteractiveMode;
-        internal static Package KeywordPackage;
-        internal static string LambdaCharacter = "\u03bb";
-        internal static Package LispDocPackage;
-        internal static Package LispPackage;
-        internal static bool OptimizerEnabled;
-        internal static bool ReadDecimalNumbers;
-        internal static bool SetupMode;
-        internal static Stopwatch StopWatch = Stopwatch.StartNew();
-        internal static Package TempPackage;
-        internal static bool UnicodeOutputEnable = true;
-        internal static Cons UserArguments;
-        internal static Package UserPackage;
-        internal static ThreadContext CurrentThreadContext
+        public static Dictionary<Type, List<Type>> AbstractTypes;
+        public static bool AdaptiveCompilation = true;
+        public static int CompilationThreshold = 100;
+        public static bool ConsoleMode;
+        public static bool EmbeddedMode;
+        public static bool DebugMode;
+        public static bool Mono;
+        public static Readtable DefaultReadtable;
+        public static Dictionary<object, string> Documentation;
+        public static long GentempCounter = 0;
+        public static string HomeDirectory = Directory.GetCurrentDirectory();
+        public static bool InteractiveMode;
+        public static Package KeywordPackage;
+        public static string LambdaCharacter = "\u03bb";
+        public static Package LispDocPackage;
+        public static Package LispPackage;
+        public static bool OptimizerEnabled;
+        public static bool ReadDecimalNumbers;
+        public static bool SetupMode;
+        public static Stopwatch StopWatch = Stopwatch.StartNew();
+        public static Package TempPackage;
+        public static Cons UserArguments;
+        public static string ScriptName;
+        public static Package UserPackage;
+        public static Missing MissingValue = Missing.Value;
+
+        public static ThreadContext CurrentThreadContext
         {
             get
             {
-                if ( _Context == null )
+                if (_Context == null)
                 {
-                    _Context = new ThreadContext( null );
+                    _Context = new ThreadContext(null);
                 }
                 return _Context;
             }
@@ -55,60 +58,60 @@ namespace Kiezel
             }
         }
 
-        [Lisp( "exit" )]
+        [Lisp("exit")]
         public static void Exit()
         {
-            Environment.Exit( 0 );
+            Environment.Exit(0);
         }
 
-        [Lisp( "exit" )]
-        public static void Exit( int code )
+        [Lisp("exit")]
+        public static void Exit(int code)
         {
-            Environment.Exit( code );
+            Environment.Exit(code);
         }
 
-        [Lisp( "set-read-decimal-numbers" )]
-        public static void SetReadDecimalNumbers( bool flag )
+        [Lisp("set-read-decimal-numbers")]
+        public static void SetReadDecimalNumbers(bool flag)
         {
             ReadDecimalNumbers = flag;
         }
 
-        internal static void AddFeature( string name )
+        public static void AddFeature(string name)
         {
-            var key = MakeSymbol( name, KeywordPackage );
-            Symbols.Features.Value = MakeCons( key, ( Cons ) Symbols.Features.Value );
+            var key = MakeSymbol(":", name);
+            Symbols.Features.Value = MakeCons(key, (Cons)Symbols.Features.Value);
         }
 
-        internal static string GetApplicationInitFile()
+        public static string GetApplicationInitFile()
         {
             // application config file is same folder as kiezellisp-lib.dll
             var assembly = Assembly.GetExecutingAssembly();
             var root = assembly.Location;
-            var dir = Path.GetDirectoryName( root );
-            return PathExtensions.Combine( dir, "kiezellisp-init" );
+            var dir = Path.GetDirectoryName(root);
+            return PathExtensions.Combine(dir, "kiezellisp-init");
         }
 
-        internal static bool HasFeature( string feature )
+        public static bool HasFeature(string feature)
         {
-            var list = ( Cons ) Symbols.Features.Value;
-            var result = SeqBase.FindItem( list, feature, Eql, SymbolName, null );
+            var list = (Cons)Symbols.Features.Value;
+            var result = SeqBase.FindItem(list, feature, Eql, SymbolName, null);
             return result.Item2 != null;
         }
 
-        internal static void InitAbstractTypes()
+        public static void InitAbstractTypes()
         {
             var types = new Type[]
             {
                 typeof(Number), typeof(Complex), typeof(Integer), typeof(BigInteger), typeof(Numerics.BigRational),
-                        typeof(Rational), typeof(decimal), typeof(double), typeof(long), typeof(int), null,
+                typeof(Rational), typeof(decimal), typeof(double), typeof(long), typeof(int), null,
                 typeof(Rational), typeof(Numerics.BigRational), typeof(Integer), typeof(BigInteger), typeof(long), typeof(int), null,
                 typeof(Integer), typeof(BigInteger), typeof(long), typeof(int), null,
-                typeof(List), typeof(Cons),null,
-                typeof(Sequence), typeof( List), typeof(Vector), null,
-                typeof(Enumerable), typeof(IEnumerable),null,
-                typeof(Symbol),typeof(KeywordClass),null,
-                typeof(Atom),typeof(Symbol),typeof(KeywordClass),typeof(ValueType),typeof(string),typeof(Number),
-                        typeof(Complex), typeof(Integer), typeof(BigInteger), typeof(Numerics.BigRational), typeof(Rational),null,
+                typeof(List), typeof(Cons), null,
+                typeof(Sequence), typeof(List), typeof(Vector), null,
+                typeof(Enumerable), typeof(IEnumerable), null,
+                typeof(Symbol), typeof(KeywordClass), null,
+                typeof(Atom), typeof(Symbol), typeof(KeywordClass), typeof(ValueType), typeof(string), typeof(Number),
+                typeof(Complex), typeof(Integer), typeof(BigInteger), typeof(Numerics.BigRational), typeof(Rational), null,
                 null
             };
 
@@ -117,74 +120,69 @@ namespace Kiezel
             Type key = null;
             List<Type> subtypes = null;
 
-            foreach ( var t in types )
+            foreach (var t in types)
             {
-                if ( key == null )
+                if (key == null)
                 {
                     key = t;
                     subtypes = new List<Type>();
                 }
-                else if ( t == null )
+                else if (t == null)
                 {
-                    AbstractTypes[ key ] = subtypes;
+                    AbstractTypes[key] = subtypes;
                     key = null;
                 }
                 else
                 {
-                    subtypes.Add( t );
+                    subtypes.Add(t);
                 }
             }
         }
 
-        internal static void Reset( bool loadDebug )
+        public static void Reset()
         {
             SetupMode = true;
 
             InitAbstractTypes();
-
             RestartVariables();
             RestartDependencies();
             RestartBinders();
             RestartSymbols();
             RestartCompiler();
             RestartSettings();
-            RestartBuiltins( typeof( Runtime ) );
-
-            SetupMode = false;
-
-            RestartLoadFiles( loadDebug );
+            RestartBuiltins(typeof(Runtime));
         }
 
-        internal static void RestartBuiltins( Type type )
+        public static void RestartBuiltins(Type type)
         {
             var flags = BindingFlags.Static | BindingFlags.Instance | BindingFlags.Public;
-            var names = type.GetMethods( flags ).Select( x => x.Name ).Distinct();
+            var names = type.GetMethods(flags).Select(x => x.Name).Distinct();
 
-            foreach ( var name in names )
+            foreach (var name in names)
             {
-                var members = type.GetMember( name, flags ).Select( x => x as MethodInfo ).Where( x => x != null ).ToArray();
-                var attrs = members[ 0 ].GetCustomAttributes( typeof( LispAttribute ), false );
+                var members = type.GetMember(name, flags).Select(x => x as MethodInfo).Where(x => x != null && x.GetCustomAttributes(typeof(LispAttribute), false).Length != 0).ToArray();
 
-                if ( attrs.Length != 0 )
+                if (members.Length != 0)
                 {
-                    var pure = members[ 0 ].GetCustomAttributes( typeof( PureAttribute ), false ).Length != 0;
-                    var builtin = new ImportedFunction( name, type, members, pure );
+                    var pure = members[0].GetCustomAttributes(typeof(PureAttribute), false).Length != 0;
+                    var lisp = members[0].GetCustomAttributes(typeof(LispAttribute), false);
+                    var builtin = new ImportedFunction(name, type, members, pure);
 
-                    foreach ( string symbolName in ( ( LispAttribute ) attrs[ 0 ] ).Names )
+                    foreach (string symbolName in ( ( LispAttribute ) lisp[ 0 ] ).Names)
                     {
-                        var sym = FindSymbol( symbolName, creating: true );
-                        if ( !sym.IsUndefined )
+                        var sym = FindSymbol(symbolName);
+                        if (!sym.IsUndefined)
                         {
-                            PrintWarning( "Duplicate builtin name: ", sym.Name );
+                            PrintWarning("Duplicate builtin name: ", sym.Name);
                         }
                         sym.FunctionValue = builtin;
-                        sym.Package.Export( sym.Name );
+                        sym.Package.Export(sym.Name);
                     }
                 }
             }
         }
 
-        internal static object RestartDependencies()
+        public static object RestartDependencies()
         {
             // Make sure dlls are loaded when Kiezellisp starts.
             var temp = new object[]
@@ -197,53 +195,85 @@ namespace Kiezel
             return temp;
         }
 
-        internal static void RestartLoadFiles( bool loadDebug )
+        public static void RestartLoadFiles(int level)
         {
-            SetLoadPath( "." );
+            SetupMode = false;
+
+            SetLoadPath(".");
 
             Symbols.Package.Value = UserPackage;
 
             string path = GetApplicationInitFile();
 
-            if ( path != null )
+            if (path != null)
             {
-                TryLoad( path, loadDebug, false, false );
+                switch (level)
+                {
+                    case 0:
+                    {
+                        TryLoad(path, false, false);
+                        break;
+                    }
+                    case 1:
+                    {
+                        TryLoad(path, true, false);
+                        break;
+                    }
+                    case 2:
+                    {
+                        TryLoad(path, true, true);
+                        break;
+                    }
+
+                }
             }
         }
 
-        internal static void RestartSettings()
+        public static void RestartSettings()
         {
-            if ( Environment.OSVersion.Platform == PlatformID.Win32NT )
-            {
-                AddFeature( "windows" );
-            }
-            else if ( Environment.OSVersion.Platform == PlatformID.Unix )
-            {
-                // osx too?
-                AddFeature( "unix" );
-            }
-            else if ( Environment.OSVersion.Platform == PlatformID.MacOSX )
-            {
-                AddFeature( "macosx" );
-            }
-
             if (Type.GetType("Mono.Runtime") != null)
             {
+                Mono = true;
                 AddFeature("mono");
             }
             else
             {
+                Mono = false;
                 AddFeature("microsoft");
             }
 
-            if ( Environment.Is64BitProcess )
+            if (Type.GetType("System.Windows.Forms.Form") != null)
             {
-                AddFeature( "x64" );
+                AddFeature("winforms");
+            }
+
+            if (Environment.OSVersion.Platform == PlatformID.Win32NT)
+            {
+                if (!String.IsNullOrEmpty(Environment.GetEnvironmentVariable("WINDOWID")))
+                {
+                    AddFeature("wine");
+                }
+
+                AddFeature("windows");
+            }
+            else if (Environment.OSVersion.Platform == PlatformID.Unix)
+            {
+                // osx too?
+                AddFeature("unix");
+            }
+            else if (Environment.OSVersion.Platform == PlatformID.MacOSX)
+            {
+                AddFeature("macosx");
+            }
+
+            if (Environment.Is64BitProcess)
+            {
+                AddFeature("x64");
             }
             else
             {
-                AddFeature( "x32" );
-                AddFeature( "x86" );
+                AddFeature("x32");
+                AddFeature("x86");
             }
 
 #if CLR40
@@ -251,41 +281,43 @@ namespace Kiezel
 #endif
 
 #if CLR45
-            AddFeature( "clr45");
+            AddFeature("clr45");
 #endif
 
-            AddFeature( "kiezellisp" );
-            AddFeature( ConsoleMode ? "console-mode" : "graphical-mode" );
+            AddFeature("kiezellisp");
+            AddFeature(ConsoleMode ? "console-mode" : "graphical-mode");
             
-            if ( DebugMode )
+            if (DebugMode)
             {
-                AddFeature( "debug" );
+                AddFeature("debug");
             }
 
-            Symbols.Features.VariableValue = AsList( Sort( ( Cons ) Symbols.Features.Value ) );
+            Symbols.Features.VariableValue = AsList(Sort((Cons)Symbols.Features.Value));
         }
 
-        internal static void RestartSymbols()
+        public static void RestartSymbols()
         {
             // these packages do not use lisp package
-            KeywordPackage = MakePackage( "keyword" );
-            TempPackage = MakePackage( "temp" );
-            LispPackage = MakePackage( "lisp" );
-            LispDocPackage = MakePackage( "example" );
+            KeywordPackage = MakePackage("keyword", reserved: true);
+            TempPackage = MakePackage("temp", reserved: true);
+            LispPackage = MakePackage("lisp", reserved: true);
+            LispDocPackage = MakePackage("example", reserved: true);
 
-            SetupMode = false;
-            UserPackage = MakePackage( "user" );
-            SetupMode = true;
-            
+            // these packages do use lisp package
+            MakePackage("terminal", useLisp: true);
+            UserPackage = MakePackage("user", useLisp: true);
+
             Symbols.Create();
 
             // standard set of variables
             Symbols.CommandLineArguments.ReadonlyValue = UserArguments;
+            Symbols.CommandLineScriptName.ReadonlyValue = ScriptName;
             Symbols.DebugMode.ConstantValue = DebugMode;
             Symbols.E.ConstantValue = Math.E;
             Symbols.EnableWarnings.VariableValue = true;
             Symbols.Exception.ReadonlyValue = null;
             Symbols.Features.VariableValue = null;
+            Symbols.HelpHook.VariableValue = null;
             Symbols.I.ConstantValue = Complex.ImaginaryOne;
             Symbols.InteractiveMode.ConstantValue = InteractiveMode;
             Symbols.It.VariableValue = null;
@@ -293,14 +325,13 @@ namespace Kiezel
             Symbols.LoadPath.ReadonlyValue = null;
             Symbols.LoadPrint.VariableValue = false;
             Symbols.LoadVerbose.VariableValue = false;
+            Symbols.MissingValue.ConstantValue = MissingValue;
             Symbols.Modules.ReadonlyValue = null;
             Symbols.Package.VariableValue = LispPackage;
             Symbols.PackageNamePrefix.VariableValue = null;
             Symbols.PI.ConstantValue = Math.PI;
             Symbols.PrettyPrintHook.VariableValue = null;
-            Symbols.PrintBackgroundColor.Value = null;
             Symbols.PrintBase.VariableValue = 10;
-            Symbols.PrintColor.Value = null;
             Symbols.PrintCompact.Value = true;
             Symbols.PrintEscape.VariableValue = true;
             Symbols.PrintForce.VariableValue = true;
@@ -312,17 +343,16 @@ namespace Kiezel
             Symbols.Recur.ReadonlyValue = null;
             Symbols.ReplForceIt.VariableValue = false;
             Symbols.ReplListenerPort.VariableValue = 8080;
-            Symbols.ScriptDirectory.ReadonlyValue = NormalizePath( HomeDirectory );
+            Symbols.ScriptDirectory.ReadonlyValue = NormalizePath(HomeDirectory);
             Symbols.ScriptName.ReadonlyValue = null;
-            Symbols.StdErr.VariableValue = true;
-            Symbols.StdIn.VariableValue = Console.In;
-            Symbols.StdLog.VariableValue = true;
-            Symbols.StdOut.VariableValue = true;
-            Symbols.StandoutColor.Value = Console.BackgroundColor;
-            Symbols.StandoutBackgroundColor.Value = Console.ForegroundColor;
+            Symbols.StdErr.VariableValue = null;
+            Symbols.StdIn.ConstantValue = null;
+            Symbols.StdOut.ConstantValue = null;
+            Symbols.StdScr.ConstantValue = null;
+            Symbols.InfoColor.Value = "gray";
         }
 
-        internal static void RestartVariables()
+        public static void RestartVariables()
         {
             ReadDecimalNumbers = true;
             GentempCounter = 0;

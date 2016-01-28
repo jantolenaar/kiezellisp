@@ -7,23 +7,23 @@ using Numerics;
 
 namespace Kiezel
 {
-    internal abstract class Number
+    public abstract class Number
     {
-        private static int a = ( int ) 'a';
-        private static int A = ( int ) 'A';
-        private static int nine = ( int ) '9';
-        private static int z = ( int ) 'z';
-        private static int Z = ( int ) 'Z';
-        private static int zero = ( int ) '0';
+        private static int a = (int)'a';
+        private static int A = (int)'A';
+        private static int nine = (int)'9';
+        private static int z = (int)'z';
+        private static int Z = (int)'Z';
+        private static int zero = (int)'0';
 
-        static internal bool CanShrink( BigRational d )
+        static public bool CanShrink(BigRational d)
         {
-            return ( d.Denominator == 1 );
+            return (d.Denominator == 1);
         }
 
-        static internal bool CanShrink( Int64 d )
+        static public bool CanShrink(Int64 d)
         {
-            if ( Int32.MinValue <= d && d <= Int32.MaxValue )
+            if (Int32.MinValue <= d && d <= Int32.MaxValue)
             {
                 return true;
             }
@@ -33,9 +33,9 @@ namespace Kiezel
             }
         }
 
-        static internal bool CanShrink( BigInteger d )
+        static public bool CanShrink(BigInteger d)
         {
-            if ( Int64.MinValue <= d && d <= Int64.MaxValue )
+            if (Int64.MinValue <= d && d <= Int64.MaxValue)
             {
                 return true;
             }
@@ -45,88 +45,88 @@ namespace Kiezel
             }
         }
 
-        internal static string ConvertToString( BigInteger n, bool escape, int radix )
+        public static string ConvertToString(BigInteger n, bool escape, int radix)
         {
-            if ( radix == -1 )
+            if (radix == -1)
             {
-                radix = ( int ) Runtime.GetDynamic( Symbols.PrintBase );
+                radix = (int)Runtime.GetDynamic(Symbols.PrintBase);
             }
 
-            if ( radix == -1 )
+            if (radix == -1)
             {
                 radix = 10;
             }
-            else if ( radix < 2 || radix > 36 )
+            else if (radix < 2 || radix > 36)
             {
-                throw new LispException( "Invalid number base: {0}", radix );
+                throw new LispException("Invalid number base: {0}", radix);
             }
 
-            if ( n == 0 )
+            if (n == 0)
             {
                 return "0";
             }
 
-            var sign = ( n >= 0 ) ? "" : "-";
-            n = ( n >= 0 ) ? n : -n;
+            var sign = (n >= 0) ? "" : "-";
+            n = (n >= 0) ? n : -n;
             var stk = new Vector();
-            while ( n != 0 )
+            while (n != 0)
             {
-                var d = ( int ) ( n % radix );
-                if ( d <= 9 )
+                var d = (int)(n % radix);
+                if (d <= 9)
                 {
-                    stk.Add( ( char ) ( d + '0' ) );
+                    stk.Add((char)(d + '0'));
                 }
                 else
                 {
-                    stk.Add( ( char ) ( d - 10 + 'a' ) );
+                    stk.Add((char)(d - 10 + 'a'));
                 }
                 n = n / radix;
             }
             stk.Reverse();
-            if ( escape )
+            if (escape)
             {
-                if ( radix == 10 )
+                if (radix == 10)
                 {
-                    return sign + Runtime.MakeString( stk.ToArray() );
+                    return sign + Runtime.MakeString(stk.ToArray());
                 }
-                else if ( radix == 16 )
+                else if (radix == 16)
                 {
-                    return sign + "0x" + Runtime.MakeString( stk.ToArray() );
+                    return sign + "0x" + Runtime.MakeString(stk.ToArray());
                 }
-                else if ( radix == 8 )
+                else if (radix == 8)
                 {
-                    return sign + "0" + Runtime.MakeString( stk.ToArray() );
+                    return sign + "0" + Runtime.MakeString(stk.ToArray());
                 }
-                else if ( radix == 2 )
+                else if (radix == 2)
                 {
-                    return "#b" + sign + Runtime.MakeString( stk.ToArray() );
+                    return "#b" + sign + Runtime.MakeString(stk.ToArray());
                 }
                 else
                 {
-                    return "#" + radix.ToString() + "r" + sign + Runtime.MakeString( stk.ToArray() );
+                    return "#" + radix.ToString() + "r" + sign + Runtime.MakeString(stk.ToArray());
                 }
             }
             else
             {
-                return sign + Runtime.MakeString( stk.ToArray() );
+                return sign + Runtime.MakeString(stk.ToArray());
             }
         }
 
-        internal static int ParseNumberBase( string token, int numberBase )
+        public static int ParseNumberBase(string token, int numberBase)
         {
             BigInteger value;
-            if ( !TryParseNumberBase( token, true, numberBase, out value ) )
+            if (!TryParseNumberBase(token, true, numberBase, out value))
             {
-                throw new LispException( "invalid base {0} number: {1}", numberBase, token );
+                throw new LispException("invalid base {0} number: {1}", numberBase, token);
             }
-            return ( int ) value;
+            return (int)value;
         }
 
-        internal static object Shrink( BigRational d )
+        public static object Shrink(BigRational d)
         {
-            if ( CanShrink( d ) )
+            if (CanShrink(d))
             {
-                return Shrink( d.Numerator );
+                return Shrink(d.Numerator);
             }
             else
             {
@@ -134,11 +134,11 @@ namespace Kiezel
             }
         }
 
-        internal static object Shrink( Int64 d )
+        public static object Shrink(Int64 d)
         {
-            if ( CanShrink( d ) )
+            if (CanShrink(d))
             {
-                return ( int ) d;
+                return (int)d;
             }
             else
             {
@@ -146,11 +146,11 @@ namespace Kiezel
             }
         }
 
-        internal static object Shrink( BigInteger d )
+        public static object Shrink(BigInteger d)
         {
-            if ( CanShrink( d ) )
+            if (CanShrink(d))
             {
-                return Shrink( ( Int64 ) d );
+                return Shrink((Int64)d);
             }
             else
             {
@@ -158,12 +158,12 @@ namespace Kiezel
             }
         }
 
-        internal static object TryParse( string str, CultureInfo culture, int numberBase, bool decimalPointIsComma )
+        public static object TryParse(string str, CultureInfo culture, int numberBase, bool decimalPointIsComma)
         {
             string s = str;
             BigInteger result;
 
-            if ( str == "." )
+            if (str == ".")
             {
                 // Mono parses this as a zero.
                 return null;
@@ -171,11 +171,11 @@ namespace Kiezel
 
             var point = decimalPointIsComma ? "," : ".";
 
-            if ( numberBase != 0 && numberBase != 10 )
+            if (numberBase != 0 && numberBase != 10)
             {
-                if ( TryParseNumberBase( s, true, numberBase, out result ) )
+                if (TryParseNumberBase(s, true, numberBase, out result))
                 {
-                    return Shrink( result );
+                    return Shrink(result);
                 }
                 else
                 {
@@ -183,54 +183,54 @@ namespace Kiezel
                 }
             }
 
-            if ( numberBase == 0 && s.Length >= 3 && s[ 0 ] == '0' && s[ 1 ] == 'x' )
+            if (numberBase == 0 && s.Length >= 3 && s[0] == '0' && s[1] == 'x')
             {
-                if ( TryParseNumberBase( s.Substring( 2 ), false, 16, out result ) )
+                if (TryParseNumberBase(s.Substring(2), false, 16, out result))
                 {
-                    return Shrink( result );
+                    return Shrink(result);
                 }
             }
-            else if ( numberBase == 0 && s.Length >= 4 && s[ 0 ] == '-' && s[ 1 ] == '0' && s[ 2 ] == 'x' )
+            else if (numberBase == 0 && s.Length >= 4 && s[0] == '-' && s[1] == '0' && s[2] == 'x')
             {
-                if ( TryParseNumberBase( s.Substring( 3 ), false, 16, out result ) )
+                if (TryParseNumberBase(s.Substring(3), false, 16, out result))
                 {
-                    return Shrink( -result );
+                    return Shrink(-result);
                 }
             }
-            else if ( numberBase == 0 && s.Length >= 2 && s[ 0 ] == '0' && s[ 1 ] != '.' )
+            else if (numberBase == 0 && s.Length >= 2 && s[0] == '0' && s[1] != '.')
             {
-                if ( TryParseNumberBase( s.Substring( 1 ), false, 8, out result ) )
+                if (TryParseNumberBase(s.Substring(1), false, 8, out result))
                 {
-                    return Shrink( result );
+                    return Shrink(result);
                 }
             }
-            else if ( numberBase == 0 && s.Length >= 3 && s[ 0 ] == '-' && s[ 1 ] == '0' && s[ 2 ] != '.' )
+            else if (numberBase == 0 && s.Length >= 3 && s[0] == '-' && s[1] == '0' && s[2] != '.')
             {
-                if ( TryParseNumberBase( s.Substring( 2 ), false, 8, out result ) )
+                if (TryParseNumberBase(s.Substring(2), false, 8, out result))
                 {
-                    return Shrink( -result );
+                    return Shrink(-result);
                 }
             }
-            else if ( s.IndexOf( point ) == -1 )
+            else if (s.IndexOf(point) == -1)
             {
-                int pos = s.IndexOf( '/' );
+                int pos = s.IndexOf('/');
 
-                if ( 0 < pos && pos + 1 < s.Length )
+                if (0 < pos && pos + 1 < s.Length)
                 {
                     BigInteger numerator;
                     BigInteger denominator;
 
-                    if ( TryParseNumberBase( s.Substring( 0, pos ), true, 10, out numerator )
-                        && TryParseNumberBase( s.Substring( pos + 1 ), false, 10, out denominator ) )
+                    if (TryParseNumberBase(s.Substring(0, pos), true, 10, out numerator)
+                        && TryParseNumberBase(s.Substring(pos + 1), false, 10, out denominator))
                     {
-                        return Shrink( new BigRational( numerator, denominator ) );
+                        return Shrink(new BigRational(numerator, denominator));
                     }
                 }
                 else
                 {
-                    if ( TryParseNumberBase( s, true, 10, out result ) )
+                    if (TryParseNumberBase(s, true, 10, out result))
                     {
-                        return Shrink( result );
+                        return Shrink(result);
                     }
                 }
             }
@@ -239,22 +239,22 @@ namespace Kiezel
                 decimal result2;
                 double result3;
 
-                s = s.Replace( "_", "" );
+                s = s.Replace("_", "");
 
-                if ( decimalPointIsComma )
+                if (decimalPointIsComma)
                 {
-                    s = s.Replace( ".", "" ).Replace( ",", "." );
+                    s = s.Replace(".", "").Replace(",", ".");
                 }
                 else
                 {
-                    s = s.Replace( ",", "" );
+                    s = s.Replace(",", "");
                 }
 
-                if ( Runtime.ReadDecimalNumbers && decimal.TryParse( s, NumberStyles.Any, culture ?? CultureInfo.InvariantCulture, out result2 ) )
+                if (Runtime.ReadDecimalNumbers && decimal.TryParse(s, NumberStyles.Any, culture ?? CultureInfo.InvariantCulture, out result2))
                 {
                     return result2;
                 }
-                else if ( double.TryParse( s, NumberStyles.Any, culture ?? CultureInfo.InvariantCulture, out result3 ) )
+                else if (double.TryParse(s, NumberStyles.Any, culture ?? CultureInfo.InvariantCulture, out result3))
                 {
                     return result3;
                 }
@@ -263,41 +263,53 @@ namespace Kiezel
             return null;
         }
 
-        internal static bool TryParseNumberBase( string token, bool negAllowed, int numberBase, out BigInteger result )
+        public static bool TryParseHexNumber(string token, out int result)
+        {
+            BigInteger number;
+            if (TryParseNumberBase(token, false, 16, out number))
+            {
+                result = (int)number;
+                return true;
+            }
+            result = 0;
+            return false;
+        }
+
+        public static bool TryParseNumberBase(string token, bool negAllowed, int numberBase, out BigInteger result)
         {
             bool negative = false;
             int digits = 0;
             result = 0;
 
-            foreach ( char ch in token )
+            foreach (char ch in token)
             {
-                if ( ch == '_' )
+                if (ch == '_')
                 {
                     continue;
                 }
 
-                int digitCode = ( int ) ch;
+                int digitCode = (int)ch;
                 int digitValue = numberBase;
 
-                if ( digits == 0 && negAllowed && ch == '-' )
+                if (digits == 0 && negAllowed && ch == '-')
                 {
                     negative = !negative;
                     continue;
                 }
-                else if ( zero <= digitCode && digitCode <= nine )
+                else if (zero <= digitCode && digitCode <= nine)
                 {
                     digitValue = digitCode - zero;
                 }
-                else if ( a <= digitCode && digitCode <= z )
+                else if (a <= digitCode && digitCode <= z)
                 {
                     digitValue = digitCode - a + 10;
                 }
-                else if ( A <= digitCode && digitCode <= Z )
+                else if (A <= digitCode && digitCode <= Z)
                 {
                     digitValue = digitCode - A + 10;
                 }
 
-                if ( digitValue >= numberBase )
+                if (digitValue >= numberBase)
                 {
                     return false;
                 }
@@ -306,12 +318,12 @@ namespace Kiezel
                 ++digits;
             }
 
-            if ( digits == 0 )
+            if (digits == 0)
             {
                 return false;
             }
 
-            if ( negative )
+            if (negative)
             {
                 result = -result;
             }

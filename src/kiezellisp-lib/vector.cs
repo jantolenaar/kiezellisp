@@ -8,71 +8,71 @@ namespace Kiezel
 {
     public partial class Runtime
     {
-        [Lisp( "vector" )]
-        public static Vector MakeVector( params object[] items )
+        [Lisp("vector")]
+        public static Vector MakeVector(params object[] items)
         {
-            return new Vector( items );
+            return new Vector(items);
         }
 
-        [Lisp( "vector*" )]
-        public static Vector MakeVectorStar( params object[] items )
+        [Lisp("vector*")]
+        public static Vector MakeVectorStar(params object[] items)
         {
             // Last item must be a seq, works like list*
             var v = new Vector();
             var n = items.Length;
-            if ( n > 0 )
+            if (n > 0)
             {
-                for ( var i = 0; i < n - 1; ++i )
+                for (var i = 0; i < n - 1; ++i)
                 {
-                    v.Add( items[ i ] );
+                    v.Add(items[i]);
                 }
             }
-            v.AddRange( ( IEnumerable ) items[ n - 1 ] );
+            v.AddRange((IEnumerable)items[n - 1]);
             return v;
         }
     }
 
     public class Vector : List<object>
     {
-        internal Vector()
-            : base( 20 )
+        public Vector()
+            : base(20)
         {
         }
 
-        internal Vector( int size )
-            : base( size )
+        public Vector(int size)
+            : base(size)
         {
         }
 
-        internal Vector( params object[] items )
+        public Vector(params object[] items)
         {
-            if ( items != null )
+            if (items != null)
             {
                 var j = items.Length;
-                for ( var i = 0; i < j; ++i )
+                for (var i = 0; i < j; ++i)
                 {
-                    Add( items[ i ] );
+                    Add(items[i]);
                 }
             }
         }
 
-        public void AddRange( IEnumerable items )
+        public void AddRange(IEnumerable items)
         {
-            if ( items != null )
+            if (items != null)
             {
-                foreach ( var item in items )
+                foreach (var item in items)
                 {
-                    Add( item );
+                    Add(item);
                 }
             }
         }
 
-        public new Vector GetRange( int index, int count )
+        public new Vector GetRange(int index, int count)
         {
             Vector z = new Vector();
-            for ( int i = 0; i < count; ++i )
+            for (int i = 0; i < count; ++i)
             {
-                z.Add( this[ i + index ] );
+                z.Add(this[i + index]);
             }
             return z;
         }

@@ -1,29 +1,30 @@
 namespace Kiezel
 {
-    internal abstract class Atom
+    public abstract class Atom
     {
     }
 
-    internal abstract class Enumerable
+    public abstract class Enumerable
     {
     }
 
-    internal abstract class Integer : Number
+    public abstract class Integer : Number
     {
     }
 
-    internal abstract class KeywordClass
+    public abstract class KeywordClass
     {
     }
 
-    internal abstract class List
+    public abstract class List
     {
     }
 
-    internal abstract class Rational : Number
+    public abstract class Rational : Number
     {
     }
-    internal abstract class Sequence
+
+    public abstract class Sequence
     {
     }
 }

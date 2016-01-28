@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -8,20 +8,19 @@ namespace kiezellisp_embedded_demo
 {
     class Program
     {
-        static void Main( string[] args )
+        static void Main(string[] args)
         {
             try
             {
-                Kiezel.EmbeddedMode.Init( consoleMode: true, debugMode: false );
-                var a = Kiezel.EmbeddedMode.Funcall( "+", 2, 3 );
-                Kiezel.EmbeddedMode.Funcall( "print-line", a );
-                Kiezel.EmbeddedMode.Funcall( "++", 3, 4 );
-                
+                Kiezel.EmbeddedMode.Init(consoleMode: true, debugMode: false);
+                var a = Kiezel.EmbeddedMode.Funcall("+", 2, 3);
+                Console.WriteLine("a={0}", a);
+                Kiezel.EmbeddedMode.Funcall("++", 3, 4);               
             }
-            catch ( Exception ex )
+            catch (Exception ex)
             {
-                var s = Kiezel.EmbeddedMode.GetDiagnostics( ex );
-                Console.WriteLine( s );
+                var s = Kiezel.EmbeddedMode.GetDiagnostics(ex);
+                Console.WriteLine(s);
             }
         }
     }

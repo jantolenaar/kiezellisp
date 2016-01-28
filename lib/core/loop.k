@@ -37,6 +37,8 @@
     (var $continue-label-used false)
     (var $finish-label-used false)
     (var $break-label-used false)
+    (when (null? forms)
+        (throw-error "LOOP body cannot be empty"))
     (each do-form forms)
     (add-accumulator-steps)
     (loop-macroexpand-all (generate-code)))

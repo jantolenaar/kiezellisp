@@ -3,44 +3,110 @@
 
 (defpackage "lisp"
     (:export 
-        "documentation"
         "help"
-        "set-online-help"
+        "set-help-path"
     ))
 
 (in-package "lisp")
 
-(def $website "http://www.kiezellisp.nl")
+(def $help-path null)
 
-#+windows
-(def $browser null)
+(defun set-help-path (&rest dirs)
+    (let transformer (compose path:get-unix-name path:get-full-path))
+    (setf $help-path (as-list (map transformer dirs)))
+    (make-help-symbols "about"))
 
-#+unix
-(def $browser "firefox")
+(defun make-help-symbols (target)
+    (loop
+        (for name in $help-path)
+        (let folder (path:combine name target))
+        (when (directory:exists folder)
+            (let files (directory:get-files folder))
+            (each #(make-symbol target 
+                                ":" 
+                                (path:get-file-name-without-extension %1))
+                          files))))
 
-(defun set-online-help (browser url)
-    (setf $browser browser)
-    (setf $website url))
+(defun make-documentation-window (topic)
+    (let $stdout (window:open :buffer-height 999
+                              :tab-completion-enabled true
+                              :html-enabled true))
+    (print-line (get-documentation topic))
+    (print-line (string:repeat "-" (terminal:width)))
+    (.set-buffer-pos $stdout 0 0)
+    $stdout)
 
+(defun help (&optional (topic 'help))
+    (var win (make-documentation-window topic))
+    (var topics (list win))
+    (var index 0)
+    (letfun goto-new-topic (topic)
+        (when topic
+            (while (> index 0)
+                (window:close (first topics))
+                (pop topics)
+                (decf index))
+            (setf win (make-documentation-window topic))
+            (push win topics)))
+    (letfun command-key? (ch)
+        (or (= ch #\slash)
+            (= ch #\colon)))
+    (letfun escape-key? (key)
+        (or (= key terminal-keys:ESCAPE)
+            (and (= key terminal-keys:BACK)
+                 (null? (nth (inc index) topics)))))
+    (letfun back-key? (key)
+        (or (= key terminal-keys:BACK)
+            (= key terminal-keys:LEFT)))
+    (letfun forward-key? (key)
+        (or (= key terminal-keys:RIGHT)
+            (= key terminal-keys:ENTER)))
+    (letfun click-key? (key)             
+        (= key terminal-keys:LBUTTON))
+    (try
+        (loop
+            (.bring-to-top win)
+            (let info (.read-key win))
+            (let key (.key-data info))
+            (let ch (.key-char info))
+            (let clicks (.mouse-clicks info))
+            (let x (.mouse-col info))
+            (let y (.mouse-row info))
+            ;(breakpoint)
+            (cond
+                ((escape-key? key)
+                    (return))
+                ((command-key? ch)
+                    (goto-new-topic (command-popup win "topic: ")))
+                ((forward-key? key)
+                    (when-let (right-win (nth (dec index) topics))
+                        (decf index)
+                        (setf win right-win)))
+                ((back-key? key)
+                    (when-let (left-win (nth (inc index) topics))
+                        (incf index)
+                        (setf win left-win)))
+                ((and (click-key? key)
+                      (> clicks 1))
+                    (goto-new-topic (.scrape-lisp-word-at win x y)))
+                ))
+        (finally
+            (terminal:close-all-windows))))
 
-(defun help (&optional topic)
-    (if topic
-          (print-online-help topic)
-        (print-console-help))
-    (void))
+(setf $help-hook help)
 
-(defun print-online-help (topic)
-    (assert (symbol? topic))
-    (let $package (find-package "lisp"))
-    (let url (path:combine $website (string "api.html?#" topic)))
-    (help-run-browser url)
-    (void))
-
-(defun documentation (&optional topic)
-    (if topic
-          (print-topic-documentation topic)
-        (print-console-help))
-    (void))
+(defun command-popup (win-orig prompt)
+    (let w (.width win-orig))
+    (let h (.height win-orig))   
+    (using (win (window:open :top (- h 2) :height 2))     
+        (.write win (string:repeat "-" w))
+        ;(.draw-line $stdscr 0 0 w 0)
+        (.set-cursor-pos win 0 1)
+        (setf (.bold win) true)
+        (.write win prompt)
+        (setf (.bold win) false)
+        (let str (.read win :max-chars 20))
+        (return str)))
 
 (def usage-list-for-variables '(
     variable 
@@ -50,102 +116,142 @@
     special-readonly-variable 
     special-constant))
 
-(defun print-topic-documentation (topic)
+(defun transform-topic-to-path-name (topic)
+    (do
+        (.long-name topic)
+        (.replace ~ "?" "(qm)")
+        (.replace ~ "." "(dot)")
+        (.replace ~ ">" "(gt)")
+        (.replace ~ "<" "(lt)")
+        (.replace ~ "/" "(slash)")
+        (.replace ~ "*" "(star)")
+        (.replace ~ "λ" "(greek-lambda)")
+        (.replace ~ ":" "/")))
+
+(defun get-documentation (topic)
+    (let target (if (symbol? topic)
+                      topic
+                    (make-symbol topic)))
+    (let text (or (get-documentation-from-file target)
+                  (get-runtime-documentation target)))
+    (transform-page text))
+
+(defun get-documentation-from-file (topic)
+    (let name (transform-topic-to-path-name topic))
+    (let files (list (string name ".txt") (string name ".md")))
+    (let path (find-one-of-source-files files $help-path))
+    (if path
+        (file:read-all-text path)))
+
+(defun margin (&optional (depth 2))
+    (string:repeat "    " depth))
+
+(defun get-runtime-documentation (topic)
+    (with-output-to-string ($stdout)
+        (print-runtime-documentation topic)))
+
+(defun print-runtime-documentation (topic)
     (let descr (get-description topic))
+    (let name (.name descr))
     (let compiler-documentation (.compiler-documentation descr))
     (let compiler-usage (.compiler-usage descr))
     (let compiler-syntax-list (.compiler-syntax descr))
-    (when compiler-usage
-        (print-line "COMPILER-USAGE")
-        (print-line "    " compiler-usage))
-    (when compiler-syntax-list
-        (print-line "COMPILER-SYNTAX")
-        (each print-syntax compiler-syntax-list))
-    (when compiler-documentation
-        (print-line "COMPILER-DESCRIPTION")
-        (print-documentation-item compiler-documentation))
     (let documentation (.documentation descr))
     (let usage (.usage descr))
     (let syntax-list (.function-syntax descr))
-    (when usage
-        (print-line "USAGE")
-        (print-line "    " usage))
+    (let value (.value descr))
+    (let type (.type descr))
+    (when name
+        (print-line "# NAME")
+        (print-line (margin) name)
+        (print-line))
+    (when compiler-usage
+        (print-line "# COMPILER-USAGE")
+        (print-line (margin) compiler-usage)
+        (print-line))
+    (when compiler-syntax-list
+        (print-line "# COMPILER-SYNTAX")
+        (each print-syntax compiler-syntax-list)
+        (print-line))
+    (when compiler-documentation
+        (print-line "# COMPILER-DESCRIPTION")
+        (print-line (.indent compiler-documentation (margin)))
+        (print-line))
+   (when usage
+        (print-line "# USAGE")
+        (print-line (margin) usage)
+        (print-line))
     (when (find usage usage-list-for-variables)
-        (print-line "SYNTAX")
-        (print-line "    " (.name descr)))
+        (print-line "# SYNTAX")
+        (print-line (margin) (.name descr))
+        (print-line))
     (when syntax-list
-        (print-line "SYNTAX")
-        (each print-syntax syntax-list))
+        (print-line "# SYNTAX")
+        (each print-syntax syntax-list)
+        (print-line))
     (when documentation
-        (print-line "DESCRIPTION")
-        (print-documentation-item documentation))
+        (print-line "# DESCRIPTION")
+        (print-line (.indent documentation (margin)))
+        (print-line))
+    (when value
+        (print-line "# VALUE")
+        (print (margin))
+        (write-line value :pretty true :left (length (margin)))
+        (print-line))
+    (when type
+        (print-line "# TYPE")
+        (print-line (margin) type)
+        (print-line))
+
     (print-line))
 
-(defun help-run-browser (url)
-    (let proc (process:new))
-    (let info (.start-info proc))
-    (cond 
-        ($browser
-            (setf (.file-name info) $browser)
-            (setf (.redirect-standard-output info) true)
-            (setf (.redirect-standard-error info) true)
-            (setf (.redirect-standard-input info) true)
-            (setf (.use-shell-execute info) false)
-            (setf (.arguments info) (enclose-in-quotes url)))
-        (true
-            (setf (.file-name info) url)
-            (setf (.redirect-standard-output info) false)
-            (setf (.redirect-standard-error info) false)
-            (setf (.redirect-standard-input info) false)
-            (setf (.arguments info) "")
-            (setf (.use-shell-execute info) true)))
-    (.start proc)
-    (void))
-
-(defun enclose-in-quotes (arg)
-    (cond
-        ((null? arg)
-            "")
-        ((find #\double-quote arg)
-            (string "\"" arg "\""))
-        ((find #\space arg)
-            (string "\"" arg "\""))
-        (true
-            arg)))
-
-(defun make-safe-argument-string (args)
-    (string:join " " (map enclose-in-quotes args)))
-
 (defun print-syntax (syn)
-    (print "    ")
+    (print (margin))
     (write-line syn :escape false))
 
-(defun print-documentation-item (item)
-    ; rewrite markdown html links []() and [][]
-    (let item1 (.trim item "\r\n"))
-    (let item2 (.regex-replace item1 #/\[(.*?)\]\(.*?\)" @"`\1`/))
-    (let item3 (.regex-replace item2 #/\[(.*?)\]\[.*?\]" @"`\1`/))
-    (write-line item3 :escape false))
+(defun transform-line (text)
+    (let bold-pattern1 #/\*\*(.*?)\*\*/)
+    (let bold-pattern2 #/__(.*?)__/)
+    (let italic-pattern1 #/\*(.*?)\*/)
+    (let italic-pattern2 #/_(.*?)_/)
+    (let code-pattern #/`(.*?)`/)
+    (do
+        text
+        (.regex-replace ~ bold-pattern1 @"<b>\1</b>")
+        (.regex-replace ~ bold-pattern2 @"<b>\1</b>")
+        (.regex-replace ~ italic-pattern1 @"<i>\1</i>")
+        (.regex-replace ~ italic-pattern2 @"<i>\1</i>")
+        (.regex-replace ~ code-pattern @"<u><i>\1</i></u>")
+        ))
 
+(defun bold (text)
+    (string "<b>" text "</b>"))
 
-(defun print-console-help ()
-    (print console-help))
-
-(def console-help        
-"""
-Help examples:
-
-    help                    Shows this help text.
-    help 'car               Shows online help for the symbol `car`.
-    help 'help              Shows online help for the symbol `help`.
-    help 'repl<TAB>         Shows online help for `repl` after TAB completion.
-    help 'kiezel<TAB>       Shows online help for `kiezellisp` after TAB completion.
-    documentation           Shows this help text.
-    documentation 'car      Shows summary description for the symbol `car`.
-""")
-
-(make-symbol "repl:commands")
-(make-symbol "keyboard-shortcuts")
-(make-symbol "kiezellisp:command-line-options")
-
-
+(defun transform-page (text)
+    (let lines (string:split text "\n"))
+    (let result
+        (loop
+            (initially 
+                (var inside-code false))
+            (for line :in lines)
+            (cond
+                ((.starts-with line "~~~")
+                    (setf inside-code (not inside-code))
+                    (collect (if inside-code "<italic><delete-lf>" "</italic><delete-lf>")))
+                (inside-code
+                    (collect (string (margin) line)))
+                ((.starts-with line "### ")
+                    (let text (.trim (.substring line 3)))
+                    (collect (string (margin) (bold text)))
+                    (collect ""))
+                ((.starts-with line "## ")
+                    (let text (.to-upper (.trim (.substring line 2))))
+                    (collect (string (margin 1) (bold text))))
+                ((.starts-with line "# ")
+                    (let text (.to-upper (.trim (.substring line 1))))
+                    (collect (bold text)))
+                (true
+                    (collect (string (margin) (transform-line line)))))))
+    (do
+        (string:join "\n" result)
+        (string:replace ~ "<delete-lf>\n" "")))

@@ -36,6 +36,7 @@
         "using"
         "when"
         "when-let"
+        "with"
         "with-input-from-string"
         "with-output-to-string"
     ))
@@ -78,6 +79,13 @@
         (def ,sym ,value ,doc-string)))
 
 ;;;
+;;; binding
+;;;
+
+(defmacro with ((sym value) &body forms)
+    `(do (let (,sym ,value) ,@forms)))
+
+;;;
 ;;; conditions
 ;;;
 
@@ -112,14 +120,15 @@
      (cond-compiler forms))
 
 (defun case-keylist-helper (sym keys)
-    (cons 'or (as-list (map (lambda (key) `(= ,sym ',key)) keys))))
+    (cons 'or (as-list (map (lambda (key) `(= ,sym ,key)) keys))))
 
 (defun case-key-helper (sym keys)
-    (if (list? keys)
+    (if (and (list? keys)
+             (/= (first keys) 'quote))
           (case-keylist-helper sym keys)
         (if (or (= keys 'true) (= keys 'otherwise))
             `true
-            `(= ,sym ',keys))))
+            `(= ,sym ,keys))))
 
 (defun case-clause-helper (sym clause)
     (cons (case-key-helper sym (first clause)) (rest clause)))
@@ -175,7 +184,7 @@
             (write-line (string
                             ,(write-to-string expr :escape true)
                             " => "
-                            (write-to-string ,result :escape true)) :stream $stdlog))))
+                            (write-to-string ,result :escape true)) :stream $stderr))))
 
 ;;;
 ;;; tail recursion

@@ -10,261 +10,273 @@ namespace Kiezel
 {
     public partial class Runtime
     {
-        [Pure, Lisp( "atom?" )]
-        public static bool Atomp( object expr )
+        [Pure, Lisp("atom?")]
+        public static bool Atomp(object expr)
         {
-            return Literalp( expr ) || Symbolp( expr );
+            return Literalp(expr) || Symbolp(expr);
         }
 
-        [Pure, Lisp( "char?" )]
-        public static bool Charp( object expr )
+        [Pure, Lisp("char?")]
+        public static bool Charp(object expr)
         {
             return expr is char;
         }
 
-        [Pure, Lisp( "compiler-macro?" )]
-        public static bool CompilerMacrop( Symbol sym )
+        [Pure, Lisp("compiler-macro?")]
+        public static bool CompilerMacrop(Symbol sym)
         {
             return sym.CompilerUsage == SymbolUsage.CompilerMacro;
         }
 
 
-        [Pure, Lisp( "complex?" )]
-        public static bool Complexp( object expr )
+        [Pure, Lisp("complex?")]
+        public static bool Complexp(object expr)
         {
             return expr is Complex;
         }
 
-        [Pure, Lisp( "cons?" )]
-        public static bool Consp( object expr )
+        [Pure, Lisp("cons?")]
+        public static bool Consp(object expr)
         {
             return expr is Cons;
         }
 
-        [Pure, Lisp( "date?" )]
-        public static bool Datep( object expr )
+        [Pure, Lisp("date?")]
+        public static bool Datep(object expr)
         {
             return expr is DateTime;
         }
 
-        [Pure, Lisp( "defined?" )]
-        public static bool Definedp( Symbol sym )
+        [Pure, Lisp("defined?")]
+        public static bool Definedp(Symbol sym)
         {
             return !sym.IsUndefined;
         }
 
-        [Pure, Lisp( "empty?" )]
-        public static bool Emptyp( object expr )
+        [Pure, Lisp("empty?")]
+        public static bool Emptyp(object expr)
         {
-            return expr == null || Zerop( Length( ToIter( expr ) ) );
+            return expr == null || Zerop(Length(ToIter(expr)));
         }
 
-        [Pure, Lisp( "enumerable?" )]
-        public static bool Enumerablep( object expr )
+        [Pure, Lisp("enumerable?")]
+        public static bool Enumerablep(object expr)
         {
             return expr == null || expr is IEnumerable;
         }
 
-        [Pure, Lisp( "even?" )]
-        public static bool Evenp( object expr )
+        [Pure, Lisp("even?")]
+        public static bool Evenp(object expr)
         {
-            if ( !Integerp( expr ) )
+            if (!Integerp(expr))
             {
-                throw new LispException( "Not an integer" );
+                throw new LispException("Not an integer");
             }
-            return Equal( BitAnd( expr, 1 ), 0 );
+            return Equal(BitAnd(expr, 1), 0);
         }
 
-        [Pure, Lisp( "exception?" )]
-        public static bool Exceptionp( object expr )
+        [Pure, Lisp("exception?")]
+        public static bool Exceptionp(object expr)
         {
             return expr is Exception;
         }
 
-        [Pure, Lisp( "function?" )]
-        public static bool Functionp( object expr )
+        [Pure, Lisp("function?")]
+        public static bool Functionp(object expr)
         {
             return expr is IApply;
         }
 
-        [Pure, Lisp( "ilist?" )]
-        public static bool IListp( object expr )
+        [Pure, Lisp("ilist?")]
+        public static bool IListp(object expr)
         {
             return expr is IList;
         }
 
-        [Pure, Lisp( "integer?" )]
-        public static bool Integerp( object expr )
+        [Pure, Lisp("integer?")]
+        public static bool Integerp(object expr)
         {
             return expr is int || expr is Int64 || expr is BigInteger;
         }
 
-        [Pure, Lisp( "keyword?" )]
-        public static bool Keywordp( object expr )
+        [Pure, Lisp("keyword?")]
+        public static bool Keywordp(object expr)
         {
             var sym = expr as Symbol;
             return sym != null && sym.Package == KeywordPackage;
         }
 
-        [Pure, Lisp( "lambda?" )]
-        public static bool Lambdap( object expr )
+        [Pure, Lisp("lambda?")]
+        public static bool Lambdap(object expr)
         {
             var func = expr as LambdaClosure;
             return func != null && func.Kind == LambdaKind.Function;
         }
 
-        [Pure, Lisp( "list?" )]
-        public static bool Listp( object expr )
+        [Pure, Lisp("list?")]
+        public static bool Listp(object expr)
         {
             return expr == null || expr is Cons;
         }
 
-        [Pure, Lisp( "literal?" )]
-        public static bool Literalp( object expr )
+        [Pure, Lisp("literal?")]
+        public static bool Literalp(object expr)
         {
-            return expr == null || expr is ValueType || Numberp( expr ) || Stringp( expr );
+            return expr == null || expr is ValueType || Numberp(expr) || Stringp(expr);
         }
 
-        [Pure, Lisp( "macro?" )]
-        public static bool Macrop( Symbol sym )
+        [Pure, Lisp("macro?")]
+        public static bool Macrop(Symbol sym)
         {
             return sym.CompilerUsage == SymbolUsage.Macro;
         }
 
-        [Pure, Lisp( "minus?" )]
-        public static bool Minusp( object a1 )
+        [Pure, Lisp("minus?")]
+        public static bool Minusp(object a1)
         {
-            if ( !Numberp( a1 ) )
+            if (!Numberp(a1))
             {
-                throw new LispException( "Not a number" );
+                throw new LispException("Not a number");
             }
-            return Less( a1, 0 );
+            return Less(a1, 0);
         }
 
-        [Pure, Lisp( "multi-method?" )]
-        public static bool MultiMethodp( object expr )
+        [Pure, Lisp("multi-method?")]
+        public static bool MultiMethodp(object expr)
         {
             return expr is MultiMethod;
         }
 
-        [Pure, Lisp( "null?" )]
-        public static bool Nullp( object expr )
+        [Pure, Lisp("missing-value?")]
+        public static bool MissingValuep(object expr)
+        {
+            return expr == Symbols.MissingValue.Value;
+        }
+
+        [Pure, Lisp("supplied?")]
+        public static bool Suppliedp(object expr)
+        {
+            return !MissingValuep(expr);
+        }
+
+        [Pure, Lisp("null?")]
+        public static bool Nullp(object expr)
         {
             return expr == null;
         }
 
-        [Pure, Lisp( "number?" )]
-        public static bool Numberp( object expr )
+        [Pure, Lisp("number?")]
+        public static bool Numberp(object expr)
         {
-            return Integerp( expr ) || expr is decimal || expr is double || Rationalp( expr ) || Complexp( expr );
+            return Integerp(expr) || expr is decimal || expr is double || Rationalp(expr) || Complexp(expr);
         }
 
-        [Pure, Lisp( "odd?" )]
-        public static bool Oddp( object expr )
+        [Pure, Lisp("odd?")]
+        public static bool Oddp(object expr)
         {
-            if ( !Integerp( expr ) )
+            if (!Integerp(expr))
             {
-                throw new LispException( "Not an integer" );
+                throw new LispException("Not an integer");
             }
-            return Equal( BitAnd( expr, 1 ), 1 );
+            return Equal(BitAnd(expr, 1), 1);
         }
 
         //[Pure, Lisp( "pattern-variable?" )]
-        public static bool PatternVariablep( object expr )
+        public static bool PatternVariablep(object expr)
         {
             var sym = expr as Symbol;
-            return sym != null && sym.Package != KeywordPackage && sym.Name.StartsWith( "?" );
+            return sym != null && sym.Package != KeywordPackage && sym.Name.StartsWith("?");
         }
 
-        [Pure, Lisp( "plus?" )]
-        public static bool Plusp( object a1 )
+        [Pure, Lisp("plus?")]
+        public static bool Plusp(object a1)
         {
-            if ( !Numberp( a1 ) )
+            if (!Numberp(a1))
             {
-                throw new LispException( "Not a number" );
+                throw new LispException("Not a number");
             }
-            return Greater( a1, 0 );
+            return Greater(a1, 0);
         }
 
-        [Pure, Lisp( "prototype?" )]
-        public static bool Prototypep( object expr )
+        [Pure, Lisp("prototype?")]
+        public static bool Prototypep(object expr)
         {
             return expr is Prototype;
         }
 
-        [Pure, Lisp( "rational?" )]
-        public static bool Rationalp( object expr )
+        [Pure, Lisp("rational?")]
+        public static bool Rationalp(object expr)
         {
-            return expr is BigRational || Integerp( expr );
+            return expr is BigRational || Integerp(expr);
         }
 
-        [Pure, Lisp( "ratio?" )]
-        public static bool Ratiop( object expr )
+        [Pure, Lisp("ratio?")]
+        public static bool Ratiop(object expr)
         {
             return expr is BigRational;
         }
 
-        [Pure, Lisp( "sequence?" )]
-        public static bool Sequencep( object expr )
+        [Pure, Lisp("sequence?")]
+        public static bool Sequencep(object expr)
         {
-            return Listp( expr ) || Vectorp( expr );
+            return Listp(expr) || Vectorp(expr);
         }
 
-        [Pure, Lisp( "special-form?" )]
-        public static bool SpecialFormp( Symbol sym )
+        [Pure, Lisp("special-form?")]
+        public static bool SpecialFormp(Symbol sym)
         {
             return sym.CompilerUsage == SymbolUsage.SpecialForm;
         }
 
-        [Pure, Lisp( "special-symbol?" )]
-        public static bool SpecialSymbolp( object expr )
+        [Pure, Lisp("special-symbol?")]
+        public static bool SpecialSymbolp(object expr)
         {
             var sym = expr as Symbol;
             return sym != null && sym.IsDynamic;
         }
 
-        [Pure, Lisp( "string?" )]
-        public static bool Stringp( object expr )
+        [Pure, Lisp("string?")]
+        public static bool Stringp(object expr)
         {
             return expr is string;
         }
 
-        [Lisp( "subtype?" )]
-        public static bool Subtypep( Symbol subtype, Symbol supertype )
+        [Lisp("subtype?")]
+        public static bool Subtypep(Symbol subtype, Symbol supertype)
         {
-            return IsSubtype( GetType( subtype ), GetType( supertype ), false );
+            return IsSubtype(GetType(subtype), GetType(supertype), false);
         }
 
-        [Pure, Lisp( "symbol?" )]
-        public static bool Symbolp( object expr )
+        [Pure, Lisp("symbol?")]
+        public static bool Symbolp(object expr)
         {
             return expr is Symbol;
         }
 
-        [Pure, Lisp( "boolean" )]
-        public static bool ToBool( object a1 )
+        [Pure, Lisp("boolean")]
+        public static bool ToBool(object a1)
         {
-            if ( a1 is bool )
+            if (a1 is bool)
             {
-                return ( bool ) a1;
+                return (bool)a1;
             }
-            else if ( a1 == null )
+            else if (a1 == null)
             {
                 return false;
             }
-            else if ( a1 is string )
+            else if (a1 is string)
             {
-                return ( string ) a1 != "";
+                return (string)a1 != "";
             }
-            else if ( a1 is ICollection )
+            else if (a1 is ICollection)
             {
-                return ( ( ICollection ) a1 ).Count != 0;
+                return ((ICollection)a1).Count != 0;
             }
-            else if ( a1 is IEnumerable )
+            else if (a1 is IEnumerable)
             {
-                return AsLazyList( ( IEnumerable ) a1 ) != null;
+                return AsLazyList((IEnumerable)a1) != null;
             }
-            else if ( a1 is VOID )
+            else if (a1 is VOID)
             {
                 return false;
             }
@@ -274,166 +286,166 @@ namespace Kiezel
             }
         }
 
-        [Pure, Lisp( "type?" )]
-        public static bool Typep( object target, Symbol type )
+        [Pure, Lisp("type?")]
+        public static bool Typep(object target, Symbol type)
         {
-            var t = GetType( type );
-            return IsInstanceOf( target, t );
+            var t = GetType(type);
+            return IsInstanceOf(target, t);
         }
 
-        [Pure, Lisp( "vector?" )]
-        public static bool Vectorp( object expr )
+        [Pure, Lisp("vector?")]
+        public static bool Vectorp(object expr)
         {
             return expr is Vector;
         }
 
-        [Pure, Lisp( "void?" )]
-        public static bool Voidp( object expr )
+        [Pure, Lisp("void?")]
+        public static bool Voidp(object expr)
         {
             return expr is VOID;
         }
 
-        [Pure, Lisp( "zero?" )]
-        public static bool Zerop( object a1 )
+        [Pure, Lisp("zero?")]
+        public static bool Zerop(object a1)
         {
-            if ( !Numberp( a1 ) )
+            if (!Numberp(a1))
             {
-                throw new LispException( "Not a number" );
+                throw new LispException("Not a number");
             }
-            return Equal( a1, 0 );
+            return Equal(a1, 0);
         }
 
-        internal static bool IsInstanceOf( object target, object type )
+        public static bool IsInstanceOf(object target, object type)
         {
-            if ( type == null )
+            if (type == null)
             {
                 return true;
             }
 
-            if ( type is bool && ( bool ) type )
+            if (type is bool && (bool)type)
             {
                 return true;
             }
 
-            if ( type is EqlSpecializer )
+            if (type is EqlSpecializer)
             {
-                var value = ( ( EqlSpecializer ) type ).Value;
-                return Eql( target, value );
+                var value = ((EqlSpecializer)type).Value;
+                return Eql(target, value);
             }
-            else if ( type is Prototype )
+            else if (type is Prototype)
             {
                 var inst = target as Prototype;
-                return inst != null && ( inst == type || inst.IsSubTypeOf( ( Prototype ) type ) );
+                return inst != null && (inst == type || inst.IsSubTypeOf((Prototype)type));
             }
-            else if ( type is Type )
+            else if (type is Type)
             {
-                var t = ( Type ) type;
+                var t = (Type)type;
 
-                if ( t == typeof( Number ) )
+                if (t == typeof(Number))
                 {
-                    return Numberp( target );
+                    return Numberp(target);
                 }
-                else if ( t == typeof( Integer ) )
+                else if (t == typeof(Integer))
                 {
-                    return Integerp( target );
+                    return Integerp(target);
                 }
-                else if ( t == typeof( Rational ) )
+                else if (t == typeof(Rational))
                 {
-                    return Rationalp( target );
+                    return Rationalp(target);
                 }
-                else if ( t == typeof( List ) )
+                else if (t == typeof(List))
                 {
-                    return Listp( target );
+                    return Listp(target);
                 }
-                else if ( t == typeof( Atom ) )
+                else if (t == typeof(Atom))
                 {
-                    return Atomp( target );
+                    return Atomp(target);
                 }
-                else if ( t == typeof( Sequence ) )
+                else if (t == typeof(Sequence))
                 {
-                    return Sequencep( target );
+                    return Sequencep(target);
                 }
-                else if ( t == typeof( Enumerable ) )
+                else if (t == typeof(Enumerable))
                 {
-                    return Enumerablep( target );
+                    return Enumerablep(target);
                 }
-                else if ( t == typeof( KeywordClass ) )
+                else if (t == typeof(KeywordClass))
                 {
-                    return Keywordp( target );
+                    return Keywordp(target);
                 }
                 else
                 {
-                    return t.IsInstanceOfType( target );
+                    return t.IsInstanceOfType(target);
                 }
             }
             else
             {
-                throw new LispException( "Not a type: {0}", ToPrintString( type ) );
+                throw new LispException("Not a type: {0}", ToPrintString(type));
             }
         }
 
-        internal static bool IsSubtype( object subtype, object type, bool strict )
+        public static bool IsSubtype(object subtype, object type, bool strict)
         {
-            if ( Equal( subtype, type ) )
+            if (Equal(subtype, type))
             {
                 return !strict;
             }
 
-            if ( type == null )
+            if (type == null)
             {
                 return true;
             }
 
-            if ( type is bool && ( bool ) type )
+            if (type is bool && (bool)type)
             {
                 return true;
             }
 
-            if ( type == ( object ) typeof( object ) )
+            if (type == (object)typeof(object))
             {
                 return true;
             }
 
-            if ( subtype == null )
+            if (subtype == null)
             {
                 return false;
             }
 
-            if ( subtype is bool && ( bool ) subtype )
+            if (subtype is bool && (bool)subtype)
             {
                 return false;
             }
 
-            if ( subtype == ( object ) typeof( object ) )
+            if (subtype == (object)typeof(object))
             {
                 return false;
             }
 
-            if ( subtype is EqlSpecializer )
+            if (subtype is EqlSpecializer)
             {
-                var sub = ( ( EqlSpecializer ) subtype ).Value;
-                if ( type is EqlSpecializer )
+                var sub = ((EqlSpecializer)subtype).Value;
+                if (type is EqlSpecializer)
                 {
-                    var super = ( ( EqlSpecializer ) type ).Value;
-                    return strict ? false : Eql( sub, super );
+                    var super = ((EqlSpecializer)type).Value;
+                    return strict ? false : Eql(sub, super);
                 }
-                else if ( type is Prototype )
+                else if (type is Prototype)
                 {
                     return false;
                 }
                 else
                 {
-                    var super = ( Type ) type;
-                    return IsInstanceOf( sub, super );
+                    var super = (Type)type;
+                    return IsInstanceOf(sub, super);
                 }
             }
-            else if ( subtype is Prototype )
+            else if (subtype is Prototype)
             {
-                var sub = ( Prototype ) subtype;
-                if ( type is Prototype )
+                var sub = (Prototype)subtype;
+                if (type is Prototype)
                 {
-                    var super = ( Prototype ) type;
-                    return sub.IsSubTypeOf( super );
+                    var super = (Prototype)type;
+                    return sub.IsSubTypeOf(super);
                 }
                 else
                 {
@@ -442,18 +454,18 @@ namespace Kiezel
             }
             else
             {
-                var sub = ( Type ) subtype;
-                if ( type is Type )
+                var sub = (Type)subtype;
+                if (type is Type)
                 {
-                    var super = ( Type ) type;
+                    var super = (Type)type;
                     List<Type> subtypes;
-                    if ( AbstractTypes.TryGetValue( super, out subtypes ) )
+                    if (AbstractTypes.TryGetValue(super, out subtypes))
                     {
-                        return subtypes.Contains( sub );
+                        return subtypes.Contains(sub);
                     }
                     else
                     {
-                        return super.IsAssignableFrom( sub );
+                        return super.IsAssignableFrom(sub);
                     }
                 }
                 else
@@ -462,9 +474,10 @@ namespace Kiezel
                 }
             }
         }
-        internal static bool Quotedp( object expr )
+
+        public static bool Quotedp(object expr)
         {
-            return expr is Cons && First( expr ) == Symbols.Quote;
+            return expr is Cons && First(expr) == Symbols.Quote;
         }
     }
 }

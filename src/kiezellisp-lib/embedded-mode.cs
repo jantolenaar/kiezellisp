@@ -13,26 +13,26 @@ namespace Kiezel
     public class EmbeddedMode
     {
 
-        public static void Init( bool consoleMode=true, bool debugMode=false )
+        public static void Init(bool consoleMode = true, bool debugMode = false)
         {
             Runtime.EmbeddedMode = true;
             Runtime.DebugMode = debugMode;
             Runtime.ConsoleMode = consoleMode;
             Runtime.InteractiveMode = false;
             Runtime.OptimizerEnabled = !Runtime.DebugMode;
-
-            Runtime.Reset( false );
+            Runtime.Reset();
+            Runtime.RestartLoadFiles(0);
         }
 
-        public static string GetDiagnostics( Exception ex )
+        public static string GetDiagnostics(Exception ex)
         {
-            return Runtime.GetDiagnostics( ex );
+            return Runtime.GetDiagnostics(ex);
         }
 
-        public static object Funcall( string functionName, params object[] args )
+        public static object Funcall(string functionName, params object[] args)
         {
-            var sym = Runtime.FindSymbol( functionName );
-            return Runtime.Apply( sym, args );
+            var sym = Runtime.FindSymbol(functionName);
+            return Runtime.Apply(sym, args);
         }
     }
 

@@ -8,16 +8,16 @@ namespace Kiezel
 {
     public partial class Runtime
     {
-        internal static object QuasiQuoteExpandRest( object expr )
+        public static object QuasiQuoteExpandRest(object expr)
         {
             Cons list = expr as Cons;
 
-            if ( !( expr is Cons ) || list == null )
+            if (!(expr is Cons) || list == null)
             {
                 // not a list or empty
-                if ( Symbolp( expr ) && !Keywordp( expr ) )
+                if (Symbolp(expr) && !Keywordp(expr))
                 {
-                    return MakeList( Symbols.bqQuote, expr );
+                    return MakeList(Symbols.bqQuote, expr);
                 }
                 else
                 {
@@ -25,110 +25,110 @@ namespace Kiezel
                 }
             }
 
-            if ( First( list ) == Symbols.Unquote )
+            if (First(list) == Symbols.Unquote)
             {
-                return Second( list );
+                return Second(list);
             }
 
-            if ( First( list ) == Symbols.UnquoteSplicing )
+            if (First(list) == Symbols.UnquoteSplicing)
             {
-                throw new LispException( "`,@args is illegal syntax" );
+                throw new LispException("`,@args is illegal syntax");
             }
 
-            return QuasiQuoteExpandList( list );
+            return QuasiQuoteExpandList(list);
         }
 
-        internal static object QuasiQuoteExpandList( Cons list )
+        public static object QuasiQuoteExpandList(Cons list)
         {
             Stack stack = new Stack();
 
-            while ( list != null )
+            while (list != null)
             {
-                object item1 = First( list );
-                list = Cdr( list );
+                object item1 = First(list);
+                list = Cdr(list);
 
-                if ( item1 is Cons )
+                if (item1 is Cons)
                 {
-                    var item2 = ( Cons ) item1;
-                    if ( First( item2 ) == Symbols.Unquote )
+                    var item2 = (Cons)item1;
+                    if (First(item2) == Symbols.Unquote)
                     {
-                        stack.Push( new Cons( Symbols.bqList, Cdr( item2 ) ) );
+                        stack.Push(new Cons(Symbols.bqList, Cdr(item2)));
                         continue;
                     }
-                    else if ( First( item2 ) == Symbols.UnquoteSplicing )
+                    else if (First(item2) == Symbols.UnquoteSplicing)
                     {
-                        stack.Push( Second( item2 ) );
+                        stack.Push(Second(item2));
                         continue;
                     }
                 }
 
-                object expansion = QuasiQuoteExpandRest( item1 );
-                stack.Push( MakeList( Symbols.bqList, expansion ) );
+                object expansion = QuasiQuoteExpandRest(item1);
+                stack.Push(MakeList(Symbols.bqList, expansion));
             }
 
             Cons code = null;
             list = null;
 
-            while ( stack.Count > 0 )
+            while (stack.Count > 0)
             {
                 var expr2 = stack.Pop();
                 var temp = expr2 as Cons;
 
-                if ( temp != null && First( temp ) == Symbols.bqList )
+                if (temp != null && First(temp) == Symbols.bqList)
                 {
-                    list = new Cons( Second( temp ), list );
+                    list = new Cons(Second(temp), list);
                 }
                 else
                 {
-                    if ( list != null )
+                    if (list != null)
                     {
-                        code = new Cons( new Cons( Symbols.bqList, list ), code );
+                        code = new Cons(new Cons(Symbols.bqList, list), code);
                         list = null;
                     }
-                    code = new Cons( expr2, code );
+                    code = new Cons(expr2, code);
                 }
             }
 
-            if ( list != null )
+            if (list != null)
             {
-                code = new Cons( new Cons( Symbols.bqList, list ), code );
+                code = new Cons(new Cons(Symbols.bqList, list), code);
                 list = null;
             }
 
-            if ( code != null && Cdr( code ) == null )
+            if (code != null && Cdr(code) == null)
             {
                 //return new Cons( Symbols.bqAppend, code );
-                return First( code );
+                return First(code);
             }
             else
             {
-                return new Cons( Symbols.bqAppend, code );
+                return new Cons(Symbols.bqAppend, code);
             }
         }
 
-        internal static object MapTree( KeyFunc fn, object x )
+        public static object MapTree(KeyFunc fn, object x)
         {
-            if ( Consp( x ) )
+            if (Consp(x))
             {
-                var c = ( Cons ) x;
-                var a = fn( Car( c ) );
-                var b = ( Cons ) MapTree( fn, Cdr( c ) );
-                if ( a == Car( c ) && b == Cdr( c ) )
+                var c = (Cons)x;
+                var a = fn(Car(c));
+                var b = (Cons)MapTree(fn, Cdr(c));
+                if (a == Car(c) && b == Cdr(c))
                 {
                     return x;
                 }
                 else
                 {
-                    return MakeCons( a, b );
+                    return MakeCons(a, b);
                 }
             }
             else
             {
-                return fn( x );
+                return fn(x);
             }
         }
 
-#if XXX
+        #if XXX
         [Lisp( "simplify" )]
         public static object Simplify( object x )
         {
@@ -150,7 +150,7 @@ namespace Kiezel
             }
         }
 
-        internal static Cons SimplifyArgs( Cons x )
+        public static Cons SimplifyArgs( Cons x )
         {
             Cons result = null;
 
@@ -183,7 +183,7 @@ namespace Kiezel
             return result;
         }
 
-        internal static bool NullOrQuoted( object x )
+        public static bool NullOrQuoted( object x )
         {
             if ( x == null )
             {
@@ -200,7 +200,7 @@ namespace Kiezel
             return false;
         }
 
-        internal static Cons bqQuoteNil = MakeList( Symbols.bqQuote, null );
+        public static Cons bqQuoteNil = MakeList( Symbols.bqQuote, null );
 
         // When BQ-ATTACH-APPEND is called, the OP should be #:BQ-APPEND
         // or #:BQ-NCONC.  This produces a form (op item result) but
@@ -211,7 +211,7 @@ namespace Kiezel
         //  (op item 'nil) => (op item), if item is a splicable frob
         //  (op item (op a b c)) => (op item a b c)
 
-        internal static Cons AttachAppend( Symbol op, object item, Cons result )
+        public static Cons AttachAppend( Symbol op, object item, Cons result )
         {
             if ( NullOrQuoted( item ) && NullOrQuoted( result ) )
             {
@@ -240,7 +240,7 @@ namespace Kiezel
         //  (LIST* a b c (LIST* d e f g)) => (LIST* a b c d e f g)
         //  (LIST* a b c (LIST d e f g)) => (LIST a b c d e f g)
 
-        internal static Cons AttachConses (Cons items, Cons result)
+        public static Cons AttachConses (Cons items, Cons result)
         {
             if ( Every( NullOrQuoted, items ) && NullOrQuoted( result ) )
             {
