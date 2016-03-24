@@ -1,5 +1,8 @@
 (help)
 ;; The 'help' command starts the help system.
+;; When a message says 'Press something' this is an instruction
+;; for you when you are running the REPL not when viewing the
+;; video.
 ;; Press ENTER to start.
 <enter>
 ;; We can scroll with page/ctrl+arrow-up/down.

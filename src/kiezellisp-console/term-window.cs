@@ -843,6 +843,8 @@ namespace Kiezel
 
         public void Write(char ch, bool refresh)
         {
+            HideCursor();
+
             if (Pos < 0 || Pos >= Size)
             {
                 return;
@@ -1528,6 +1530,8 @@ namespace Kiezel
         {
             var s = Read(args);
             WriteLine();
+            ShowCursor();
+            RuntimeConsole.ProcessEvents();
             return s;
         }
 

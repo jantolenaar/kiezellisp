@@ -1,5 +1,9 @@
 # Change Log
 
+## 2016/03/23
+
+*   Update cursor position after entering a REPL command.
+
 ## 2016/01/28
 
 *   Changed most files due to conversion to monodevelop syntax formatter.
