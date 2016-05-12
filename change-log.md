@@ -1,5 +1,10 @@
 # Change Log
 
+## 2016/05/12
+
+*   Fixed stack overflow bug caused by recursion in prototype getters
+    (lambda-valued members).
+
 ## 2016/03/23
 
 *   Update cursor position after entering a REPL command.

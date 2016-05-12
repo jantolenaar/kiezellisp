@@ -154,10 +154,6 @@ namespace Kiezel
             {
                 return true;
             }
-            else if (sym1.Name == sym2.Name)
-            {
-                return true;
-            }
             return false;
         }
 

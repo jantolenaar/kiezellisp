@@ -140,18 +140,17 @@ namespace Kiezel
 
         public static string CollectParameterInfo(DynamicMetaObject[] args)
         {
-            return "(" + ", ".Join(args.Select(x => Runtime.ToPrintString(x.Value))) + ")";
+            return String.Format("({0} args)", args.Length);
         }
 
         public static string CollectParameterInfo(DynamicMetaObject target, DynamicMetaObject[] args)
         {
-            var args2 = RuntimeHelpers.GetCombinedTargetArgs(target, args);
-            return "(" + ", ".Join(args2.Select(x => Runtime.ToPrintString(x.Value))) + ")";
+            return String.Format("({0} args)", 1 + args.Length);
         }
 
         public static string CollectParameterInfo(DynamicMetaObject target)
         {
-            return "(" + Runtime.ToPrintString(target.Value) + ")";
+            return String.Format("({0} args)", 1);
         }
 
         public static int CompareParameterInfo(ParameterInfo[] param1, bool createdParamArray1, ParameterInfo[] param2, bool createdParamArray2)
@@ -354,8 +353,8 @@ namespace Kiezel
         //
         public static DynamicMetaObject CreateThrow
                 (DynamicMetaObject target, DynamicMetaObject[] args,
-                  BindingRestrictions moreTests,
-                  Type exception, params object[] exceptionArgs)
+                 BindingRestrictions moreTests,
+                 Type exception, params object[] exceptionArgs)
         {
             Expression[] argExprs = null;
             Type[] argTypes = Type.EmptyTypes;

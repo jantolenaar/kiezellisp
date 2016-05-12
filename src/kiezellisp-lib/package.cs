@@ -174,7 +174,7 @@ namespace Kiezel
             {
                 return sym;
             }
-            else if (useMissing && ImportedType != null)
+            else if (useMissing && ImportedType != null && !ImportMissingDone)
             {
                 Runtime.ImportMissingSymbol(key, this);
                 if (Dict.TryGetValue(key, out sym))
