@@ -1,5 +1,10 @@
 # Change Log
 
+## 2016/05/23
+
+*   Fixed documentation errors.
+*   Removed prototype getter mechanism.
+
 ## 2016/05/12
 
 *   Fixed stack overflow bug caused by recursion in prototype getters

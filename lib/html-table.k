@@ -14,6 +14,14 @@
 
 (def MAGIC-NUMBER -424242)
 
+(defstruct column 
+    "Defines a column of the html table"
+    binder
+    width
+    centered
+    caption
+    format)
+
 (defun make-table (layout table &key grouping blank-when-zero)
 
     (var row-number 0)
@@ -23,21 +31,24 @@
         (cond
             ((= x MAGIC-NUMBER) "solid")
             ((not grouping) "border")
-            ((= 0 (% row-number grouping)) "even")
-            (true "odd")))
+            ((= 1 (% row-number grouping)) "top")
+            ((= 0 (% row-number grouping)) "bot")
+            (true "mid")))
 
     (letfun format-header-col (x)
-        (if (not (.width x))
-                (<th> :class "data" (.caption x))
-                (<th> :class "data" :style "width:<%=(.width x)%>em;" (.caption x))))
+        (let w (column-width x))
+        (let c (column-caption x))
+        (if (not w)
+                (<th> :class "data" c)
+                (<th> :class "data" :style "width:<%=w%>em;" c)))
 
     (letfun format-header-row ()
         (<tr> (map format-header-col layout)))
 
     (letfun format-data-col (col)
-        (let format (or (.format col) "{0}"))
+        (let format (or (column-format col) "{0}"))
         (let numeric (.starts-with format "{0:"))
-        (let value1 (attr row (.expr col)))
+        (let value1 ((column-binder col) row))
         (let value2
             (if (and blank-when-zero
                      numeric
@@ -52,7 +63,7 @@
                 ((= value2 MAGIC-NUMBER) "x")
                 (true (string:format format value2))))
         (let align
-            (if (.centered col) "center" (if numeric "right" "left")))
+            (if (column-centered col) "center" (if numeric "right" "left")))
         (if (= value3 "&nbsp;")
             (<td> :class (get-class value2) value3)
             (<td> :class (get-class value2) :style "text-align:<%=align%>" value3)))
@@ -90,21 +101,31 @@
 				/*white-space: nowrap;*/
 			}
 
-			th.data
+            th, td
+            {
+                padding-right: 1ex;
+                padding-left: 1ex;
+            }
+
+            td
+            {
+                border-left: solid 1px gray;
+                border-right: solid 1px gray;
+            }
+
+			td.top
 			{
-				padding-right: 16px;
+                border-top: solid 1px gray;
 			}
 
-			td.even
+			td.bot
 			{
-				padding-right: 3ex;
-				padding-bottom: 1ex;
+                border-bottom: solid 1px gray;
 			}
 
-			td.odd
-			{
-				padding-right: 3ex;
-			}
+            td.mid
+            {
+            }
 
 			td.border
 			{
@@ -122,64 +143,9 @@
 				margin: 1em;
 			}
 
-			span.t1 .t2 .t3 .t4. .t5 .t6 .t7 .t8 .t9
-			{
-				border: solid 1px gray;
-				padding-left: 16px;
-				padding-right: 16px;
-			}
-
 			span.nowrap
 			{
 				white-space: nowrap;
 			}
-
-			span.t1
-			{
-				color:white;
-				background: blue;
-			}
-
-			span.t2
-			{
-				color:white;
-				background: red;
-			}
-
-			span.t3
-			{
-				background: yellow;
-			}
-
-			span.t4
-			{
-				color:white;
-				background: green;
-			}
-
-			span.t5
-			{
-				color:white;
-				background: purple;
-			}
-
-			span.t6
-			{
-				background: orange;
-			}
-
-			span.t7
-			{
-				background: pink;
-			}
-
-			span.t8
-			{
-				background: white;
-			}
-
-			span.t9
-			{
-				background: lightblue;
-			}								"""
+        """
 )

@@ -111,6 +111,7 @@ namespace Kiezel
                 return Defer(target);
             }
 
+
             var flags = BindingFlags.IgnoreCase | BindingFlags.Instance | BindingFlags.Public | BindingFlags.FlattenHierarchy;
             var name = this.Name.LispToPascalCaseName();
             var members = target.LimitType.GetMember(name, flags);
@@ -264,7 +265,7 @@ namespace Kiezel
             if (builtin != null)
             {
                 DynamicMetaObject result;
-                if (builtin.TryBindInvokeBestMethod(false, target, target, args, out result))
+                if (builtin.TryBindInvokeBestInstanceMethod(false, target, target, args, out result))
                 {
                     return result;
                 }

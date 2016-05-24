@@ -429,22 +429,7 @@ namespace Kiezel
 
             if (Dict.TryGetValue(name, out result))
             {
-                if (result is LambdaClosure)
-                {
-                    var lambda = (LambdaClosure)result;
-                    if (lambda.IsGetter)
-                    {
-                        return Runtime.Funcall(lambda, target);
-                    }
-                    else
-                    {
-                        return result;
-                    }
-                }
-                else
-                {
-                    return result;
-                }
+                return result;
             }
 
             foreach (var parent in Parents)
@@ -483,16 +468,7 @@ namespace Kiezel
             {
                 if (!dict.ContainsKey(item.Key))
                 {
-                    var result = item.Value;
-                    if (result is LambdaClosure)
-                    {
-                        var lambda = (LambdaClosure)result;
-                        if (lambda.IsGetter)
-                        {
-                            result = Runtime.Funcall(lambda, original);
-                        }
-                    }
-                    dict[item.Key] = result;
+                    dict[item.Key] = item.Value;
                 }
             }
 

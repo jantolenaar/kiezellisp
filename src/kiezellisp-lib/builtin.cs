@@ -544,31 +544,32 @@ namespace Kiezel
             return String.Format("Function Name=\"{0}.{1}\"", DeclaringType, Name);
         }
 
+        public bool IsProperOrExtensionInstanceMethod(MethodInfo method)
+        {
+            if (!method.IsStatic)
+            {
+                return true;
+            }
+            if (method.GetCustomAttributes(typeof(System.Runtime.CompilerServices.ExtensionAttribute), true).Length != 0)
+            {
+                return true;
+            }
+            return false;
+        }
+
         public bool TryBindInvokeBestMethod(bool restrictionOnTargetInstance, DynamicMetaObject target, DynamicMetaObject[] args, out DynamicMetaObject result)
         {
             DynamicMetaObject argsFirst = null;
             DynamicMetaObject[] argsRest = null;
-            return TryBindInvokeBestMethod(restrictionOnTargetInstance, target, args, argsFirst, argsRest, out result);
+            return TryBindInvokeBestMethod(false, restrictionOnTargetInstance, target, args, argsFirst, argsRest, out result);
         }
 
-        //public Delegate MakeExpressionProc( int argCount )
-        //{
-        //    var args = new ParameterExpression[ argCount ];
-        //    for ( var i = 0; i < argCount; ++i )
-        //    {
-        //        args[ i ] = Expression.Parameter( typeof( object ) );
-        //    }
-        //    var binder = Runtime.GetInvokeBinder( args.Length );
-        //    var code = Runtime.CompileDynamicExpression( binder, typeof( object ), args );
-        //    var proc = Runtime.CompileToDelegate( code, args );
-        //    return proc;
-        //}
-        public bool TryBindInvokeBestMethod(bool restrictionOnTargetInstance, DynamicMetaObject target, DynamicMetaObject argsFirst, DynamicMetaObject[] argsRest, out DynamicMetaObject result)
+        public bool TryBindInvokeBestInstanceMethod(bool restrictionOnTargetInstance, DynamicMetaObject target, DynamicMetaObject argsFirst, DynamicMetaObject[] argsRest, out DynamicMetaObject result)
         {
-            return TryBindInvokeBestMethod(restrictionOnTargetInstance, target, null, argsFirst, argsRest, out result);
+            return TryBindInvokeBestMethod(true, restrictionOnTargetInstance, target, null, argsFirst, argsRest, out result);
         }
 
-        public bool TryBindInvokeBestMethod(bool restrictionOnTargetInstance, DynamicMetaObject target, DynamicMetaObject[] args, DynamicMetaObject argsFirst, DynamicMetaObject[] argsRest, out DynamicMetaObject result)
+        public bool TryBindInvokeBestMethod(bool instanceMethodsOnly, bool restrictionOnTargetInstance, DynamicMetaObject target, DynamicMetaObject[] args, DynamicMetaObject argsFirst, DynamicMetaObject[] argsRest, out DynamicMetaObject result)
         {
             bool createdParamArray;
             var candidates = new List<CandidateMethod<MethodInfo>>();
@@ -576,6 +577,11 @@ namespace Kiezel
 
             foreach (MethodInfo m in BuiltinExtensionMembers)
             {
+                if (instanceMethodsOnly && !IsProperOrExtensionInstanceMethod(m))
+                {
+                    continue;
+                }
+
                 if (m.IsStatic)
                 {
                     if (RuntimeHelpers.ParametersMatchArguments(m.GetParameters(), args, out createdParamArray))
@@ -601,6 +607,11 @@ namespace Kiezel
             {
                 foreach (MethodInfo m in Members)
                 {
+                    if (instanceMethodsOnly && !IsProperOrExtensionInstanceMethod(m))
+                    {
+                        continue;
+                    }
+
                     if (m.IsStatic)
                     {
                         if (RuntimeHelpers.ParametersMatchArguments(m.GetParameters(), args, out createdParamArray))
@@ -627,6 +638,11 @@ namespace Kiezel
             {
                 foreach (MethodInfo m in ExternalExtensionMembers)
                 {
+                    if (instanceMethodsOnly && !IsProperOrExtensionInstanceMethod(m))
+                    {
+                        continue;
+                    }
+
                     if (m.IsStatic)
                     {
                         if (RuntimeHelpers.ParametersMatchArguments(m.GetParameters(), args, out createdParamArray))

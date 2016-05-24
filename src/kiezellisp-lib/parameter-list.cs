@@ -59,11 +59,6 @@ namespace Kiezel
             }
         }
 
-        public bool IsGetter()
-        {
-            return Kind == LambdaKind.Function && Parameters.Count == 1 && RequiredArgsCount == 1 && Parameters[0].Sym.Name == "this";
-        }
-
         public bool ParametersMatchArguments(object[] args)
         {
             int i = 0;

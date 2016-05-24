@@ -41,14 +41,6 @@ namespace Kiezel
             }
         }
 
-        public bool IsGetter
-        {
-            get
-            {
-                return Definition.Signature.IsGetter();
-            }
-        }
-
         public LambdaKind Kind
         {
             get
