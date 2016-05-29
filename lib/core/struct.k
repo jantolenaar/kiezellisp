@@ -40,7 +40,7 @@
         (throw-error "Expected documentation string, not: " descr))
     (let constructor-name (make-symbol "make-" name))
     (let predicate-name (make-symbol name "?"))
-    (let slots (.keys prototype))
+    (let slots (prototype:keys prototype))
     `(do 
         (deftype ,name ,prototype)
         (defun ,predicate-name (obj) (type? obj ',name))

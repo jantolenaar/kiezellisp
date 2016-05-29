@@ -33,7 +33,7 @@
         (cond
             ((keyword? item)
                 (let value (pop args))
-                (.set-value attributes item value))
+                (setf (elt attributes item) value))
             (true
                 (.add elements item))))
     target)

@@ -7,14 +7,13 @@ using System.ComponentModel;
 using System.Dynamic;
 using System.Linq;
 using System.Linq.Expressions;
+using System.Reflection;
 
 namespace Kiezel
 {
     [RestrictedImport]
-    public class Prototype : DynamicObject, IEnumerable, /*ICustomTypeDescriptor, */ IApply
+    public class Prototype : IDynamicMetaObjectProvider, IEnumerable, IApply
     {
-        public static Prototype Dummy = new Prototype();
-
         public PrototypeDictionary Dict = new PrototypeDictionary(false);
 
         public List<Prototype> Parents = new List<Prototype>();
@@ -23,6 +22,11 @@ namespace Kiezel
         public Prototype(params object[] args)
         {
             Create(args);
+        }
+
+        DynamicMetaObject IDynamicMetaObjectProvider.GetMetaObject(Expression parameter)
+        {
+            return new PrototypeMetaObject(parameter, this);
         }
 
         public Symbol ClassName
@@ -113,7 +117,6 @@ namespace Kiezel
             }
         }
 
-        [Lisp]
         public object GetValue(object ident)
         {
             return GetValueFor(this, ident);
@@ -155,73 +158,17 @@ namespace Kiezel
 
         object IApply.Apply(object[] args)
         {
-            return GetValue(args[0]);
+            var arg = args[0];
+            if (arg is IApply)
+            {
+                return Runtime.Funcall((IApply)arg, this);
+            }
+            else
+            {
+                return GetValue(arg);
+            }
         }
 
-        /*
-        AttributeCollection ICustomTypeDescriptor.GetAttributes()
-        {
-            return new AttributeCollection();
-        }
-
-        //
-        // Makes prototype work as a DataSource element
-        //
-        string ICustomTypeDescriptor.GetClassName()
-        {
-            return this.GetType().Name;
-        }
-
-        string ICustomTypeDescriptor.GetComponentName()
-        {
-            return null;
-        }
-
-        TypeConverter ICustomTypeDescriptor.GetConverter()
-        {
-            return null;
-        }
-
-        EventDescriptor ICustomTypeDescriptor.GetDefaultEvent()
-        {
-            return null;
-        }
-
-        PropertyDescriptor ICustomTypeDescriptor.GetDefaultProperty()
-        {
-            throw new NotImplementedException();
-        }
-
-        object ICustomTypeDescriptor.GetEditor( Type editorBaseType )
-        {
-            return null;
-        }
-
-        EventDescriptorCollection ICustomTypeDescriptor.GetEvents( Attribute[] attributes )
-        {
-            return ( ( ICustomTypeDescriptor ) this ).GetEvents();
-        }
-
-        EventDescriptorCollection ICustomTypeDescriptor.GetEvents()
-        {
-            return EventDescriptorCollection.Empty;
-        }
-
-        PropertyDescriptorCollection ICustomTypeDescriptor.GetProperties( Attribute[] attributes )
-        {
-            return ( ( ICustomTypeDescriptor ) this ).GetProperties();
-        }
-
-        PropertyDescriptorCollection ICustomTypeDescriptor.GetProperties()
-        {
-            return new PropertyDescriptorCollection( Keys.Cast<string>().Select( x => new StringPropertyDescriptor( x, GetValue( x ) ) ).ToArray() );
-        }
-
-        object ICustomTypeDescriptor.GetPropertyOwner( PropertyDescriptor pd )
-        {
-            return this;
-        }
-*/
         [Lisp]
         public void SetParents(IEnumerable parents)
         {
@@ -236,82 +183,10 @@ namespace Kiezel
             Parents = newlist;
         }
 
-        [Lisp]
         public object SetValue(object name, object value)
         {
             Dict[GetKey(name)] = value;
             return value;
-        }
-
-        public override bool TryCreateInstance(CreateInstanceBinder binder, object[] args, out object result)
-        {
-            //if ( this == Dummy )
-            //{
-            //    result = new Prototype( null, args );
-            //}
-            //else
-            {
-                result = new Prototype(this, args);
-            }
-
-            return true;
-        }
-
-        public override bool TryGetIndex(GetIndexBinder binder, object[] indexes, out object result)
-        {
-            if (indexes.Length != 1)
-            {
-                throw new LispException("Prototype objects support only one index");
-            }
-
-            var index = GetKey(indexes[0]);
-            return TryGetValue(index, out result);
-        }
-
-        public override bool TryGetMember(GetMemberBinder binder, out object result)
-        {
-            return TryGetValue(binder.Name, out result);
-        }
-
-        public bool TryGetValue(object name, out object result)
-        {
-            result = GetValue(name);
-            return true;
-        }
-
-        public override bool TryInvokeMember(InvokeMemberBinder binder, object[] args, out object result)
-        {
-            if (args != null && args.Length != 0)
-            {
-                throw new LispException("Prototype accessors cannot have arguments");
-            }
-            return TryGetValue(binder.Name, out result);
-        }
-
-        public override bool TrySetIndex(SetIndexBinder binder, object[] indexes, object value)
-        {
-            if (indexes.Length != 1)
-            {
-                throw new LispException("Prototype objects support only one index");
-            }
-
-            var index = GetKey(indexes[0]);
-            SetValue(index, value);
-            return true;
-        }
-
-        public override bool TrySetMember(SetMemberBinder binder, object value)
-        {
-            SetValue(binder.Name, value);
-            return true;
-        }
-
-        public void AddDictionary(PrototypeDictionary dict)
-        {
-            foreach (var pair in dict)
-            {
-                Dict[pair.Key] = pair.Value;
-            }
         }
 
         public void AddParent(Prototype parent)
@@ -491,85 +366,46 @@ namespace Kiezel
         }
     }
 
-    /*
-    public class StringPropertyDescriptor : PropertyDescriptor
+    public class PrototypeMetaObject : GenericApplyMetaObject<Prototype>
     {
-        private readonly string m_Name;
-        private readonly object m_Value;
+        public Prototype Proto;
 
-        public StringPropertyDescriptor( string name, object val )
-            : base( name, new Attribute[] { } )
+        public PrototypeMetaObject(Expression parameter, Prototype proto)
+            : base(parameter, proto)
         {
-            m_Name = name;
-            m_Value = val;
+            this.Proto = proto;
         }
 
-        public override Type ComponentType
+        public override DynamicMetaObject BindInvokeMember(InvokeMemberBinder binder, DynamicMetaObject[] args)
         {
-            get
-            {
-                return typeof( Prototype );
-            }
+            // Handles (.member obj)
+            MethodInfo method = typeof(Prototype).GetMethod("GetValue");
+            var index = Expression.Constant(binder.Name);
+            var expr = Expression.Call(Expression.Convert(this.Expression, typeof(Prototype)), method, index);
+            var restrictions = BindingRestrictions.GetTypeRestriction(this.Expression, typeof(Prototype));
+            return new DynamicMetaObject(RuntimeHelpers.EnsureObjectResult(expr), restrictions);
         }
 
-        public override bool IsReadOnly
+        public override DynamicMetaObject BindGetMember(GetMemberBinder binder)
         {
-            get
-            {
-                return false;
-            }
+            // Handles (attr obj 'member)
+            MethodInfo method = typeof(Prototype).GetMethod("GetValue");
+            var index = Expression.Constant(binder.Name);
+            var expr = Expression.Call(Expression.Convert(this.Expression, typeof(Prototype)), method, index);
+            var restrictions = BindingRestrictions.GetTypeRestriction(this.Expression, typeof(Prototype));
+            return new DynamicMetaObject(RuntimeHelpers.EnsureObjectResult(expr), restrictions);
         }
 
-        public override Type PropertyType
+        public override DynamicMetaObject BindSetMember(SetMemberBinder binder, DynamicMetaObject value)
         {
-            get
-            {
-                return typeof( object );
-            }
-        }
-
-        public override bool CanResetValue( object component )
-        {
-            return false;
-        }
-
-        public override bool Equals( object obj )
-        {
-
-            if ( obj is StringPropertyDescriptor )
-            {
-                return ( ( StringPropertyDescriptor ) obj ).m_Name == m_Name;
-            }
-
-            return base.Equals( obj );
-        }
-
-        public override int GetHashCode()
-        {
-            return m_Name.GetHashCode();
-        }
-
-        public override object GetValue( object component )
-        {
-            var proto = ( Prototype ) component;
-            return proto.GetValue( m_Name );
-        }
-
-        public override void ResetValue( object component )
-        {
-        }
-        public override void SetValue( object component, object value )
-        {
-            var proto = ( Prototype ) component;
-            proto.SetValue( m_Name, value );
-        }
-
-        public override bool ShouldSerializeValue( object component )
-        {
-            return false;
+            MethodInfo method = typeof(Prototype).GetMethod("SetValue");
+            var index = Expression.Constant(binder.Name);
+            var expr = Expression.Call(Expression.Convert(this.Expression, typeof(Prototype)), method, index, value.Expression);
+            var restrictions = BindingRestrictions.GetTypeRestriction(this.Expression, typeof(Prototype));
+            return new DynamicMetaObject(RuntimeHelpers.EnsureObjectResult(expr), restrictions);
         }
     }
-*/
+
     public class CaseInsensitiveEqualityComparer : IEqualityComparer<object>
     {
         private CaseInsensitiveComparer comparer = CaseInsensitiveComparer.DefaultInvariant;

@@ -1,5 +1,9 @@
 # Change Log
 
+## 2016/05/24
+
+*   Refactored prototype implementation.
+
 ## 2016/05/23
 
 *   Fixed documentation errors.

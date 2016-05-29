@@ -70,7 +70,7 @@ namespace Kiezel
                 var proto = (Prototype)target;
                 var indexes = indexesAndValue.Take(indexesAndValue.Length - 1).ToArray();
                 var value = indexesAndValue[indexesAndValue.Length - 1];
-                proto.TrySetIndex(null, indexes, value);
+                proto[indexes[0]] = value;
                 return value;
             }
             else

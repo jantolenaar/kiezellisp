@@ -221,7 +221,7 @@ $print-escape and $print-base.
     (write expr :force false))
 
 (defun pprint-prototype (expr)
-    (let types (.get-type-specifier expr))
+    (let types (prototype:get-type-specifier expr))
     (let suffix (if types (write-to-string types)))
     (cond
         ($print-prototype-with-braces
@@ -383,7 +383,7 @@ $print-escape and $print-base.
 
 (defun pprint-prototype-items-vertically (seq newline)
     (loop
-        (for key in (.keys seq))
+        (for key in (prototype:keys seq))
         (when newline
             (print-line)
             (pprint-left-margin))
