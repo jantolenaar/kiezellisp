@@ -8,7 +8,6 @@ namespace Kiezel
 {
     public class Cons : IEnumerable, IPrintsValue
     {
-        public static Cons EMPTY = new Cons();
         internal object car;
         internal object cdr;
 
@@ -28,18 +27,11 @@ namespace Kiezel
         {
             get
             {
-                if (this == Cons.EMPTY)
-                {
-                    return null;
-                }
-                else
-                {
-                    return car;
-                }
+                return car;
             }
             set
             {
-                if (this == Cons.EMPTY)
+                if (this == null)
                 {
                     throw new LispException("Cannot set car of empty list");
                 }
@@ -54,9 +46,9 @@ namespace Kiezel
         {
             get
             {
-                if (this == Cons.EMPTY)
+                if (this == null)
                 {
-                    return this;
+                    return null;
                 }
 
                 if (cdr is IEnumerator)
@@ -72,13 +64,9 @@ namespace Kiezel
             }
             set
             {
-                if (this == Cons.EMPTY)
+                if (this == null)
                 {
                     throw new LispException("Cannot set cdr of empty list");
-                }
-                else if (value == Cons.EMPTY)
-                {
-                    cdr = null;
                 }
                 else
                 {

@@ -159,7 +159,7 @@ namespace Kiezel
         object IApply.Apply(object[] args)
         {
             var arg = args[0];
-            if (arg is IApply)
+            if (arg is LambdaClosure)
             {
                 return Runtime.Funcall((IApply)arg, this);
             }

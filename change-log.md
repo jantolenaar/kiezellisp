@@ -1,5 +1,10 @@
 # Change Log
 
+## 2016/05/29
+
+*   Removed all occurrences of Cons.EMPTY.
+*   Fixed bug in Prototype.Apply.
+
 ## 2016/05/24
 
 *   Refactored prototype implementation.
