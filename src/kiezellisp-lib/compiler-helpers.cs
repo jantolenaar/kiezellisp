@@ -138,19 +138,15 @@ namespace Kiezel
                 context);
         }
 
-        public static string CollectParameterInfo(DynamicMetaObject[] args)
+        public static string CollectParameterInfo(params DynamicMetaObject[] args)
         {
-            return String.Format("({0} args)", args.Length);
+            return "(" + ", ".Join(args.Select(x => Runtime.ToPrintString(x.Value))) + ")";
         }
 
         public static string CollectParameterInfo(DynamicMetaObject target, DynamicMetaObject[] args)
         {
-            return String.Format("({0} args)", 1 + args.Length);
-        }
-
-        public static string CollectParameterInfo(DynamicMetaObject target)
-        {
-            return String.Format("({0} args)", 1);
+            var args2 = RuntimeHelpers.GetCombinedTargetArgs(target, args);
+            return CollectParameterInfo(args2);
         }
 
         public static int CompareParameterInfo(ParameterInfo[] param1, bool createdParamArray1, ParameterInfo[] param2, bool createdParamArray2)

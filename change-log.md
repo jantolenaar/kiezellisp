@@ -2,6 +2,7 @@
 
 ## 2016/05/29
 
+*   Undid changes to CollectParameterInfo() diagnostic code.
 *   Removed all occurrences of Cons.EMPTY.
 *   Fixed bug in Prototype.Apply.
 
