@@ -1,5 +1,10 @@
 # Change Log
 
+## 2016/06/06
+
+*   Added accidentally omitted help files.
+*   Fixed init.k script.
+
 ## 2016/05/29
 
 *   Undid changes to CollectParameterInfo() diagnostic code.
