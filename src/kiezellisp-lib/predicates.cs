@@ -131,6 +131,12 @@ namespace Kiezel
             return sym.CompilerUsage == SymbolUsage.Macro;
         }
 
+        [Pure, Lisp("symbol-macro?")]
+        public static bool SymbolMacrop(Symbol sym)
+        {
+            return sym.CompilerUsage == SymbolUsage.SymbolMacro;
+        }
+
         [Pure, Lisp("minus?")]
         public static bool Minusp(object a1)
         {

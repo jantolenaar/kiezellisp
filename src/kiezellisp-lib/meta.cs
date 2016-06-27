@@ -175,9 +175,9 @@ namespace Kiezel
         }
 
         [Lisp("find-name-in-environment")]
-        public static bool FindNameInEnvironment(Symbol sym, AnalysisScope env)
+        public static bool FindNameOrMacroInEnvironment(Symbol sym, AnalysisScope env)
         {
-            return env != null && env.HasLocalVariable(sym, int.MaxValue);
+            return env != null && env.FindLocal(sym) != null;
         }
 
         [Lisp("gentemp")]
@@ -202,15 +202,10 @@ namespace Kiezel
             return Eval(expr);
         }
 
-        //[Lisp( "augment-environment" )]
-        //public static void AugmentEnvironment( Symbol sym, AnalysisScope env )
-        //{
-        //    env.DefineFrameLocal( sym, ScopeFlags.All );
-        //}
         [Lisp("macroexpand")]
         public static object MacroExpand(object expr)
         {
-            return MacroExpand(expr, null);
+            return MacroExpand(expr, MakeEnvironment());
         }
 
         [Lisp("macroexpand")]
@@ -228,7 +223,7 @@ namespace Kiezel
         [Lisp("macroexpand-1")]
         public static Cons MacroExpand1(object expr)
         {
-            return MacroExpand1(expr, null);
+            return MacroExpand1(expr, MakeEnvironment());
         }
 
         [Lisp("macroexpand-1")]
@@ -242,7 +237,7 @@ namespace Kiezel
         [Lisp("macroexpand-all")]
         public static object MacroExpandAll(object form)
         {
-            return MacroExpandAll(form, null);
+            return MacroExpandAll(form, MakeEnvironment());
         }
 
         [Lisp("macroexpand-all")]
@@ -304,36 +299,49 @@ namespace Kiezel
         {
             result = expr;
 
-            if (!(expr is Cons))
+            var sym = expr as Symbol;
+
+            if (sym != null)
             {
-                return false;
+                var entry = env.FindLocal(sym);
+                var macro = (entry != null) ? entry.SymbolMacroValue : sym.SymbolMacroValue;
+                if (macro != null)
+                {
+                    result = macro.Form;
+                    return result != expr;
+                }
+                else
+                {
+                    return false;
+                }
             }
 
-            var form = (Cons)expr;
-            var head = First(form) as Symbol;
+            var form = expr as Cons;
 
-            if (head == null)
+            if (form != null)
             {
-                return false;
+                var head = First(form) as Symbol;
+
+                if (head == null)
+                {
+                    return false;
+                }
+
+                var entry = env.FindLocal(head);
+                var macro = (entry != null) ? entry.MacroValue : head.MacroValue;
+                if (macro != null)
+                {
+                    var args = AsArray(Cdr(form));
+                    result = macro.ApplyLambdaBind(null, args, false, new AnalysisScope(env, "try-macroexpand"), form);
+                    return result != form;
+                }
+                else
+                {
+                    return false;
+                }
             }
 
-            if (FindNameInEnvironment(head, env))
-            {
-                return false;
-            }
-
-            var macro = head.MacroValue ?? (head.Value as LambdaClosure);
-
-            if (macro == null || macro.Kind != LambdaKind.Macro)
-            {
-                return false;
-            }
-
-            var args = AsArray(Cdr(form));
-
-            result = macro.ApplyLambdaBind(null, args, false, new AnalysisScope(env, "try-macroexpand"), form);
-
-            return result != form;
+            return false;
         }
     }
 }

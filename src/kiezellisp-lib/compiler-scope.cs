@@ -18,6 +18,8 @@ namespace Kiezel
         Future = 32,
         Lazy = 64,
         Constant = 128,
+        Macro = 256,
+        SymbolMacro = 512,
         All = 31
     }
 
@@ -110,6 +112,11 @@ namespace Kiezel
             }
         }
 
+        public void DefineMacro(Symbol sym, object macro, ScopeFlags flags)
+        {
+            Variables.Add(new ScopeEntry(sym, macro, flags));
+        }
+
         public int DefineFrameLocal(Symbol sym, ScopeFlags flags)
         {
             if (Names == null)
@@ -135,17 +142,8 @@ namespace Kiezel
         public bool FindLocal(Symbol sym, ScopeFlags reason)
         {
             int depth;
-            int index;
-            ParameterExpression parameter;
-            ScopeFlags flags;
-            int realDepth;
-            return FindLocal(sym, reason, out realDepth, out depth, out index, out parameter, out flags);
-        }
-
-        public bool FindLocal(Symbol sym, ScopeFlags reason, out int depth, out int index, out ParameterExpression parameter, out ScopeFlags flags)
-        {
-            int realDepth;
-            return FindLocal(sym, reason, out realDepth, out depth, out index, out parameter, out flags);
+            ScopeEntry entry;
+            return FindLocal(sym, reason, out depth, out entry);
         }
 
         bool LexicalSymEqual(Symbol sym1, Symbol sym2)
@@ -157,15 +155,13 @@ namespace Kiezel
             return false;
         }
 
-        public bool FindLocal(Symbol sym, ScopeFlags reason, out int realDepth, out int depth, out int index, out ParameterExpression parameter, out ScopeFlags flags)
+
+        public bool FindLocal(Symbol sym, ScopeFlags reason, out int depth, out ScopeEntry entry)
         {
             bool noCapturedNativeParametersBeyondThisPoint = false;
 
-            realDepth = 0;
             depth = 0;
-            index = 0;
-            parameter = null;
-            flags = 0;
+            entry = null;
 
             for (AnalysisScope sc = this; sc != null; sc = sc.Parent)
             {
@@ -178,14 +174,15 @@ namespace Kiezel
                     // Looking for exact match
                     if (LexicalSymEqual(item.Key, sym))
                     {
+                        entry = item;
+
                         if (LexicalSymEqual(sym, Symbols.Tilde))
                         {
                             UsesTilde = true;
                         }
 
-                        if (item.Index != -1)
+                        if (item.Index != -1 || item.MacroValue != null || item.SymbolMacroValue != null)
                         {
-                            index = item.Index;
                             item.Flags |= reason;
                         }
                         else if (reason != 0 && noCapturedNativeParametersBeyondThisPoint && !LexicalSymEqual(sym, Symbols.Tilde))
@@ -197,15 +194,13 @@ namespace Kiezel
                             // The recompile that comes later uses the list of free variables to
                             // choose the correct implementation scheme.
                             sc.FreeVariables.Add(sym);
-                            index = sc.DefineFrameLocal(sym, reason);
+                            var index = sc.DefineFrameLocal(sym, reason);
+                            entry = Variables[index];
                         }
                         else
                         {
-                            parameter = item.Parameter;
                             item.Flags |= reason;
                         }
-
-                        flags = item.Flags;
 
                         return true;
                     }
@@ -228,23 +223,25 @@ namespace Kiezel
                     ++depth;
                 }
 
-                ++realDepth;
             }
 
             depth = 0;
-            index = -1;
 
             return false;
         }
 
-        public bool HasLocalVariable(Symbol name, int maxDepth)
+        public ScopeEntry FindLocal(Symbol name, int maxDepth = int.MaxValue)
         {
-            int realDepth;
             int depth;
-            int index;
-            ParameterExpression parameter;
-            ScopeFlags flags;
-            return FindLocal(name, 0, out realDepth, out depth, out index, out parameter, out flags) && realDepth <= maxDepth;
+            ScopeEntry entry;
+            if (FindLocal(name, 0, out depth, out entry) && depth <= maxDepth)
+            {
+                return entry;
+            }
+            else
+            {
+                return null;
+            }
         }
 
         public void PrintWarning(string context, string error, Symbol sym)
@@ -263,24 +260,46 @@ namespace Kiezel
     public class ScopeEntry
     {
         public ScopeFlags Flags;
-        public int Index;
         public Symbol Key;
-        public ParameterExpression Parameter;
+        public object Value;
 
-        public ScopeEntry(Symbol key, int index, ScopeFlags flags)
+        public ScopeEntry(Symbol key, object value, ScopeFlags flags)
         {
             Key = key;
-            Index = index;
-            Parameter = null;
+            Value = value;
             Flags = flags;
         }
 
-        public ScopeEntry(Symbol key, ParameterExpression parameter, ScopeFlags flags)
+        public int Index
         {
-            Key = key;
-            Index = -1;
-            Parameter = parameter;
-            Flags = flags;
+            get
+            { 
+                return (Value is Int32) ? (Int32)Value : -1;
+            }
+        }
+
+        public LambdaClosure MacroValue
+        {
+            get
+            { 
+                return Value as LambdaClosure; 
+            }
+        }
+
+        public SymbolMacro SymbolMacroValue
+        {
+            get
+            { 
+                return Value as SymbolMacro; 
+            }
+        }
+
+        public ParameterExpression Parameter
+        {
+            get
+            {
+                return Value as ParameterExpression;
+            }
         }
 
         public bool Assigned

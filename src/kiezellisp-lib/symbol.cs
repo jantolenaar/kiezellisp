@@ -15,6 +15,7 @@ namespace Kiezel
         Function,
         SpecialForm,
         Macro,
+        SymbolMacro,
         CompilerMacro
     }
 
@@ -162,6 +163,14 @@ namespace Kiezel
             return sym;
         }
 
+        public static object DefineSymbolMacro(Symbol sym, SymbolMacro value, string doc)
+        {
+            EraseVariable(sym);
+            sym.SymbolMacroValue = value;
+            sym.CompilerDocumentation = doc;
+            return sym;
+        }
+
         public static object DefineMacro(Symbol sym, LambdaClosure value, string doc)
         {
             EraseVariable(sym);
@@ -204,7 +213,19 @@ namespace Kiezel
         public Symbol(string name, Package package = null)
         {
             Name = name;
-            IsDynamic = Name[0] == '$';
+            if (Name[0] == '$')
+            {
+                IsDynamic = true;
+            }
+            else if (Name.Length >= 3 && Name[0] == '*' && Name[Name.Length - 1] == '*')
+            {
+                IsDynamic = true;
+            }
+            else
+            {
+                IsDynamic = false;
+            }
+
             PropList = null;
             Package = package;
 
@@ -422,6 +443,20 @@ namespace Kiezel
             }
         }
 
+        public SymbolMacro SymbolMacroValue
+        {
+            get
+            {
+                return _compilerValue as SymbolMacro;
+            }
+
+            set
+            {
+                _compilerValue = value;
+                CompilerUsage = SymbolUsage.SymbolMacro;
+            }
+        }
+
         public object Value
         {
             get
@@ -553,6 +588,8 @@ namespace Kiezel
 
         public static Symbol DefineCompilerMacro;
 
+        public static Symbol DefineSymbolMacro;
+
         public static Symbol DefMacro;
 
         public static Symbol DefMethod;
@@ -674,6 +711,10 @@ namespace Kiezel
         public static Symbol Let;
 
         public static Symbol LetFun;
+
+        public static Symbol LetMacro;
+
+        public static Symbol LetSymbolMacro;
 
         public static Symbol List;
 
@@ -829,6 +870,8 @@ namespace Kiezel
 
         public static Symbol StructurallyEqual;
 
+        public static Symbol SymbolMacro;
+
         public static Symbol TagBody;
 
         public static Symbol TailCall;
@@ -901,6 +944,7 @@ namespace Kiezel
             Def = MakeSymbol("def");
             DefConstant = MakeSymbol("defconstant");
             DefineCompilerMacro = MakeSymbol("define-compiler-macro");
+            DefineSymbolMacro = MakeSymbol("define-symbol-macro");
             DefMacro = MakeSymbol("defmacro");
             DefMethod = MakeSymbol("defmethod");
             DefMulti = MakeSymbol("defmulti");
@@ -960,6 +1004,8 @@ namespace Kiezel
             Left = MakeSymbol(":left");
             Let = MakeSymbol("let");
             LetFun = MakeSymbol("letfun");
+            LetMacro = MakeSymbol("letmacro");
+            LetSymbolMacro = MakeSymbol("let-symbol-macro");
             List = MakeSymbol("list");
             ListStar = MakeSymbol("list*");
             LoadPath = MakeSymbol("$load-path");
@@ -1034,6 +1080,7 @@ namespace Kiezel
             Str = MakeSymbol("string");
             Stream = MakeSymbol(":stream");
             StructurallyEqual = MakeSymbol("structurally-equal");
+            SymbolMacro = MakeSymbol("symbol-macro");
             TagBody = MakeSymbol("tagbody");
             TailCall = MakeSymbol("tailcall");
             Target = MakeSymbol("__target__");

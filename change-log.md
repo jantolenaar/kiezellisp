@@ -1,5 +1,13 @@
 # Change Log
 
+## 2016/06/21
+
+*   Added special form `define-symbol-macro`.
+*   Added special form `let-symbol-macro`.
+*   Added special form `let-macro`.
+*   Added function `symbol-macro?`.
+*   Added `*var*` earmuff to special variables.
+
 ## 2016/06/06
 
 *   Added accidentally omitted help files.

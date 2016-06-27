@@ -98,12 +98,6 @@ namespace Kiezel
 
         }
 
-
-        public static void ConsoleSetColor(object color, object bkcolor = null)
-        {
-            // to do
-        }
-
         public static void Quit()
         {
             Terminal.History.Close();

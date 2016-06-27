@@ -122,7 +122,6 @@ namespace Kiezel
         {
             // Wraps on white space boundary
             var buf = new StringBuilder();
-            var count = 0;
             var pos = 0;
             while (pos + width < text.Length)
             {               

@@ -103,8 +103,12 @@
     :with 'with-clause
     ))
 
-(def loop-ignorables [defun defun* defmacro defmulti defmethod lambda lambda* λ letfun])
-;(def loop-ignorables null)
+(def loop-ignorables #v(
+            defun defun* 
+            defmacro define-symbol-macro
+            defmulti defmethod
+            lambda lambda* λ 
+            letmacro letfun let-symbol-macro))
 
 (defun loop-macroexpand-1 (form env)
     (when (and (cons? form)

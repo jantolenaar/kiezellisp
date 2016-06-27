@@ -20,6 +20,7 @@ namespace Kiezel
         public static MethodInfo DefDynamicConstMethod = RuntimeMethod("DefDynamicConst");
         public static MethodInfo DefDynamicMethod = RuntimeMethod("DefDynamic");
         public static MethodInfo DefineCompilerMacroMethod = RuntimeMethod("DefineCompilerMacro");
+        public static MethodInfo DefineSymbolMacroMethod = RuntimeMethod("DefineSymbolMacro");
         public static MethodInfo DefineConstantMethod = RuntimeMethod("DefineConstant");
         public static MethodInfo DefineFunctionMethod = RuntimeMethod("DefineFunction");
         public static MethodInfo DefineMacroMethod = RuntimeMethod("DefineMacro");
@@ -432,6 +433,21 @@ namespace Kiezel
             return Expression.Call(DefineCompilerMacroMethod, Expression.Constant(sym), lambda, Expression.Constant(doc, typeof(string)));
         }
 
+        public static Expression CompileDefineSymbolMacro(Cons form, AnalysisScope scope)
+        {
+            // define-compiler name form
+            CheckLength(form, 3);
+            var sym = CheckSymbol(Second(form));
+            if (sym.IsDynamic)
+            {
+                throw new LispException("Invalid symbol-macro name: {0}", sym);
+            }
+            WarnWhenShadowing(sym);
+            string doc = "";
+            var macro = new SymbolMacro(Third(form));
+            return Expression.Call(DefineSymbolMacroMethod, Expression.Constant(sym), Expression.Constant(macro), Expression.Constant(doc, typeof(string)));
+        }
+
         public static Expression CompileDefMacro(Cons form, AnalysisScope scope)
         {
             // defmacro name args body
@@ -721,6 +737,20 @@ namespace Kiezel
 
         public static Expression CompileFunctionCall(Cons form, AnalysisScope scope)
         {
+            if (OptimizerEnabled)
+            {
+                var expr = Optimizer(form);
+                if (expr != form)
+                {
+                    return Expression.Constant(expr, typeof(object));
+                }
+            }
+
+//            if (head == Symbols.Catch || head == Symbols.Finally)
+//            {
+//                PrintWarning("Catch/finally used outside of a try block?!");
+//            }
+
             CheckMinLength(form, 1);
             var formFunc = First(form);
             var formArgs = Cdr(form);
@@ -814,30 +844,32 @@ namespace Kiezel
             }
             else
             {
-                int index;
                 int depth;
-                ParameterExpression parameter;
-                ScopeFlags flags;
+                ScopeEntry entry;
 
-                if (scope.FindLocal(sym, ScopeFlags.Referenced, out depth, out index, out parameter, out flags))
+                if (scope.FindLocal(sym, ScopeFlags.Referenced, out depth, out entry))
                 {
                     Expression code;
 
-                    if (parameter != null)
+                    if (entry.MacroValue != null || entry.SymbolMacroValue != null)
                     {
-                        code = parameter;
+                        throw new LispException("{0}: cannot compile reference to (symbol)macro variable", sym);
+                    }
+                    else if (entry.Parameter != null)
+                    {
+                        code = entry.Parameter;
                     }
                     else
                     {
-                        code = CallRuntime(GetLexicalMethod, Expression.Constant(depth), Expression.Constant(index));
+                        code = CallRuntime(GetLexicalMethod, Expression.Constant(depth), Expression.Constant(entry.Index));
                     }
 
-                    if ((flags & ScopeFlags.Future) != 0)
+                    if ((entry.Flags & ScopeFlags.Future) != 0)
                     {
                         // This also handles the lazy-future case.
                         code = CallRuntime(GetTaskResultMethod, Expression.Convert(code, typeof(ThreadContext)));
                     }
-                    else if ((flags & ScopeFlags.Lazy) != 0)
+                    else if ((entry.Flags & ScopeFlags.Lazy) != 0)
                     {
                         code = CallRuntime(GetDelayedExpressionResultMethod, Expression.Convert(code, typeof(DelayedExpression)));
                     }
@@ -1113,6 +1145,62 @@ namespace Kiezel
             return CompileLet(letForm, scope);
         }
 
+        public static Expression CompileLetMacro(Cons form, AnalysisScope scope)
+        {
+            // letmacro name args body
+            CheckMinLength(form, 3);
+            var sym = CheckSymbol(Second(form));
+            if (sym.IsDynamic)
+            {
+                throw new LispException("Invalid macro name: {0}", sym);
+            }
+            if (!scope.IsBlockScope)
+            {
+                throw new LispException("Statement requires block or file scope: {0}", form);
+            }
+            if (sym == Symbols.Tilde)
+            {
+                throw new LispException("\"~\" is a reserved symbol name");
+            }
+            if (scope.FindLocal(sym, 0) != null)
+            {
+                throw new LispException("Duplicate declaration of variable: {0}", sym);
+            }
+            string doc;
+            var lambda = CompileLambdaDef(sym, Cddr(form), scope, LambdaKind.Macro, out doc);
+            var closure = (LambdaClosure)Execute(lambda);
+            scope.DefineMacro(sym, closure, ScopeFlags.Macro | ScopeFlags.All);
+            return Expression.Constant(null);
+        }
+
+        public static Expression CompileLetSymbolMacro(Cons form, AnalysisScope scope)
+        {
+            // let-symbol-macro name form
+            CheckLength(form, 3);
+            CheckMinLength(form, 3);
+            var sym = CheckSymbol(Second(form));
+            if (sym.IsDynamic)
+            {
+                throw new LispException("Invalid symbol-macro name: {0}", sym);
+            }
+            if (!scope.IsBlockScope)
+            {
+                throw new LispException("Statement requires block or file scope: {0}", form);
+            }
+            if (sym == Symbols.Tilde)
+            {
+                throw new LispException("\"~\" is a reserved symbol name");
+            }
+            if (scope.FindLocal(sym, 0) != null)
+            {
+                throw new LispException("Duplicate declaration of variable: {0}", sym);
+            }
+            var macro = new SymbolMacro(Third(form));
+            scope.DefineMacro(sym, macro, ScopeFlags.SymbolMacro | ScopeFlags.All);
+            return Expression.Constant(null);
+
+        }
+
         public static Expression CompileLexicalVarInScope(Cons form, AnalysisScope scope, bool native, bool future, bool lazy, bool constant)
         {
             // var sym [expr]
@@ -1127,7 +1215,7 @@ namespace Kiezel
             {
                 throw new LispException("\"~\" is a reserved symbol name");
             }
-            if (scope.HasLocalVariable(sym, 0))
+            if (scope.FindLocal(sym, 0) != null)
             {
                 throw new LispException("Duplicate declaration of variable: {0}", sym);
             }
@@ -1323,6 +1411,14 @@ namespace Kiezel
             CheckLength(form, 3);
 
             var sym = CheckSymbol(Second(form));
+            var form2 = MacroExpand(sym, scope);
+            if (form2 != sym)
+            {
+                // symbol macro - change setq to setf
+                var expr = MakeListStar(Symbols.Setf, form2, Cddr(form));
+                return Compile(expr, scope);
+            }
+
             var value = Compile(Third(form), scope);
 
             if (sym.IsDynamic)
@@ -1340,26 +1436,29 @@ namespace Kiezel
             else
             {
                 int depth;
-                int index;
-                ParameterExpression parameter;
-                ScopeFlags flags;
+                ScopeEntry entry;
 
-                if (scope.FindLocal(sym, ScopeFlags.Assigned, out depth, out index, out parameter, out flags))
+                if (scope.FindLocal(sym, ScopeFlags.Assigned, out depth, out entry))
                 {
-                    var constant = (flags & ScopeFlags.Constant) != 0;
+                    if (entry.MacroValue != null || entry.SymbolMacroValue != null)
+                    {
+                        throw new LispException("{0}: cannot compile reference to (symbol)macro variable", sym);
+                    }
+
+                    var constant = (entry.Flags & ScopeFlags.Constant) != 0;
 
                     if (constant)
                     {
                         throw new LispException("Cannot assign to a constant, future or lazy variable: {0}", sym);
                     }
 
-                    if (parameter != null)
+                    if (entry.Parameter != null)
                     {
-                        return Expression.Assign(parameter, value);
+                        return Expression.Assign(entry.Parameter, value);
                     }
                     else
                     {
-                        return CallRuntime(SetLexicalMethod, Expression.Constant(depth), Expression.Constant(index), value);
+                        return CallRuntime(SetLexicalMethod, Expression.Constant(depth), Expression.Constant(entry.Index), value);
                     }
                 }
                 else if (scope.Parent == null)
@@ -1571,40 +1670,29 @@ namespace Kiezel
             else if (expr is Cons)
             {
                 var form = (Cons)expr;
-                var head = First(form) as Symbol;
 
-                if (head != null && !FindNameInEnvironment(head, scope))
+                if (First(form) is Symbol)
                 {
-                    if (OptimizerEnabled && TryOptimize(ref expr))
+                    var head = (Symbol)First(form);
+                    var shadowed = scope.FindLocal(head) != null;
+                
+                    if (shadowed)
                     {
-                        return Expression.Constant(expr, typeof(object));
+                        return CompileFunctionCall(form, scope);
                     }
-
-                    if (head.SpecialFormValue != null)
+                    else if (head.SpecialFormValue != null)
                     {
                         return head.SpecialFormValue.Helper(form, scope);
                     }
-
-                    //if ( head.MacroValue != null )
-                    //{
-                    //    var expansion = MacroExpand( form, scope );
-                    //    if ( form == expansion )
-                    //    {
-                    //        return CompileFunctionCall( form, scope );
-                    //    }
-                    //    else
-                    //    {
-                    //        return Compile( expansion, scope );
-                    //    }
-                    //}
-
-                    if (head == Symbols.Catch || head == Symbols.Finally)
+                    else
                     {
-                        PrintWarning("Catch/finally used outside of a try block?!");
+                        return CompileFunctionCall(form, scope);
                     }
                 }
-
-                return CompileFunctionCall(form, scope);
+                else
+                {
+                    return CompileFunctionCall(form, scope);
+                }
             }
             else
             {
@@ -1693,6 +1781,7 @@ namespace Kiezel
             Symbols.Def.SpecialFormValue = new SpecialForm(CompileDef);
             Symbols.DefConstant.SpecialFormValue = new SpecialForm(CompileDefConstant);
             Symbols.DefineCompilerMacro.SpecialFormValue = new SpecialForm(CompileDefineCompilerMacro);
+            Symbols.DefineSymbolMacro.SpecialFormValue = new SpecialForm(CompileDefineSymbolMacro);
             Symbols.DefMacro.SpecialFormValue = new SpecialForm(CompileDefMacro);
             Symbols.DefMethod.SpecialFormValue = new SpecialForm(CompileDefMethod);
             Symbols.DefMulti.SpecialFormValue = new SpecialForm(CompileDefMulti);
@@ -1712,6 +1801,8 @@ namespace Kiezel
             Symbols.LazyVar.SpecialFormValue = new SpecialForm(CompileLazyVar);
             Symbols.Let.SpecialFormValue = new SpecialForm(CompileLet);
             Symbols.LetFun.SpecialFormValue = new SpecialForm(CompileLetFun);
+            Symbols.LetMacro.SpecialFormValue = new SpecialForm(CompileLetMacro);
+            Symbols.LetSymbolMacro.SpecialFormValue = new SpecialForm(CompileLetSymbolMacro);
             Symbols.MergingDo.SpecialFormValue = new SpecialForm(CompileMergingDo);
             Symbols.Or.SpecialFormValue = new SpecialForm(CompileOr);
             Symbols.Quote.SpecialFormValue = new SpecialForm(CompileQuote);
@@ -1766,14 +1857,6 @@ namespace Kiezel
             label = null;
 
             return false;
-        }
-
-        public static bool TryOptimize(ref object expr)
-        {
-            var expr2 = Optimizer(expr);
-            var optimized = expr2 != expr;
-            expr = expr2;
-            return optimized;
         }
 
         public static Expression WrapBooleanTest(Expression expr)

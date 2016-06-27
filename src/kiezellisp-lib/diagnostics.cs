@@ -88,6 +88,12 @@ namespace Kiezel
                         }
                         break;
                     }
+                    case SymbolUsage.SymbolMacro:
+                    {
+                        z["compiler-usage"] = Symbols.SymbolMacro;
+                        z["compiler-value"] = sym.SymbolMacroValue;
+                        break;
+                    }
                     case SymbolUsage.SpecialForm:
                     {
                         z["compiler-usage"] = Symbols.SpecialForm;
