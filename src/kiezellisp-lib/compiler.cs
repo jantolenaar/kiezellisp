@@ -292,8 +292,9 @@ namespace Kiezel
                 }
             }
 
-            if (bodyExprs[bodyExprs.Count - 1] is LabelExpression)
+            if (bodyExprs.Count > 0 && bodyExprs[bodyExprs.Count - 1] is LabelExpression && tilde != null)
             {
+                // last expression in block must not be a value-less label
                 bodyExprs.Add(tilde);
             }
 
@@ -1096,32 +1097,20 @@ namespace Kiezel
                 }
             }
 
-            var v = new Vector();
-
-            if (args == null)
-            {
-                v.AddRange(body);
-                v.Add(MakeList(Symbols.Label, Symbols.FunctionExitLabel));
-            }
-            else
-            {
-                GetLambdaParameterBindingCode(v, template.Signature);
-                v.Add(MakeListStar(Symbols.Do, body));
-                v.Add(MakeList(Symbols.Label, Symbols.FunctionExitLabel));
-            }
-
-            body = AsList(v);
-
-#if DEBUG
+            #if DEBUG
             template.Source = MakeListStar(Symbols.Lambda, MakeList(Symbols.Params, Symbols.Args), body);
-#endif
+            #endif
             var lambdaListNative = funscope.DefineNativeLocal(Symbols.LambdaList, ScopeFlags.All);
-            var recurNative = funscope.DefineNativeLocal(Symbols.Recur, ScopeFlags.All);
+            var selfNative = funscope.DefineNativeLocal(Symbols.Self, ScopeFlags.All);
             var argsNative = funscope.DefineNativeLocal(Symbols.Args, ScopeFlags.All);
 
-            Expression code = CompileBody(body, funscope);
+            var v = new Vector();
+            GetLambdaParameterSetupCode(Symbols.Var, v, template.Signature);
+            v.Add(MakeListStar(Symbols.Do, body));
+            v.Add(MakeList(Symbols.Label, Symbols.FunctionExitLabel));
+            var code = CompileBody(AsList(v), funscope);
 
-            template.Proc = CompileToFunction3(code, lambdaListNative, recurNative, argsNative);
+            template.Proc = CompileToFunction3(code, lambdaListNative, selfNative, argsNative);
 
             return CallRuntime(MakeLambdaClosureMethod, Expression.Constant(template, typeof(LambdaDefinition)));
         }
@@ -1295,17 +1284,22 @@ namespace Kiezel
 
         public static Expression CompileMergingDo(Cons forms, AnalysisScope scope)
         {
-            if (scope.IsBlockScope)
+            var body = Cdr(forms);
+            if (body == null)
             {
-                // merge
-                var expressions = CompileBodyExpressions(Cdr(forms), scope);
+                throw new LispException("Merging-do body cannot be empty");
+            }
+            if (scope.IsBlockScope && body != null)
+            {
+                // compile into outer block scope
+                var expressions = CompileBodyExpressions(body, scope);
                 Expression block = Expression.Block(typeof(object), expressions);
                 return block;
             }
             else
             {
-                // compile as do block
-                return CompileBody(Cdr(forms), scope);
+                // compile into new block scope
+                return CompileBody(body, scope);
             }
         }
 
@@ -1361,6 +1355,7 @@ namespace Kiezel
             }
             else
             {
+                funscope.UsesReturn = true;
                 var value = Cadr(form);
                 return Compile(MakeList(Symbols.Goto, Symbols.FunctionExitLabel, value), scope);
             }
@@ -1740,7 +1735,7 @@ namespace Kiezel
             return null;
         }
 
-        public static void GetLambdaParameterBindingCode(Vector code, LambdaSignature signature)
+        public static void GetLambdaParameterSetupCode(Symbol setup, Vector code, LambdaSignature signature)
         {
             for (int i = 0; i < signature.Names.Count; ++i)
             {
@@ -1748,17 +1743,17 @@ namespace Kiezel
                 {
                     if (i >= signature.Parameters.Count || !signature.Parameters[i].Hidden)
                     {
-                        code.Add(MakeList(Symbols.Var, signature.Names[i], MakeList(Symbols.GetElt, Symbols.Args, i)));
+                        code.Add(MakeList(setup, signature.Names[i], MakeList(Symbols.GetElt, Symbols.Args, i)));
                     }
                 }
             }
             if (signature.WholeArg != null)
             {
-                code.Add(MakeList(Symbols.Var, signature.WholeArg, MakeList(Symbols.GetElt, Symbols.Args, signature.Names.Count)));
+                code.Add(MakeList(setup, signature.WholeArg, MakeList(Symbols.GetElt, Symbols.Args, signature.Names.Count)));
             }
             if (signature.EnvArg != null)
             {
-                code.Add(MakeList(Symbols.Var, signature.EnvArg, MakeList(Symbols.GetElt, Symbols.Args, signature.Names.Count + (signature.WholeArg != null ? 1 : 0))));
+                code.Add(MakeList(setup, signature.EnvArg, MakeList(Symbols.GetElt, Symbols.Args, signature.Names.Count + (signature.WholeArg != null ? 1 : 0))));
             }
         }
 
@@ -1776,7 +1771,7 @@ namespace Kiezel
         public static void RestartCompiler()
         {
             Symbols.And.SpecialFormValue = new SpecialForm(CompileAnd);
-            Symbols.Quote.SpecialFormValue = new SpecialForm(CompileQuote);
+            Symbols.CompileTimeBranch.SpecialFormValue = new SpecialForm(CompileMergingDo);
             Symbols.Declare.SpecialFormValue = new SpecialForm(CompileDeclare);
             Symbols.Def.SpecialFormValue = new SpecialForm(CompileDef);
             Symbols.DefConstant.SpecialFormValue = new SpecialForm(CompileDefConstant);
@@ -1792,7 +1787,6 @@ namespace Kiezel
             Symbols.GetAttr.SpecialFormValue = new SpecialForm(CompileGetMember);
             Symbols.GetElt.SpecialFormValue = new SpecialForm(CompileGetElt);
             Symbols.Goto.SpecialFormValue = new SpecialForm(CompileGoto);
-            Symbols.GreekLambda.SpecialFormValue = new SpecialForm(CompileLambda);
             Symbols.HiddenVar.SpecialFormValue = new SpecialForm(CompileHiddenVar);
             Symbols.If.SpecialFormValue = new SpecialForm(CompileIf);
             Symbols.Label.SpecialFormValue = new SpecialForm(CompileLabel);

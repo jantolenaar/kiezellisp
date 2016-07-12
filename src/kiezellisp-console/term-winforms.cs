@@ -687,18 +687,24 @@ namespace Kiezel
         public static void LoadClipboardData()
         {
             var code = GetClipboardData();
-            Runtime.TryLoadText(code, null, null, false, false);
+            using (var source = new StringReader(code))
+            {
+                Runtime.TryLoadText(source, null, null, false, false);
+            }
         }
 
         [LispAttribute("run-clipboard")]
         public static void RunClipboardData()
         {
             var code = GetClipboardData();
-            Runtime.TryLoadText(code, null, null, false, false);
-            var main = Symbols.Main.Value as IApply;
-            if (main != null)
+            using (var source = new StringReader(code))
             {
-                Runtime.Funcall(main);
+                Runtime.TryLoadText(source, null, null, false, false);
+                var main = Symbols.Main.Value as IApply;
+                if (main != null)
+                {
+                    Runtime.Funcall(main);
+                }
             }
         }
 

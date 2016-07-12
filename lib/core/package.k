@@ -14,12 +14,12 @@
 (defun get-option (keyword options)
     (do
         options
-        (filter (λx (= (car x) keyword)) ~)
+        (filter #(= (car %1) keyword) ~)
         (map rest ~)))
 
 (defun defpackage-imp (name options)
     (let $package (make-package name))
-    (each (λx (set-doc $package (apply string x)))
+    (each #(set-doc $package (apply string %1))
           (get-option :documentation options))
     (use-package "lisp")
     (each use-package (flatten (get-option :use options)))

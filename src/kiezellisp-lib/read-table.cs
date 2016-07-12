@@ -17,8 +17,7 @@ namespace Kiezel
         SingleEscape,
         MultipleEscape,
         TerminatingMacro,
-        NonTerminatingMacro,
-        EOF = 32,
+        NonTerminatingMacro
     }
 
     public class EOF
@@ -46,11 +45,6 @@ namespace Kiezel
         public static ReadtableEntry DefaultItem = new ReadtableEntry
         {
             Type = CharacterType.Constituent
-        };
-
-        public static ReadtableEntry EofItem = new ReadtableEntry
-        {
-            Type = CharacterType.EOF
         };
 
         public ReadtableEntry[] Items;
@@ -86,11 +80,7 @@ namespace Kiezel
         {
             ReadtableEntry item;
 
-            if (code < 0)
-            {
-                return EofItem;
-            }
-            else if (code < Items.Length)
+            if (code < Items.Length)
             {
                 return Items[code];
             }
@@ -122,11 +112,9 @@ namespace Kiezel
                 Items[i].DispatchReadtable = null;
             }
 
-            DefineMacro("\x00", CharacterType.EOF);
             DefineMacro("\\", CharacterType.SingleEscape);
             DefineMacro("|", CharacterType.MultipleEscape);
 
-            SetMacroCharacter(Runtime.LambdaCharacter, Runtime.ReadLambdaCharacterHandler, CharacterType.NonTerminatingMacro);
             SetMacroCharacter("(", Runtime.ReadListHandler);
             DefineMacro(")");
             SetMacroCharacter("\'", Runtime.ReadQuoteHandler);
@@ -275,27 +263,6 @@ namespace Kiezel
         {
             var table = new Readtable();
             table.Init();
-            return table;
-        }
-
-        public static Readtable GetPrettyPrintingReadtable()
-        {
-            var table = new Readtable();
-            table.Init();
-            table.SetMacroCharacter("\"", PrettyPrinting.ReadStringHandler);
-            table.SetMacroCharacter(";", PrettyPrinting.ReadLineCommentHandler);
-            table.SetDispatchMacroCharacter("@", "\"", PrettyPrinting.ReadStringHandler2);
-            table.SetDispatchMacroCharacter("#", "(", PrettyPrinting.ReadShortLambdaExpressionHandler);
-            table.SetDispatchMacroCharacter("#", "!", PrettyPrinting.ReadLineCommentHandler2);
-            table.SetDispatchMacroCharacter("#", "|", PrettyPrinting.ReadBlockCommentHandler);
-            table.SetDispatchMacroCharacter("#", "r", PrettyPrinting.ReadNumberHandler);
-            table.SetDispatchMacroCharacter("#", "x", PrettyPrinting.ReadNumberHandler);
-            table.SetDispatchMacroCharacter("#", "o", PrettyPrinting.ReadNumberHandler);
-            table.SetDispatchMacroCharacter("#", "b", PrettyPrinting.ReadNumberHandler);
-            table.SetDispatchMacroCharacter("#", "+", PrettyPrinting.ReadPlusMinusExprHandler);
-            table.SetDispatchMacroCharacter("#", "-", PrettyPrinting.ReadPlusMinusExprHandler);
-            table.SetDispatchMacroCharacter("#", "q", PrettyPrinting.ReadSpecialStringHandler);
-            table.SetDispatchMacroCharacter("#", "s", PrettyPrinting.ReadStructHandler);
             return table;
         }
 

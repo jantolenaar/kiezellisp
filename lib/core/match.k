@@ -172,10 +172,10 @@
     `(type? ,expr ,(first args)))
 
 (defun encode-and (expr args)
-    `(and ,@(map (λx (encode-pattern expr x)) args)))
+    `(and ,@(map #(encode-pattern expr %1) args)))
 
 (defun encode-or (expr args)
-    `(or ,@(map (λx (encode-pattern expr x)) args)))
+    `(or ,@(map #(encode-pattern expr %1) args)))
 
 (defun encode-not (expr args)
     `(not ,(encode-pattern expr (first args))))
@@ -189,11 +189,11 @@
 
 (defun encode-property (expr args)
     (let obj (gentemp "obj"))
-    (let patterns (map (λx (flatten x 1)) (partition-all 2 (partition-by keyword? args))))
+    (let patterns (map #(flatten %1 1) (partition-all 2 (partition-by keyword? args))))
     `(do
         (let ,obj ,expr)
         (and (prototype? ,obj)
-             ,@(map (λx (get-property-items obj x)) patterns))))
+             ,@(map #(get-property-items obj %1) patterns))))
 
 (defun get-property-items (obj args)
     (let name (first args))

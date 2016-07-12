@@ -64,8 +64,7 @@
     (when (not headers)
         (setf headers (map cleanup-header (first grid)))
         (setf grid (rest grid)))
-    (map (λ (fields) (read-grid-line-to-record prototype headers fields))
-         grid))
+    (map #(read-grid-line-to-record prototype headers %1) grid))
 
 (defun read-grid-line-to-record (prototype headers fields)
     (let record (new prototype))
@@ -83,7 +82,7 @@
                                        (height int32:MAX-VALUE))
     (do 
         (subseq grid top :count height)
-        (map (λ (v) (subseq v left :count width)) ~)
+        (map #(subseq %1 left :count width) ~)
         (if keep-empty-lines?
               ~
             (filter boolean ~))))
@@ -99,9 +98,9 @@
 (defun write-records-to-grid (records headers)
     (append
         (vector headers)
-        (map (λ (record)
-             (map (λ (name) (elt record name))
-                  headers))
+        (map (lambda (record)
+                (map (lambda (name) (elt record name))
+                     headers))
             records)))
 
 

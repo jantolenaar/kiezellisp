@@ -33,6 +33,8 @@ namespace Kiezel
 
         public bool IsLambda;
 
+        public int LambdaParameterCount;
+
         public string Name;
 
         public List<Symbol> Names = null;
@@ -50,6 +52,8 @@ namespace Kiezel
         public bool UsesFramedVariables = false;
 
         public bool UsesTilde = false;
+
+        public bool UsesReturn = false;
 
         public List<ScopeEntry> Variables = new List<ScopeEntry>();
 

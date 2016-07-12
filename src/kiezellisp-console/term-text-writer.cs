@@ -144,7 +144,7 @@ namespace Kiezel
                     else if (middle.StartsWith("<") && middle.EndsWith(">"))
                     {
                         var color = middle.Substring(1, middle.Length - 2);
-                        if (color.Length != 0 && char.IsLower(color, 0))
+                        if (color.Length != 0 && char.IsLower(color, 0) && color.IndexOf(' ') == -1)
                         {
                             oldColor = window.ForeColor;
                             window.ForeColor = middle.Substring(1, middle.Length - 2);

@@ -12,6 +12,7 @@
 (load "core/macros")
 (load "core/setf")
 (load "core/loop")
+(load "core/macros2")
 (load "core/struct")
 (load "core/match")
 (load "core/threading")

@@ -87,6 +87,7 @@
     :multiply 'multiply-clause
     :minimize 'minimize-clause
     :maximize 'maximize-clause
+    :collecting 'collecting-clause
     :counting 'counting-clause
     :summing 'summing-clause
     :multiplying 'multiplying-clause
@@ -164,7 +165,7 @@
               (= null form))
              null)
         ((= (first pattern) '?rest)
-            (let result (recur (rest pattern) null))
+            (let result (self (rest pattern) null))
             (if (list? result)
                   (cons form result)
                 false))
@@ -172,14 +173,14 @@
              (= null form))
             false)
         ((= (first pattern) '?)
-            (let result (recur (rest pattern) (rest form)))
+            (let result (self (rest pattern) (rest form)))
             (if (list? result)
                   (cons (first form) result)
                 false))
         ((and (symbol? (first form))
               (= (symbol-name (first form))
                  (symbol-name (first pattern))))
-            (recur (rest pattern) (rest form)))
+            (self (rest pattern) (rest form)))
         (true 
             false)))
 

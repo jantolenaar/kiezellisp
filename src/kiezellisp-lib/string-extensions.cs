@@ -161,8 +161,15 @@ namespace Kiezel
             {
                 lines.RemoveAt(lines.Count - 1);
             }
-            var lines2 = lines.Select(s => prefix + s);
-            return String.Join("\n", lines2) + (emptyLine ? "\n" : "");
+            if (lines.Count != 0)
+            {
+                var lines2 = lines.Select(s => prefix + s);
+                return String.Join("\n", lines2) + (emptyLine ? "\n" : "");
+            }
+            else
+            {
+                return prefix;
+            }
         }
 
         public static string IndentWithLineNumbers(this string text, int lineNumber, int width, string separator)

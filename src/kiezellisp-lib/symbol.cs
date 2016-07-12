@@ -76,6 +76,14 @@ namespace Kiezel
             return sym;
         }
 
+        [Lisp("undef")]
+        public static void Undef(object target)
+        {
+            var sym = CheckSymbol(target);
+            EraseCompilerValue(sym);
+            EraseVariable(sym);
+        }
+
         [Lisp("set")]
         public static object Set(object var, object val)
         {
@@ -570,6 +578,8 @@ namespace Kiezel
 
         public static Symbol CompilerMacro;
         
+        public static Symbol CompileTimeBranch;
+
         public static Symbol Compiling;
 
         public static Symbol Constant;
@@ -620,8 +630,6 @@ namespace Kiezel
 
         public static Symbol Environment;
 
-        public static Symbol EofValue;
-
         public static Symbol Equality;
 
         public static Symbol Escape;
@@ -657,8 +665,6 @@ namespace Kiezel
         public static Symbol GetElt;
 
         public static Symbol Goto;
-
-        public static Symbol GreekLambda;
 
         public static Symbol HashElif;
 
@@ -810,8 +816,6 @@ namespace Kiezel
 
         public static Symbol Readtable;
 
-        public static Symbol Recur;
-
         public static Symbol ReplForceIt;
 
         public static Symbol ReplListenerPort;
@@ -834,6 +838,8 @@ namespace Kiezel
 
         public static Symbol ScriptName;
 
+        public static Symbol Self;
+
         public static Symbol Set;
 
         public static Symbol SetAttr;
@@ -843,8 +849,6 @@ namespace Kiezel
         public static Symbol Setf;
 
         public static Symbol Setq;
-
-        public static Symbol PrettyReader;
 
         public static Symbol[] ShortLambdaVariables;
 
@@ -935,6 +939,7 @@ namespace Kiezel
             CommandLineArguments = MakeSymbol("$command-line-arguments");
             CommandLineScriptName = MakeSymbol("$command-line-script-name");
             CompilerMacro = MakeSymbol("compiler-macro");
+            CompileTimeBranch = MakeSymbol("compile-time-branch");
             Compiling = MakeSymbol("compiling");
             Constant = MakeSymbol("constant");
             CreateDelayedExpression = MakeSymbol("system:create-delayed-expression");
@@ -959,7 +964,6 @@ namespace Kiezel
             EnableExternalDocumentation = MakeSymbol("$enable-external-documentation");
             EnableWarnings = MakeSymbol("$enable-warnings");
             Environment = MakeSymbol("&environment");
-            EofValue = MakeSymbol(":eof-value");
             Equality = MakeSymbol("=");
             Escape = MakeSymbol(":escape");
             Eval = MakeSymbol("eval");
@@ -978,7 +982,6 @@ namespace Kiezel
             GetAttr = MakeSymbol("attr");
             GetElt = MakeSymbol("elt");
             Goto = MakeSymbol("goto");
-            GreekLambda = MakeSymbol("\u03bb");
             HashElif = MakeSymbol("#elif");
             HashElse = MakeSymbol("#else");
             HashEndif = MakeSymbol("#endif");
@@ -1052,7 +1055,6 @@ namespace Kiezel
             ReadEval = MakeSymbol("$read-eval");
             ReadonlyVariable = MakeSymbol("readonly-variable");
             Readtable = MakeSymbol("$readtable");
-            Recur = MakeSymbol("recur");
             ReplForceIt = MakeSymbol("$repl-force-it");
             ReplListenerPort = MakeSymbol("$repl-listener-port");
             Rest = MakeSymbol("&rest");
@@ -1063,12 +1065,12 @@ namespace Kiezel
             Right = MakeSymbol(":right");
             ScriptDirectory = MakeSymbol("$script-directory");
             ScriptName = MakeSymbol("$script-name");
+            Self = MakeSymbol("self");
             Set = MakeSymbol("set");
             SetAttr = MakeSymbol("set-attr");
             SetElt = MakeSymbol("set-elt");
             Setf = MakeSymbol("setf");
             Setq = MakeSymbol("setq");
-            PrettyReader = MakeSymbol("system:pretty-reader");
             SpecialConstant = MakeSymbol("special-constant");
             SpecialForm = MakeSymbol("special-form");
             SpecialReadonlyVariable = MakeSymbol("special-readonly-variable");

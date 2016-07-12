@@ -23,9 +23,10 @@ namespace Kiezel
         }
 
         [Pure, Lisp("compiler-macro?")]
-        public static bool CompilerMacrop(Symbol sym)
+        public static bool CompilerMacrop(object target)
         {
-            return sym.CompilerUsage == SymbolUsage.CompilerMacro;
+            var sym = target as Symbol;
+            return sym != null && sym.CompilerUsage == SymbolUsage.CompilerMacro;
         }
 
 
@@ -48,9 +49,10 @@ namespace Kiezel
         }
 
         [Pure, Lisp("defined?")]
-        public static bool Definedp(Symbol sym)
+        public static bool Definedp(object target)
         {
-            return !sym.IsUndefined;
+            var sym = target as Symbol;
+            return sym != null && !sym.IsUndefined;
         }
 
         [Pure, Lisp("empty?")]
@@ -100,9 +102,9 @@ namespace Kiezel
         }
 
         [Pure, Lisp("keyword?")]
-        public static bool Keywordp(object expr)
+        public static bool Keywordp(object target)
         {
-            var sym = expr as Symbol;
+            var sym = target as Symbol;
             return sym != null && sym.Package == KeywordPackage;
         }
 
@@ -126,15 +128,17 @@ namespace Kiezel
         }
 
         [Pure, Lisp("macro?")]
-        public static bool Macrop(Symbol sym)
+        public static bool Macrop(object target)
         {
-            return sym.CompilerUsage == SymbolUsage.Macro;
+            var sym = target as Symbol;
+            return sym != null && sym.CompilerUsage == SymbolUsage.Macro;
         }
 
         [Pure, Lisp("symbol-macro?")]
-        public static bool SymbolMacrop(Symbol sym)
+        public static bool SymbolMacrop(object target)
         {
-            return sym.CompilerUsage == SymbolUsage.SymbolMacro;
+            var sym = target as Symbol;
+            return sym != null && sym.CompilerUsage == SymbolUsage.SymbolMacro;
         }
 
         [Pure, Lisp("minus?")]
@@ -187,13 +191,6 @@ namespace Kiezel
             return Equal(BitAnd(expr, 1), 1);
         }
 
-        //[Pure, Lisp( "pattern-variable?" )]
-        public static bool PatternVariablep(object expr)
-        {
-            var sym = expr as Symbol;
-            return sym != null && sym.Package != KeywordPackage && sym.Name.StartsWith("?");
-        }
-
         [Pure, Lisp("plus?")]
         public static bool Plusp(object a1)
         {
@@ -229,15 +226,16 @@ namespace Kiezel
         }
 
         [Pure, Lisp("special-form?")]
-        public static bool SpecialFormp(Symbol sym)
+        public static bool SpecialFormp(object target)
         {
-            return sym.CompilerUsage == SymbolUsage.SpecialForm;
+            var sym = target as Symbol;
+            return sym != null && sym.CompilerUsage == SymbolUsage.SpecialForm;
         }
 
         [Pure, Lisp("special-symbol?")]
-        public static bool SpecialSymbolp(object expr)
+        public static bool SpecialSymbolp(object target)
         {
-            var sym = expr as Symbol;
+            var sym = target as Symbol;
             return sym != null && sym.IsDynamic;
         }
 

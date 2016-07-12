@@ -74,7 +74,6 @@ namespace Kiezel
             AddEditHandler(TerminalKeys.Enter, CmdEnterDataOrCommand);
             AddEditHandler(TerminalKeys.Up, CmdHistoryPrev);
             AddEditHandler(TerminalKeys.Down, CmdHistoryNext);
-            AddEditHandler(TerminalKeys.L | TerminalKeys.Alt, CmdLambda);
             AddEditHandler(TerminalKeys.F1, CmdHelp);
         }
 
@@ -129,13 +128,7 @@ namespace Kiezel
                 InsertString(Terminal.History.Previous());
             }
         }
-
-        void CmdLambda()
-        {
-            InsertString(Runtime.LambdaCharacter);
-        }
-
- 
+            
     }
 
 }

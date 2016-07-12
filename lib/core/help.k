@@ -210,11 +210,11 @@
     (write-line syn :escape false))
 
 (defun transform-line (text)
-    (let bold-pattern1 #/\*\*(.*?)\*\*/)
-    (let bold-pattern2 #/__(.*?)__/)
-    (let italic-pattern1 #/\*(.*?)\*/)
-    (let italic-pattern2 #/_(.*?)_/)
-    (let code-pattern #/`(.*?)`/)
+    (let bold-pattern1 #/\*\*(\S*?)\*\*/)
+    (let bold-pattern2 #/__(\S*?)__/)
+    (let italic-pattern1 #/\*(\S*?)\*/)
+    (let italic-pattern2 #/_(\S*?)_/)
+    (let code-pattern #/`(\S*?)`/)
     (do
         text
         (.regex-replace ~ bold-pattern1 @"<b>\1</b>")

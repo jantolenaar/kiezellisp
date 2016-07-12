@@ -111,10 +111,10 @@
         (if (eql (first form) true)
               `(do? ,@(rest form))
             (if (rest form)
-                  `(if ,(first form) (do? ,@(rest form)) ,(recur (rest forms)))
+                  `(if ,(first form) (do? ,@(rest form)) ,(self (rest forms)))
                 (do
                     (let temp (gentemp))
-                    `(if-let (,temp ,(first form)) ,temp ,(recur (rest forms))))))))
+                    `(if-let (,temp ,(first form)) ,temp ,(self (rest forms))))))))
 
 (defmacro cond (&body forms)
      (cond-compiler forms))
@@ -265,7 +265,9 @@
 ;;;
 
 (defmacro with-input-from-string ((variable text) &body forms)
-    `(using (,variable (lisp-reader:new ,text))
+    (let temp (gentemp))
+    `(using (,temp (string-reader:new ,text))
+        (let ,variable (open-lisp-reader ,temp))
         ,@forms))
 
 (defmacro with-output-to-string ((variable) &body forms)
@@ -334,6 +336,7 @@
     (let count (length places))
     (letfun do-var (index place)
         `(setf ,place (elt ,temp ,index)))
-    `(do
+    `(merging-do
         (let ,temp (as-multiple-elements ,form ,count))
         ,@(map-indexed do-var places)))
+

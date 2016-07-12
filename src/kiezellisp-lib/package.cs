@@ -480,25 +480,10 @@ namespace Kiezel
         }
 
         [Lisp("find-symbol")]
-        public static Symbol FindSymbol(string name, bool prettyPrinting = false)
+        public static Symbol FindSymbol(string name)
         {
-            SymbolDescriptor descr;
-
-            if (prettyPrinting)
-            {
-                // Ignore package specifier since package may not exist anyway.
-                descr = new SymbolDescriptor();
-                descr.Exported = true;
-                descr.PackageName = "";
-                descr.Package = CurrentPackage();
-                descr.SymbolName = name;
-            }
-            else
-            {
-                descr = ParseSymbol(name);
-            }
-
-            Symbol sym = descr.Package.FindOrCreate(descr.SymbolName, useMissing: true, export: descr.Exported);
+            var descr = ParseSymbol(name);
+            var sym = descr.Package.FindOrCreate(descr.SymbolName, useMissing: true, export: descr.Exported);
 
             if (sym == null)
             {

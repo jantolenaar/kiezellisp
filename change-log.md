@@ -1,12 +1,20 @@
 # Change Log
 
+## 2016/07/11
+
+*   Refactored lisp reader.
+*   Removed greek lambda.
+*   Added function `undef`.
+*   Added macros `psetq` and `psetf`.
+*   Renamed `recur` to `self`.
+
 ## 2016/06/21
 
 *   Added special form `define-symbol-macro`.
 *   Added special form `let-symbol-macro`.
 *   Added special form `let-macro`.
 *   Added function `symbol-macro?`.
-*   Added `*var*` earmuff to special variables.
+*   Added earmuff style `*var*` to special variables.
 
 ## 2016/06/06
 

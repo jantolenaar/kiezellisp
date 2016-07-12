@@ -20,6 +20,8 @@ namespace Kiezel
             new CharacterRepresentation(':', null, "colon"),
             new CharacterRepresentation(';', null, "semicolon"),
             new CharacterRepresentation('"', null, "double-quote"),
+            new CharacterRepresentation('(', null, "left-par"),
+            new CharacterRepresentation(')', null, "right-par"),
             new CharacterRepresentation('/', null, "slash"),
             new CharacterRepresentation('\f', @"\f", "page"),
             new CharacterRepresentation('\n', @"\n", "newline"),
@@ -79,69 +81,6 @@ namespace Kiezel
             }
         }
 
-        [Lisp("pretty-print-source-code")]
-        public static string PrettyPrintSourceCode(string text, params object[] kwargs)
-        {
-            var args = ParseKwargs(kwargs, new string[] { "left", "right" }, 0, null);
-            var left = (int)args[0];
-            var right = args[1];
-            var buf = new StringWriter();
-            var saved = SaveStackAndFrame();
-            var env = MakeExtendedEnvironment();
-            var package = MakePackage("__pprint__");
-            var readtable = GetPrettyPrintingReadtable();
-
-            CurrentThreadContext.Frame = env.Frame;           
-                        
-            DefDynamic(Symbols.Package, package);
-            DefDynamic(Symbols.PackageNamePrefix, null);
-            DefDynamic(Symbols.Readtable, readtable);
-
-            var parts = text.ConvertToInternalLineEndings().RegexMatch(new Regex(@"^(\s*)(.*?)(\s*)$", RegexOptions.Singleline));
-            var leader = (string)Second(parts);
-            var code = (string)Third(parts);
-            var trailer = (string)Fourth(parts);
-
-            var reader = new LispReader(code, true);
-
-            try
-            {
-                object previousExpr = null;
-
-                foreach (object expr in reader)
-                {
-                    if (previousExpr != null)
-                    {
-                        if (Consp(previousExpr) && Consp(expr) && First(previousExpr) == Symbols.PrettyReader && First(expr) == Symbols.PrettyReader
-                            && (string)Second(previousExpr) == "line-comment" && (string)Second(expr) == "line-comment")
-                        {
-                            // no blank line between comment forms
-                            buf.WriteLine();
-                        }
-                        else
-                        {
-                            buf.WriteLine();
-                            buf.WriteLine();
-                        }
-                    }
-
-                    previousExpr = expr;
-
-                    for (int i = 0; i < left; ++i)
-                    {
-                        buf.Write(" ");
-                    }
-                    PrettyPrint(buf, left, right, expr);
-                }
-            }
-            finally
-            {
-                RestoreStackAndFrame(saved);
-            }
-
-            return MakeString(leader, buf.ToString(), trailer);
-        }
-
         [Lisp("print")]
         public static void Print(params object[] items)
         {
@@ -158,72 +97,219 @@ namespace Kiezel
             Print("\n");
         }
 
-        [Lisp("read")]
-        public static object Read(params object[] kwargs)
+        static LispReader ConvertToLispReader(object stream)
         {
-            var args = ParseKwargs(kwargs, new string[] { "stream", "eof-value", "eof-error?" }, GetDynamic(Symbols.StdIn), null, true);
-            var stdin = args[0];
-            var eofValue = args[1];
-            //var eofError = ToBool(args[2]); // not used
-
-            if (stdin as LispReader == null)
+            if (stream == null)
             {
-                return null;
+                return (LispReader)GetDynamic(Symbols.StdIn);
             }
-            var parser = (LispReader)stdin;
-            var value = parser.Read(eofValue);
-            return value;
+            else if (stream is TextReader)
+            {
+                return new LispReader((TextReader)stream);
+            }
+            else
+            {
+                return (LispReader)stream;
+            }
+        }
+
+        [Lisp("read-char")]
+        public static object ReadChar()
+        {
+            return ReadChar(null);
+        }
+
+        [Lisp("read-char")]
+        public static object ReadChar(LispReader stream)
+        {
+            return ReadChar(stream, true);
+        }
+
+        [Lisp("read-char")]
+        public static object ReadChar(LispReader stream, object eofErrorp)
+        {
+            return ReadChar(stream, eofErrorp, null);
+        }
+
+        [Lisp("read-char")]
+        public static object ReadChar(LispReader stream, object eofErrorp, object eofValue)
+        {
+            var parser = ConvertToLispReader(stream);
+            var eofError = ToBool(eofErrorp);
+            var value = parser.ReadChar();
+            if (parser.IsEof)
+            {
+                if (eofError)
+                {
+                    ThrowError("read-char: unexpected EOF");
+                }
+                return eofValue;
+            }
+            else
+            {
+                return value;
+            }
+        }
+
+        [Lisp("unread-char")]
+        public static void UnreadChar()
+        {
+            UnreadChar(null);
+        }
+
+        [Lisp("unread-char")]
+        public static void UnreadChar(LispReader stream)
+        {
+            var parser = ConvertToLispReader(stream);
+            parser.UnreadChar();
+        }
+
+        [Lisp("peek-char")]
+        public static object PeekChar(LispReader stream)
+        {
+            return PeekChar(stream, null);
+        }
+
+        [Lisp("peek-char")]
+        public static object PeekChar(LispReader stream, object peekType)
+        {
+            return PeekChar(stream, peekType, true);
+        }
+
+        [Lisp("peek-char")]
+        public static object PeekChar(LispReader stream, object peekType, object eofErrorp)
+        {
+            return PeekChar(stream, peekType, eofErrorp, null);
+        }
+
+        [Lisp("peek-char")]
+        public static object PeekChar(LispReader stream, object peekType, object eofErrorp, object eofValue)
+        {
+            var parser = ConvertToLispReader(stream);
+            var eofError = ToBool(eofErrorp);
+            var value = parser.PeekChar(peekType);
+            if (parser.IsEof)
+            {
+                if (eofError)
+                {
+                    ThrowError("peek-char: unexpected EOF");
+                }
+                return eofValue;
+            }
+            else
+            {
+                return value;
+            }
+        }
+
+        [Lisp("read")]
+        public static object Read()
+        {
+            return Read(null);
+        }
+
+        [Lisp("read")]
+        public static object Read(LispReader stream)
+        {
+            return Read(stream, true);
+        }
+
+        [Lisp("read")]
+        public static object Read(LispReader stream, object eofErrorp)
+        {
+            return Read(stream, eofErrorp, null);
+        }
+
+        [Lisp("read")]
+        public static object Read(LispReader stream, object eofErrorp, object eofValue)
+        {
+            var parser = ConvertToLispReader(stream);
+            var eofError = ToBool(eofErrorp);
+            var value = parser.Read(EOF.Value);
+            if (value == EOF.Value)
+            {
+                if (eofError)
+                {
+                    ThrowError("read: unexpected EOF");
+                }
+                return eofValue;
+            }
+            else
+            {
+                return value;
+            }
         }
 
         [Lisp("read-all")]
-        public static object ReadAll(params object[] kwargs)
+        public static object ReadAll()
         {
-            var args = ParseKwargs(kwargs, new string[] { "stream" }, GetDynamic(Symbols.StdIn));
-            var stdin = args[0];
-            if (stdin as LispReader == null)
-            {
-                return null;
-            }
-            var parser = (LispReader)stdin;
-            return AsList(parser.ReadAll());
+            return ReadAll(null);
+        }
+
+        [Lisp("read-all")]
+        public static object ReadAll(LispReader stream)
+        {
+            var parser = ConvertToLispReader(stream);
+            return parser.ReadAll();
         }
 
         [Lisp("read-all-from-string")]
         public static Cons ReadAllFromString(string text)
         {
-            var parser = new LispReader(text);
-            return AsList(parser.ReadAll());
+            using (var stream = new StringReader(text))
+            {
+                var parser = new LispReader(stream);
+                return parser.ReadAll();
+            }
         }
 
         [Lisp("read-delimited-list")]
-        public static object ReadDelimitedList(string terminator, params object[] kwargs)
+        public static object ReadDelimitedList(string terminator)
         {
-            var args = ParseKwargs(kwargs, new string[] { "stream" }, GetDynamic(Symbols.StdIn));
-            var stdin = args[0];
+            return ReadDelimitedList(terminator, null);
+        }
 
-            if (stdin as LispReader == null)
-            {
-                return null;
-            }
-            var parser = (LispReader)stdin;
+        [Lisp("read-delimited-list")]
+        public static object ReadDelimitedList(string terminator, LispReader stream)
+        {
+            var parser = ConvertToLispReader(stream);
             var value = parser.ReadDelimitedList(terminator);
             return value;
         }
 
         [Lisp("read-from-string")]
-        public static object ReadFromString(string text, params object[] kwargs)
+        public static object ReadFromString(string text)
         {
-            var args = ParseKwargs(kwargs, new string[] { "eof-value" }, null);
-            var eofValue = args[0];
-            var parser = new LispReader(text);
-            return Read(Symbols.Stream, parser, Symbols.EofValue, eofValue);
+            return ReadFromString(text, true);
         }
 
-        [Lisp("scan-all-from-string")]
-        public static Cons ScanAllFromString(string text)
+        [Lisp("read-from-string")]
+        public static object ReadFromString(string text, object eofErrorp)
         {
-            var parser = new LispReader(text);
-            return AsList(parser.ScanAll());
+            return ReadFromString(text, eofErrorp, null);
+        }
+
+        [Lisp("read-from-string")]
+        public static object ReadFromString(string text, object eofErrorp, object eofValue)
+        {
+            using (var stream = new StringReader(text))
+            {
+                var parser = new LispReader(stream);
+                var eofError = ToBool(eofErrorp);
+                var value = Read(parser, false, EOF.Value);
+                if (value == EOF.Value)
+                {
+                    if (eofError)
+                    {
+                        ThrowError("read-from-string: unexpected EOF");
+                    }
+                    return eofValue;
+                }
+                else
+                {
+                    return value;
+                }
+            }
         }
 
         [Lisp("require")]
@@ -298,9 +384,9 @@ namespace Kiezel
         }
 
         [Lisp("open-lisp-reader")]
-        public static LispReader OpenLispReader(string source)
+        public static LispReader OpenLispReader(TextReader stream)
         {
-            return new LispReader(source);
+            return new LispReader(stream);
         }
 
 
@@ -710,18 +796,41 @@ namespace Kiezel
                 PrintLog(";;; Loading ", file, " from ", path);
             }
 
-            var content = File.ReadAllText(path);
             var scriptDirectory = NormalizePath(Path.GetDirectoryName(path));
             var scriptName = Path.GetFileName(path);
 
-            TryLoadText(content, scriptDirectory, scriptName, loadVerbose, loadPrint);
+            using (var source = File.OpenText(path))
+            {
+                TryLoadText(source, scriptDirectory, scriptName, loadVerbose, loadPrint);
+            }
 
             return true;
         }
 
-        public static void TryLoadText(string text, string newDir, string scriptName, bool loadVerbose, bool loadPrint)
+
+        static IEnumerable RewriteCompileTimeBranch(IEnumerable forms)
         {
-            var reader = new LispReader(text);
+            // Flatten top level compile branches created by #if #elif #else #endif.
+            // Branches inside functions or macros are treated as merging-do forms.
+            foreach (var expr in forms)
+            {
+                if (expr is Cons && Runtime.First(expr) == Symbols.CompileTimeBranch)
+                {
+                    foreach (var form in RewriteCompileTimeBranch(Runtime.ToIter(Runtime.Cdr((Cons)expr))))
+                    {
+                        yield return form;
+                    }
+                }
+                else
+                {
+                    yield return expr;
+                }
+            }
+        }
+
+        public static void TryLoadText(TextReader source, string newDir, string scriptName, bool loadVerbose, bool loadPrint)
+        {
+            var reader = new LispReader(source);
             var saved = SaveStackAndFrame();
             var env = MakeExtendedEnvironment();
             var scope = env.Scope;
@@ -742,7 +851,9 @@ namespace Kiezel
 
             try
             {
-                foreach (object statement in reader)
+                var forms = RewriteCompileTimeBranch(reader.ReadAllEnum());
+
+                foreach (object statement in forms)
                 {
                     var code = Compile(statement, scope);
                     if (code == null)

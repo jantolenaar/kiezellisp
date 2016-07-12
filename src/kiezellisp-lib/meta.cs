@@ -73,6 +73,11 @@ namespace Kiezel
                         return form;
                         //throw new LispException( "lambda not supported by code walker" );
                     }
+                    case "letmacro":
+                    case "let-symbol-macro":
+                    {
+                        return form;
+                    }
                     case "letfun":
                     {
                         return form;

@@ -18,7 +18,7 @@ namespace Kiezel
 
         public static Dictionary<Type, List<Type>> AbstractTypes;
         public static bool AdaptiveCompilation = true;
-        public static int CompilationThreshold = 100;
+        public static int CompilationThreshold = 50;
         public static bool ConsoleMode;
         public static bool EmbeddedMode;
         public static bool DebugMode;
@@ -29,7 +29,6 @@ namespace Kiezel
         public static string HomeDirectory = Directory.GetCurrentDirectory();
         public static bool InteractiveMode;
         public static Package KeywordPackage;
-        public static string LambdaCharacter = "\u03bb";
         public static Package LispDocPackage;
         public static Package LispPackage;
         public static bool OptimizerEnabled;
@@ -340,7 +339,7 @@ namespace Kiezel
             Symbols.PrintVectorWithBrackets.VariableValue = false;
             Symbols.ReadEval.VariableValue = null;
             Symbols.Readtable.VariableValue = GetStandardReadtable();
-            Symbols.Recur.ReadonlyValue = null;
+            Symbols.Self.ReadonlyValue = null;
             Symbols.ReplForceIt.VariableValue = false;
             Symbols.ReplListenerPort.VariableValue = 8080;
             Symbols.ScriptDirectory.ReadonlyValue = NormalizePath(HomeDirectory);
