@@ -39,7 +39,7 @@ namespace Kiezel
             return new DelayedExpression(func);
         }
 
-        [Lisp("force")]
+        [Lisp("force", "bq:force")]
         public static object Force(object expr)
         {
             if (expr is DelayedExpression)

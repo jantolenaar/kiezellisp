@@ -90,7 +90,6 @@
     <Compile Include="file-extensions.cs" />
     <Compile Include="frame.cs" />
     <Compile Include="functional.cs" />
-    <Compile Include="lambda-arity.cs" />
     <Compile Include="generic.cs" />
     <Compile Include="infix.cs" />
     <Compile Include="interfaces.cs" />

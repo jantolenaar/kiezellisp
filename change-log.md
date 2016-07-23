@@ -1,5 +1,15 @@
 # Change Log
 
+## 2016/07/23
+
+*   Fixed bug: impossible to run with option --release.
+*   Removed `tailcall`.
+*   Added special form `recur` (tail recursion).
+*   Added macro `tail-recursion`.
+*   Added `&raw` parameter modifier.
+*   Changed multi-arity functions from special form to macro.
+*   Refactored `loop` macro.
+
 ## 2016/07/11
 
 *   Refactored lisp reader.

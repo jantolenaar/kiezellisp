@@ -74,7 +74,9 @@
       ;(new 1 :align)
       (new pprint-new)
       (or 1 :align)
-      (quote 1)
+      (psetf 2)
+      (psetq 2)
+      (quote 1)     
       (return 1)
       (return-from 2)
       (return-if 1)
@@ -94,7 +96,6 @@
       (when 1)
       (when-match 2)
       (while 1)
-      (λ 1)
      ))
 
 (defun pprint (expr &key (left $pprint-left-margin) (right $pprint-right-margin))

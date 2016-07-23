@@ -8,6 +8,7 @@ using System.Reflection;
 namespace Kiezel
 {
     public delegate Expression CompilerHelper(Cons form,AnalysisScope scope);
+
     public partial class Runtime
     {
         public static MethodInfo AddEventHandlerMethod = RuntimeMethod("AddEventHandler");
@@ -37,9 +38,7 @@ namespace Kiezel
         public static MethodInfo LogBeginCallMethod = RuntimeMethod("LogBeginCall");
         public static MethodInfo LogEndCallMethod = RuntimeMethod("LogEndCall");
         public static MethodInfo MakeLambdaClosureMethod = RuntimeMethod(typeof(LambdaDefinition), "MakeLambdaClosure");
-        public static MethodInfo MakeMultiArityLambdaMethod = RuntimeMethod("MakeMultiArityLambda");
         public static MethodInfo NotMethod = RuntimeMethod("Not");
-        public static MethodInfo NullOperationMethod = RuntimeMethod("NullOperation");
         public static MethodInfo RestoreFrameMethod = RuntimeMethod("RestoreFrame");
         public static MethodInfo RestoreStackAndFrameMethod = RuntimeMethod("RestoreStackAndFrame");
         public static MethodInfo SaveStackAndFrameMethod = RuntimeMethod("SaveStackAndFrame");
@@ -178,7 +177,7 @@ namespace Kiezel
                 if (name != null)
                 {
                     var label = Expression.Label(typeof(object), name);
-                    bodyScope.Tags.Add(label);
+                    bodyScope.Labels.Add(label);
                 }
             }
 
@@ -267,6 +266,8 @@ namespace Kiezel
             var bodyExprs = new List<Expression>();
             var tilde = bodyScope.Tilde;
 
+            bodyExprs.Add(Expression.Assign(tilde, CompileLiteral(null)));
+                
             for (var list = forms; list != null; list = list.Cdr)
             {
                 var expr = list.Car;
@@ -325,7 +326,6 @@ namespace Kiezel
                                Expression.Block(typeof(object),
                                    new ParameterExpression[] { var2 },
                                    CallRuntime(RestoreFrameMethod, saved),
-                                                      //Expression.Assign( var2, var1 ),
                                    Expression.Assign(var2, CallRuntime(UnwindExceptionMethod, var1)),
                                    CompileBody(forms, catchScope)));
                 return code;
@@ -515,21 +515,6 @@ namespace Kiezel
             return CallRuntime(DefineFunctionMethod, Expression.Constant(sym), lambda, Expression.Constant(doc, typeof(string)));
         }
 
-        public static Expression CompileDefunStar(Cons form, AnalysisScope scope)
-        {
-            // defun* name (args body) ...
-            CheckMinLength(form, 3);
-            var sym = CheckSymbol(Second(form));
-            if (sym.IsDynamic)
-            {
-                throw new LispException("Invalid function name: {0}", sym);
-            }
-            WarnWhenShadowing(sym);
-            string doc;
-            var lambda = CompileMultiArityLambdaDef(sym, Cddr(form), scope, out doc);
-            return CallRuntime(DefineFunctionMethod, Expression.Constant(sym), lambda, Expression.Constant(doc, typeof(string)));
-        }
-
         public static Expression CompileDo(Cons form, AnalysisScope scope)
         {
             return CompileBody(Cdr(form), scope);
@@ -594,7 +579,7 @@ namespace Kiezel
 
         public static LambdaSignature CompileFormalArgs(Cons args, AnalysisScope scope, LambdaKind kind)
         {
-            var signature = new LambdaSignature(kind == LambdaKind.MultiArityFunction ? LambdaKind.Function : kind);
+            var signature = new LambdaSignature(kind);
             signature.ArgModifier = null;
             bool wantWholeArgName = false;
             bool wantEnvArgName = false;
@@ -631,15 +616,12 @@ namespace Kiezel
                         }
                         wantEnvArgName = true;
                     }
-                    else if (sym == Symbols.Optional || sym == Symbols.Key || sym == Symbols.Rest || sym == Symbols.Body || sym == Symbols.Params || sym == Symbols.Vector)
+                    else if (sym == Symbols.Optional || sym == Symbols.Key || sym == Symbols.Rest
+                             || sym == Symbols.Body || sym == Symbols.Params || sym == Symbols.Vector || sym == Symbols.RawParams)
                     {
-                        if (kind == LambdaKind.MultiArityFunction)
-                        {
-                            throw new LispException("Modifiers not allowed on multi-lambda function");
-                        }
                         if (signature.ArgModifier != null)
                         {
-                            throw new LispException("Only one modifier can be used: &key, &optional, &rest, &body, &vector or &params");
+                            throw new LispException("Only one modifier can be used: &key, &optional, &rest, &body, &vector, &params or &rawparams");
                         }
                         signature.ArgModifier = sym;
                         signature.RequiredArgsCount = signature.Parameters.Count;
@@ -721,10 +703,17 @@ namespace Kiezel
                 signature.RequiredArgsCount = signature.Parameters.Count;
             }
 
-            if (kind == LambdaKind.Function)
+            //if (kind == LambdaKind.Function)
             {
                 var sym = signature.ArgModifier;
-                if (sym == Symbols.Rest || sym == Symbols.Body || sym == Symbols.Params || sym == Symbols.Vector)
+                if (sym == Symbols.RawParams)
+                {
+                    if (signature.Parameters.Count != 1)
+                    {
+                        throw new LispException("&rawparams: parameter count must be one.");
+                    }
+                }
+                else if (sym == Symbols.Rest || sym == Symbols.Body || sym == Symbols.Params || sym == Symbols.Vector)
                 {
                     if (signature.RequiredArgsCount + 1 != signature.Parameters.Count)
                     {
@@ -746,11 +735,6 @@ namespace Kiezel
                     return Expression.Constant(expr, typeof(object));
                 }
             }
-
-//            if (head == Symbols.Catch || head == Symbols.Finally)
-//            {
-//                PrintWarning("Catch/finally used outside of a try block?!");
-//            }
 
             CheckMinLength(form, 1);
             var formFunc = First(form);
@@ -963,38 +947,19 @@ namespace Kiezel
             }
         }
 
-        public static Expression CompileLambdaStar(Cons form, AnalysisScope scope)
-        {
-            // lambda [name] args body
+        public static Cons LambdaTemplate = null;
 
-            string doc;
-            if (Symbolp(Second(form)))
-            {
-                CheckMinLength(form, 3);
-                return CompileMultiArityLambdaDef((Symbol)Second(form), Cddr(form), scope, out doc);
-            }
-            else
-            {
-                CheckMinLength(form, 2);
-                return CompileMultiArityLambdaDef(null, Cdr(form), scope, out doc);
-            }
-        }
-
-        public static Expression CompileMultiArityLambdaDef(Symbol name, Cons forms, AnalysisScope scope, out string doc)
+        public static void InitLambdaTemplate()
         {
-            doc = "";
-            var lambdas = new List<Expression>();
-            foreach (Cons form in ToIter( forms ))
-            {
-                string doc2;
-                lambdas.Add(CompileLambdaDef(name, form, scope, LambdaKind.MultiArityFunction, out doc2));
-                if (!String.IsNullOrWhiteSpace(doc2))
-                {
-                    doc = doc + doc2 + "\n";
-                }
-            }
-            var expr = CallRuntime(MakeMultiArityLambdaMethod, Expression.NewArrayInit(typeof(LambdaClosure), lambdas));
-            return expr;
+            LambdaTemplate = (Cons)ReadFromString(@"
+                    (do
+                        %1
+                        (label %recursion-label)
+                        (hidden-var %2 ~)
+                        (do
+                            %%3
+                            (do %%4))
+                        (label %function-exit))");
         }
 
         public static Expression CompileLambdaDef(Symbol name, Cons forms, AnalysisScope scope, LambdaKind kind, out string doc)
@@ -1007,19 +972,10 @@ namespace Kiezel
             }
 
             var args = (Cons)First(forms);
-
-            //if ( kind == LambdaKind.Function && args != null && Listp( First(args) ) )
-            //{
-            //    return CompileMultiArityLambdaDef( name, forms, scope, out doc );
-            //}
-            
             var body = Cdr(forms);
-
             var funscope = new AnalysisScope(scope, name == null ? null : name.Name);
             funscope.IsLambda = true;
-
             var template = new LambdaDefinition();
-
             template.Name = name;
             template.Signature = CompileFormalArgs(args, scope, kind);
 
@@ -1081,10 +1037,10 @@ namespace Kiezel
                 template.Syntax = MakeListStar(template.Name, args);
             }
 
-#if !DEBUG
             template.Source = MakeListStar(Symbols.Lambda, args, body);
-#endif
+
             doc = "";
+
             if (body != null)
             {
                 if (body.Car is string)
@@ -1097,18 +1053,16 @@ namespace Kiezel
                 }
             }
 
-            #if DEBUG
-            template.Source = MakeListStar(Symbols.Lambda, MakeList(Symbols.Params, Symbols.Args), body);
-            #endif
             var lambdaListNative = funscope.DefineNativeLocal(Symbols.LambdaList, ScopeFlags.All);
             var selfNative = funscope.DefineNativeLocal(Symbols.Self, ScopeFlags.All);
             var argsNative = funscope.DefineNativeLocal(Symbols.Args, ScopeFlags.All);
+            Expression code;
 
-            var v = new Vector();
-            GetLambdaParameterSetupCode(Symbols.Var, v, template.Signature);
-            v.Add(MakeListStar(Symbols.Do, body));
-            v.Add(MakeList(Symbols.Label, Symbols.FunctionExitLabel));
-            var code = CompileBody(AsList(v), funscope);
+            var names = GetLambdaArgumentNames(template.Signature);
+            var rawparams = template.Signature.ArgModifier == Symbols.RawParams;
+            var temp = GenTemp();
+            var body4 = FormatCode(LambdaTemplate, Symbols.Args, temp, GetDeclarations(rawparams, names, temp), body);
+            code = Compile(body4, funscope);
 
             template.Proc = CompileToFunction3(code, lambdaListNative, selfNative, argsNative);
 
@@ -1151,7 +1105,7 @@ namespace Kiezel
             {
                 throw new LispException("\"~\" is a reserved symbol name");
             }
-            if (scope.FindLocal(sym, 0) != null)
+            if (scope.FindDuplicate(sym))
             {
                 throw new LispException("Duplicate declaration of variable: {0}", sym);
             }
@@ -1180,7 +1134,7 @@ namespace Kiezel
             {
                 throw new LispException("\"~\" is a reserved symbol name");
             }
-            if (scope.FindLocal(sym, 0) != null)
+            if (scope.FindDuplicate(sym))
             {
                 throw new LispException("Duplicate declaration of variable: {0}", sym);
             }
@@ -1204,7 +1158,7 @@ namespace Kiezel
             {
                 throw new LispException("\"~\" is a reserved symbol name");
             }
-            if (scope.FindLocal(sym, 0) != null)
+            if (scope.FindDuplicate(sym))
             {
                 throw new LispException("Duplicate declaration of variable: {0}", sym);
             }
@@ -1342,20 +1296,20 @@ namespace Kiezel
             // return [expr]
             CheckMaxLength(form, 2);
 
-            var funscope = FindFirstLambda(scope);
+            var returnScope = FindReturnScope(scope);
 
-            if (funscope == null)
+            if (returnScope == null)
             {
                 throw new LispException("Invalid use of RETURN.");
             }
 
-            if (funscope.IsFileScope)
+            if (returnScope.IsFileScope)
             {
                 return Compile(MakeList(Symbols.ReturnFromLoad), scope);
             }
             else
             {
-                funscope.UsesReturn = true;
+                returnScope.UsesReturn = true;
                 var value = Cadr(form);
                 return Compile(MakeList(Symbols.Goto, Symbols.FunctionExitLabel, value), scope);
             }
@@ -1735,31 +1689,98 @@ namespace Kiezel
             return null;
         }
 
-        public static void GetLambdaParameterSetupCode(Symbol setup, Vector code, LambdaSignature signature)
+        public static AnalysisScope FindReturnScope(AnalysisScope scope)
         {
+            var curscope = scope;
+            while (curscope != null)
+            {
+                if (curscope.IsLambda || curscope.IsFileScope)
+                {
+                    return curscope;
+                }
+                else
+                {
+                    curscope = curscope.Parent;
+                }
+            }
+            return null;
+        }
+
+        public static bool TryFindLabel(AnalysisScope scope, Symbol labelName)
+        {
+            AnalysisScope labelScope;
+            LabelTarget label;
+            return TryFindTagbodyLabel(scope, labelName.LongName, out labelScope, out label);
+        }
+
+        public static Vector GetLambdaArgumentNames(LambdaSignature signature)
+        {
+            var v = new Vector();
             for (int i = 0; i < signature.Names.Count; ++i)
             {
                 if (signature.Names[i] != Symbols.Underscore)
                 {
                     if (i >= signature.Parameters.Count || !signature.Parameters[i].Hidden)
                     {
-                        code.Add(MakeList(setup, signature.Names[i], MakeList(Symbols.GetElt, Symbols.Args, i)));
+                        v.Add(signature.Names[i]);
                     }
                 }
             }
             if (signature.WholeArg != null)
             {
-                code.Add(MakeList(setup, signature.WholeArg, MakeList(Symbols.GetElt, Symbols.Args, signature.Names.Count)));
+                v.Add(signature.WholeArg);
             }
             if (signature.EnvArg != null)
             {
-                code.Add(MakeList(setup, signature.EnvArg, MakeList(Symbols.GetElt, Symbols.Args, signature.Names.Count + (signature.WholeArg != null ? 1 : 0))));
+                v.Add(signature.EnvArg);
             }
+            return v;
         }
 
-        public static object NullOperation(object a)
+        public static Cons GetDeclarations(bool rawparams, Vector names, object values)
         {
-            return null;
+            var i = 0;
+            var v = new Vector();
+            if (rawparams)
+            {
+                v.Add(MakeList(Symbols.Var, names[0], values));
+            }
+            else
+            {
+                foreach (var name in names)
+                {
+                    v.Add(MakeList(Symbols.Var, name, MakeList(Symbols.GetElt, values, i)));
+                    ++i;
+                }
+            }
+            return AsList(v);
+        }
+
+        public static Cons GetRecursionCode(bool rawparams, Vector names, object init, Cons body)
+        {
+            var v = new Vector();
+            var temp = GenTemp();
+            v.Add(init);
+            v.Add(MakeList(Symbols.Label, Symbols.RecursionLabel));
+            v.Add(MakeList(Symbols.HiddenVar, temp, Symbols.Tilde)); // to pick up the value of the goto or the init
+            var w = new Vector();
+            w.Add(Symbols.Do);
+            w.AddRange(GetDeclarations(rawparams, names, temp));
+            w.Add(MakeListStar(Symbols.Do, body));
+            v.Add(AsList(w));
+            return AsList(v);
+        }
+
+        public static Expression CompileRecur(Cons form, AnalysisScope scope)
+        {
+            // recur value*
+            if (!TryFindLabel(scope, Symbols.RecursionLabel))
+            {
+                ThrowError("recur: not contained in recursion block");
+            }
+            var values = Cdr(form);
+            var code = MakeList(Symbols.Goto, Symbols.RecursionLabel, MakeListStar(MakeSymbol("array"), values));
+            return Compile(code, scope);
         }
 
         public static ImportedFunction GetBuiltinFunction(string name)
@@ -1781,7 +1802,6 @@ namespace Kiezel
             Symbols.DefMethod.SpecialFormValue = new SpecialForm(CompileDefMethod);
             Symbols.DefMulti.SpecialFormValue = new SpecialForm(CompileDefMulti);
             Symbols.Defun.SpecialFormValue = new SpecialForm(CompileDefun);
-            Symbols.DefunStar.SpecialFormValue = new SpecialForm(CompileDefunStar);
             Symbols.Do.SpecialFormValue = new SpecialForm(CompileDo);
             Symbols.FutureVar.SpecialFormValue = new SpecialForm(CompileFutureVar);
             Symbols.GetAttr.SpecialFormValue = new SpecialForm(CompileGetMember);
@@ -1791,7 +1811,6 @@ namespace Kiezel
             Symbols.If.SpecialFormValue = new SpecialForm(CompileIf);
             Symbols.Label.SpecialFormValue = new SpecialForm(CompileLabel);
             Symbols.Lambda.SpecialFormValue = new SpecialForm(CompileLambda);
-            Symbols.LambdaStar.SpecialFormValue = new SpecialForm(CompileLambdaStar);
             Symbols.LazyVar.SpecialFormValue = new SpecialForm(CompileLazyVar);
             Symbols.Let.SpecialFormValue = new SpecialForm(CompileLet);
             Symbols.LetFun.SpecialFormValue = new SpecialForm(CompileLetFun);
@@ -1801,6 +1820,7 @@ namespace Kiezel
             Symbols.Or.SpecialFormValue = new SpecialForm(CompileOr);
             Symbols.Quote.SpecialFormValue = new SpecialForm(CompileQuote);
             Symbols.bqQuote.SpecialFormValue = new SpecialForm(CompileQuote);
+            Symbols.Recur.SpecialFormValue = new SpecialForm(CompileRecur);
             Symbols.Return.SpecialFormValue = new SpecialForm(CompileReturn);
             Symbols.SetAttr.SpecialFormValue = new SpecialForm(CompileSetMember);
             Symbols.SetElt.SpecialFormValue = new SpecialForm(CompileSetElt);
@@ -1808,6 +1828,9 @@ namespace Kiezel
             Symbols.Throw.SpecialFormValue = new SpecialForm(CompileThrow);
             Symbols.Try.SpecialFormValue = new SpecialForm(CompileTry);
             Symbols.Var.SpecialFormValue = new SpecialForm(CompileVar);
+
+            InitLambdaTemplate();
+
         }
 
         public static MethodInfo RuntimeMethod(string name)
@@ -1828,7 +1851,7 @@ namespace Kiezel
             {
                 if (curscope.IsBlockScope)
                 {
-                    var tag = curscope.Tags.FirstOrDefault(x => x.Name == labelName);
+                    var tag = curscope.Labels.FirstOrDefault(x => x.Name == labelName);
                     if (tag != null)
                     {
                         labelScope = curscope;
@@ -1892,6 +1915,51 @@ namespace Kiezel
                 exprs
             );
         }
+
+        public static Cons FormatCode(string template, params object[] args)
+        {
+            var form = (Cons)ReadFromString(template);
+            return FormatCode(form, args);
+        }
+
+        public static Cons FormatCode(Cons template, params object[] args)
+        {
+            var result = new Vector();
+            foreach (var item in template)
+            {
+                if (item is Symbol)
+                {
+                    var sym = (Symbol)item;
+                    if (sym.Name.StartsWith("%%"))
+                    {
+                        int index;
+                        if (int.TryParse(sym.Name.Substring(2), out index))
+                        {
+                            result.AddRange((Cons)args[index - 1]);
+                            continue;
+                        }
+                    }
+                    else if (sym.Name.StartsWith("%"))
+                    {
+                        int index;
+                        if (int.TryParse(sym.Name.Substring(1), out index))
+                        {
+                            result.Add(args[index - 1]);
+                            continue;
+                        }
+                    }
+                }
+
+                if (item is Cons)
+                {
+                    result.Add(FormatCode((Cons)item, args));
+                    continue;
+                }
+                result.Add(item);
+            }
+            return AsList(result);
+        }
+
     }
 
     public class SpecialForm

@@ -125,7 +125,6 @@
         (.replace ~ "<" "(lt)")
         (.replace ~ "/" "(slash)")
         (.replace ~ "*" "(star)")
-        (.replace ~ "λ" "(greek-lambda)")
         (.replace ~ ":" "/")))
 
 (defun get-documentation (topic)

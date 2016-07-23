@@ -33,8 +33,6 @@ namespace Kiezel
 
         public bool IsLambda;
 
-        public int LambdaParameterCount;
-
         public string Name;
 
         public List<Symbol> Names = null;
@@ -43,7 +41,7 @@ namespace Kiezel
 
         public ParameterExpression TagBodySaved;
 
-        public List<LabelTarget> Tags = new List<LabelTarget>();
+        public List<LabelTarget> Labels = new List<LabelTarget>();
 
         public ParameterExpression Tilde;
 
@@ -80,7 +78,7 @@ namespace Kiezel
         {
             get
             {
-                return Tags.Count != 0;
+                return Labels.Count != 0;
             }
         }
 
@@ -118,7 +116,7 @@ namespace Kiezel
 
         public void DefineMacro(Symbol sym, object macro, ScopeFlags flags)
         {
-            Variables.Add(new ScopeEntry(sym, macro, flags));
+            Variables.Add(new ScopeEntry(this, sym, macro, flags));
         }
 
         public int DefineFrameLocal(Symbol sym, ScopeFlags flags)
@@ -130,15 +128,27 @@ namespace Kiezel
 
             UsesFramedVariables = true;
             Names.Add(sym);
-            Variables.Add(new ScopeEntry(sym, Names.Count - 1, flags));
+            Variables.Add(new ScopeEntry(this, sym, Names.Count - 1, flags));
 
             return Names.Count - 1;
+        }
+
+        public void ChangeNativeToFrameLocal(ScopeEntry entry)
+        {
+            if (Names == null)
+            {
+                Names = new List<Symbol>();
+            }
+
+            UsesFramedVariables = true;
+            Names.Add(entry.Key);
+            entry.Value = Names.Count - 1;
         }
 
         public ParameterExpression DefineNativeLocal(Symbol sym, ScopeFlags flags, Type type = null)
         {
             var parameter = Expression.Parameter(type ?? typeof(object), sym.Name);
-            Variables.Add(new ScopeEntry(sym, parameter, flags));
+            Variables.Add(new ScopeEntry(this, sym, parameter, flags));
 
             return parameter;
         }
@@ -179,6 +189,7 @@ namespace Kiezel
                     if (LexicalSymEqual(item.Key, sym))
                     {
                         entry = item;
+                        item.Flags |= reason;
 
                         if (LexicalSymEqual(sym, Symbols.Tilde))
                         {
@@ -187,7 +198,6 @@ namespace Kiezel
 
                         if (item.Index != -1 || item.MacroValue != null || item.SymbolMacroValue != null)
                         {
-                            item.Flags |= reason;
                         }
                         else if (reason != 0 && noCapturedNativeParametersBeyondThisPoint && !LexicalSymEqual(sym, Symbols.Tilde))
                         {
@@ -198,12 +208,7 @@ namespace Kiezel
                             // The recompile that comes later uses the list of free variables to
                             // choose the correct implementation scheme.
                             sc.FreeVariables.Add(sym);
-                            var index = sc.DefineFrameLocal(sym, reason);
-                            entry = Variables[index];
-                        }
-                        else
-                        {
-                            item.Flags |= reason;
+                            sc.ChangeNativeToFrameLocal(item);
                         }
 
                         return true;
@@ -234,11 +239,17 @@ namespace Kiezel
             return false;
         }
 
-        public ScopeEntry FindLocal(Symbol name, int maxDepth = int.MaxValue)
+        public bool FindDuplicate(Symbol name)
+        {
+            var entry = FindLocal(name);
+            return entry != null && entry.Scope == this;
+        }
+
+        public ScopeEntry FindLocal(Symbol name)
         {
             int depth;
             ScopeEntry entry;
-            if (FindLocal(name, 0, out depth, out entry) && depth <= maxDepth)
+            if (FindLocal(name, 0, out depth, out entry))
             {
                 return entry;
             }
@@ -263,12 +274,14 @@ namespace Kiezel
 
     public class ScopeEntry
     {
+        public AnalysisScope Scope;
         public ScopeFlags Flags;
         public Symbol Key;
         public object Value;
 
-        public ScopeEntry(Symbol key, object value, ScopeFlags flags)
+        public ScopeEntry(AnalysisScope scope, Symbol key, object value, ScopeFlags flags)
         {
+            Scope = scope;
             Key = key;
             Value = value;
             Flags = flags;

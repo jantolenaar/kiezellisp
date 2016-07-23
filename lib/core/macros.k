@@ -187,14 +187,6 @@
                             (write-to-string ,result :escape true)) :stream $stderr))))
 
 ;;;
-;;; tail recursion
-;;;
-
-(defmacro tailcall (proc &rest args)
-    `(return (system:create-tailcall ,proc ,@args)))
-
-
-;;;
 ;;; generic methods
 ;;;
 

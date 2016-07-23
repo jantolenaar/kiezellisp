@@ -7,12 +7,6 @@
 
 (defpackage "lisp"
     (:export
-        "break"
-        "break-if"
-        "continue"
-        "continue-if"
-        "finish"
-        "finish-if"
         "foreach"
         "loop"
         "while"
@@ -23,7 +17,7 @@
 (def $env null)
 
 (defmacro loop (&body forms &environment env)
-    (let $env (or env (make-environment)))
+    (let $env (make-environment env))
     (let $initial-steps (vector))
     (let $tests (vector))
     (let $body (vector))
@@ -41,7 +35,8 @@
         (throw-error "LOOP body cannot be empty"))
     (each do-form forms)
     (add-accumulator-steps)
-    (loop-macroexpand-all (generate-code)))
+    (generate-code)
+    #;(loop-macroexpand-all ~))
 
 (defmacro while (test &body forms)
     `(loop
@@ -53,33 +48,17 @@
         (for ,v :in ,seq)
         ,@forms))
 
-(defmacro break (&optional value)
-    (setf $break-label-used true)
-    `(goto break-label ,value))
-
-(defmacro break-if (test &optional value)
-    `(if ,test (break ,value)))
-
-(defmacro continue ()
-    (setf $continue-label-used true)
-    `(goto continue-label))
-
-(defmacro continue-if (test)
-    `(if ,test (continue)))
-
-(defmacro finish ()
-    (setf $finish-label-used true)
-    `(goto finish-label))
-
-(defmacro finish-if (test)
-    `(if ,test (finish)))
-    
-
 ;;;
 ;;; internal functions below this line
 ;;;
 
 (def loop-clauses (new
+    :break 'break-clause
+    :break-if 'break-if-clause
+    :continue 'continue-clause
+    :continue-if 'continue-if-clause
+    :finish 'finish-clause
+    :finish-if 'finish-if-clause
     :collect 'collect-clause
     :collect-each 'collect-each-clause
     :count 'count-clause
@@ -104,19 +83,13 @@
     :with 'with-clause
     ))
 
-(def loop-ignorables #v(
-            defun defun* 
-            defmacro define-symbol-macro
-            defmulti defmethod
-            lambda lambda* λ 
-            letmacro letfun let-symbol-macro))
+(each export-symbol (prototype:keys loop-clauses))
+(each export-symbol (prototype:keys loop-top-level-clauses))
 
 (defun loop-macroexpand-1 (form env)
     (when (and (cons? form)
                (symbol? (first form))
-               (not (find-name-in-environment (first form) env)))
-        (when (find (first form) loop-ignorables)
-            (return (list form false)))
+               (/= 'loop (first form)))
         (when-let (proc (elt loop-clauses (first form)))
             (return (list (funcall (symbol-value proc) form) true))))
     (return (macroexpand-1 form env)))
@@ -131,6 +104,9 @@
 
 (defun loop-macroexpand-all (form)
     (code-walk form loop-macroexpand $env))
+
+(defun loop-macroexpand-list (forms)
+    (map loop-macroexpand-all forms))
 
 (defmacro prologue ()
     `(merging-do
@@ -194,10 +170,10 @@
     (do-code form))
 
 (defun initially-clause (form)
-    (do-initially (rest form)))
+    (do-initially (loop-macroexpand-list (rest form))))
 
 (defun finally-clause (form)
-    (do-finally (rest form)))
+    (do-finally (loop-macroexpand-list (rest form))))
 
 (defun for-clause (form)
     (prologue)
@@ -266,11 +242,7 @@
             (throw-error "Invalid <with> clause in loop"))))
 
 (defun do-code (form)
-    ;;; this expansion gets the accumulator stuff out.
-    (loop-macroexpand-all form)
-    ;;; but add unexpanded code since the entire loop body will be expanded
-    ;;; in one go thus properly obeying scoping rules.
-    (.add $body form)
+    (.add $body (loop-macroexpand-all form))
     true)
 
 (defun do-initially (forms)
@@ -324,6 +296,45 @@
                 ,arg1))
         (true
             (throw-error "Invalid <next> clause in loop"))))
+
+(defun break-clause (form)
+    (prologue)
+    (cond
+        ((match '(break))
+            (setf $break-label-used true)
+            `(goto break-label))
+        ((match '(break ?))
+            (setf $break-label-used true)
+            `(goto break-label ,arg1))
+        (true
+            (throw-error "Invalid <break> clause in loop"))))
+
+(defun break-if-clause (form)
+    (prologue)
+    (cond
+        ((match '(break-if ?))
+            `(if ,arg1 (break)))
+        ((match '(break-if ? ?))
+            `(if ,arg1 (break ,arg2)))
+        (true
+            (throw-error "Invalid <break-if> clause in loop"))))
+
+(defun continue-clause (form)
+    (prologue)
+    (cond
+        ((match '(continue))
+            (setf $continue-label-used true)
+            `(goto continue-label))
+        (true
+            (throw-error "Invalid <continue> clause in loop"))))
+
+(defun continue-if-clause (form)
+    (prologue)
+    (cond
+        ((match '(continue-if ?))
+            `(if ,arg1 (continue)))
+        (true
+            (throw-error "Invalid <continue-if> clause in loop"))))
 
 (defun collect-clause (form)
     (prologue)
@@ -380,6 +391,23 @@
                 (incf %accumulator)))
         (true
             (throw-error "Invalid <summing> clause in loop"))))
+
+(defun finish-clause (form)
+    (prologue)
+    (cond
+        ((match '(finish))
+            (setf $finish-label-used true)
+            `(goto finish-label))
+        (true
+            (throw-error "Invalid <finish> clause in loop"))))
+
+(defun finish-if-clause (form)
+    (prologue)
+    (cond
+        ((match '(finish-if ?))
+            `(if ,arg1 (finish)))
+        (true
+            (throw-error "Invalid <finish-if> clause in loop"))))
 
 (defun sum-clause (form)
     (prologue)

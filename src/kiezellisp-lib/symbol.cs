@@ -437,6 +437,11 @@ namespace Kiezel
             }
         }
 
+        internal object CompilerValue
+        {
+            get{ return _compilerValue; }
+        }
+
         public LambdaClosure MacroValue
         {
             get
@@ -560,6 +565,8 @@ namespace Kiezel
 
         public static Symbol bqAppend;
 
+        public static Symbol bqForce;
+
         public static Symbol bqList;
 
         public static Symbol bqQuote;
@@ -610,8 +617,6 @@ namespace Kiezel
 
         public static Symbol Defun;
         
-        public static Symbol DefunStar;
-
         public static Symbol Do;
 
         public static Symbol Documentation;
@@ -704,8 +709,6 @@ namespace Kiezel
 
         public static Symbol Lambda;
         
-        public static Symbol LambdaStar;
-
         public static Symbol LambdaList;
 
         public static Symbol LazyImport;
@@ -810,11 +813,17 @@ namespace Kiezel
 
         public static Symbol Quote;
 
+        public static Symbol RawParams;
+
         public static Symbol ReadEval;
 
         public static Symbol ReadonlyVariable;
 
         public static Symbol Readtable;
+
+        public static Symbol Recur;
+
+        public static Symbol RecursionLabel;
 
         public static Symbol ReplForceIt;
 
@@ -877,8 +886,6 @@ namespace Kiezel
         public static Symbol SymbolMacro;
 
         public static Symbol TagBody;
-
-        public static Symbol TailCall;
 
         public static Symbol Target;
 
@@ -955,7 +962,6 @@ namespace Kiezel
             DefMulti = MakeSymbol("defmulti");
             DefSpecialForm = MakeSymbol("define-special-form");
             Defun = MakeSymbol("defun");
-            DefunStar = MakeSymbol("defun*");
             Do = MakeSymbol("do");
             Documentation = MakeSymbol("documentation");
             Dot = MakeSymbol(".");
@@ -974,7 +980,7 @@ namespace Kiezel
             Force = MakeSymbol("force");
             Funcall = MakeSymbol("funcall");
             Function = MakeSymbol("function");
-            FunctionExitLabel = MakeSymbol("function-exit");
+            FunctionExitLabel = MakeSymbol("%function-exit");
             FunctionKeyword = MakeSymbol(":function");
             FutureVar = MakeSymbol("future");
             GenericFunction = MakeSymbol("generic-function");
@@ -1001,7 +1007,6 @@ namespace Kiezel
             Label = MakeSymbol("label");
             Lambda = MakeSymbol("lambda");
             LambdaList = MakeSymbol(@"__lambdas__");
-            LambdaStar = MakeSymbol("lambda*");
             LazyImport = MakeSymbol("$lazy-import");
             LazyVar = MakeSymbol("lazy");
             Left = MakeSymbol(":left");
@@ -1052,9 +1057,12 @@ namespace Kiezel
             PrintVectorWithBrackets = MakeSymbol("$print-vector-with-brackets");
             QuasiQuote = MakeSymbol("quasi-quote");
             Quote = MakeSymbol("quote");
+            RawParams = MakeSymbol("&rawparams");
             ReadEval = MakeSymbol("$read-eval");
             ReadonlyVariable = MakeSymbol("readonly-variable");
             Readtable = MakeSymbol("$readtable");
+            Recur = MakeSymbol("recur");
+            RecursionLabel = MakeSymbol("%recursion-label");
             ReplForceIt = MakeSymbol("$repl-force-it");
             ReplListenerPort = MakeSymbol("$repl-listener-port");
             Rest = MakeSymbol("&rest");
@@ -1084,7 +1092,6 @@ namespace Kiezel
             StructurallyEqual = MakeSymbol("structurally-equal");
             SymbolMacro = MakeSymbol("symbol-macro");
             TagBody = MakeSymbol("tagbody");
-            TailCall = MakeSymbol("tailcall");
             Target = MakeSymbol("__target__");
             Temp = MakeSymbol(@"__temp__");
             Throw = MakeSymbol("throw");
@@ -1108,6 +1115,7 @@ namespace Kiezel
             bqAppend = MakeSymbol("bq:append");
             bqList = MakeSymbol("bq:list");
             bqQuote = MakeSymbol("bq:quote");
+            bqForce = MakeSymbol("bq:force");
 
             NumberedVariables = new Symbol[]
             {

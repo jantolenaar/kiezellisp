@@ -50,7 +50,7 @@
                     `(do ,@original-body) 
                     (first original-body)))
     (let test-form (encode-pattern $temp pattern))
-    (force (cond
+    (cond
         ($variables
             `(do
                 (multiple-var ,(as-list $variables) null)
@@ -58,7 +58,7 @@
         ((= test-form true)
             `(return-from case-match ,body))
         (true
-            `(if ,test-form (return-from case-match ,body))))))
+            `(if ,test-form (return-from case-match ,body)))))
 
 (def encode-handlers (new
     :quote 'encode-quote
@@ -97,7 +97,7 @@
                 (funcall (symbol-value proc) expr args)))))
 
 (defun encode-symbol (expr pattern)
-    (if (not (find pattern $variables))
+    (when (not (find pattern $variables))
         (.add $variables pattern))
     `(do
         (setf ,pattern ,expr)

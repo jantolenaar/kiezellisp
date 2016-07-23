@@ -254,13 +254,25 @@ namespace Kiezel
         [Lisp("make-environment")]
         public static AnalysisScope MakeEnvironment()
         {
-            return new AnalysisScope();
+            return new AnalysisScope(null, "env");
+        }
+
+        [Lisp("make-environment")]
+        public static AnalysisScope MakeEnvironment(AnalysisScope env)
+        {
+            return new AnalysisScope(env, "env");
         }
 
         [Lisp("make-extended-environment")]
         public static FrameAndScope MakeExtendedEnvironment()
         {
             return new FrameAndScope();
+        }
+
+        [Lisp("add-macro-to-environment")]
+        public static void AddMacroToEnvironment(Symbol localName, Symbol globalName, AnalysisScope env)
+        {
+            env.DefineMacro(localName, globalName.CompilerValue, ScopeFlags.All);
         }
 
         public static Cons CodeWalkListTry(Cons forms, Func<object, AnalysisScope, object> transform, AnalysisScope env)

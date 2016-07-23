@@ -13,8 +13,7 @@ namespace Kiezel
     {
         Function,
         Method,
-        Macro,
-        MultiArityFunction
+        Macro
     }
 
     public class LambdaClosure : IDynamicMetaObjectProvider, IApply, ISyntax
@@ -32,14 +31,6 @@ namespace Kiezel
         }
 
         public BindingRestrictions GenericRestrictions;
-
-        public MultiArityLambda MultiLambda
-        {
-            get
-            {
-                return Owner as MultiArityLambda;
-            }
-        }
 
         public LambdaKind Kind
         {
@@ -60,9 +51,16 @@ namespace Kiezel
             // Entrypoint when called via funcall or apply or map etc.
             if (Kind == LambdaKind.Macro)
             {
-                throw new LispException("Macros must be defined before use.");
+                throw new LispException("Invalid macro call.");
             }
-            return ApplyLambdaBind(null, args, false, null, null);
+            if (Definition.Signature.ArgModifier == Symbols.RawParams)
+            {
+                return ApplyLambdaBind(null, args, true, null, null);
+            }
+            else
+            {
+                return ApplyLambdaBind(null, args, false, null, null);
+            }
         }
 
         DynamicMetaObject IDynamicMetaObjectProvider.GetMetaObject(Expression parameter)
@@ -119,12 +117,6 @@ namespace Kiezel
                 result = Definition.Proc(lambdaList, Owner ?? this, args);
             }
             context.Frame = saved;
-
-            var tailcall = result as TailCall;
-            if (tailcall != null)
-            {
-                result = tailcall.Run();
-            }
 
             return result;
         }
@@ -260,12 +252,15 @@ namespace Kiezel
                         list = new Cons(input[i], list);
                     }
                 }
-                output[output.Length - 1] = list;
+                int j = output.Length - 1 - ((signature.EnvArg != null) ? 1 : 0);
+                output[j] = list;
+                haveAll = true;
             }
 
             if (signature.EnvArg != null)
             {
-                output[output.Length - 1] = env;
+                int j = output.Length - 1;
+                output[j] = env;
             }
 
             if (offset < input.Length && !haveAll && firstKey == -1)
@@ -309,15 +304,6 @@ namespace Kiezel
             };
 
             return closure;
-        }
-    }
-
-    public partial class Runtime
-    {
-        [Lisp("system:create-tailcall")]
-        public static object CreateTailCall(IApply proc, params object[] args)
-        {
-            return new TailCall(proc, args);
         }
     }
 
@@ -447,6 +433,17 @@ namespace Kiezel
             var elementType = typeof(object);
             var offset = 0;
             var output = new List<Expression>();
+
+            if (signature.ArgModifier == Symbols.RawParams)
+            {
+                var tail = new List<Expression>();
+                for (int i = offset; i < input.Length; ++i)
+                {
+                    tail.Add(Expression.Convert(input[i].Expression, elementType));
+                }
+                var tailExpr = Expression.NewArrayInit(elementType, tail);
+                return tailExpr;
+            }
 
             for (offset = 0; offset < signature.RequiredArgsCount; ++offset)
             {
@@ -637,21 +634,5 @@ namespace Kiezel
             return restrictions;
         }
     }
-
-    public class TailCall
-    {
-        private object[] Args;
-        private IApply Proc;
-
-        public TailCall(IApply proc, object[] args)
-        {
-            Proc = proc;
-            Args = args;
-        }
-
-        public object Run()
-        {
-            return Proc.Apply(Args);
-        }
-    }
+        
 }

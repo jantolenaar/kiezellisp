@@ -224,7 +224,7 @@ namespace Kiezel
         [Lisp("bq:append")]
         public static Cons ForceAppend(params IEnumerable[] seqs)
         {
-            return (Cons)Force(AsLazyList(SeqBase.Append(seqs)));
+            return AsList(SeqBase.Append(seqs));
         }
 
         [Lisp("group-by")]

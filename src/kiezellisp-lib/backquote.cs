@@ -52,12 +52,14 @@ namespace Kiezel
                     var item2 = (Cons)item1;
                     if (First(item2) == Symbols.Unquote)
                     {
-                        stack.Push(new Cons(Symbols.bqList, Cdr(item2)));
+                        var data = MakeList(Symbols.bqForce, Second(item2));
+                        stack.Push(MakeList(Symbols.bqList, data));
                         continue;
                     }
                     else if (First(item2) == Symbols.UnquoteSplicing)
                     {
-                        stack.Push(Second(item2));
+                        var data = MakeList(Symbols.bqForce, Second(item2));
+                        stack.Push(data);
                         continue;
                     }
                 }
@@ -106,6 +108,7 @@ namespace Kiezel
             }
         }
 
+        #if XXX
         public static object MapTree(KeyFunc fn, object x)
         {
             if (Consp(x))
@@ -128,7 +131,6 @@ namespace Kiezel
             }
         }
 
-        #if XXX
         [Lisp( "simplify" )]
         public static object Simplify( object x )
         {
