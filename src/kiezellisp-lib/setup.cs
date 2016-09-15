@@ -150,6 +150,7 @@ namespace Kiezel
             RestartCompiler();
             RestartSettings();
             RestartBuiltins(typeof(Runtime));
+            RestartRuntimeSymbols();
         }
 
         public static void RestartBuiltins(Type type)
@@ -349,6 +350,11 @@ namespace Kiezel
             Symbols.StdOut.ConstantValue = null;
             Symbols.StdScr.ConstantValue = null;
             Symbols.InfoColor.Value = "gray";
+        }
+
+        public static void RestartRuntimeSymbols()
+        {
+            Symbols.MacroexpandHook.VariableValue = Symbols.Funcall.Value;
         }
 
         public static void RestartVariables()

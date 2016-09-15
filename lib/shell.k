@@ -184,11 +184,3 @@
         ("~my-documents" $my-documents)
         (true head)))
 
-(defun back-tick-readhandler (stream char count)
-    (declare (ignore count))
-    (let seq (map string (.read-delimited-list stream (string char))))
-    `(with-output-to-string ($stdout)
-        (shell:run ,@seq)))
-
-(set-dispatch-macro-character "#" "`" back-tick-readhandler)
-

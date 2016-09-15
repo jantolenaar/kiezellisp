@@ -53,15 +53,23 @@ namespace Kiezel
         }
 
         [Lisp("conj")]
-        public static object Conjoin(IEnumerable seq, object item)
+        public static object Conjoin(IEnumerable seq, params object[] items)
         {
             if (Listp(seq))
             {
-                return MakeCons(item, (Cons)seq);
+                var lst = (Cons)seq;
+                foreach (var item in ToIter(items))
+                {
+                    lst = MakeCons(item, lst);
+                }
+                return lst;
             }
             else if (Vectorp(seq))
             {
-                ((Vector)seq).Add(item);
+                if (items != null)
+                {
+                    ((Vector)seq).AddRange(items);
+                }
                 return seq;
             }
             else
@@ -69,6 +77,7 @@ namespace Kiezel
                 throw new NotImplementedException();
             }
         }
+
 
         [Lisp("copy-seq")]
         public static Cons CopySeq(IEnumerable seq)

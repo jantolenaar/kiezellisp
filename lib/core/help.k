@@ -5,6 +5,7 @@
     (:export 
         "help"
         "set-help-path"
+        "$help-path"
     ))
 
 (in-package "lisp")

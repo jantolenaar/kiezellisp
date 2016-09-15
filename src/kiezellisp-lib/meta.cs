@@ -195,7 +195,7 @@ namespace Kiezel
         public static Symbol GenTemp(object prefix)
         {
             var count = Interlocked.Increment(ref GentempCounter);
-            var name = String.Format("temp:_{0}{1}", GetDesignatedString(prefix), count);
+            var name = String.Format("temp:{0}-{1}", GetDesignatedString(prefix), count);
             var sym = FindSymbol(name);
             return sym;
         }
@@ -314,8 +314,12 @@ namespace Kiezel
 
         public static bool TryMacroExpand(object expr, AnalysisScope env, out object result)
         {
-            result = expr;
+            result = MacroExpandBase(expr, env);
+            return result != expr;
+        }
 
+        public static object MacroExpandBase(object expr, AnalysisScope env)
+        {
             var sym = expr as Symbol;
 
             if (sym != null)
@@ -324,12 +328,11 @@ namespace Kiezel
                 var macro = (entry != null) ? entry.SymbolMacroValue : sym.SymbolMacroValue;
                 if (macro != null)
                 {
-                    result = macro.Form;
-                    return result != expr;
+                    return macro.Form;
                 }
                 else
                 {
-                    return false;
+                    return expr;
                 }
             }
 
@@ -341,24 +344,23 @@ namespace Kiezel
 
                 if (head == null)
                 {
-                    return false;
+                    return expr;
                 }
 
                 var entry = env.FindLocal(head);
                 var macro = (entry != null) ? entry.MacroValue : head.MacroValue;
                 if (macro != null)
                 {
-                    var args = AsArray(Cdr(form));
-                    result = macro.ApplyLambdaBind(null, args, false, new AnalysisScope(env, "try-macroexpand"), form);
-                    return result != form;
+                    var hook = (IApply)GetDynamic(Symbols.MacroexpandHook);
+                    return Runtime.Funcall(hook, macro, form, new AnalysisScope(env, "try-macroexpand"));
                 }
                 else
                 {
-                    return false;
+                    return expr;
                 }
             }
 
-            return false;
+            return expr;
         }
     }
 }

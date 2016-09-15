@@ -1,5 +1,11 @@
 # Change Log
 
+## 2016/08/27
+
+*   Added `get-setf-expansion` and `define-modify-macro`.
+*   Added #<backquote> reader macro.
+*   Added $macroexpand-hook.
+
 ## 2016/07/23
 
 *   Fixed bug: impossible to run with option --release.

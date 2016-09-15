@@ -321,6 +321,17 @@ namespace Kiezel
             }
         }
 
+        public bool SuppressWarnings
+        {
+            get
+            {
+                return this.Package == Runtime.TempPackage
+                || Name.StartsWith("_")
+                || Name.StartsWith("~")
+                || Name.StartsWith("%");
+            }
+        }
+
         public bool IsConstant
         {
             get
@@ -741,6 +752,8 @@ namespace Kiezel
 
         public static Symbol Macro;
 
+        public static Symbol MacroexpandHook;
+
         public static Symbol Macroexpand1;
 
         public static Symbol MacroKeyword;
@@ -1022,6 +1035,7 @@ namespace Kiezel
             LoadVerbose = MakeSymbol("$load-verbose");
             LoadVerboseKeyword = MakeSymbol(":verbose");
             Macro = MakeSymbol("macro");
+            MacroexpandHook = MakeSymbol("$macroexpand-hook");
             Macroexpand1 = MakeSymbol("macroexpand-1");
             MacroKeyword = MakeSymbol(":macro");
             Main = MakeSymbol("user:main");

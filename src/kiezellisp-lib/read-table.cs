@@ -131,6 +131,7 @@ namespace Kiezel
 
             SetDispatchMacroCharacter("@", "\"", Runtime.ReadStringHandler2);
             SetDispatchMacroCharacter("#", "(", Runtime.ReadShortLambdaExpressionHandler);
+            SetDispatchMacroCharacter("#", "`", Runtime.ReadQuasiQuoteLambdaExpressionHandler);
             SetDispatchMacroCharacter("#", "|", Runtime.ReadBlockCommentHandler);
             SetDispatchMacroCharacter("#", "r", Runtime.ReadNumberHandler);
             SetDispatchMacroCharacter("#", "x", Runtime.ReadNumberHandler);

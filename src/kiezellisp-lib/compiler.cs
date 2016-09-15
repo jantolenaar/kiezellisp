@@ -577,6 +577,13 @@ namespace Kiezel
             }
         }
 
+        [Lisp("system:parse-parameter-list")]
+        public static Cons ParseParameterList(Cons args)
+        {
+            var signature = CompileFormalArgs(args, null, LambdaKind.Macro);
+            return AsList(signature.Names);
+        }
+
         public static LambdaSignature CompileFormalArgs(Cons args, AnalysisScope scope, LambdaKind kind)
         {
             var signature = new LambdaSignature(kind);

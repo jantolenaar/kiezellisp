@@ -51,9 +51,12 @@ namespace Kiezel
             // Entrypoint when called via funcall or apply or map etc.
             if (Kind == LambdaKind.Macro)
             {
-                throw new LispException("Invalid macro call.");
+                var form = (Cons)args[0];
+                var env = args[1];
+                return ApplyLambdaBind(null, Runtime.AsArray(Runtime.Cdr(form)), false, env, form);
+                // throw new LispException("Invalid macro call.");
             }
-            if (Definition.Signature.ArgModifier == Symbols.RawParams)
+            else if (Definition.Signature.ArgModifier == Symbols.RawParams)
             {
                 return ApplyLambdaBind(null, args, true, null, null);
             }

@@ -102,7 +102,7 @@ namespace Kiezel
                 }
                 else if (!v.Referenced)
                 {
-                    if (!v.Key.Name.StartsWith("_") && !v.Key.Name.StartsWith("~") && !v.Key.Name.StartsWith("%") && !v.Ignore)
+                    if (!v.Key.SuppressWarnings && !v.Ignore)
                     {
                         PrintWarning(context, "unreferenced variable", v.Key);
                     }

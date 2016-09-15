@@ -55,14 +55,8 @@ namespace Kiezel
 
         public static object ParseInterpolateString(string s)
         {
-            int pos = 0;
-            Vector code = new Vector();
-
-//            if ( s.StartsWith( "~/" ) )
-//            {
-//                code.Add( FindSymbol( "shell:$home" ) );
-//                pos = 1;
-//            }
+            var pos = 0;
+            var code = new Vector();
 
             for (var match = InterpolationStringPatterns.Match(s, pos); match.Success; match = match.NextMatch())
             {
@@ -437,7 +431,14 @@ namespace Kiezel
 
         public static object ReadShortLambdaExpressionHandler(LispReader stream, string ch, int arg)
         {
-            return stream.ParseShortLambdaExpression(")");
+            // put '(' back syncing with ReadQuasiQuoteLambdaExpressionHandler
+            stream.UnreadChar();
+            return stream.ParseShortLambdaExpression(false, ")");
+        }
+
+        public static object ReadQuasiQuoteLambdaExpressionHandler(LispReader stream, string ch, int arg)
+        {
+            return stream.ParseShortLambdaExpression(true, ")");
         }
 
         public static object ReadSpecialStringHandler(LispReader stream, string ch, int arg)

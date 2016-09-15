@@ -667,15 +667,31 @@ namespace Kiezel
             return new RegexPlus(pattern, options);
         }
 
-        public object ParseShortLambdaExpression(string delimiter)
+        public object ParseShortLambdaExpression(bool quasiQuoted, string delimiter)
         {
+            SkipWhitespace();
+            var ch = ReadChar();
+            if (ch != '(')
+            {
+                throw MakeScannerException("expected ')' character");
+            }
+
             // The list is treated as a single form! 
             // So the entire thing is (like) one function call.
             var form = ReadDelimitedList(delimiter);
             var lastIndex = GrepShortLambdaParameters(form);
             var args = Runtime.AsList(Symbols.ShortLambdaVariables.Skip(1).Take(lastIndex));
-            var code = Runtime.MakeList(Symbols.Lambda, args, form);
-            return code;
+            if (quasiQuoted)
+            {
+                var form2 = Runtime.QuasiQuoteExpandRest(form);
+                var code = Runtime.MakeList(Symbols.Lambda, args, form2);
+                return code;
+            }
+            else
+            {
+                var code = Runtime.MakeList(Symbols.Lambda, args, form);
+                return code;
+            }
         }
 
         public string ParseSingleLineString()

@@ -9,7 +9,7 @@
         "psetf"
         "lambda*"
         "defun*"
-        "tail-recursion-loop"
+        "tail-recursion"
         ))
 
 (in-package "lisp")
@@ -62,10 +62,10 @@
         ,(argument-case 'args branches)))
 
 ;;;
-;;; tail-recursion-loop
+;;; tail-recursion
 ;;;
 
-(defmacro tail-recursion-loop ((&rest bindings) &body forms)
+(defmacro tail-recursion ((&rest bindings) &body forms)
     (let temp (gentemp))
     (let names (map first bindings))
     (let values (map second bindings))
