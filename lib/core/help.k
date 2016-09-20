@@ -120,6 +120,7 @@
 (defun transform-topic-to-path-name (topic)
     (do
         (.long-name topic)
+        (.replace ~ "$" "(dollar)")
         (.replace ~ "?" "(qm)")
         (.replace ~ "." "(dot)")
         (.replace ~ ">" "(gt)")

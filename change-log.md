@@ -1,5 +1,9 @@
 # Change Log
 
+## 2016/09/20
+
+*   Refactored shell.k.
+
 ## 2016/08/27
 
 *   Added `get-setf-expansion` and `define-modify-macro`.
