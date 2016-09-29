@@ -390,7 +390,7 @@
             `(if ,arg1
                 (incf %accumulator)))
         (true
-            (throw-error "Invalid <summing> clause in loop"))))
+            (throw-error "Invalid <counting> clause in loop"))))
 
 (defun finish-clause (form)
     (prologue)
