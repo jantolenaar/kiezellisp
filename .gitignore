@@ -1,8 +1,6 @@
 bin/
 obj/
 github.git/
-grammar/
-private/
 man/
 help/
 *~

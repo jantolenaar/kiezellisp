@@ -12,11 +12,11 @@
 (setq $stderr "d:/temp/stdlog")
 
 #if unix
-(let project-path "/home/jan/projects/kiezellisp/")
+(let project-path "/home/jan/projects/")
 #elif wine
-(let project-path "z:/home/jan/projects/kiezellisp/")
+(let project-path "z:/home/jan/projects/")
 #elif windows
-(let project-path "d:/projects/kiezellisp/")
+(let project-path "d:/projects/")
 #endif
 
 (letfun make-path (x)
@@ -25,11 +25,11 @@
         (string project-path x)))
 
 (apply set-load-path (map make-path (list
-                "private/lib"
-                "private/app"
-                "contrib/lib"
-                "lib"
-                "app" )))
+                "kiezellisp-private/lib"
+                "kiezellisp-private/app"
+                "kiezellisp/contrib/lib"
+                "kiezellisp/lib"
+                "kiezellisp/app" )))
 
 (setq $repl-force-it true)
 
