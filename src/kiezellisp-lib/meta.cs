@@ -185,13 +185,13 @@ namespace Kiezel
             return env != null && env.FindLocal(sym) != null;
         }
 
-        [Lisp("gentemp")]
+        [Lisp("gensym", "gentemp")]
         public static Symbol GenTemp()
         {
             return GenTemp("temp");
         }
 
-        [Lisp("gentemp")]
+        [Lisp("gensym", "gentemp")]
         public static Symbol GenTemp(object prefix)
         {
             var count = Interlocked.Increment(ref GentempCounter);
