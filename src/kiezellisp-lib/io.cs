@@ -240,6 +240,38 @@ namespace Kiezel
             }
         }
 
+        [Lisp("read-line")]
+        public static object ReadLine(LispReader stream)
+        {
+            return ReadLine(stream, true);
+        }
+
+        [Lisp("read-line")]
+        public static object ReadLine(LispReader stream, object eofErrorp)
+        {
+            return ReadLine(stream, eofErrorp, null);
+        }
+
+        [Lisp("read-line")]
+        public static object ReadLine(LispReader stream, object eofErrorp, object eofValue)
+        {
+            var parser = ConvertToLispReader(stream);
+            var eofError = ToBool(eofErrorp);
+            var value = parser.ReadLine(EOF.Value);
+            if (value == EOF.Value)
+            {
+                if (eofError)
+                {
+                    ThrowError("read: unexpected EOF");
+                }
+                return eofValue;
+            }
+            else
+            {
+                return value;
+            }
+        }
+
         [Lisp("read-all")]
         public static object ReadAll()
         {
@@ -256,9 +288,8 @@ namespace Kiezel
         [Lisp("read-all-from-string")]
         public static Cons ReadAllFromString(string text)
         {
-            using (var stream = new StringReader(text))
+            using (var parser = OpenLispReaderFromString(text))
             {
-                var parser = new LispReader(stream);
                 return parser.ReadAll();
             }
         }
@@ -292,9 +323,8 @@ namespace Kiezel
         [Lisp("read-from-string")]
         public static object ReadFromString(string text, object eofErrorp, object eofValue)
         {
-            using (var stream = new StringReader(text))
+            using (var parser = OpenLispReaderFromString(text))
             {
-                var parser = new LispReader(stream);
                 var eofError = ToBool(eofErrorp);
                 var value = Read(parser, false, EOF.Value);
                 if (value == EOF.Value)
@@ -389,6 +419,19 @@ namespace Kiezel
             return new LispReader(stream);
         }
 
+        [Lisp("open-lisp-reader")]
+        public static LispReader OpenLispReader(string path)
+        {
+            var stream = File.OpenText(path);
+            return new LispReader(stream);
+        }
+
+        [Lisp("open-lisp-reader-from-string")]
+        public static LispReader OpenLispReaderFromString(string text)
+        {
+            var stream = new StringReader(text);
+            return new LispReader(stream);
+        }
 
         public static TextWriter ConvertToTextWriter(object stream)
         {
@@ -799,9 +842,9 @@ namespace Kiezel
             var scriptDirectory = NormalizePath(Path.GetDirectoryName(path));
             var scriptName = Path.GetFileName(path);
 
-            using (var source = File.OpenText(path))
+            using (var reader = OpenLispReader(path))
             {
-                TryLoadText(source, scriptDirectory, scriptName, loadVerbose, loadPrint);
+                TryLoadText(reader, scriptDirectory, scriptName, loadVerbose, loadPrint);
             }
 
             return true;
@@ -828,9 +871,8 @@ namespace Kiezel
             }
         }
 
-        public static void TryLoadText(TextReader source, string newDir, string scriptName, bool loadVerbose, bool loadPrint)
+        public static void TryLoadText(LispReader reader, string newDir, string scriptName, bool loadVerbose, bool loadPrint)
         {
-            var reader = new LispReader(source);
             var saved = SaveStackAndFrame();
             var env = MakeExtendedEnvironment();
             var scope = env.Scope;

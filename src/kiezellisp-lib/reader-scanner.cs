@@ -11,7 +11,7 @@ using System.Text.RegularExpressions;
 namespace Kiezel
 {
     [RestrictedImport]
-    public class LispReader
+    public class LispReader: IDisposable
     {
         private TextReader stream;
         private bool autoClose;
@@ -23,6 +23,15 @@ namespace Kiezel
         private bool haveUnreadChar = false;
         private StringBuilder lineBuffer = new StringBuilder();
         private bool haveCompleteLine = false;
+
+        void IDisposable.Dispose()
+        {
+            if (stream != null)
+            {
+                stream.Close();
+                stream = null;
+            }
+        }
 
         public bool IsEof
         {
@@ -163,7 +172,7 @@ namespace Kiezel
             return obj;
         }
 
-        public object Read(object eofValue = null)
+        public object Read(object eofValue)
         {
             object obj;
             while ((obj = MaybeRead(eofValue)) == VOID.Value)
@@ -208,13 +217,24 @@ namespace Kiezel
             }
         }
 
-        public string ReadLine()
+        public object ReadLine(object eofValue = null)
         {
             var buf = new StringBuilder();
             while (true)
             {
                 var ch = ReadChar();
-                if (IsEof || ch == '\n')
+                if (IsEof)
+                {
+                    if (buf.Length == 0)
+                    {
+                        return eofValue;
+                    }
+                    else
+                    {
+                        break;
+                    }
+                }
+                else if (ch == '\n')
                 {
                     break;
                 }
@@ -797,7 +817,12 @@ namespace Kiezel
                 default:
                 {
                     UnreadChar();
-                    terminator = ReadLine().Trim();
+                    var line = ReadLine();
+                    if (line == null)
+                    {
+                        MakeScannerException("No terminator after #q expression");
+                    }
+                    terminator = ((string)line).Trim();
                     if (terminator == "")
                     {
                         MakeScannerException("No terminator after #q expression");
