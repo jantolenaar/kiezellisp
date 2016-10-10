@@ -349,9 +349,10 @@ namespace Kiezel
             base.OnFormClosed(e);
             if (main != null)
             {
-                RuntimeConsole.Quit();
+                RuntimeGfx.Quit();
             }
         }
+
 
         public void ClearKeyboardBuffer()
         {
@@ -661,7 +662,7 @@ namespace Kiezel
 
     }
 
-    public partial class RuntimeConsole
+    public partial class RuntimeGfx
     {
         [LispAttribute("set-clipboard")]
         public static void SetClipboardData(string str)
@@ -687,9 +688,9 @@ namespace Kiezel
         public static void LoadClipboardData()
         {
             var code = GetClipboardData();
-            using (var source = new StringReader(code))
+            using (var reader = Runtime.OpenLispReaderFromString(code))
             {
-                Runtime.TryLoadText(source, null, null, false, false);
+                Runtime.TryLoadText(reader, null, null, false, false);
             }
         }
 
@@ -697,9 +698,9 @@ namespace Kiezel
         public static void RunClipboardData()
         {
             var code = GetClipboardData();
-            using (var source = new StringReader(code))
+            using (var reader = Runtime.OpenLispReaderFromString(code))
             {
-                Runtime.TryLoadText(source, null, null, false, false);
+                Runtime.TryLoadText(reader, null, null, false, false);
                 var main = Symbols.Main.Value as IApply;
                 if (main != null)
                 {

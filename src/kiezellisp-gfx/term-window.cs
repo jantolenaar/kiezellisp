@@ -625,7 +625,7 @@ namespace Kiezel
             }
             if (refresh && Col == 0)
             {
-                RuntimeConsole.ProcessEvents();
+                RuntimeGfx.ProcessEvents();
             }
         }
 
@@ -1434,7 +1434,7 @@ namespace Kiezel
                                 //win.WriteLine(line);
                             }
                             win.Refresh();
-                            RuntimeConsole.ProcessEvents();
+                            RuntimeGfx.ProcessEvents();
                             if (interactive)
                             {  
                                 Terminal.TerminalWindow.ReadTerminalKey();
@@ -1531,7 +1531,7 @@ namespace Kiezel
             var s = Read(args);
             WriteLine();
             ShowCursor();
-            RuntimeConsole.ProcessEvents();
+            RuntimeGfx.ProcessEvents();
             return s;
         }
 
@@ -1834,12 +1834,12 @@ namespace Kiezel
         void CmdCopy()
         {
             var text = GetStringFromBuffer(HomePos, EndPos);
-            RuntimeConsole.SetClipboardData(text.ToString());
+            RuntimeGfx.SetClipboardData(text.ToString());
         }
 
         void CmdPaste()
         {
-            string str = RuntimeConsole.GetClipboardData();
+            string str = RuntimeGfx.GetClipboardData();
             InsertString(str);
         }
 
@@ -2014,7 +2014,7 @@ namespace Kiezel
             if (refresh)
             {
                 Refresh();
-                RuntimeConsole.ProcessEvents();
+                RuntimeGfx.ProcessEvents();
             }
         }
 
@@ -2040,7 +2040,7 @@ namespace Kiezel
         string SelectCompletion(string text)
         {
             var prefix = text;
-            var completions = RuntimeConsole.GetCompletions(prefix);
+            var completions = RuntimeGfx.GetCompletions(prefix);
             var x = ScreenLeft + Col;
             var y = ScreenTop + Row;
             var w = 40;
@@ -2062,14 +2062,14 @@ namespace Kiezel
                         if (prefix != "")
                         {
                             prefix = prefix.Substring(0, prefix.Length - 1);
-                            completions = RuntimeConsole.GetCompletions(prefix);
+                            completions = RuntimeGfx.GetCompletions(prefix);
                             return completions;
                         }
                     }
                     else if (' ' <= k.KeyChar)
                     {
                         prefix = prefix + k.KeyChar.ToString();
-                        completions = RuntimeConsole.GetCompletions(prefix);
+                        completions = RuntimeGfx.GetCompletions(prefix);
                         return completions;
                     }
                     return null;
@@ -2111,6 +2111,10 @@ namespace Kiezel
             AddEditHandler(TerminalKeys.Back, CmdBackspace);
             AddEditHandler(TerminalKeys.Delete, CmdDeleteChar);
             AddEditHandler(TerminalKeys.Tab, CmdTabCompletion);
+            AddEditHandler(TerminalKeys.C | TerminalKeys.Control, CmdCopy);
+            AddEditHandler(TerminalKeys.X | TerminalKeys.Control, CmdCut);
+            AddEditHandler(TerminalKeys.V | TerminalKeys.Control, CmdPaste);
+
         }
 
         internal void AddScrollHandler(TerminalKeys key, ScrollHandler handler)

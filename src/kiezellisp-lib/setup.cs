@@ -20,6 +20,7 @@ namespace Kiezel
         public static bool AdaptiveCompilation = true;
         public static int CompilationThreshold = 50;
         public static bool ConsoleMode;
+        public static bool GraphicalMode;
         public static bool EmbeddedMode;
         public static bool DebugMode;
         public static bool Mono;
@@ -27,7 +28,7 @@ namespace Kiezel
         public static Dictionary<object, string> Documentation;
         public static long GentempCounter = 0;
         public static string HomeDirectory = Directory.GetCurrentDirectory();
-        public static bool InteractiveMode;
+        public static bool Repl;
         public static Package KeywordPackage;
         public static Package LispDocPackage;
         public static Package LispPackage;
@@ -285,8 +286,27 @@ namespace Kiezel
 #endif
 
             AddFeature("kiezellisp");
-            AddFeature(ConsoleMode ? "console-mode" : "graphical-mode");
-            
+
+            if (ConsoleMode)
+            {
+                AddFeature("console-mode");
+            }
+
+            if (GraphicalMode)
+            {
+                AddFeature("graphical-mode");
+            }
+
+            if (EmbeddedMode)
+            {
+                AddFeature("embedded-mode");
+            }
+
+            if (Repl)
+            {
+                AddFeature("repl");
+            }
+
             if (DebugMode)
             {
                 AddFeature("debug");
@@ -319,7 +339,7 @@ namespace Kiezel
             Symbols.Features.VariableValue = null;
             Symbols.HelpHook.VariableValue = null;
             Symbols.I.ConstantValue = Complex.ImaginaryOne;
-            Symbols.InteractiveMode.ConstantValue = InteractiveMode;
+            Symbols.InteractiveMode.ConstantValue = Repl;
             Symbols.It.VariableValue = null;
             Symbols.LazyImport.VariableValue = true;
             Symbols.LoadPath.ReadonlyValue = null;

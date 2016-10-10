@@ -16,10 +16,10 @@
 (load "core/struct")
 (load "core/match")
 (load "core/threading")
+
+#if graphical-mode
 (load "core/terminal")
+#endif
+
 (load "core/pprint")
 (load "core/help")
-
-
-
-

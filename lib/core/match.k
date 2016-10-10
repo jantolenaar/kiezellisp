@@ -6,7 +6,7 @@
 ;;;;
 
 (defpackage "lisp"
-    (:export 
+    (:export
         "case-match"
         "ecase-match"
         "if-match"
@@ -31,23 +31,23 @@
 (defmacro if-match (pattern expr then-form &optional else-form)
     (cond
         (else-form
-            `(case-match ,expr 
+            `(case-match ,expr
                 (,pattern ,then-form)
                 (otherwise ,else-form)))
         (true
-            `(case-match ,expr 
+            `(case-match ,expr
                 (,pattern ,then-form)))))
 
 (defmacro when-match (pattern expr &body forms)
-    `(case-match ,expr 
+    `(case-match ,expr
         (,pattern ,@forms)))
 
 (defun match-clause (clause)
     (let $variables (vector))
     (let pattern (first clause))
     (let original-body (rest clause))
-    (let body (if (< 1 (length original-body)) 
-                    `(do ,@original-body) 
+    (let body (if (< 1 (length original-body))
+                    `(do ,@original-body)
                     (first original-body)))
     (let test-form (encode-pattern $temp pattern))
     (cond
@@ -202,5 +202,3 @@
     `(do
         (let ,prop (attr ,obj ,name))
         ,(encode-and prop patterns)))
-
-

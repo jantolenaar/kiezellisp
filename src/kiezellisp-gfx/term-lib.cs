@@ -214,7 +214,7 @@ namespace Kiezel
             RefreshAllWindows();
             TerminalWindow.Show();
             TerminalWindow.Activate();
-            RuntimeConsole.ApplicationRun(TerminalWindow);
+            RuntimeGfx.ApplicationRun(TerminalWindow);
             //Runtime.Quit();
         }
 
@@ -356,7 +356,7 @@ namespace Kiezel
         internal static void Write(string str)
         {
             Out.Write(str);
-            RuntimeConsole.ProcessEvents();
+            RuntimeGfx.ProcessEvents();
         }
 
         internal static void Write(string fmt, params object[] args)

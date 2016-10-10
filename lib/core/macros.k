@@ -4,6 +4,7 @@
 ;;;; language forms (except loop and setf)
 ;;;;
 
+
 (defpackage "lisp"
     (:export
         "$tracing"
@@ -31,7 +32,6 @@
         "return-or-throw"
         "trace"
         "try-and-catch"
-        "try-match"
         "typecase"
         "using"
         "when"
@@ -47,9 +47,10 @@
 ;;; removable do; eliminates do block when it is not necessary.
 ;;;
 
+
 (defun declaration? (form)
     (and (cons? form)
-         (find (first form) '( let var hidden-var letfun future lazy multiple-let multiple-var))))
+         (find (first form) '(let var hidden-var letfun future lazy multiple-let multiple-var))))
 
 (defmacro do? (&body forms)
     (let count (length forms))
@@ -165,7 +166,7 @@
     (let sym (gentemp))
     `(do
         (let ,sym ,keyform)
-        (cond 
+        (cond
             ,@(map (partially-apply typecase-clause-helper sym) clauses)
             (true (throw-error "Unhandled typecase.")))))
 
@@ -322,7 +323,7 @@
         (let ,temp (as-multiple-elements ,form ,count))
         ,@(map-indexed do-var vars)))
 
-    
+
 (defmacro multiple-setf ((&rest places) form)
     (let temp (gentemp))
     (let count (length places))
@@ -331,4 +332,3 @@
     `(merging-do
         (let ,temp (as-multiple-elements ,form ,count))
         ,@(map-indexed do-var places)))
-

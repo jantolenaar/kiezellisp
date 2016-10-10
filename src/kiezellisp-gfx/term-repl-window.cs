@@ -93,7 +93,7 @@ namespace Kiezel
         {
             CmdEnd();
             Text = GetStringFromBuffer(HomePos, EndPos);
-            if (RuntimeConsole.IsCompleteSourceCode(Text))
+            if (RuntimeGfx.IsCompleteSourceCode(Text))
             {
                 Done = true;
             }

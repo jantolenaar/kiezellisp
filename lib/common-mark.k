@@ -20,6 +20,3 @@
 
 (defun convert-to-html (str)
     (common-mark-converter:convert str null))
-    
-
-

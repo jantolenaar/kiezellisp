@@ -8,16 +8,15 @@ using System.Reflection;
 using System.Threading;
 using System.Linq;
 
-[assembly: CLSCompliant(false)]
 
 namespace Kiezel
 {
     [RestrictedImport]
-    public partial class RuntimeConsole
+    public partial class RuntimeGfx
     {
         public static string[] ReplCommands = new string[]
         {
-            ":clear", ":continue", ":globals", ":history", ":quit",
+            ":clear", ":continue", ":globals", ":quit",
             ":abort", ":backtrace", ":variables", ":$variables",
             ":top", ":exception", ":Exception", ":force",
             ":describe", ":reset", ":time"
@@ -64,17 +63,6 @@ namespace Kiezel
             {
                 state = oldState;
             }
-        }
-
-        public static void InsertExternalCommand(string text)
-        {
-            //le.SetExternalInput( text.ConvertToExternalLineEndings() );
-        }
-
-        [Lisp("set-console-key-binding")]
-        public static void SetConsoleKeyBinding(Symbol key, Cons modifiers, object handler)
-        {
-            //le.SetKeyBinding( key, modifiers, handler );
         }
 
         public static List<string> GetCompletions(string prefix)
@@ -165,14 +153,6 @@ namespace Kiezel
                         Terminal.History.Clear();
                         state = new Stack<ThreadContextState>();
                         state.Push(Runtime.SaveStackAndFrame());
-                        break;
-                    }
-                    case ":history":
-                    {
-                        for (int i = 0; i < Terminal.History.Count; ++i)
-                        {
-                            Terminal.WriteLine("[{0}] {1}", i + 1, Terminal.History.Line(i));
-                        }
                         break;
                     }
                     case ":abort":
@@ -402,7 +382,7 @@ namespace Kiezel
                         var scriptFile = commandOptionArgument;
                         commandOptionArgument = "";
                         Runtime.Run(scriptFile, Symbols.LoadPrintKeyword, false, Symbols.LoadVerboseKeyword, false);
-                        if (!Runtime.DebugMode)
+                        if (!Runtime.Repl)
                         {
                             Runtime.Exit();
                         }
@@ -495,13 +475,14 @@ namespace Kiezel
             }
         }
 
-        public static void RunConsoleMode(CommandLineOptions options)
+        public static void RunGuiReplMode(CommandLineOptions options)
         {
-            Runtime.ConsoleMode = true;
+            Runtime.ConsoleMode = false;
+            Runtime.GraphicalMode = true;
             Runtime.EmbeddedMode = false;
             Runtime.DebugMode = options.Debug;
+            Runtime.Repl = options.Repl;
             Runtime.OptimizerEnabled = !Runtime.DebugMode;
-            Runtime.InteractiveMode = Runtime.DebugMode;
             Runtime.ScriptName = options.ScriptName;
             Runtime.UserArguments = options.UserArguments;
 
@@ -513,6 +494,7 @@ namespace Kiezel
                 Terminal.WriteLine(fileVersion.LegalCopyright);
                 Terminal.WriteLine("Type `help` for help on top-level commands");
             }
+
             ReadEvalPrintLoop(commandOptionArgument: options.ScriptName, initialized: false);
         }
 

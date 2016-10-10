@@ -9,7 +9,7 @@ using System.Runtime.InteropServices;
 [assembly: AssemblyDescription("")]
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("Tolenaar IT Services")]
-[assembly: AssemblyProduct("Kiezellisp")]
+[assembly: AssemblyProduct("Kiezellisp Graphics")]
 [assembly: AssemblyCopyright("Copyright \u00a9 Jan Tolenaar 2009-2016")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]

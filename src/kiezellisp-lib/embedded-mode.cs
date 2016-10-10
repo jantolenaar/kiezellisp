@@ -13,12 +13,13 @@ namespace Kiezel
     public class EmbeddedMode
     {
 
-        public static void Init(bool consoleMode = true, bool debugMode = false)
+        public static void Init(bool debugMode = false)
         {
             Runtime.EmbeddedMode = true;
+            Runtime.GraphicalMode = false;
+            Runtime.ConsoleMode = false;
             Runtime.DebugMode = debugMode;
-            Runtime.ConsoleMode = consoleMode;
-            Runtime.InteractiveMode = false;
+            Runtime.Repl = false;
             Runtime.OptimizerEnabled = !Runtime.DebugMode;
             Runtime.Reset();
             Runtime.RestartLoadFiles(0);

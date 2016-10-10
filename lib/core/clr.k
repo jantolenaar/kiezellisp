@@ -30,7 +30,6 @@
 (import "System.Boolean")
 (import "System.Byte")
 (import "System.Char")
-(import "System.Drawing.Color")
 (import "System.Convert")
 (import "System.DateTime")
 (import "System.Decimal")
@@ -60,6 +59,9 @@
 (import "System.Text.RegularExpressions.RegexOptions")
 (import "System.TimeSpan")
 
+#if graphical-mode
+(import "System.Drawing.Color")
+#endif
 
 (import "Kiezel.AssertFailedException")
 (import "Kiezel.Cons")

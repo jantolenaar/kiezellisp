@@ -224,12 +224,8 @@ namespace Kiezel
                     return null;
                 }
 
-                double val;
+                var val = token.ParseNumber();
 
-                if (!double.TryParse(token, System.Globalization.NumberStyles.Any, null, out val))
-                {
-                    throw new LispException("json: invalid number: {0}", token);
-                }
                 return val;
             }
 

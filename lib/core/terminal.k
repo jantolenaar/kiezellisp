@@ -1,5 +1,6 @@
 ;;;; Copyright (c) Jan Tolenaar. See the file LICENSE for details.
 
+
 (import "Kiezel.Terminal")
 (import "Kiezel.Window")
 (import "Kiezel.TerminalKeys")
@@ -12,18 +13,18 @@
 
 (in-package "window")
 
-(defun open (&key (left 0) (top 0) 
+(defun open (&key (left 0) (top 0)
                   (width 0) (height 0) (buffer-height -1)
-                  (parent null) 
-                  (border false) 
+                  (parent null)
+                  (border false)
                   (caption null)
                   (fore-color (terminal:default-fore-color))
                   (back-color (terminal:default-back-color))
-                  (scroll-enabled missing-value) 
+                  (scroll-enabled missing-value)
                   (tab-completion-enabled missing-value)
                   (auto-refresh-enabled missing-value)
                   (html-enabled missing-value))
-    (let win (window:create left top 
+    (let win (window:create left top
                             width height buffer-height
                             fore-color back-color
                             parent border))
@@ -37,5 +38,3 @@
     (when (supplied? html-enabled)
         (setf (.html-enabled win) html-enabled))
     win)
-
-  

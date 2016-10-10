@@ -5,10 +5,10 @@
 ;;; kiezellisp-init.k
 ;;;
 
-#+(and unix graphical-mode)
+#+(and unix (not repl))
 (setq $stderr "/tmp/stdlog")
 
-#+(and windows graphical-mode)
+#+(and windows (not repl))
 (setq $stderr "d:/temp/stdlog")
 
 #if unix
@@ -38,6 +38,6 @@
 (require "unit-test")
 
 (apply set-help-path (map make-path (list
-                "help" 
+                "kiezellisp/help" 
                 "/home/jan/documents/help")))
 

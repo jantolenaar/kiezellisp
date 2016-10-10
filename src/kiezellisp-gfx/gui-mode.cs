@@ -11,13 +11,15 @@ using System.Threading;
 namespace Kiezel
 {
 
-    public partial class RuntimeConsole
+    public partial class RuntimeGfx
     {
-        public static void RunFormsMode(CommandLineOptions options)
+        public static void RunGuiMode(CommandLineOptions options)
         {
             Runtime.ConsoleMode = false;
-            Runtime.InteractiveMode = false;
+            Runtime.GraphicalMode = true;
+            Runtime.EmbeddedMode = false;
             Runtime.DebugMode = options.Debug;
+            Runtime.Repl = options.Repl;
             Runtime.OptimizerEnabled = !Runtime.DebugMode;
             Runtime.ScriptName = options.ScriptName;
             Runtime.UserArguments = options.UserArguments;

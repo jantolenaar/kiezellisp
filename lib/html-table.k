@@ -14,7 +14,7 @@
 
 (def MAGIC-NUMBER -424242)
 
-(defstruct column 
+(defstruct column
     "Defines a column of the html table"
     binder
     width
@@ -79,7 +79,7 @@
 
 (defun format-html-list (column table)
     (<ul>
-        (map (λr (<li> (elt r column))) table)))
+        (map #(<li> (elt %1 column)) table)))
 
 (defun get-default-stylesheet ()
 

@@ -16,7 +16,7 @@
 (in-package "lisp")
 
 (defmacro task (&body forms)
-    `(system:create-task (lambda null ,@forms)))
+    `(system:create-task (lambda () ,@forms)))
 
 (defmacro generator (&body forms)
     `(system:create-generator (lambda () ,@forms)))
@@ -30,7 +30,7 @@
     `(do
         ,@decls
         (list ,@vars)))
-        
+
 
 (defmacro delay (&body forms)
     `(system:create-delayed-expression (lambda () ,@forms)))
