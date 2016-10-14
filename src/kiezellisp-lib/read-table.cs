@@ -232,6 +232,16 @@ namespace Kiezel
         }
 
         [Lisp("set-dispatch-macro-character")]
+        public static void SetDispatchMacroCharacter(string dispatchChar, string subChar, IApply handler, params object[] kwargs)
+        {
+            ReadtableHandler2 proc = (reader, ch, arg) =>
+            {
+                var stream = reader.Stream;
+                return Runtime.Funcall(handler, stream, ch, arg);
+            };
+            SetDispatchMacroCharacter(dispatchChar, subChar, proc, kwargs);
+        }
+
         public static void SetDispatchMacroCharacter(string dispatchChar, string subChar, ReadtableHandler2 handler, params object[] kwargs)
         {
             var args = ParseKwargs(kwargs, new string[] { "readtable" }, GetReadtable());
@@ -240,6 +250,16 @@ namespace Kiezel
         }
 
         [Lisp("set-macro-character")]
+        public static void SetMacroCharacter(string dispatchChar, IApply handler, params object[] kwargs)
+        {
+            ReadtableHandler proc = (reader, ch) =>
+            {
+                var stream = reader.Stream;
+                return Runtime.Funcall(handler, stream, ch);
+            };
+            SetMacroCharacter(dispatchChar, proc, kwargs);
+        }
+
         public static void SetMacroCharacter(string dispatchChar, ReadtableHandler handler, params object[] kwargs)
         {
             var args = ParseKwargs(kwargs, new string[] { "non-terminating?", "readtable" }, false, GetReadtable());

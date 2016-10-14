@@ -67,7 +67,6 @@
 (import "Kiezel.Cons")
 (import "Kiezel.FileExtensions" :extends-package-name "file")
 (import "Kiezel.LispException")
-(import "Kiezel.LispReader")
 (import "Kiezel.PathExtensions" :extends-package-name "path")
 (import "Kiezel.Prototype")
 (import "Kiezel.StringExtensions" :extends-package-name "string")

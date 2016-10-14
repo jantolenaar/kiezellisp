@@ -51,9 +51,11 @@ namespace Kiezel
 
         public bool UsesTilde = false;
 
-        public bool UsesReturn = false;
+        public bool UsesTildeHere = false;
 
         public List<ScopeEntry> Variables = new List<ScopeEntry>();
+
+        public bool AnyLabelsCreated;
 
         public AnalysisScope()
         {
@@ -181,6 +183,14 @@ namespace Kiezel
             {
                 ScopeEntry item;
 
+                if (sc.IsBlockScope && sym == Symbols.Tilde)
+                {
+                    if (sc.Tilde == null)
+                    {
+                        sc.Tilde = sc.DefineNativeLocal(Symbols.Tilde, ScopeFlags.All);
+                    }
+                }
+
                 for (int i = sc.Variables.Count - 1; i >= 0; --i)
                 {
                     item = sc.Variables[i];
@@ -194,6 +204,7 @@ namespace Kiezel
                         if (LexicalSymEqual(sym, Symbols.Tilde))
                         {
                             UsesTilde = true;
+                            UsesTildeHere = true;
                         }
 
                         if (item.Index != -1 || item.MacroValue != null || item.SymbolMacroValue != null)

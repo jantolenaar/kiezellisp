@@ -554,6 +554,8 @@ namespace Kiezel
 
         public static Symbol Args;
 
+        public static Symbol Array;
+
         public static Symbol AsVector;
 
         public static Symbol Base;
@@ -822,6 +824,8 @@ namespace Kiezel
 
         public static Symbol PrintVectorWithBrackets;
 
+        public static Symbol Prog;
+
         public static Symbol QuasiQuote;
 
         public static Symbol Quote;
@@ -898,8 +902,6 @@ namespace Kiezel
 
         public static Symbol SymbolMacro;
 
-        public static Symbol TagBody;
-
         public static Symbol Target;
 
         public static Symbol Temp;
@@ -942,6 +944,7 @@ namespace Kiezel
             Append = MakeSymbol("append");
             Apply = MakeSymbol("apply");
             Args = MakeSymbol("__args__");
+            Array = MakeSymbol("array");
             AsVector = MakeSymbol("as-vector");
             Base = MakeSymbol(":base");
             BitAnd = MakeSymbol("bit-and");
@@ -1069,6 +1072,7 @@ namespace Kiezel
             PrintPrototypeWithBraces = MakeSymbol("$print-prototype-with-braces");
             PrintShortSymbolNames = MakeSymbol("$print-short-symbol-names");
             PrintVectorWithBrackets = MakeSymbol("$print-vector-with-brackets");
+            Prog = MakeSymbol("prog");
             QuasiQuote = MakeSymbol("quasi-quote");
             Quote = MakeSymbol("quote");
             RawParams = MakeSymbol("&rawparams");
@@ -1105,7 +1109,6 @@ namespace Kiezel
             Stream = MakeSymbol(":stream");
             StructurallyEqual = MakeSymbol("structurally-equal");
             SymbolMacro = MakeSymbol("symbol-macro");
-            TagBody = MakeSymbol("tagbody");
             Target = MakeSymbol("__target__");
             Temp = MakeSymbol(@"__temp__");
             Throw = MakeSymbol("throw");

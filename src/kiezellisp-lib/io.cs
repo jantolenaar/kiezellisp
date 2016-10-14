@@ -6,11 +6,23 @@ using System.IO;
 using System.Linq;
 using System.Numerics;
 using System.Text.RegularExpressions;
+using System.Runtime.CompilerServices;
 
 namespace Kiezel
 {
     public partial class Runtime
     {
+        public static ConditionalWeakTable<TextReader,LispReader> ReaderCache = new ConditionalWeakTable<TextReader, LispReader>();
+
+        public static LispReader AcquireReader(TextReader stream)
+        {
+            // Allow single-threaded but nested use of textreader caused by custom reader macro handlers.
+            var stream2 = stream != null ? stream : (TextReader)GetDynamic(Symbols.StdIn);
+            var reader = ReaderCache.GetOrCreateValue(stream2);
+            reader.Stream = stream2;
+            return reader;
+        }
+
         public static CharacterRepresentation[] CharacterTable = new CharacterRepresentation[]
         {
             new CharacterRepresentation('\0', @"\0", "null"),
@@ -97,22 +109,6 @@ namespace Kiezel
             Print("\n");
         }
 
-        static LispReader ConvertToLispReader(object stream)
-        {
-            if (stream == null)
-            {
-                return (LispReader)GetDynamic(Symbols.StdIn);
-            }
-            else if (stream is TextReader)
-            {
-                return new LispReader((TextReader)stream);
-            }
-            else
-            {
-                return (LispReader)stream;
-            }
-        }
-
         [Lisp("read-char")]
         public static object ReadChar()
         {
@@ -120,21 +116,21 @@ namespace Kiezel
         }
 
         [Lisp("read-char")]
-        public static object ReadChar(LispReader stream)
+        public static object ReadChar(TextReader stream)
         {
             return ReadChar(stream, true);
         }
 
         [Lisp("read-char")]
-        public static object ReadChar(LispReader stream, object eofErrorp)
+        public static object ReadChar(TextReader stream, object eofErrorp)
         {
             return ReadChar(stream, eofErrorp, null);
         }
 
         [Lisp("read-char")]
-        public static object ReadChar(LispReader stream, object eofErrorp, object eofValue)
+        public static object ReadChar(TextReader stream, object eofErrorp, object eofValue)
         {
-            var parser = ConvertToLispReader(stream);
+            var parser = AcquireReader(stream);
             var eofError = ToBool(eofErrorp);
             var value = parser.ReadChar();
             if (parser.IsEof)
@@ -158,34 +154,34 @@ namespace Kiezel
         }
 
         [Lisp("unread-char")]
-        public static void UnreadChar(LispReader stream)
+        public static void UnreadChar(TextReader stream)
         {
-            var parser = ConvertToLispReader(stream);
+            var parser = AcquireReader(stream);
             parser.UnreadChar();
         }
 
         [Lisp("peek-char")]
-        public static object PeekChar(LispReader stream)
+        public static object PeekChar(TextReader stream)
         {
             return PeekChar(stream, null);
         }
 
         [Lisp("peek-char")]
-        public static object PeekChar(LispReader stream, object peekType)
+        public static object PeekChar(TextReader stream, object peekType)
         {
             return PeekChar(stream, peekType, true);
         }
 
         [Lisp("peek-char")]
-        public static object PeekChar(LispReader stream, object peekType, object eofErrorp)
+        public static object PeekChar(TextReader stream, object peekType, object eofErrorp)
         {
             return PeekChar(stream, peekType, eofErrorp, null);
         }
 
         [Lisp("peek-char")]
-        public static object PeekChar(LispReader stream, object peekType, object eofErrorp, object eofValue)
+        public static object PeekChar(TextReader stream, object peekType, object eofErrorp, object eofValue)
         {
-            var parser = ConvertToLispReader(stream);
+            var parser = AcquireReader(stream);
             var eofError = ToBool(eofErrorp);
             var value = parser.PeekChar(peekType);
             if (parser.IsEof)
@@ -209,21 +205,21 @@ namespace Kiezel
         }
 
         [Lisp("read")]
-        public static object Read(LispReader stream)
+        public static object Read(TextReader stream)
         {
             return Read(stream, true);
         }
 
         [Lisp("read")]
-        public static object Read(LispReader stream, object eofErrorp)
+        public static object Read(TextReader stream, object eofErrorp)
         {
             return Read(stream, eofErrorp, null);
         }
 
         [Lisp("read")]
-        public static object Read(LispReader stream, object eofErrorp, object eofValue)
+        public static object Read(TextReader stream, object eofErrorp, object eofValue)
         {
-            var parser = ConvertToLispReader(stream);
+            var parser = AcquireReader(stream);
             var eofError = ToBool(eofErrorp);
             var value = parser.Read(EOF.Value);
             if (value == EOF.Value)
@@ -241,24 +237,24 @@ namespace Kiezel
         }
 
         [Lisp("read-line")]
-        public static object ReadLine(LispReader stream)
+        public static object ReadLine(TextReader stream)
         {
             return ReadLine(stream, true);
         }
 
         [Lisp("read-line")]
-        public static object ReadLine(LispReader stream, object eofErrorp)
+        public static object ReadLine(TextReader stream, object eofErrorp)
         {
             return ReadLine(stream, eofErrorp, null);
         }
 
         [Lisp("read-line")]
-        public static object ReadLine(LispReader stream, object eofErrorp, object eofValue)
+        public static object ReadLine(TextReader stream, object eofErrorp, object eofValue)
         {
-            var parser = ConvertToLispReader(stream);
+            var parser = AcquireReader(stream);
             var eofError = ToBool(eofErrorp);
-            var value = parser.ReadLine(EOF.Value);
-            if (value == EOF.Value)
+            var value = parser.ReadLine();
+            if (value == null)
             {
                 if (eofError)
                 {
@@ -279,18 +275,18 @@ namespace Kiezel
         }
 
         [Lisp("read-all")]
-        public static object ReadAll(LispReader stream)
+        public static Cons ReadAll(TextReader stream)
         {
-            var parser = ConvertToLispReader(stream);
+            var parser = AcquireReader(stream);
             return parser.ReadAll();
         }
 
         [Lisp("read-all-from-string")]
         public static Cons ReadAllFromString(string text)
         {
-            using (var parser = OpenLispReaderFromString(text))
+            using (var stream = new StringReader(text))
             {
-                return parser.ReadAll();
+                return ReadAll(stream);
             }
         }
 
@@ -301,9 +297,9 @@ namespace Kiezel
         }
 
         [Lisp("read-delimited-list")]
-        public static object ReadDelimitedList(string terminator, LispReader stream)
+        public static object ReadDelimitedList(string terminator, TextReader stream)
         {
-            var parser = ConvertToLispReader(stream);
+            var parser = AcquireReader(stream);
             var value = parser.ReadDelimitedList(terminator);
             return value;
         }
@@ -323,10 +319,10 @@ namespace Kiezel
         [Lisp("read-from-string")]
         public static object ReadFromString(string text, object eofErrorp, object eofValue)
         {
-            using (var parser = OpenLispReaderFromString(text))
+            using (var stream = new StringReader(text))
             {
                 var eofError = ToBool(eofErrorp);
-                var value = Read(parser, false, EOF.Value);
+                var value = Read(stream, false, EOF.Value);
                 if (value == EOF.Value)
                 {
                     if (eofError)
@@ -411,26 +407,6 @@ namespace Kiezel
                 Write(item, kwargs2.ToArray());
                 return stream.ToString();
             }
-        }
-
-        [Lisp("open-lisp-reader")]
-        public static LispReader OpenLispReader(TextReader stream)
-        {
-            return new LispReader(stream);
-        }
-
-        [Lisp("open-lisp-reader")]
-        public static LispReader OpenLispReader(string path)
-        {
-            var stream = File.OpenText(path);
-            return new LispReader(stream);
-        }
-
-        [Lisp("open-lisp-reader-from-string")]
-        public static LispReader OpenLispReaderFromString(string text)
-        {
-            var stream = new StringReader(text);
-            return new LispReader(stream);
         }
 
         public static TextWriter ConvertToTextWriter(object stream)
@@ -842,9 +818,9 @@ namespace Kiezel
             var scriptDirectory = NormalizePath(Path.GetDirectoryName(path));
             var scriptName = Path.GetFileName(path);
 
-            using (var reader = OpenLispReader(path))
+            using (var stream = File.OpenText(path))
             {
-                TryLoadText(reader, scriptDirectory, scriptName, loadVerbose, loadPrint);
+                TryLoadText(stream, scriptDirectory, scriptName, loadVerbose, loadPrint);
             }
 
             return true;
@@ -871,7 +847,7 @@ namespace Kiezel
             }
         }
 
-        public static void TryLoadText(LispReader reader, string newDir, string scriptName, bool loadVerbose, bool loadPrint)
+        public static void TryLoadText(TextReader stream, string newDir, string scriptName, bool loadVerbose, bool loadPrint)
         {
             var saved = SaveStackAndFrame();
             var env = MakeExtendedEnvironment();
@@ -893,6 +869,7 @@ namespace Kiezel
 
             try
             {
+                var reader = AcquireReader(stream);
                 var forms = RewriteCompileTimeBranch(reader.ReadAllEnum());
 
                 foreach (object statement in forms)
@@ -907,8 +884,8 @@ namespace Kiezel
                         var result = Execute(code);
                         if (loadPrint)
                         {
-                            var stream = GetDynamic(Symbols.StdErr);
-                            PrintLogColor(stream, "info", ToPrintString(result));
+                            var err = GetDynamic(Symbols.StdErr);
+                            PrintLogColor(err, "info", ToPrintString(result));
                         }
                     }
                 }

@@ -17,8 +17,13 @@ namespace Kiezel
         public static ThreadContext _Context = null;
 
         public static Dictionary<Type, List<Type>> AbstractTypes;
+        #if DEBUG
+        public static bool AdaptiveCompilation = false;
+        public static int CompilationThreshold = 50;
+        #else
         public static bool AdaptiveCompilation = true;
         public static int CompilationThreshold = 50;
+        #endif
         public static bool ConsoleMode;
         public static bool GraphicalMode;
         public static bool EmbeddedMode;

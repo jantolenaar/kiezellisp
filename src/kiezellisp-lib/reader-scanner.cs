@@ -13,23 +13,22 @@ namespace Kiezel
     [RestrictedImport]
     public class LispReader: IDisposable
     {
-        private TextReader stream;
-        private bool autoClose;
+        public TextReader Stream;
 
         private int col = 0;
         private int line = 0;
         private int symbolSuppression = 0;
-        private int lastChar;
+        private int lastChar = 0;
         private bool haveUnreadChar = false;
         private StringBuilder lineBuffer = new StringBuilder();
         private bool haveCompleteLine = false;
 
         void IDisposable.Dispose()
         {
-            if (stream != null)
+            if (Stream != null)
             {
-                stream.Close();
-                stream = null;
+                Stream.Close();
+                Stream = null;
             }
         }
 
@@ -39,13 +38,6 @@ namespace Kiezel
             {
                 return lastChar == -1;
             }
-        }
-
-        public LispReader(TextReader stream)
-        {
-            this.stream = stream;
-            this.autoClose = true;
-            this.lastChar = (stream == null) ? -1 : 0;
         }
 
         public IEnumerable ReadAllEnum()
@@ -116,7 +108,7 @@ namespace Kiezel
 
         public char ReadChar()
         {
-            if (lastChar == -1 || stream == null)
+            if (lastChar == -1 || Stream == null)
             {
                 return (char)0;
             }
@@ -127,14 +119,10 @@ namespace Kiezel
             }
             else
             {
-                int ch = stream.Read();
+                int ch = Stream.Read();
                 if (ch == -1)
                 {
-                    if (autoClose)
-                    {
-                        stream.Close();
-                    }
-                    stream = null;
+                    Stream = null;
                     haveCompleteLine = true;
                     lastChar = ch;
                     return (char)0;
@@ -217,7 +205,7 @@ namespace Kiezel
             }
         }
 
-        public object ReadLine(object eofValue = null)
+        public string ReadLine()
         {
             var buf = new StringBuilder();
             while (true)
@@ -227,7 +215,7 @@ namespace Kiezel
                 {
                     if (buf.Length == 0)
                     {
-                        return eofValue;
+                        return null;
                     }
                     else
                     {
@@ -822,7 +810,7 @@ namespace Kiezel
                     {
                         MakeScannerException("No terminator after #q expression");
                     }
-                    terminator = ((string)line).Trim();
+                    terminator = line.Trim();
                     if (terminator == "")
                     {
                         MakeScannerException("No terminator after #q expression");

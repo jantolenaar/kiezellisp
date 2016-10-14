@@ -688,9 +688,9 @@ namespace Kiezel
         public static void LoadClipboardData()
         {
             var code = GetClipboardData();
-            using (var reader = Runtime.OpenLispReaderFromString(code))
+            using (var stream = new StringReader(code))
             {
-                Runtime.TryLoadText(reader, null, null, false, false);
+                Runtime.TryLoadText(stream, null, null, false, false);
             }
         }
 
@@ -698,9 +698,9 @@ namespace Kiezel
         public static void RunClipboardData()
         {
             var code = GetClipboardData();
-            using (var reader = Runtime.OpenLispReaderFromString(code))
+            using (var stream = new StringReader(code))
             {
-                Runtime.TryLoadText(reader, null, null, false, false);
+                Runtime.TryLoadText(stream, null, null, false, false);
                 var main = Symbols.Main.Value as IApply;
                 if (main != null)
                 {

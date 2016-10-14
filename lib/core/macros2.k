@@ -9,7 +9,6 @@
         "psetf"
         "lambda*"
         "defun*"
-        "tail-recursion"
         ))
 
 (in-package "lisp")
@@ -46,7 +45,7 @@
     `(ecase (length ,sym)
         ,@(map #(argument-case-branch sym %1) cases)))
 
-(defun argument-case-branch (sym branch)    
+(defun argument-case-branch (sym branch)
     (let names (first branch))
     (let body (rest branch))
     `(,(length names)
@@ -60,20 +59,3 @@
 (defmacro defun* (name &rest branches)
     `(defun ,name (&rawparams args)
         ,(argument-case 'args branches)))
-
-;;;
-;;; tail-recursion
-;;;
-
-(defmacro tail-recursion ((&rest bindings) &body forms)
-    (let temp (gentemp))
-    (let names (map first bindings))
-    (let values (map second bindings))
-    `(do
-        (array ,@values)
-        (label %recursion-label)
-        (let ,temp ~)
-        (do
-            ,@(map-indexed #(list 'var %2 (list 'elt temp %1)) names)
-            (do ,@forms))))
-

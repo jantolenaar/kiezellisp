@@ -1,5 +1,12 @@
 # Change Log
 
+## 2016/10/13
+
+*   Renamed macro `tail-recursion` to special-form `prog`.
+*   Made LispReader invisible: use TextReader instead of LispReader with
+    Kiezellisp `read` functions.
+*   Removed `open-lisp-reader`.
+
 ## 2016/10/09
 
 *   Renamed `kiezellisp` to `kiezellisp-gfx`.
@@ -22,7 +29,7 @@
 *   Removed `tailcall`.
 *   Added special form `recur` (tail recursion).
 *   Added macro `tail-recursion`.
-*   Added `&raw` parameter modifier.
+*   Added `&rawparams` parameter modifier.
 *   Changed multi-arity functions from special form to macro.
 *   Refactored `loop` macro.
 

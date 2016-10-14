@@ -258,9 +258,7 @@
 ;;;
 
 (defmacro with-input-from-string ((variable text) &body forms)
-    (let temp (gentemp))
-    `(using (,temp (string-reader:new ,text))
-        (let ,variable (open-lisp-reader ,temp))
+    `(using (,variable (string-reader:new ,text))
         ,@forms))
 
 (defmacro with-output-to-string ((variable) &body forms)
