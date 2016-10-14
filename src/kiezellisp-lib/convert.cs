@@ -405,7 +405,7 @@ namespace Kiezel
 
         public static Delegate ConvertToDelegate(Type type, IApply closure)
         {
-            var expr = RuntimeHelpers.GetDelegateExpression(Expression.Constant(closure), type);
+            var expr = GetDelegateExpression(Expression.Constant(closure), type);
             return expr.Compile();
         }
 

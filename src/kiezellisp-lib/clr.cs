@@ -19,7 +19,7 @@ namespace Kiezel
         public static object GetStaticPropertyValue(Type type, object ident)
         {
             var flags = BindingFlags.IgnoreCase | BindingFlags.Static | BindingFlags.Public;
-            var name = Runtime.GetDesignatedString(ident).LispToPascalCaseName();
+            var name = GetDesignatedString(ident).LispToPascalCaseName();
             var member = type.GetProperty(name, flags);
             if (member != null)
             {

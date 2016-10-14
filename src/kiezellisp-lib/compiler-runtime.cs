@@ -209,7 +209,7 @@ namespace Kiezel
 
             if (value is Symbol || value is string)
             {
-                var name = Runtime.GetDesignatedString(value).LispToPascalCaseName();
+                var name = GetDesignatedString(value).LispToPascalCaseName();
                 var field = enumType.GetFields().Where(f => String.Compare(f.Name, name, true) == 0).First();
                 if (field == null)
                 {

@@ -237,7 +237,7 @@ namespace Kiezel
             ReadtableHandler2 proc = (reader, ch, arg) =>
             {
                 var stream = reader.Stream;
-                return Runtime.Funcall(handler, stream, ch, arg);
+                return Funcall(handler, stream, ch, arg);
             };
             SetDispatchMacroCharacter(dispatchChar, subChar, proc, kwargs);
         }
@@ -255,7 +255,7 @@ namespace Kiezel
             ReadtableHandler proc = (reader, ch) =>
             {
                 var stream = reader.Stream;
-                return Runtime.Funcall(handler, stream, ch);
+                return Funcall(handler, stream, ch);
             };
             SetMacroCharacter(dispatchChar, proc, kwargs);
         }
@@ -276,7 +276,7 @@ namespace Kiezel
 
         public static Readtable GetReadtable()
         {
-            var readtable = (Readtable)Runtime.GetDynamic(Symbols.Readtable);
+            var readtable = (Readtable)GetDynamic(Symbols.Readtable);
             return readtable;
         }
 

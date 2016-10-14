@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
+using System.Runtime.CompilerServices;
 
 namespace Kiezel
 {
@@ -513,11 +514,11 @@ namespace Kiezel
             return CompileBody(Cdr(form), scope);
         }
 
-        public static Expression CompileDynamicExpression(System.Runtime.CompilerServices.CallSiteBinder binder, Type returnType, IEnumerable<Expression> args)
+        public static Expression CompileDynamicExpression(CallSiteBinder binder, Type returnType, IEnumerable<Expression> args)
         {
             if (AdaptiveCompilation)
             {
-                return Microsoft.Scripting.Ast.Utils.LightDynamic(binder, returnType, new System.Runtime.CompilerServices.ReadOnlyCollectionBuilder<Expression>(args));
+                return Microsoft.Scripting.Ast.Utils.LightDynamic(binder, returnType, new ReadOnlyCollectionBuilder<Expression>(args));
             }
             else
             {
@@ -891,9 +892,21 @@ namespace Kiezel
             }
 
             var value = Compile(Third(form), scope);
-            Expression code;
 
-            if (labelScope != scope)
+            // GOTO expressions are void. The function EnsureObjectResult can handle 
+            // the conversion but here I do it explicitly to take case of different
+            // scopes.
+
+            if (labelScope == scope)
+            {
+                var code = Expression.Block(
+                               typeof(object),
+                               Expression.Goto(label, value),
+                               CompileLiteral(null));
+                
+                return code;
+            }
+            else
             {
                 if (labelScope.TagBodySaved == null)
                 {
@@ -902,17 +915,17 @@ namespace Kiezel
 
                 var result = Expression.Parameter(typeof(object), "result");
 
-                value = Expression.Block(
-                    typeof(object),
-                    new ParameterExpression[] { result },
-                    Expression.Assign(result, value),
-                    CallRuntime(RestoreStackAndFrameMethod, labelScope.TagBodySaved),
-                    RuntimeHelpers.EnsureObjectResult(result));
+                var code = Expression.Block(
+                               typeof(object),
+                               new ParameterExpression[] { result },
+                               Expression.Assign(result, value),
+                               CallRuntime(RestoreStackAndFrameMethod, labelScope.TagBodySaved),
+                               Expression.Goto(label, result),
+                               CompileLiteral(null));
+
+                return code;
             }
 
-            code = Expression.Goto(label, value);
-
-            return RuntimeHelpers.EnsureObjectResult(code);
         }
 
         public static Expression CompileHiddenVar(Cons form, AnalysisScope scope)

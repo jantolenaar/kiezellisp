@@ -383,7 +383,7 @@ namespace Kiezel
             var index = Expression.Constant(binder.Name);
             var expr = Expression.Call(Expression.Convert(this.Expression, typeof(Prototype)), method, index);
             var restrictions = BindingRestrictions.GetTypeRestriction(this.Expression, typeof(Prototype));
-            return new DynamicMetaObject(RuntimeHelpers.EnsureObjectResult(expr), restrictions);
+            return new DynamicMetaObject(Runtime.EnsureObjectResult(expr), restrictions);
         }
 
         public override DynamicMetaObject BindGetMember(GetMemberBinder binder)
@@ -393,7 +393,7 @@ namespace Kiezel
             var index = Expression.Constant(binder.Name);
             var expr = Expression.Call(Expression.Convert(this.Expression, typeof(Prototype)), method, index);
             var restrictions = BindingRestrictions.GetTypeRestriction(this.Expression, typeof(Prototype));
-            return new DynamicMetaObject(RuntimeHelpers.EnsureObjectResult(expr), restrictions);
+            return new DynamicMetaObject(Runtime.EnsureObjectResult(expr), restrictions);
         }
 
         public override DynamicMetaObject BindSetMember(SetMemberBinder binder, DynamicMetaObject value)
@@ -402,7 +402,7 @@ namespace Kiezel
             var index = Expression.Constant(binder.Name);
             var expr = Expression.Call(Expression.Convert(this.Expression, typeof(Prototype)), method, index, value.Expression);
             var restrictions = BindingRestrictions.GetTypeRestriction(this.Expression, typeof(Prototype));
-            return new DynamicMetaObject(RuntimeHelpers.EnsureObjectResult(expr), restrictions);
+            return new DynamicMetaObject(Runtime.EnsureObjectResult(expr), restrictions);
         }
     }
 

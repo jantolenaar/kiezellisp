@@ -62,7 +62,7 @@ namespace Kiezel
             DynamicMetaObject target, DynamicMetaObject[] indexes,
             DynamicMetaObject errorSuggestion)
         {
-            var deferArgs = RuntimeHelpers.CheckDeferArgs(target, indexes);
+            var deferArgs = Runtime.CheckDeferArgs(target, indexes);
             if (deferArgs != null)
             {
                 return Defer(deferArgs);
@@ -79,19 +79,19 @@ namespace Kiezel
             //
             // Conversions created in GetIndexExpression must be consistent with
             // restrictions made in GetTargetArgsRestrictions.
-            var indexingExpr = RuntimeHelpers.GetIndexingExpression(target, indexes);
+            var indexingExpr = Runtime.GetIndexingExpression(target, indexes);
 
             if (indexingExpr == null)
             {
                 return errorSuggestion ??
-                RuntimeHelpers.CreateThrow(
+                Runtime.CreateThrow(
                     target, indexes, BindingRestrictions.Empty,
                     typeof(InvalidOperationException),
-                    "No get indexer found: " + target.LimitType.FullName + RuntimeHelpers.CollectParameterInfo(target, indexes));
+                    "No get indexer found: " + target.LimitType.FullName + Runtime.CollectParameterInfo(target, indexes));
             }
 
-            var restrictions = RuntimeHelpers.GetTargetArgsRestrictions(target, indexes, false);
-            return new DynamicMetaObject(RuntimeHelpers.EnsureObjectResult(indexingExpr), restrictions);
+            var restrictions = Runtime.GetTargetArgsRestrictions(target, indexes, false);
+            return new DynamicMetaObject(Runtime.EnsureObjectResult(indexingExpr), restrictions);
         }
     }
 
@@ -119,7 +119,7 @@ namespace Kiezel
             if (target.Value == null)
             {
                 var id = target.LimitType.Name + "." + name;
-                return RuntimeHelpers.CheckTargetNullReference(target, "Cannot get property on null reference:" + id + "(null)");
+                return Runtime.CheckTargetNullReference(target, "Cannot get property on null reference:" + id + "(null)");
             }
 
 
@@ -127,7 +127,7 @@ namespace Kiezel
             {
                 var expr = Expression.MakeMemberAccess(Expression.Convert(target.Expression, members[0].DeclaringType), members[0]);
 
-                return new DynamicMetaObject(RuntimeHelpers.EnsureObjectResult(expr),
+                return new DynamicMetaObject(Runtime.EnsureObjectResult(expr),
                     // Don't need restriction test for name since this
                     // rule is only used where binder is used, which is
                     // only used in sites with this binder.Name.
@@ -136,11 +136,11 @@ namespace Kiezel
             else
             {
                 return errorSuggestion ??
-                RuntimeHelpers.CreateThrow(
+                Runtime.CreateThrow(
                     target, null,
                     BindingRestrictions.GetTypeRestriction(target.Expression, target.LimitType),
                     typeof(MissingMemberException),
-                    "Property or field not found: " + target.LimitType.Name + "." + name + RuntimeHelpers.CollectParameterInfo(target));
+                    "Property or field not found: " + target.LimitType.Name + "." + name + Runtime.CollectParameterInfo(target));
             }
         }
     }
@@ -156,7 +156,7 @@ namespace Kiezel
             DynamicMetaObject target, DynamicMetaObject[] args,
             DynamicMetaObject errorSuggestion)
         {
-            var deferArgs = RuntimeHelpers.CheckDeferArgs(target, args);
+            var deferArgs = Runtime.CheckDeferArgs(target, args);
             if (deferArgs != null)
             {
                 return Defer(deferArgs);
@@ -164,24 +164,24 @@ namespace Kiezel
 
             if (target.Value == null)
             {
-                return RuntimeHelpers.CheckTargetNullReference(target, "Not invokable: " + RuntimeHelpers.CollectParameterInfo(target, args));
+                return Runtime.CheckTargetNullReference(target, "Not invokable: " + Runtime.CollectParameterInfo(target, args));
             }
 
             if (Runtime.Prototypep(target.Value))
             {
-                var indexingExpr = RuntimeHelpers.GetIndexingExpression(target, args);
-                var restrictions = RuntimeHelpers.GetTargetArgsRestrictions(target, args, false);
+                var indexingExpr = Runtime.GetIndexingExpression(target, args);
+                var restrictions = Runtime.GetTargetArgsRestrictions(target, args, false);
 
                 if (indexingExpr == null)
                 {
                     return errorSuggestion ??
-                    RuntimeHelpers.CreateThrow(
+                    Runtime.CreateThrow(
                         target, args, restrictions,
                         typeof(InvalidOperationException),
-                        "Not invokable: " + RuntimeHelpers.CollectParameterInfo(target, args));
+                        "Not invokable: " + Runtime.CollectParameterInfo(target, args));
                 }
 
-                return new DynamicMetaObject(RuntimeHelpers.EnsureObjectResult(indexingExpr), restrictions);
+                return new DynamicMetaObject(Runtime.EnsureObjectResult(indexingExpr), restrictions);
             }
 
             if (target.LimitType.IsSubclassOf(typeof(Delegate)))
@@ -192,24 +192,24 @@ namespace Kiezel
                 {
                     // Don't need to check if argument types match parameters.
                     // If they don't, users get an argument conversion error.
-                    var callArgs = RuntimeHelpers.ConvertArguments(args, parms);
+                    var callArgs = Runtime.ConvertArguments(args, parms);
                     var expression = Expression.Invoke(
                                          Expression.Convert(target.Expression, target.LimitType),
                                          callArgs);
                     return new DynamicMetaObject(
-                        RuntimeHelpers.EnsureObjectResult(expression),
+                        Runtime.EnsureObjectResult(expression),
                         BindingRestrictions.GetTypeRestriction(target.Expression,
                             target.LimitType));
                 }
             }
 
             return errorSuggestion ??
-            RuntimeHelpers.CreateThrow(
+            Runtime.CreateThrow(
                 target, args,
                 BindingRestrictions.GetTypeRestriction(target.Expression,
                     target.LimitType),
                 typeof(InvalidOperationException),
-                "Not invokable: " + RuntimeHelpers.CollectParameterInfo(target, args));
+                "Not invokable: " + Runtime.CollectParameterInfo(target, args));
         }
     }
 
@@ -244,7 +244,7 @@ namespace Kiezel
             DynamicMetaObject target, DynamicMetaObject[] args,
             DynamicMetaObject errorSuggestion)
         {
-            var deferArgs = RuntimeHelpers.CheckDeferArgs(target, args);
+            var deferArgs = Runtime.CheckDeferArgs(target, args);
             if (deferArgs != null)
             {
                 return Defer(deferArgs);
@@ -255,9 +255,9 @@ namespace Kiezel
 
             if (target.Value == null)
             {
-                return RuntimeHelpers.CheckTargetNullReference(target, 
+                return Runtime.CheckTargetNullReference(target, 
                     "Cannot invoke a method on a null reference:"
-                    + limitType.FullName + "." + name + RuntimeHelpers.CollectParameterInfo(target, args));
+                    + limitType.FullName + "." + name + Runtime.CollectParameterInfo(target, args));
             }
 
             var builtin = Runtime.FindImportedFunction(limitType, this.Name);
@@ -288,9 +288,9 @@ namespace Kiezel
                     mi = m as MethodInfo;
                 }
 
-                if (mi != null && RuntimeHelpers.ParametersMatchArguments(mi.GetParameters(), args, out createdParamArray))
+                if (mi != null && Runtime.ParametersMatchArguments(mi.GetParameters(), args, out createdParamArray))
                 {
-                    RuntimeHelpers.InsertInMostSpecificOrder(methods, mi, createdParamArray);
+                    Runtime.InsertInMostSpecificOrder(methods, mi, createdParamArray);
                 }
             }
 
@@ -312,24 +312,24 @@ namespace Kiezel
                         mi = m as MethodInfo;
                     }
 
-                    if (mi != null && RuntimeHelpers.ParametersMatchArguments(mi.GetParameters(), args, out createdParamArray))
+                    if (mi != null && Runtime.ParametersMatchArguments(mi.GetParameters(), args, out createdParamArray))
                     {
-                        RuntimeHelpers.InsertInMostSpecificOrder(methods, mi, createdParamArray);
+                        Runtime.InsertInMostSpecificOrder(methods, mi, createdParamArray);
                     }
                 }
             }
 
-            var restrictions = RuntimeHelpers.GetTargetArgsRestrictions(target, args, false);
+            var restrictions = Runtime.GetTargetArgsRestrictions(target, args, false);
 
             if (methods.Count == 0)
             {
-                return errorSuggestion ?? RuntimeHelpers.CreateThrow(target, args, restrictions, typeof(MissingMemberException),
-                    "No (suitable) method found: " + limitType.FullName + "." + name + RuntimeHelpers.CollectParameterInfo(target, args));
+                return errorSuggestion ?? Runtime.CreateThrow(target, args, restrictions, typeof(MissingMemberException),
+                    "No (suitable) method found: " + limitType.FullName + "." + name + Runtime.CollectParameterInfo(target, args));
             }
             else
             {
                 var method = methods[0].Method;
-                var callArgs2 = RuntimeHelpers.ConvertArguments(args, method.GetParameters());
+                var callArgs2 = Runtime.ConvertArguments(args, method.GetParameters());
                 Expression expr;
 
                 if (method.IsStatic)
@@ -344,7 +344,7 @@ namespace Kiezel
                     expr = Expression.Call(Expression.Convert(target.Expression, limitType), method, callArgs2);
                 }
 
-                return new DynamicMetaObject(RuntimeHelpers.EnsureObjectResult(expr), restrictions);
+                return new DynamicMetaObject(Runtime.EnsureObjectResult(expr), restrictions);
             }
         }
     }
@@ -360,7 +360,7 @@ namespace Kiezel
             DynamicMetaObject target, DynamicMetaObject[] indexes,
             DynamicMetaObject value, DynamicMetaObject errorSuggestion)
         {
-            var deferArgs = RuntimeHelpers.CheckDeferArgs(target, indexes);
+            var deferArgs = Runtime.CheckDeferArgs(target, indexes);
             if (deferArgs != null)
             {
                 return Defer(deferArgs);
@@ -368,29 +368,29 @@ namespace Kiezel
 
             if (target.Value == null)
             {
-                return RuntimeHelpers.CheckTargetNullReference(target, "Cannot set index on null reference: "
-                + target.LimitType.FullName + RuntimeHelpers.CollectParameterInfo(target, indexes));
+                return Runtime.CheckTargetNullReference(target, "Cannot set index on null reference: "
+                + target.LimitType.FullName + Runtime.CollectParameterInfo(target, indexes));
             }
 
             Expression valueExpr = value.Expression;
             Debug.Assert(target.HasValue && target.LimitType != typeof(Array));
             Type valueType;
-            var indexingExpr = RuntimeHelpers.GetIndexingExpression(target, indexes, out valueType);
+            var indexingExpr = Runtime.GetIndexingExpression(target, indexes, out valueType);
 
             if (indexingExpr == null)
             {
                 return errorSuggestion ??
-                RuntimeHelpers.CreateThrow(
+                Runtime.CreateThrow(
                     target, indexes, BindingRestrictions.Empty,
                     typeof(InvalidOperationException),
-                    "No set indexer found: " + target.LimitType.FullName + RuntimeHelpers.CollectParameterInfo(target, indexes));
+                    "No set indexer found: " + target.LimitType.FullName + Runtime.CollectParameterInfo(target, indexes));
             }
 
             var setIndexExpr = Expression.Assign(indexingExpr, Expression.Convert(valueExpr, valueType));
 
-            BindingRestrictions restrictions = RuntimeHelpers.GetTargetArgsRestrictions(target, indexes, false);
+            BindingRestrictions restrictions = Runtime.GetTargetArgsRestrictions(target, indexes, false);
 
-            return new DynamicMetaObject(RuntimeHelpers.EnsureObjectResult(setIndexExpr), restrictions);
+            return new DynamicMetaObject(Runtime.EnsureObjectResult(setIndexExpr), restrictions);
         }
     }
 
@@ -417,7 +417,7 @@ namespace Kiezel
             if (target.Value == null)
             {
                 var id = target.LimitType.Name + "." + name;
-                return RuntimeHelpers.CheckTargetNullReference(target, "Cannot set property on null reference:" + id + "(null)");
+                return Runtime.CheckTargetNullReference(target, "Cannot set property on null reference:" + id + "(null)");
             }
 
             var flags = BindingFlags.IgnoreCase | BindingFlags.Instance | BindingFlags.Public | BindingFlags.FlattenHierarchy;
@@ -428,7 +428,7 @@ namespace Kiezel
                 var prop = (PropertyInfo)members[0];
                 var val = Expression.Convert(value.Expression, prop.PropertyType);
                 var expr = Expression.Assign(Expression.MakeMemberAccess(Expression.Convert(target.Expression, prop.DeclaringType), prop), val);
-                return new DynamicMetaObject(RuntimeHelpers.EnsureObjectResult(expr),
+                return new DynamicMetaObject(Runtime.EnsureObjectResult(expr),
                     BindingRestrictions.GetTypeRestriction(target.Expression, target.LimitType));
             }
             else if (members.Length == 1 && members[0] is FieldInfo)
@@ -436,7 +436,7 @@ namespace Kiezel
                 var field = (FieldInfo)members[0];
                 var val = Expression.Convert(value.Expression, field.FieldType);
                 var expr = Expression.Assign(Expression.MakeMemberAccess(Expression.Convert(target.Expression, field.DeclaringType), field), val);
-                return new DynamicMetaObject(RuntimeHelpers.EnsureObjectResult(expr),
+                return new DynamicMetaObject(Runtime.EnsureObjectResult(expr),
                     BindingRestrictions.GetTypeRestriction(target.Expression, target.LimitType));
             }
             else if (members.Length == 1 && members[0] is EventInfo)
@@ -448,18 +448,18 @@ namespace Kiezel
                                Expression.Constant(evt, typeof(EventInfo)),
                                Expression.Convert(target.Expression, evt.DeclaringType),
                                Expression.Convert(value.Expression, typeof(IApply)));
-                return new DynamicMetaObject(RuntimeHelpers.EnsureObjectResult(expr),
+                return new DynamicMetaObject(Runtime.EnsureObjectResult(expr),
                     BindingRestrictions.GetTypeRestriction(target.Expression, target.LimitType));
             }
             else
             {
                 return errorSuggestion ??
-                RuntimeHelpers.CreateThrow(
+                Runtime.CreateThrow(
                     target, null,
                     BindingRestrictions.GetTypeRestriction(target.Expression,
                         target.LimitType),
                     typeof(MissingMemberException),
-                    "Property or field not found: " + target.LimitType.Name + "." + name + RuntimeHelpers.CollectParameterInfo(target));
+                    "Property or field not found: " + target.LimitType.Name + "." + name + Runtime.CollectParameterInfo(target));
             }
         }
     }

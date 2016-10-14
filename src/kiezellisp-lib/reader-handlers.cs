@@ -126,7 +126,7 @@ namespace Kiezel
 
                     if (statements.Count > 1)
                     {
-                        code.Add(new Cons(Symbols.Do, Runtime.AsList(statements)));
+                        code.Add(new Cons(Symbols.Do, AsList(statements)));
                     }
                     else
                     {
@@ -146,7 +146,7 @@ namespace Kiezel
                     code.Add(s.Substring(pos, s.Length - pos));
                 }
 
-                return new Cons(Symbols.Str, Runtime.AsList(code));
+                return new Cons(Symbols.Str, AsList(code));
             }
         }
 
@@ -160,8 +160,8 @@ namespace Kiezel
         public static object ReadCharacterHandler(LispReader stream, string ch, int arg)
         {
             stream.UnreadChar();
-            var name = Runtime.MakeString(stream.Read());
-            var chr = Runtime.DecodeCharacterName(name);
+            var name = MakeString(stream.Read());
+            var chr = DecodeCharacterName(name);
             return chr;
         }
 
@@ -188,21 +188,21 @@ namespace Kiezel
                 throw stream.MakeScannerException("Invalid #c expression");
             }
             var nums = stream.ReadDelimitedList(")");
-            int count = Runtime.Length(nums);
-            double real = count >= 1 ? Runtime.AsDouble(nums.Car) : 0;
-            double imag = count >= 2 ? Runtime.AsDouble(nums.Cdr.Car) : 0;
+            int count = Length(nums);
+            double real = count >= 1 ? AsDouble(nums.Car) : 0;
+            double imag = count >= 2 ? AsDouble(nums.Cdr.Car) : 0;
             return new Complex(real, imag);
         }
 
         public static object ReadExecuteHandler(LispReader stream, string ch, int arg)
         {
             var expr = stream.Read();
-            var readEval = Runtime.GetDynamic(Symbols.ReadEval);
+            var readEval = GetDynamic(Symbols.ReadEval);
             if (readEval == null)
             {
                 readEval = false; //stream.loading;
             }
-            if (!Runtime.ToBool(readEval))
+            if (!ToBool(readEval))
             {
                 throw stream.MakeScannerException("Invalid use of '#.' (prohibited by $read-eval variable)");
             }
@@ -407,7 +407,7 @@ namespace Kiezel
         public static object ReadPrototypeHandler(LispReader stream, char ch)
         {
             var list = stream.ReadDelimitedList("}");
-            var obj = new Prototype(Runtime.AsArray(list));
+            var obj = new Prototype(AsArray(list));
             return obj;
         }
 

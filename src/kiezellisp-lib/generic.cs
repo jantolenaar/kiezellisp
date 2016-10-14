@@ -333,7 +333,7 @@ namespace Kiezel
             MethodInfo method = Runtime.RuntimeMethod("CallNextMethod");
             var expr = Expression.Call(method, Expression.Constant(methods), callArgs);
             restrictions = BindingRestrictions.GetInstanceRestriction(this.Expression, this.Value).Merge(restrictions);
-            return new DynamicMetaObject(RuntimeHelpers.EnsureObjectResult(expr), restrictions);
+            return new DynamicMetaObject(Runtime.EnsureObjectResult(expr), restrictions);
         }
 
         public Cons Match(DynamicMetaObject[] args)

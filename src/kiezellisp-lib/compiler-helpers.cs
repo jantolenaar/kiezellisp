@@ -24,7 +24,7 @@ namespace Kiezel
         }
     }
 
-    public static partial class RuntimeHelpers
+    public static partial class Runtime
     {
         public static object ArgumentValue(object arg)
         {
@@ -140,12 +140,12 @@ namespace Kiezel
 
         public static string CollectParameterInfo(params DynamicMetaObject[] args)
         {
-            return "(" + ", ".Join(args.Select(x => Runtime.ToPrintString(x.Value))) + ")";
+            return "(" + ", ".Join(args.Select(x => ToPrintString(x.Value))) + ")";
         }
 
         public static string CollectParameterInfo(DynamicMetaObject target, DynamicMetaObject[] args)
         {
-            var args2 = RuntimeHelpers.GetCombinedTargetArgs(target, args);
+            var args2 = GetCombinedTargetArgs(target, args);
             return CollectParameterInfo(args2);
         }
 
@@ -236,19 +236,19 @@ namespace Kiezel
                 }
                 else if (CanMaybeConvertToEnumType(parameterType, type))
                 {
-                    argExpr = Expression.Call(null, Runtime.ConvertToEnumTypeMethod, Expression.Constant(parameterType, typeof(Type)), Expression.Convert(argExpr, typeof(object)));
+                    argExpr = Expression.Call(null, ConvertToEnumTypeMethod, Expression.Constant(parameterType, typeof(Type)), Expression.Convert(argExpr, typeof(object)));
                 }
                 else if (CanMaybeCastToEnumerableT(parameterType, type))
                 {
                     // e.g. convert (1 2 3) to List<Int32>.
                     var ts = parameterType.GetGenericArguments();
-                    var m = Runtime.CastMethod.MakeGenericMethod(ts);
+                    var m = CastMethod.MakeGenericMethod(ts);
                     argExpr = Expression.Call(null, m, Expression.Convert(argExpr, typeof(IEnumerable)));
                 }
                 else if (type != parameterType && typeof(IConvertible).IsAssignableFrom(type) && typeof(IConvertible).IsAssignableFrom(parameterType))
                 {
                     //argExpr = Expression.Convert( argExpr, typeof( object ) );
-                    argExpr = Expression.Call(Runtime.ChangeTypeMethod, argExpr, Expression.Constant(parameterType));
+                    argExpr = Expression.Call(ChangeTypeMethod, argExpr, Expression.Constant(parameterType));
                     argExpr = Expression.Convert(argExpr, parameterType);
                 }
                 else
@@ -265,18 +265,18 @@ namespace Kiezel
                 }
                 else if (CanMaybeConvertToEnumType(parameterType, type))
                 {
-                    argExpr = Expression.Call(null, Runtime.ConvertToEnumTypeMethod, Expression.Constant(parameterType, typeof(Type)), Expression.Constant(arg, typeof(object)));
+                    argExpr = Expression.Call(null, ConvertToEnumTypeMethod, Expression.Constant(parameterType, typeof(Type)), Expression.Constant(arg, typeof(object)));
                 }
                 else if (CanMaybeCastToEnumerableT(parameterType, type))
                 {
                     var ts = parameterType.GetGenericArguments();
-                    var m = Runtime.CastMethod.MakeGenericMethod(ts);
+                    var m = CastMethod.MakeGenericMethod(ts);
                     argExpr = Expression.Call(null, m, Expression.Constant(arg, type));
                 }
                 else if (type != parameterType && typeof(IConvertible).IsAssignableFrom(type) && typeof(IConvertible).IsAssignableFrom(parameterType))
                 {
                     argExpr = Expression.Constant(arg, typeof(object));
-                    argExpr = Expression.Call(Runtime.ChangeTypeMethod, argExpr, Expression.Constant(parameterType));
+                    argExpr = Expression.Call(ChangeTypeMethod, argExpr, Expression.Constant(parameterType));
                     argExpr = Expression.Convert(argExpr, parameterType);
                 }
                 else
@@ -470,9 +470,9 @@ namespace Kiezel
                 foreach (var idxer in allIndexers)
                 {
                     indexerParams = idxer.GetIndexParameters();
-                    if (RuntimeHelpers.ParametersMatchArguments(indexerParams, indexes, out createdParamArray))
+                    if (ParametersMatchArguments(indexerParams, indexes, out createdParamArray))
                     {
-                        RuntimeHelpers.InsertInMostSpecificOrder(indexers, idxer, createdParamArray);
+                        InsertInMostSpecificOrder(indexers, idxer, createdParamArray);
                     }
                 }
 
@@ -482,7 +482,7 @@ namespace Kiezel
                 }
 
                 var indexer = indexers[0].Property;
-                var indexExpressions = RuntimeHelpers.ConvertArguments(indexes, indexer.GetIndexParameters());
+                var indexExpressions = ConvertArguments(indexes, indexer.GetIndexParameters());
                 valueType = indexer.PropertyType;
 
                 return Expression.MakeIndex(

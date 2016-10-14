@@ -399,12 +399,12 @@ namespace Kiezel
             var list = new List<Expression>();
             foreach (var arg in args)
             {
-                list.Add(RuntimeHelpers.ConvertArgument(arg, typeof(object)));
+                list.Add(Runtime.ConvertArgument(arg, typeof(object)));
             }
             var callArg = Expression.NewArrayInit(typeof(object), list);
             var expr = Expression.Call(Expression.Convert(this.Expression, typeof(T)), method, callArg);
             var restrictions = BindingRestrictions.GetTypeRestriction(this.Expression, typeof(T));
-            return new DynamicMetaObject(RuntimeHelpers.EnsureObjectResult(expr), restrictions);
+            return new DynamicMetaObject(Runtime.EnsureObjectResult(expr), restrictions);
         }
     }
 
@@ -425,7 +425,7 @@ namespace Kiezel
             MethodInfo method = typeof(LambdaClosure).GetMethod("ApplyLambdaFast", BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
             var expr = Expression.Call(Expression.Convert(this.Expression, typeof(LambdaClosure)), method, callArgs);
             restrictions = BindingRestrictions.GetInstanceRestriction(this.Expression, this.Value).Merge(restrictions);
-            return new DynamicMetaObject(RuntimeHelpers.EnsureObjectResult(expr), restrictions);
+            return new DynamicMetaObject(Runtime.EnsureObjectResult(expr), restrictions);
         }
     }
 

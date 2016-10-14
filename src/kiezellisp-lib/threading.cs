@@ -176,7 +176,7 @@ namespace Kiezel
                 }
                 catch (Exception ex)
                 {
-                    throw Runtime.UnwindExceptionIntoNewException(ex);
+                    throw UnwindExceptionIntoNewException(ex);
                 }
                 finally
                 {

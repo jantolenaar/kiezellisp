@@ -833,9 +833,9 @@ namespace Kiezel
             // Branches inside functions or macros are treated as merging-do forms.
             foreach (var expr in forms)
             {
-                if (expr is Cons && Runtime.First(expr) == Symbols.CompileTimeBranch)
+                if (expr is Cons && First(expr) == Symbols.CompileTimeBranch)
                 {
-                    foreach (var form in RewriteCompileTimeBranch(Runtime.ToIter(Runtime.Cdr((Cons)expr))))
+                    foreach (var form in RewriteCompileTimeBranch(ToIter(Cdr((Cons)expr))))
                     {
                         yield return form;
                     }

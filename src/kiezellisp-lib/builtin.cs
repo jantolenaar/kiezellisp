@@ -6,6 +6,7 @@ using System.Dynamic;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
+using System.Runtime.CompilerServices;
 
 namespace Kiezel
 {
@@ -367,22 +368,22 @@ namespace Kiezel
                     continue;
                 }
 
-                if (RuntimeHelpers.ParametersMatchArguments(m.GetParameters(), args, out createdParamArray))
+                if (Runtime.ParametersMatchArguments(m.GetParameters(), args, out createdParamArray))
                 {
-                    RuntimeHelpers.InsertInMostSpecificOrder(ctors, m, createdParamArray);
+                    Runtime.InsertInMostSpecificOrder(ctors, m, createdParamArray);
                 }
             }
 
             if (ctors.Count == 0)
             {
-                throw new MissingMemberException("No (suitable) constructor found: new " + runtimeModel.FullName + RuntimeHelpers.CollectParameterInfo(args));
+                throw new MissingMemberException("No (suitable) constructor found: new " + runtimeModel.FullName + Runtime.CollectParameterInfo(args));
             }
 
             var ctor = ctors[0].Method;
-            var restrictions = RuntimeHelpers.GetTargetArgsRestrictions(this, args, true);
-            var callArgs = RuntimeHelpers.ConvertArguments(args, ctor.GetParameters());
+            var restrictions = Runtime.GetTargetArgsRestrictions(this, args, true);
+            var callArgs = Runtime.ConvertArguments(args, ctor.GetParameters());
 
-            return new DynamicMetaObject(RuntimeHelpers.EnsureObjectResult(Expression.New(ctor, callArgs)), restrictions);
+            return new DynamicMetaObject(Runtime.EnsureObjectResult(Expression.New(ctor, callArgs)), restrictions);
         }
 
         //public override DynamicMetaObject BindConvert( ConvertBinder binder )
@@ -550,7 +551,7 @@ namespace Kiezel
             {
                 return true;
             }
-            if (method.GetCustomAttributes(typeof(System.Runtime.CompilerServices.ExtensionAttribute), true).Length != 0)
+            if (method.GetCustomAttributes(typeof(ExtensionAttribute), true).Length != 0)
             {
                 return true;
             }
@@ -573,7 +574,7 @@ namespace Kiezel
         {
             bool createdParamArray;
             var candidates = new List<CandidateMethod<MethodInfo>>();
-            args = args ?? RuntimeHelpers.GetCombinedTargetArgs(argsFirst, argsRest);
+            args = args ?? Runtime.GetCombinedTargetArgs(argsFirst, argsRest);
 
             foreach (MethodInfo m in BuiltinExtensionMembers)
             {
@@ -584,21 +585,21 @@ namespace Kiezel
 
                 if (m.IsStatic)
                 {
-                    if (RuntimeHelpers.ParametersMatchArguments(m.GetParameters(), args, out createdParamArray))
+                    if (Runtime.ParametersMatchArguments(m.GetParameters(), args, out createdParamArray))
                     {
-                        RuntimeHelpers.InsertInMostSpecificOrder(candidates, m, createdParamArray);
+                        Runtime.InsertInMostSpecificOrder(candidates, m, createdParamArray);
                     }
                 }
                 else
                 {
                     if (argsRest == null)
                     {
-                        RuntimeHelpers.SplitCombinedTargetArgs(args, out argsFirst, out argsRest);
+                        Runtime.SplitCombinedTargetArgs(args, out argsFirst, out argsRest);
                     }
 
-                    if (argsRest != null && RuntimeHelpers.ParametersMatchArguments(m.GetParameters(), argsRest, out createdParamArray))
+                    if (argsRest != null && Runtime.ParametersMatchArguments(m.GetParameters(), argsRest, out createdParamArray))
                     {
-                        RuntimeHelpers.InsertInMostSpecificOrder(candidates, m, createdParamArray);
+                        Runtime.InsertInMostSpecificOrder(candidates, m, createdParamArray);
                     }
                 }
             }
@@ -614,21 +615,21 @@ namespace Kiezel
 
                     if (m.IsStatic)
                     {
-                        if (RuntimeHelpers.ParametersMatchArguments(m.GetParameters(), args, out createdParamArray))
+                        if (Runtime.ParametersMatchArguments(m.GetParameters(), args, out createdParamArray))
                         {
-                            RuntimeHelpers.InsertInMostSpecificOrder(candidates, m, createdParamArray);
+                            Runtime.InsertInMostSpecificOrder(candidates, m, createdParamArray);
                         }
                     }
                     else
                     {
                         if (argsRest == null)
                         {
-                            RuntimeHelpers.SplitCombinedTargetArgs(args, out argsFirst, out argsRest);
+                            Runtime.SplitCombinedTargetArgs(args, out argsFirst, out argsRest);
                         }
 
-                        if (argsRest != null && RuntimeHelpers.ParametersMatchArguments(m.GetParameters(), argsRest, out createdParamArray))
+                        if (argsRest != null && Runtime.ParametersMatchArguments(m.GetParameters(), argsRest, out createdParamArray))
                         {
-                            RuntimeHelpers.InsertInMostSpecificOrder(candidates, m, createdParamArray);
+                            Runtime.InsertInMostSpecificOrder(candidates, m, createdParamArray);
                         }
                     }
                 }
@@ -645,21 +646,21 @@ namespace Kiezel
 
                     if (m.IsStatic)
                     {
-                        if (RuntimeHelpers.ParametersMatchArguments(m.GetParameters(), args, out createdParamArray))
+                        if (Runtime.ParametersMatchArguments(m.GetParameters(), args, out createdParamArray))
                         {
-                            RuntimeHelpers.InsertInMostSpecificOrder(candidates, m, createdParamArray);
+                            Runtime.InsertInMostSpecificOrder(candidates, m, createdParamArray);
                         }
                     }
                     else
                     {
                         if (argsRest == null)
                         {
-                            RuntimeHelpers.SplitCombinedTargetArgs(args, out argsFirst, out argsRest);
+                            Runtime.SplitCombinedTargetArgs(args, out argsFirst, out argsRest);
                         }
 
-                        if (argsRest != null && RuntimeHelpers.ParametersMatchArguments(m.GetParameters(), argsRest, out createdParamArray))
+                        if (argsRest != null && Runtime.ParametersMatchArguments(m.GetParameters(), argsRest, out createdParamArray))
                         {
-                            RuntimeHelpers.InsertInMostSpecificOrder(candidates, m, createdParamArray);
+                            Runtime.InsertInMostSpecificOrder(candidates, m, createdParamArray);
                         }
                     }
                 }
@@ -675,22 +676,22 @@ namespace Kiezel
 
             if (method.IsStatic)
             {
-                var restrictions = RuntimeHelpers.GetTargetArgsRestrictions(target, args, true);
-                var callArgs = RuntimeHelpers.ConvertArguments(args, method.GetParameters());
-                result = new DynamicMetaObject(RuntimeHelpers.EnsureObjectResult(Expression.Call(method, callArgs)), restrictions);
+                var restrictions = Runtime.GetTargetArgsRestrictions(target, args, true);
+                var callArgs = Runtime.ConvertArguments(args, method.GetParameters());
+                result = new DynamicMetaObject(Runtime.EnsureObjectResult(Expression.Call(method, callArgs)), restrictions);
             }
             else
             {
                 if (argsRest == null)
                 {
-                    RuntimeHelpers.SplitCombinedTargetArgs(args, out argsFirst, out argsRest);
+                    Runtime.SplitCombinedTargetArgs(args, out argsFirst, out argsRest);
                 }
 
                 // When called from FallbackInvokeMember we want to restrict on the type.
-                var restrictions = RuntimeHelpers.GetTargetArgsRestrictions(target, argsRest, restrictionOnTargetInstance);
+                var restrictions = Runtime.GetTargetArgsRestrictions(target, argsRest, restrictionOnTargetInstance);
                 var targetInst = Expression.Convert(argsFirst.Expression, method.DeclaringType);
-                var callArgs = RuntimeHelpers.ConvertArguments(argsRest, method.GetParameters());
-                result = new DynamicMetaObject(RuntimeHelpers.EnsureObjectResult(Expression.Call(targetInst, method, callArgs)), restrictions);
+                var callArgs = Runtime.ConvertArguments(argsRest, method.GetParameters());
+                result = new DynamicMetaObject(Runtime.EnsureObjectResult(Expression.Call(targetInst, method, callArgs)), restrictions);
             }
 
             return true;
@@ -729,7 +730,7 @@ namespace Kiezel
             DynamicMetaObject result;
             if (!runtimeModel.TryBindInvokeBestMethod(true, this, args, out result))
             {
-                throw new MissingMemberException("No (suitable) method found: " + runtimeModel.FullName + RuntimeHelpers.CollectParameterInfo(args));
+                throw new MissingMemberException("No (suitable) method found: " + runtimeModel.FullName + Runtime.CollectParameterInfo(args));
             }
             return result;
         }

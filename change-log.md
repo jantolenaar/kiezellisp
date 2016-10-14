@@ -1,5 +1,9 @@
 # Change Log
 
+## 2016/10/14
+
+*   Refactored `CompilerHelpers` class.
+
 ## 2016/10/13
 
 *   Renamed macro `tail-recursion` to special-form `prog`.

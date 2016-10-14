@@ -203,7 +203,7 @@ namespace Kiezel
         [Lisp("interpolate-string")]
         public static object InterpolateString(string str)
         {
-            var expr = Runtime.ParseInterpolateString(str);
+            var expr = ParseInterpolateString(str);
             return Eval(expr);
         }
 
@@ -352,7 +352,7 @@ namespace Kiezel
                 if (macro != null)
                 {
                     var hook = (IApply)GetDynamic(Symbols.MacroexpandHook);
-                    return Runtime.Funcall(hook, macro, form, new AnalysisScope(env, "try-macroexpand"));
+                    return Funcall(hook, macro, form, new AnalysisScope(env, "try-macroexpand"));
                 }
                 else
                 {
