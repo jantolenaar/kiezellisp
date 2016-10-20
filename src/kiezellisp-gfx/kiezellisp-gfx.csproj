@@ -48,7 +48,6 @@
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="term-buffer.cs" />
-    <Compile Include="term-history.cs" />
     <Compile Include="term-lib.cs" />
     <Compile Include="term-repl-window.cs" />
     <Compile Include="term-text-writer.cs" />

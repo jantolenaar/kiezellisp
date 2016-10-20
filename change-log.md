@@ -1,5 +1,11 @@
 # Change Log
 
+## 2016/10/20
+
+*   Added history to kiezellisp-con.
+*   Fixed omission of executables in downloadable bin archive.
+*   Added `interpose` sequence function.
+
 ## 2016/10/14
 
 *   Refactored `CompilerHelpers` class.

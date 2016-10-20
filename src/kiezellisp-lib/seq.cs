@@ -258,6 +258,12 @@ namespace Kiezel
             return AsLazyList(SeqBase.Interleave(seqs));
         }
 
+        [Lisp("interpose")]
+        public static Cons Interpose(object separator, IEnumerable seq)
+        {
+            return AsLazyList(SeqBase.Interpose(separator, seq));
+        }
+
         [Lisp("intersect")]
         public static Cons Intersect(IEnumerable seq1, IEnumerable seq2, params object[] args)
         {

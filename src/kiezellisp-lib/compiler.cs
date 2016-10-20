@@ -893,8 +893,8 @@ namespace Kiezel
 
             var value = Compile(Third(form), scope);
 
-            // GOTO expressions are void. The function EnsureObjectResult can handle 
-            // the conversion but here I do it explicitly to take case of different
+            // GOTO expressions are void. The function EnsureObjectResult can handle
+            // the conversion but here I do it explicitly to take care of different
             // scopes.
 
             if (labelScope == scope)
@@ -903,7 +903,7 @@ namespace Kiezel
                                typeof(object),
                                Expression.Goto(label, value),
                                CompileLiteral(null));
-                
+
                 return code;
             }
             else
@@ -1118,10 +1118,10 @@ namespace Kiezel
                     name = binding;
                     value = null;
                 }
-               
+
                 if (!Symbolp(name))
                 {
-                    throw new LispException("prog: invalid binding list: {0}", bindings); 
+                    throw new LispException("prog: invalid binding list: {0}", bindings);
                 }
 
                 names.Add(name);
@@ -1671,7 +1671,7 @@ namespace Kiezel
         {
             var expr = MacroExpand(expr1, scope);
 
-            // At this point expr is either not a macro call, or it is a macro call 
+            // At this point expr is either not a macro call, or it is a macro call
             // that refused to expand by returning the &whole parameter.
 
             if (expr is Symbol)
@@ -1699,7 +1699,7 @@ namespace Kiezel
                 {
                     var head = (Symbol)First(form);
                     var shadowed = scope.FindLocal(head) != null;
-                
+
                     if (shadowed)
                     {
                         return CompileFunctionCall(form, scope);

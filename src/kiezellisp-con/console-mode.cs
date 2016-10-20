@@ -22,6 +22,8 @@ namespace Kiezel
             ":describe", ":reset", ":time"
         };
 
+        public static ReplHistory History = new ReplHistory("kiezellisp-con");
+
         public static Stack<ThreadContextState> state;
 
         public static Stopwatch timer = Stopwatch.StartNew();
@@ -67,6 +69,7 @@ namespace Kiezel
 
         public static void Quit()
         {
+            History.Close();
             Environment.Exit(0);
         }
 
@@ -127,6 +130,7 @@ namespace Kiezel
                     }
                     case ":clear":
                     {
+                        History.Clear();
                         Console.Clear();
                         state = new Stack<ThreadContextState>();
                         state.Push(Runtime.SaveStackAndFrame());
@@ -302,19 +306,19 @@ namespace Kiezel
 
             while (String.IsNullOrWhiteSpace(data))
             {
-                int counter = 1;
+                int counter = History.Count + 1;
                 string prompt;
                 string debugText = debugging ? "> debug " : "";
                 var package = Runtime.CurrentPackage();
                 if (state.Count == 1)
                 {
                     Console.WriteLine();
-                    prompt = System.String.Format("{0} {2}> ", package.Name, counter, debugText);
+                    prompt = System.String.Format("{0} {1} {2}> ", package.Name, counter, debugText);
                 }
                 else
                 {
                     Console.WriteLine();
-                    prompt = System.String.Format("{0} {2}: {3} > ", package.Name, counter, debugText, state.Count - 1);
+                    prompt = System.String.Format("{0} {1} {2}: {3} > ", package.Name, counter, debugText, state.Count - 1);
                 }
 
                 Console.Write(prompt);
@@ -397,7 +401,9 @@ namespace Kiezel
                     case ConsoleKey.Enter:
                     {
                         Console.WriteLine();
-                        return new string(buffer.ToArray());
+                        var s = new string(buffer.ToArray());
+                        History.Append(s);
+                        return s;
                     }
                     case ConsoleKey.Home:
                     {
@@ -423,6 +429,40 @@ namespace Kiezel
                         {
                             ++pos;
                         }
+                        break;
+                    }
+                    case ConsoleKey.UpArrow:
+                    {
+                        if (History != null)
+                        {
+                            var s = History.Previous();
+                            if (s.Length > end)
+                            {
+                                s = s.Substring(0, end);
+                            }
+                            buffer = new List<char>(s);
+                            pos = len = buffer.Count;
+                        }
+                        break;
+                    }
+                    case ConsoleKey.DownArrow:
+                    {
+                        if (History != null)
+                        {
+                            var s = History.Next();
+                            if (s.Length > end)
+                            {
+                                s = s.Substring(0, end);
+                            }
+                            buffer = new List<char>(s);
+                            pos = len = buffer.Count;
+                        }
+                        break;
+                    }
+                    case ConsoleKey.Escape:
+                    {
+                        buffer = new List<char>();
+                        pos = len = buffer.Count;
                         break;
                     }
                     default:

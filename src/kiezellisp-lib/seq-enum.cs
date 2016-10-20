@@ -375,6 +375,20 @@ namespace Kiezel
                 }
             }
 
+            public static IEnumerable Interpose(object separator, IEnumerable seq)
+            {
+                var addSeparator = false;
+                foreach (var obj in ToIter(seq))
+                {
+                    if (addSeparator)
+                    {
+                        yield return separator;
+                    }
+                    addSeparator = true;
+                    yield return obj;
+                }
+            }
+
             public static IEnumerable Intersect(IEnumerable seq1, IEnumerable seq2, IApply test, IApply key)
             {
                 var v2 = AsVector(seq2);

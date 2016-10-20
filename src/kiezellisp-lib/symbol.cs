@@ -626,8 +626,6 @@ namespace Kiezel
 
         public static Symbol DefMulti;
 
-        public static Symbol DefSpecialForm;
-
         public static Symbol Defun;
         
         public static Symbol Do;
@@ -976,7 +974,6 @@ namespace Kiezel
             DefMacro = MakeSymbol("defmacro");
             DefMethod = MakeSymbol("defmethod");
             DefMulti = MakeSymbol("defmulti");
-            DefSpecialForm = MakeSymbol("define-special-form");
             Defun = MakeSymbol("defun");
             Do = MakeSymbol("do");
             Documentation = MakeSymbol("documentation");

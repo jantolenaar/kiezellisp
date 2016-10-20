@@ -124,6 +124,7 @@
     <Compile Include="repl.cs" />
     <Compile Include="symbol-macro.cs" />
     <Compile Include="reader-scanner.cs" />
+    <Compile Include="repl-history.cs" />
   </ItemGroup>
   <ItemGroup>
     <BootstrapperPackage Include=".NETFramework,Version=v4.0,Profile=Client">
