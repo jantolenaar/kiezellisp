@@ -8,369 +8,156 @@ using System.Reflection;
 using System.Threading;
 using System.Linq;
 using System.Text;
+using System.IO;
 
 namespace Kiezel
 {
     [RestrictedImport]
-    public partial class RuntimeConsole
+    public partial class RuntimeConsole: RuntimeConsoleBase
     {
-        public static string[] ReplCommands = new string[]
+        [Lisp("more")]
+        public static void More(string text)
         {
-            ":clear", ":continue", ":globals", ":quit",
-            ":abort", ":backtrace", ":variables", ":$variables",
-            ":top", ":exception", ":Exception", ":force",
-            ":describe", ":reset", ":time"
-        };
-
-        public static ReplHistory History = new ReplHistory("kiezellisp-con");
-
-        public static Stack<ThreadContextState> state;
-
-        public static Stopwatch timer = Stopwatch.StartNew();
-
-        public static Exception LastException = null;
-
-        [Lisp("get-version")]
-        public static string GetVersion()
-        {
-            var assembly = Assembly.GetExecutingAssembly();
-            var fileVersion = FileVersionInfo.GetVersionInfo(assembly.Location);
-            var date = new DateTime(2000, 1, 1).AddDays(fileVersion.FileBuildPart);
-            #if DEBUG
-            return String.Format("{0} {1}.{2} (Debug Build {3} - {4:yyyy-MM-dd})", fileVersion.ProductName, fileVersion.FileMajorPart, fileVersion.FileMinorPart, fileVersion.FileBuildPart, date);
-            #else
-            return String.Format("{0} {1}.{2} (Release Build {3} - {4:yyyy-MM-dd})", fileVersion.ProductName, fileVersion.FileMajorPart, fileVersion.FileMinorPart, fileVersion.FileBuildPart, date);
-            #endif
+            var height = Console.WindowHeight - 1;
+            var count = 0;
+            foreach (var ch in text)
+            {
+                var old = Console.CursorLeft;
+                Console.Write(ch);
+                if (Console.CursorLeft <= old)
+                {
+                    ++count;
+                    if (count == height)
+                    {
+                        Console.Write("(Press 'q' or ESC to cancel, any other key to continue)");
+                        var info = Console.ReadKey(true);
+                        Console.Write("\r");
+                        Console.Write("                                                       ");
+                        Console.Write("\r");
+                        height = Console.WindowHeight - 1;
+                        count = 0;
+                        if (info.Key == ConsoleKey.Escape || info.Key == ConsoleKey.Q)
+                        {
+                            return;
+                        }
+                    }
+                }
+            }
         }
 
-        [Lisp("breakpoint")]
-        public static void Breakpoint()
+        public static void ReplResetDisplay()
         {
-            var oldState = state;
-            state = new Stack<ThreadContextState>();
-            state.Push(Runtime.SaveStackAndFrame());
+            Console.Clear();
+        }
 
+        public static string ReplReadLine()
+        {
             try
             {
-                ReadEvalPrintLoop(initialized: true, debugging: true);
+                var s = ReplReadLineImp();
+                return s;
             }
-            catch (ContinueFromBreakpointException)
+            catch (Exception)
             {
-            }
-            catch (AbortingDebuggerException)
-            {
-                throw new AbortedDebuggerException();
-            }
-            finally
-            {
-                state = oldState;
+                Console.Clear();
+                Console.WriteLine("Temporarily lost control due to console display changes. Input aborted.");
+                Console.Write("Press ENTER to continue.");
+                Console.ReadLine();
+                return "";
             }
         }
 
-        public static void Quit()
-        {
-            History.Close();
-            Environment.Exit(0);
-        }
-
-        public static void EvalPrintCommand(string data, bool debugging)
-        {
-            bool leadingSpace = char.IsWhiteSpace(data, 0);
-            Cons code = Runtime.ReadAllFromString(data);
-
-            if (code == null)
-            {
-                return;
-            }
-
-            Runtime.RestoreStackAndFrame(state.Peek());
-
-            var head = Runtime.First(code) as Symbol;
-
-            if (head != null && (Runtime.Keywordp(head) || head.Name == "?"))
-            {
-                var dotCommand = Runtime.First(code).ToString();
-                var command = "";
-                var commandsPrefix = ReplCommands.Where(x => ((String)x).StartsWith(dotCommand)).ToList();
-                var commandsExact = ReplCommands.Where(x => ((String)x) == dotCommand).ToList();
-
-                if (commandsPrefix.Count == 0)
-                {
-                    Console.WriteLine("Command not found");
-                    return;
-                }
-                else if (commandsExact.Count == 1)
-                {
-                    command = commandsExact[0];
-                }
-                else if (commandsPrefix.Count == 1)
-                {
-                    command = commandsPrefix[0];
-                }
-                else
-                {
-                    Console.Write("Ambiguous command. Did you mean:");
-                    for (int i = 0; i < commandsPrefix.Count; ++i)
-                    {
-                        Console.Write("{0} {1}", (i == 0 ? "" : i + 1 == commandsPrefix.Count ? " or" : ","), commandsPrefix[i]);
-                    }
-                    Console.WriteLine("?");
-                    return;
-                }
-
-                switch (command)
-                {
-                    case ":continue":
-                    {
-                        if (debugging)
-                        {
-                            throw new ContinueFromBreakpointException();
-                        }
-                        break;
-                    }
-                    case ":clear":
-                    {
-                        History.Clear();
-                        Console.Clear();
-                        state = new Stack<ThreadContextState>();
-                        state.Push(Runtime.SaveStackAndFrame());
-                        break;
-                    }
-                    case ":abort":
-                    {
-                        if (state.Count > 1)
-                        {
-                            state.Pop();
-                        }
-                        else if (debugging)
-                        {
-                            throw new AbortingDebuggerException();
-                        }
-                        break;
-                    }
-
-                    case ":top":
-                    {
-                        while (state.Count > 1)
-                        {
-                            state.Pop();
-                        }
-                        break;
-                    }
-
-                    case ":quit":
-                    {
-                        Quit();
-                        break;
-                    }
-
-                    case ":globals":
-                    {
-                        var pattern = (string)Runtime.Second(code);
-                        Runtime.DumpDictionary(Console.Out, Runtime.GetGlobalVariablesDictionary(pattern));
-                        break;
-                    }
-
-                    case ":variables":
-                    {
-                        var pos = Runtime.Integerp(Runtime.Second(code)) ? (int)Runtime.Second(code) : 0;
-                        Runtime.DumpDictionary(Console.Out, Runtime.GetLexicalVariablesDictionary(pos));
-                        break;
-                    }
-
-                    case ":$variables":
-                    {
-                        var pos = Runtime.Integerp(Runtime.Second(code)) ? (int)Runtime.Second(code) : 0;
-                        Runtime.DumpDictionary(Console.Out, Runtime.GetDynamicVariablesDictionary(pos));
-                        break;
-                    }
-
-                    case ":backtrace":
-                    {
-                        Console.Write(Runtime.GetEvaluationStack());
-                        break;
-                    }
-
-                    case ":Exception":
-                    {
-                        Console.WriteLine(LastException.ToString());
-                        break;
-                    }
-
-                    case ":exception":
-                    {
-                        Console.WriteLine(RemoveDlrReferencesFromException(LastException));
-                        break;
-                    }
-
-                    case ":force":
-                    {
-                        var expr = (object)Runtime.Second(code) ?? Symbols.It;
-                        RunCommand(null, Runtime.MakeList(Runtime.MakeList(Symbols.Force, expr)));
-                        break;
-                    }
-
-                    case ":time":
-                    {
-                        var expr = (object)Runtime.Second(code) ?? Symbols.It;
-                        RunCommand(null, Runtime.MakeList(expr), showTime: true);
-                        break;
-                    }
-
-                    case ":describe":
-                    {
-                        RunCommand(x =>
-                        {
-                            Runtime.SetSymbolValue(Symbols.It, x);
-                            Runtime.Describe(x);
-                        }, Runtime.Cdr(code));
-                        break;
-                    }
-
-                    case ":reset":
-                    {
-                        var level = Runtime.Integerp(Runtime.Second(code)) ? (int)Runtime.Second(code) : 0;
-                        while (state.Count > 1)
-                        {
-                            state.Pop();
-                        }
-                        timer.Reset();
-                        timer.Start();
-                        Reset(level);
-                        timer.Stop();
-                        var time = timer.ElapsedMilliseconds;
-                        Runtime.PrintLog("Startup time: ", time, "ms");
-                        break;
-                    }
-
-                }
-            }
-            else
-            {
-                RunCommand(null, code, smartParens: !leadingSpace);
-            }
-        }
-
-        public static bool IsNotDlrCode(string line)
-        {
-            return line.IndexOf("CallSite") == -1
-            && line.IndexOf("System.Dynamic") == -1
-            && line.IndexOf("Microsoft.Scripting") == -1;
-        }
-
-        public static string RemoveDlrReferencesFromException(Exception ex)
-        {
-            return String.Join("\n", ex.ToString().Split('\n').Where(IsNotDlrCode));
-        }
-
-        public static int[] GetIntegerArgs(string lispCode)
-        {
-            var results = new List<int>();
-            foreach (var expr in Runtime.ReadAllFromString( lispCode ))
-            {
-                results.Add(Convert.ToInt32(Runtime.Eval(expr)));
-            }
-            return results.ToArray();
-        }
-
-        public static bool IsCompleteSourceCode(string data)
-        {
-            Cons code;
-
-            return ParseCompleteSourceCode(data, out code);
-        }
-
-        public static bool ParseCompleteSourceCode(string data, out Cons code)
-        {
-            code = null;
-
-            if (data.Trim() == "")
-            {
-                return true;
-            }
-
-            try
-            {
-                code = Runtime.ReadAllFromString(data);
-                return true;
-            }
-            catch (LispException ex)
-            {
-                return !ex.Message.Contains("EOF:");
-            }
-        }
-
-        public static string ReadCommand(bool debugging = false)
-        {
-            var data = "";
-
-            while (String.IsNullOrWhiteSpace(data))
-            {
-                int counter = History.Count + 1;
-                string prompt;
-                string debugText = debugging ? "> debug " : "";
-                var package = Runtime.CurrentPackage();
-                if (state.Count == 1)
-                {
-                    Console.WriteLine();
-                    prompt = System.String.Format("{0} {1} {2}> ", package.Name, counter, debugText);
-                }
-                else
-                {
-                    Console.WriteLine();
-                    prompt = System.String.Format("{0} {1} {2}: {3} > ", package.Name, counter, debugText, state.Count - 1);
-                }
-
-                Console.Write(prompt);
-
-                data = BetterReadLine();
-                if (String.IsNullOrWhiteSpace(data))
-                {
-                    // Show prompt again
-                    continue;
-                }
-
-                while (!IsCompleteSourceCode(data))
-                {
-                    data += "\n" + BetterReadLine();
-                }
-            }
-
-            return data;
-        }
-
-        static string BetterReadLine()
+        public static string ReplReadLineImp()
         {
             var top = Console.CursorTop;
             var left = Console.CursorLeft;
-            var end = Console.BufferWidth - left - 1;
-            var pos = 0;
             var len = 0;
+            var pos = 0;
             var buffer = new List<char>();
+            var col = 0;
+            var row = 0;
+            var topChoice = 0;
 
-            while (true)
+            Action<char> writeChar = (char ch) =>
+            {
+                var r1 = Console.CursorTop;
+                var c1 = Console.CursorLeft;
+                Console.Write(ch);
+                var r2 = Console.CursorTop;
+                var c2 = Console.CursorLeft;
+                if (r1 == Console.BufferHeight - 1)
+                {
+                    // on last row
+                    if (c1 > c2 || ch == '\n')
+                    {
+                        // scrolled
+                        --top;
+                        --topChoice;
+                        --row;
+                    }
+                }
+            };
+
+            Action Paint = () =>
             {
                 //
                 // update display
                 //
 
                 Console.SetCursorPosition(left, top);
-                for (var i = 0; i < len && i < end; ++i)
+                row = top;
+                col = left;
+
+                for (var i = 0; i < len; ++i)
                 {
-                    Console.Write(buffer[i]);
+                    writeChar(buffer[i]);
+
+                    if (i + 1 == pos)
+                    {
+                        row = Console.CursorTop;
+                        col = Console.CursorLeft;
+                    }
+
                 }
-                for (var i = len; i < end; ++i)
+
+                writeChar(' ');
+            };
+
+            Action Erase = () =>
+            {
+                var start = Console.CursorLeft + Console.CursorTop * Console.BufferWidth;
+                var end = (Console.WindowTop + Console.WindowHeight) * Console.BufferWidth - 1;
+                if (start < end)
                 {
-                    Console.Write(' ');
+                    var blanks = new String(' ', end - start);
+                    Console.Write(blanks);
                 }
+            };
+
+            Action MoveBackOverSpaces = () =>
+            {
+                if (0 < pos && (pos == len || buffer[pos] == ' '))
+                {
+                    while (0 < pos && buffer[pos - 1] == ' ')
+                    {
+                        --pos;
+                    }
+                }
+            };
+           
+            while (true)
+            {
+                Paint();
+                Erase();
 
                 //
                 // get next key
                 //
 
-                Console.SetCursorPosition(left + pos, top);
+                Console.SetCursorPosition(col, row);
                 var keyInfo = Console.ReadKey(true);
                 var key = keyInfo.Key;
+                var mod = keyInfo.Modifiers;
                 var ch = keyInfo.KeyChar;
 
                 switch (key)
@@ -394,16 +181,21 @@ namespace Kiezel
                         }
                         break;
                     }
-                    case ConsoleKey.Tab:
-                    {
-                        break;
-                    }
                     case ConsoleKey.Enter:
                     {
-                        Console.WriteLine();
+                        writeChar('\n');
                         var s = new string(buffer.ToArray());
-                        History.Append(s);
-                        return s;
+                        if (mod != ConsoleModifiers.Control && IsCompleteSourceCode(s))
+                        {
+                            return s;
+                        }
+                        else
+                        {
+                            buffer.Add('\n');
+                            ++pos;
+                            ++len;
+                        }
+                        break;                    
                     }
                     case ConsoleKey.Home:
                     {
@@ -425,7 +217,7 @@ namespace Kiezel
                     }
                     case ConsoleKey.RightArrow:
                     {
-                        if (pos < end)
+                        if (pos < len)
                         {
                             ++pos;
                         }
@@ -436,10 +228,6 @@ namespace Kiezel
                         if (History != null)
                         {
                             var s = History.Previous();
-                            if (s.Length > end)
-                            {
-                                s = s.Substring(0, end);
-                            }
                             buffer = new List<char>(s);
                             pos = len = buffer.Count;
                         }
@@ -450,10 +238,6 @@ namespace Kiezel
                         if (History != null)
                         {
                             var s = History.Next();
-                            if (s.Length > end)
-                            {
-                                s = s.Substring(0, end);
-                            }
                             buffer = new List<char>(s);
                             pos = len = buffer.Count;
                         }
@@ -465,144 +249,108 @@ namespace Kiezel
                         pos = len = buffer.Count;
                         break;
                     }
-                    default:
+                    case ConsoleKey.Tab:
                     {
-                        if (len == end)
+                        MoveBackOverSpaces();
+                        var text = new string(buffer.GetRange(0, pos).ToArray());                      
+                        var searchTerm = Runtime.GetWordFromString(text, pos, Runtime.IsLispWordChar);
+                        var completions = RuntimeConsoleBase.GetCompletions(searchTerm);
+                        var posOrig = pos;
+                        var index = 0;
+                        var leftChoice = 0;
+                        var done = false;
+                        pos = len;
+                        while (!done)
                         {
-                        }
-                        else
-                        {
-                            if (ch != 0)
+                            Paint();
+                            writeChar('\n');
+                            for (int i = 0; i < completions.Count; ++i)
                             {
-                                buffer.Insert(pos, ch);
-                                ++pos;
-                                ++len;
+                                foreach (var ch3 in completions[i])
+                                {
+                                    writeChar(ch3);
+                                }
+                                if (i == index)
+                                {
+                                    topChoice = Console.CursorTop;
+                                    leftChoice = Console.CursorLeft;
+                                }
+                                writeChar(' ');
+                                writeChar(' ');
+                            }
+                            Erase();
+                            Console.SetCursorPosition(leftChoice, topChoice);
+                            var keyInfo2 = Console.ReadKey(true);
+                            var key2 = keyInfo2.Key;
+                            if (key2 == ConsoleKey.Enter || (key2 == ConsoleKey.Tab && completions.Count == 1))
+                            {
+                                pos = posOrig - searchTerm.Length;
+                                buffer.RemoveRange(pos, searchTerm.Length);
+                                var inserted = completions[index] + " ";
+                                buffer.InsertRange(pos, inserted);
+                                len = buffer.Count;
+                                pos += inserted.Length;
+                                done = true;
+                            }
+                            else if (key2 == ConsoleKey.Tab)
+                            {
+                                index = (index + 1) % completions.Count;
+                            }
+                            else if (key2 == ConsoleKey.Escape)
+                            {
+                                pos = posOrig;
+                                done = true;
                             }
                         }
                         break;
                     }
-                }
-            }
-        }
-
-        public static void ReadEvalPrintLoop(string commandOptionArgument = null, bool initialized = false, bool debugging = false)
-        {
-            if (!initialized)
-            {
-                state = new Stack<ThreadContextState>();
-                state.Push(Runtime.SaveStackAndFrame());
-            }
-
-            while (true)
-            {
-                try
-                {
-                    if (!initialized)
+                    case ConsoleKey.V:
                     {
-                        initialized = true;
-                        Reset(0);
-                    }
-
-                    if (String.IsNullOrWhiteSpace(commandOptionArgument))
-                    {
-                        var command = ReadCommand(debugging);
-                        EvalPrintCommand(command, debugging);
-                    }
-                    else
-                    {
-                        var scriptFile = commandOptionArgument;
-                        commandOptionArgument = "";
-                        Runtime.Run(scriptFile, Symbols.LoadPrintKeyword, false, Symbols.LoadVerboseKeyword, false);
-                        if (!Runtime.Repl)
+                        if (mod == ConsoleModifiers.Control)
                         {
-                            Runtime.Exit();
+                            var text = Runtime.GetClipboardData();
+                            foreach (var ch2 in text)
+                            {
+                                var ch3 = (ch2 == '\n' || ch2 >= ' ') ? ch2 : ' ';
+                                buffer.Insert(pos, ch3);
+                                ++pos;
+                                ++len;
+                            }
                         }
-                    }
-                }
-                catch (ContinueFromBreakpointException)
-                {
-                    if (debugging)
-                    {
-                        throw;
-                    }
-                }
-                catch (AbortingDebuggerException)
-                {
-                    if (debugging)
-                    {
-                        throw;
-                    }
-                }
-                catch (AbortedDebuggerException)
-                {
-                }
-                catch (InterruptException)
-                {
-                    // Effect of Ctrl+D
-                    Console.WriteLine("Interrupt.");
-                }
-                catch (Exception ex)
-                {
-                    //ClearKeyboardBuffer();
-                    ex = Runtime.UnwindException(ex);
-                    LastException = ex;
-                    Console.WriteLine(ex.Message);
-                    state.Push(Runtime.SaveStackAndFrame());
-                } 
-            }
-        }
-
-        public static void RunCommand(Action<object> func, Cons lispCode, bool showTime = false, bool smartParens = false)
-        {
-            if (lispCode != null)
-            {
-                var head = Runtime.First(lispCode) as Symbol;
-                var scope = Runtime.ReplGetCurrentAnalysisScope();
-
-                if (smartParens && head != null)
-                {
-                    if (Runtime.LooksLikeFunction(head))
-                    {
-                        lispCode = Runtime.MakeCons(lispCode, (Cons)null);
-                    }
-                }
-
-                timer.Reset();
-
-                foreach (var expr in lispCode)
-                {
-                    var expr2 = Runtime.Compile(expr, scope);
-                    timer.Start();
-                    object val = Runtime.Execute(expr2);
-                    if (Runtime.ToBool(Runtime.GetDynamic(Symbols.ReplForceIt)))
-                    {
-                        val = Runtime.Force(val);
-                    }
-                    timer.Stop();
-                    if (func == null)
-                    {
-                        Runtime.SetSymbolValue(Symbols.It, val);
-                        if (val != VOID.Value)
+                        else
                         {
-                            Console.Write("it: ");
-                            Runtime.PrettyPrintLine(Console.Out, 4, null, val);
+                            buffer.Insert(pos, ch);
+                            ++pos;
+                            ++len;
                         }
+                        break;
                     }
-                    else
+                    case ConsoleKey.C:
                     {
-                        func(val);
+                        if (mod == ConsoleModifiers.Control)
+                        {
+                            var text = new string(buffer.ToArray());
+                            Runtime.SetClipboardData(text);
+                        }
+                        else
+                        {
+                            buffer.Insert(pos, ch);
+                            ++pos;
+                            ++len;
+                        }
+                        break;
+                    }
+                    default:
+                    {
+                        if (ch != 0)
+                        {
+                            buffer.Insert(pos, ch);
+                            ++pos;
+                            ++len;
+                        }
+                        break;
                     }
                 }
-
-                var time = timer.ElapsedMilliseconds;
-                if (showTime)
-                {
-                    Console.WriteLine("Elapsed time: {0} ms", time);
-                }
-            }
-            else
-            {
-                func(Runtime.SymbolValue(Symbols.It));
             }
         }
 
@@ -621,7 +369,7 @@ namespace Kiezel
             {
                 var assembly = Assembly.GetExecutingAssembly();
                 var fileVersion = FileVersionInfo.GetVersionInfo(assembly.Location);
-                Console.WriteLine(GetVersion());
+                Console.WriteLine(Runtime.GetVersion());
                 Console.WriteLine(fileVersion.LegalCopyright);
                 Console.WriteLine("Type `help` for help on top-level commands");
             }

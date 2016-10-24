@@ -20,7 +20,8 @@ namespace Kiezel
         #if DEBUG
         public static bool AdaptiveCompilation = false;
         public static int CompilationThreshold = 50;
-        #else
+        
+#else
         public static bool AdaptiveCompilation = true;
         public static int CompilationThreshold = 50;
         #endif
@@ -61,6 +62,19 @@ namespace Kiezel
             {
                 _Context = value;
             }
+        }
+
+        [Lisp("get-version")]
+        public static string GetVersion()
+        {
+            var assembly = Assembly.GetEntryAssembly();
+            var fileVersion = FileVersionInfo.GetVersionInfo(assembly.Location);
+            var date = new DateTime(2000, 1, 1).AddDays(fileVersion.FileBuildPart);
+            #if DEBUG
+            return String.Format("{0} {1}.{2} (Debug Build {3} - {4:yyyy-MM-dd})", fileVersion.ProductName, fileVersion.FileMajorPart, fileVersion.FileMinorPart, fileVersion.FileBuildPart, date);
+            #else
+            return String.Format("{0} {1}.{2} (Release Build {3} - {4:yyyy-MM-dd})", fileVersion.ProductName, fileVersion.FileMajorPart, fileVersion.FileMinorPart, fileVersion.FileBuildPart, date);
+            #endif
         }
 
         [Lisp("exit")]

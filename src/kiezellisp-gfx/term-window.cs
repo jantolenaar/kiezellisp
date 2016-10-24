@@ -328,6 +328,8 @@ namespace Kiezel
         int HomeCol;
         int EndRow;
         int EndCol;
+        int SavedRow;
+        int SavedCol;
 
         internal int HomePos
         { 
@@ -352,6 +354,19 @@ namespace Kiezel
             {
                 EndRow = value / Width;
                 EndCol = value % Width;
+            }
+        }
+
+        internal int SavedPos
+        { 
+            get
+            { 
+                return SavedRow * Width + SavedCol; 
+            } 
+            set
+            {
+                SavedRow = value / Width;
+                SavedCol = value % Width;
             }
         }
 
@@ -606,6 +621,7 @@ namespace Kiezel
             --HomeRow;
             --EndRow;
             --CursorRow;
+            --SavedRow;
         }
 
         internal void Next(bool scrollok = false, bool refresh = false)
@@ -871,7 +887,13 @@ namespace Kiezel
                     while (Col != 0);
                     break;
                 }
-                
+
+                case '\r':
+                {
+                    Col = 0;
+                    break;
+                }
+
                 default:
                 {
                     if (Reverse)
@@ -1157,7 +1179,7 @@ namespace Kiezel
             }
         }
 
-        void ShowCursor()
+        internal void ShowCursor()
         {
             HideCursor();
             if (0 <= Row && Row < Height)
@@ -1172,7 +1194,7 @@ namespace Kiezel
             }
         }
 
-        void HideCursor()
+        internal void HideCursor()
         {
             if (CursorVisible)
             {
@@ -1674,33 +1696,7 @@ namespace Kiezel
         public string GetWordFromBuffer(int beg, int pos, int end, Func<char,bool> wordCharTest)
         {
             var text = GetStringFromBuffer(beg, end);
-            var index = pos - beg;
-            var i = index;
-
-            while (i > 0)
-            {
-                var ch = text[i - 1];
-                if (!wordCharTest(ch))
-                {
-                    break;
-                }
-                --i;
-            }
-
-            var j = index;
-            while (j < text.Length)
-            {
-                var ch = text[j];
-                if (!wordCharTest(ch))
-                {
-                    break;
-                }
-                ++j;
-            }
-
-            var word = text.Substring(i, j - i);
-            return word;
-
+            return Runtime.GetWordFromString(text, pos - beg, wordCharTest);
         }
 
         public string ScrapeWordAt(int x, int y)
@@ -1712,18 +1708,24 @@ namespace Kiezel
             return text;
         }
 
-        internal bool IsLispWordChar(char ch)
-        {
-            return ch != '.' && Runtime.IsWordChar(ch);
-        }
-
         public string ScrapeLispWordAt(int x, int y)
         {
             var beg = y * Width;
             var end = beg + Width;
             var pos = beg + x;
-            var text = GetWordFromBuffer(beg, pos, end, IsLispWordChar);
+            var text = GetWordFromBuffer(beg, pos, end, Runtime.IsLispWordChar);
             return text;
+        }
+
+        internal void CmdMoveBackOverSpaces()
+        {
+            if (Get(Pos) == ' ')
+            {
+                while (HomePos < Pos && Get(Pos - 1) == ' ')
+                {
+                    --Pos;
+                }
+            }
         }
 
         internal void CmdDataChar(char ch)
@@ -1781,9 +1783,11 @@ namespace Kiezel
 
         void CmdEscape()
         {
-            Done = true;
-            CmdEnd();
-            Text = null;
+            while (HomePos != EndPos)
+            {
+                Pos = EndPos;
+                CmdBackspace();
+            }
         }
 
         void CmdHome()
@@ -1812,7 +1816,7 @@ namespace Kiezel
             }
         }
 
-        void CmdBackspace()
+        internal void CmdBackspace()
         {
             if (HomePos < Pos)
             {
@@ -1834,12 +1838,12 @@ namespace Kiezel
         void CmdCopy()
         {
             var text = GetStringFromBuffer(HomePos, EndPos);
-            RuntimeGfx.SetClipboardData(text.ToString());
+            Runtime.SetClipboardData(text.ToString());
         }
 
         void CmdPaste()
         {
-            string str = RuntimeGfx.GetClipboardData();
+            string str = Runtime.GetClipboardData();
             InsertString(str);
         }
 
@@ -1851,16 +1855,6 @@ namespace Kiezel
                 {
                     CmdDataChar(ch);
                 }
-            }
-        }
-
-        void CmdCut()
-        {
-            CmdCopy();
-            while (HomePos != EndPos)
-            {
-                Pos = EndPos;
-                CmdBackspace();
             }
         }
 
@@ -1900,6 +1894,7 @@ namespace Kiezel
                 HomeRow += count;
                 EndRow += count;
                 CursorRow += count;
+                SavedRow += count;
                 return true;
             }
             else
@@ -1967,6 +1962,7 @@ namespace Kiezel
                 HomeRow -= count;
                 EndRow -= count;
                 CursorRow -= count;
+                SavedRow -= count;
                 return true;
             }
             else
@@ -2024,7 +2020,8 @@ namespace Kiezel
             {
                 return;
             }
-            var text = this.GetWordFromBuffer(HomePos, Pos, Pos, IsLispWordChar);
+            CmdMoveBackOverSpaces();
+            var text = this.GetWordFromBuffer(HomePos, Pos, Pos, Runtime.IsLispWordChar);
             var textPos = Pos - text.Length;
             text = SelectCompletion(text);
             if (text != null)
@@ -2033,14 +2030,14 @@ namespace Kiezel
                 {
                     CmdBackspace();
                 }
-                InsertString(text);
+                InsertString(text + " ");
             }
         }
 
-        string SelectCompletion(string text)
+        internal string SelectCompletion(string text)
         {
             var prefix = text;
-            var completions = RuntimeGfx.GetCompletions(prefix);
+            var completions = RuntimeConsoleBase.GetCompletions(prefix);
             var x = ScreenLeft + Col;
             var y = ScreenTop + Row;
             var w = 40;
@@ -2112,7 +2109,6 @@ namespace Kiezel
             AddEditHandler(TerminalKeys.Delete, CmdDeleteChar);
             AddEditHandler(TerminalKeys.Tab, CmdTabCompletion);
             AddEditHandler(TerminalKeys.C | TerminalKeys.Control, CmdCopy);
-            AddEditHandler(TerminalKeys.X | TerminalKeys.Control, CmdCut);
             AddEditHandler(TerminalKeys.V | TerminalKeys.Control, CmdPaste);
 
         }

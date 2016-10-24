@@ -293,6 +293,43 @@ namespace Kiezel
             return item.Type == CharacterType.Constituent;
         }
 
+        public static bool IsLispWordChar(char ch)
+        {
+            return ch != '.' && IsWordChar(ch);
+        }
+
+
+        public static string GetWordFromString(string text, int index, Func<char,bool> wordCharTest)
+        {
+            var i = index;
+
+            while (i > 0)
+            {
+                var ch = text[i - 1];
+                if (!wordCharTest(ch))
+                {
+                    break;
+                }
+                --i;
+            }
+
+            var j = index;
+            while (j < text.Length)
+            {
+                var ch = text[j];
+                if (!wordCharTest(ch))
+                {
+                    break;
+                }
+                ++j;
+            }
+
+            var word = text.Substring(i, j - i);
+            return word;
+
+        }
+
+
         public static bool MustEscapeChar(char ch)
         {
             var item = DefaultReadtable.GetEntry(ch);

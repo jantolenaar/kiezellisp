@@ -1,5 +1,14 @@
 # Change Log
 
+## 2016/10/24
+
+*   Added tab expansion to kiezellisp-con.
+*   Changed `help` from function to macro.
+*   Added `man` macro.
+*   Added `CTRL+C` to copy the REPL input line to the clipboard.
+*   Added `CTRL+ENTER` to append a LF to the REPL input line.
+*   Added `more` pager function.
+
 ## 2016/10/20
 
 *   Added history to kiezellisp-con.

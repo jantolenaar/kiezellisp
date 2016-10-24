@@ -206,7 +206,6 @@ namespace Kiezel
             DefaultHighlightForeColor = new ColorType(options.HighlightForeColor);
             DefaultHighlightBackColor = new ColorType(options.HighlightBackColor);
             DefaultShadowBackColor = new ColorType(options.ShadowBackColor);
-            History = new ReplHistory("kiezellisp-gfx");
             TerminalWindow = new TerminalMainForm(options.FontName, options.FontSize, Width, Height, mainProgram);
             WindowList = new List<Window>();
             StdScr = ReplWindow.CreateReplWindow(Width, Height, options.BufferHeight);
@@ -279,7 +278,6 @@ namespace Kiezel
 
         public static ColorType DefaultErrorColor{ get ; set; }
 
-        internal static ReplHistory History;
         internal static ReplWindow StdScr;
 
         public static void ResetColors()

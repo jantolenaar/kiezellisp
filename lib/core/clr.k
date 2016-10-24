@@ -63,6 +63,10 @@
 (import "System.Drawing.Color")
 #endif
 
+#if console-mode
+(import "System.Console")
+#endif
+
 (import "Kiezel.AssertFailedException")
 (import "Kiezel.Cons")
 (import "Kiezel.FileExtensions" :extends-package-name "file")

@@ -664,50 +664,6 @@ namespace Kiezel
 
     public partial class RuntimeGfx
     {
-        [LispAttribute("set-clipboard")]
-        public static void SetClipboardData(string str)
-        {
-            if (String.IsNullOrEmpty(str))
-            {
-                System.Windows.Forms.Clipboard.Clear();
-            }
-            else
-            {
-                System.Windows.Forms.Clipboard.SetText(str);
-            }
-        }
-
-        [LispAttribute("get-clipboard")]
-        public static string GetClipboardData()
-        {
-            string str = System.Windows.Forms.Clipboard.GetText();
-            return str;
-        }
-
-        [LispAttribute("load-clipboard")]
-        public static void LoadClipboardData()
-        {
-            var code = GetClipboardData();
-            using (var stream = new StringReader(code))
-            {
-                Runtime.TryLoadText(stream, null, null, false, false);
-            }
-        }
-
-        [LispAttribute("run-clipboard")]
-        public static void RunClipboardData()
-        {
-            var code = GetClipboardData();
-            using (var stream = new StringReader(code))
-            {
-                Runtime.TryLoadText(stream, null, null, false, false);
-                var main = Symbols.Main.Value as IApply;
-                if (main != null)
-                {
-                    Runtime.Funcall(main);
-                }
-            }
-        }
 
         public static void ProcessEvents()
         {

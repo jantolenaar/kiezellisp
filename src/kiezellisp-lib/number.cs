@@ -7,6 +7,7 @@ using Numerics;
 
 namespace Kiezel
 {
+    [RestrictedImport]
     public abstract class Number
     {
         private static int a = (int)'a';

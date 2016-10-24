@@ -13,6 +13,10 @@ namespace Kiezel
         [STAThread]
         static void Main(string[] args)
         {
+            RuntimeConsole.ResetRuntimeFunctionImp = RuntimeConsole.Reset;
+            RuntimeConsole.ResetDisplayFunctionImp = RuntimeConsole.ReplResetDisplay;
+            RuntimeConsole.ReadLineFunctionImp = RuntimeConsole.ReplReadLine;
+
             Thread.CurrentThread.CurrentCulture = CultureInfo.InvariantCulture;
 
             var options = RuntimeConsole.ParseArgs(args);

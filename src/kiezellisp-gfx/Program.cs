@@ -14,6 +14,10 @@ namespace Kiezel
         [STAThread]
         static void Main(string[] args)
         {
+            RuntimeGfx.ResetRuntimeFunctionImp = RuntimeGfx.Reset;
+            RuntimeGfx.ReadLineFunctionImp = RuntimeGfx.ReplReadLine;
+            RuntimeGfx.ResetDisplayFunctionImp = RuntimeGfx.ReplResetDisplay;
+
             Thread.CurrentThread.CurrentCulture = CultureInfo.InvariantCulture;
 
             try
@@ -49,8 +53,8 @@ namespace Kiezel
             Runtime.Reset();
             Runtime.RestartBuiltins(typeof(RuntimeGfx));
             Symbols.StdScr.ConstantValue = Terminal.StdScr;
-            Symbols.StdOut.ConstantValue = Terminal.StdScr;
-            Symbols.StdErr.VariableValue = Terminal.StdScr;
+            Symbols.StdOut.ConstantValue = Terminal.Out;
+            Symbols.StdErr.VariableValue = Terminal.Out;
             Symbols.StdIn.ConstantValue = Terminal.StdScr;
             Runtime.RestartLoadFiles(level);
         }

@@ -18,11 +18,9 @@ namespace Kiezel
             cursor = 0;
             lines = new List<string>();
             histfile = null;
-        }
 
-        public ReplHistory(string app) : this()
-        {
-            string dir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "kiezellisp");
+            var app = "kiezellisp";
+            var dir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "kiezellisp");
 
             if (!Directory.Exists(dir))
             {
@@ -62,18 +60,36 @@ namespace Kiezel
         public void Append(string s)
         {
             s = s.TrimEnd();
-            if (lines.Contains(s))
+
+            switch (s)
             {
-                lines.Remove(s);
+                case ":q":
+                case ":qu":
+                case ":qui":
+                case ":quit":
+                {
+                    break;
+                }
+                default:
+                {
+                    if (lines.Contains(s))
+                    {
+                        lines.Remove(s);
+                    }
+                    lines.Add(s);
+                    break;
+                }
             }
-            lines.Add(s);
+
             cursor = Count;
         }
 
-        public void Clear()
+        public void Clear(int keep = 0)
         {
-            lines.Clear();
-            cursor = 0;
+            var k = Math.Min(lines.Count, keep);
+            var n = lines.Count - k;
+            lines = lines.GetRange(n, k);
+            cursor = Count;
         }
 
         public void Close()
@@ -87,6 +103,8 @@ namespace Kiezel
             {
                 using (StreamWriter sw = File.CreateText(histfile))
                 {
+                    Clear(25);
+
                     foreach (string s in lines)
                     {                       
                         sw.WriteLine(s.Replace("\n", "<CRLF>"));

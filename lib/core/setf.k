@@ -21,7 +21,7 @@
 
 (defun get-setf-expansion (place)
     (let place (macroexpand place))
-    (cond 
+    (cond
         ((list? place)
             (let head (first place))
             (let tail (rest place))
@@ -36,7 +36,7 @@
                     (let reader-form (cons head vars))
                     (let writer-form `(,update-fn ,@vars ,store-var))
                     (list vars vals store-var reader-form writer-form))
-                ;; next part handles (setf (.name obj) x) which 
+                ;; next part handles (setf (.name obj) x) which
                 ;; reads as (setf ((. "name") obj) x)
                 ((and (list? head)
                       (= '. (first head))
@@ -48,8 +48,8 @@
                     (let reader-form `(attr ,(first vars) ,member))
                     (let writer-form `(set-attr ,(first vars) ,member ,store-var))
                     (list vars vals store-var reader-form writer-form))
-                      
-                (true 
+
+                (true
                     (throw-error "setf: no setf expander for: " (write-to-string (first place)))
 
                 )))
@@ -110,22 +110,22 @@
 (defmacro define-modify-macro (name args func)
     (let arg-names (system:parse-parameter-list args))
     `(defmacro ,name (place ,@args)
-        (multiple-let (vars vals store-var reader-form writer-form) 
+        (multiple-let (vars vals store-var reader-form writer-form)
                 (get-setf-expansion place))
         `(do
             ,@(map #`(let ,%1 ,%2) vars vals)
             (let ,store-var (,,func ,reader-form ,,@arg-names))
             ,writer-form)))
 
-(define-modify-macro incf (&optional delta) '+)
-(define-modify-macro decf (&optional delta) '-)
+(define-modify-macro incf (&optional (delta 1)) '+)
+(define-modify-macro decf (&optional (delta 1)) '-)
 
 ;;;
 ;;; push and pop macros (not optimized)
 ;;;
 
 (defmacro pop (place)
-    (multiple-let (vars vals store-var reader-form writer-form) 
+    (multiple-let (vars vals store-var reader-form writer-form)
                         (get-setf-expansion place))
     (let temp (gentemp "list"))
     `(do
@@ -136,7 +136,7 @@
         (car ,temp)))
 
 (defmacro push (item place)
-    (multiple-let (vars vals store-var reader-form writer-form) 
+    (multiple-let (vars vals store-var reader-form writer-form)
                         (get-setf-expansion place))
     `(do
         ,@(map #`(let ,%1 ,%2) vars vals)
@@ -144,12 +144,9 @@
         ,writer-form))
 
 (defmacro pushnew (item place)
-    (multiple-let (vars vals store-var reader-form writer-form) 
+    (multiple-let (vars vals store-var reader-form writer-form)
                         (get-setf-expansion place))
     `(do
         ,@(map #`(let ,%1 ,%2) vars vals)
         (var ,store-var (adjoin ,item ,reader-form))
         ,writer-form))
-
-
-        

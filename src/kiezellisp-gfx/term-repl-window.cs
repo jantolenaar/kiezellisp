@@ -71,22 +71,30 @@ namespace Kiezel
 
         void InitHandlers()
         {
+            AddEditHandler(TerminalKeys.Enter | TerminalKeys.Control, CmdEnterData);
             AddEditHandler(TerminalKeys.Enter, CmdEnterDataOrCommand);
             AddEditHandler(TerminalKeys.Up, CmdHistoryPrev);
             AddEditHandler(TerminalKeys.Down, CmdHistoryNext);
             AddEditHandler(TerminalKeys.F1, CmdHelp);
+            AddEditHandler(TerminalKeys.Tab, CmdTabCompletion);
         }
 
         void CmdHelp()
         {
-            var topic = GetWordFromBuffer(HomePos, Pos, EndPos, IsLispWordChar);
+            CmdMoveBackOverSpaces();
+            var topic = GetWordFromBuffer(HomePos, Pos, EndPos, Runtime.IsLispWordChar);
             var helper = Symbols.HelpHook.Value as IApply;
             if (helper != null)
             {
                 var sym = topic == "" ? null : Runtime.MakeSymbol(topic);
                 Runtime.Funcall(helper, sym);
-                //RuntimeConsole.ClearKeyboardBuffer();
             }
+        }
+
+        void CmdEnterData()
+        {
+            CmdEnd();
+            CmdDataChar('\n');
         }
 
         void CmdEnterDataOrCommand()
@@ -105,30 +113,95 @@ namespace Kiezel
 
         void CmdHistoryNext()
         {
-            if (Terminal.History != null)
+            if (RuntimeGfx.History != null)
             {
                 Pos = HomePos;
                 while (HomePos < EndPos)
                 {
                     CmdDeleteChar();
                 }
-                InsertString(Terminal.History.Next());
+                InsertString(RuntimeGfx.History.Next());
             }
         }
 
         void CmdHistoryPrev()
         {
-            if (Terminal.History != null)
+            if (RuntimeGfx.History != null)
             {
                 Pos = HomePos;
                 while (HomePos < EndPos)
                 {
                     CmdDeleteChar();
                 }
-                InsertString(Terminal.History.Previous());
+                InsertString(RuntimeGfx.History.Previous());
             }
         }
-            
+
+        void CmdTabCompletion()
+        {
+            CmdMoveBackOverSpaces();
+            var searchTerm = this.GetWordFromBuffer(HomePos, Pos, Pos, Runtime.IsLispWordChar);
+            var completions = RuntimeConsoleBase.GetCompletions(searchTerm);
+            var index = 0;
+            var done = false;
+            var scrollProtection = false;
+
+            SavedPos = Pos;
+
+            while (!done)
+            {               
+                var choicePos = 0;
+                Pos = EndPos;
+                WriteLine();
+                for (int i = 0; i < completions.Count; ++i)
+                {
+                    Write(completions[i]);
+                    if (i == index)
+                    {
+                        choicePos = Pos;
+                    }
+                    Write(' ');
+                    Write(' ');
+                }
+                ClearToBot();
+                if (!scrollProtection)
+                {
+                    scrollProtection = true;
+                    continue;
+                }
+                Pos = choicePos;
+                ShowCursor();
+                var info2 = ReadKey(false);
+                var key2 = info2.KeyData;
+                HideCursor();
+                if (key2 == TerminalKeys.Enter || (key2 == TerminalKeys.Tab && completions.Count == 1))
+                {
+                    Pos = EndPos;
+                    ClearToBot();
+                    Pos = SavedPos;
+                    var newPos = Pos - searchTerm.Length;
+                    while (Pos != newPos)
+                    {
+                        CmdBackspace();
+                    }
+                    InsertString(completions[index] + " ");
+                    done = true;
+                }
+                else if (key2 == TerminalKeys.Tab)
+                {
+                    index = (index + 1) % completions.Count;
+                }
+                else if (key2 == TerminalKeys.Escape)
+                {
+                    Pos = EndPos;
+                    ClearToBot();
+                    Pos = SavedPos;
+                    done = true;
+                }
+            }
+
+        }
+
     }
 
 }

@@ -329,4 +329,22 @@
         `(setf ,place (elt ,temp ,index)))
     `(merging-do
         (let ,temp (as-multiple-elements ,form ,count))
-        ,@(map-indexed do-var places)))
+        ,@(map-indexed
+            do-var places)))
+;;;
+;;; compiler macros
+;;;
+
+(define-compiler-macro + (&rest numbers &whole original-form)
+    (if (and (= (length numbers) 2)
+             (number? (second numbers))
+             (= (second numbers) 1))
+        `(inc ,(first numbers))
+        original-form))
+
+(define-compiler-macro - (&rest numbers &whole original-form)
+    (if (and (= (length numbers) 2)
+             (number? (second numbers))
+             (= (second numbers) 1))
+        `(dec ,(first numbers))
+        original-form))        

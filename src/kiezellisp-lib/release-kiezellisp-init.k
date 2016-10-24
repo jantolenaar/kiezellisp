@@ -7,8 +7,6 @@
 
 (set-load-path "../lib" "../app")
 
-(setq $load-verbose $interactive-mode)
-
 (require "system")
 (require "shell")
 

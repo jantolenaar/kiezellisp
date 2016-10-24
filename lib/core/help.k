@@ -4,6 +4,7 @@
 (defpackage "lisp"
     (:export
         "help"
+        "man"
         "set-help-path"
         "$help-path"
     ))
@@ -28,18 +29,24 @@
                                 (path:get-file-name-without-extension %1))
                           files))))
 
+(defmacro help (&optional (topic 'help))
+    `(show-help ',topic))
+
+(defmacro man (&optional (topic 'man))
+    `(show-man ',topic))
+
 #if graphical-mode
 
 (defun make-documentation-window (topic)
     (let $stdout (window:open :buffer-height 999
                               :tab-completion-enabled true
                               :html-enabled true))
-    (print-line (get-documentation topic))
+    (print-line (transform-page-gfx (get-documentation topic)))
     (print-line (string:repeat "-" (terminal:width)))
     (.set-buffer-pos $stdout 0 0)
     $stdout)
 
-(defun help (&optional (topic 'help))
+(defun show-help (topic)
     (var win (make-documentation-window topic))
     (var topics (list win))
     (var index 0)
@@ -113,13 +120,16 @@
 
 #if console-mode
 
-(defun help (&optional (topic 'help))
-    (print (get-documentation topic))
-    (void))
+(defun show-help (topic)
+    (show-man topic))
 
 #endif
 
-(setf $help-hook help)
+(defun show-man (topic)
+    (more (transform-page (get-documentation topic)))
+    (void))
+
+(setf $help-hook show-help)
 
 (def usage-list-for-variables '(
     variable
@@ -147,7 +157,7 @@
                     (make-symbol topic)))
     (let text (or (get-documentation-from-file target)
                   (get-runtime-documentation target)))
-    (transform-page text))
+    text)
 
 (defun get-documentation-from-file (topic)
     (let name (transform-topic-to-path-name topic))
@@ -224,7 +234,7 @@
 
 #if graphical-mode
 
-(defun transform-line (text)
+(defun transform-line-gfx (text)
     (let bold-pattern1 #/\*\*(\S*?)\*\*/)
     (let bold-pattern2 #/__(\S*?)__/)
     (let italic-pattern1 #/\*(\S*?)\*/)
@@ -239,11 +249,15 @@
         (.regex-replace ~ code-pattern @"<u><i>\1</i></u>")
         ))
 
-(defun bold (text)
+(defun bold-gfx (text)
     (string "<b>" text "</b>"))
 
+(defun transform-page-gfx (text)
+    (transform-page-base text bold-gfx "<i>" "</i>" transform-line-gfx))
 
-(defun transform-page (text)
+#endif
+
+(defun transform-page-base (text bold italic-on italic-off transform-line)
     (let lines (string:split text "\n"))
     (let result
         (loop
@@ -253,7 +267,9 @@
             (cond
                 ((.starts-with line "~~~")
                     (setf inside-code (not inside-code))
-                    (collect (if inside-code "<italic><delete-lf>" "</italic><delete-lf>")))
+                    (collect (if inside-code
+                                (string italic-on "<delete-lf>")
+                                (string italic-off "<delete-lf>"))))
                 (inside-code
                     (collect (string (margin) line)))
                 ((.starts-with line "### ")
@@ -271,10 +287,6 @@
     (do
         (string:join "\n" result)
         (string:replace ~ "<delete-lf>\n" "")))
-
-#endif
-
-#if console-mode
 
 (defun transform-line (text)
     (let bold-pattern1 #/\*\*(\S*?)\*\*/)
@@ -291,36 +303,5 @@
         ;(.regex-replace ~ code-pattern @"\1")
         ))
 
-(defun bold (text)
-    (string "" text ""))
-
 (defun transform-page (text)
-    (let lines (string:split text "\n"))
-    (let result
-        (loop
-            (initially
-                (var inside-code false))
-            (for line :in lines)
-            (cond
-                ((.starts-with line "~~~")
-                    (setf inside-code (not inside-code))
-                    (collect (if inside-code "<delete-lf>" "<delete-lf>")))
-                (inside-code
-                    (collect (string (margin) line)))
-                ((.starts-with line "### ")
-                    (let text (.trim (.substring line 3)))
-                    (collect (string (margin) (bold text)))
-                    (collect ""))
-                ((.starts-with line "## ")
-                    (let text (.to-upper (.trim (.substring line 2))))
-                    (collect (string (margin 1) (bold text))))
-                ((.starts-with line "# ")
-                    (let text (.to-upper (.trim (.substring line 1))))
-                    (collect (bold text)))
-                (true
-                    (collect (string (margin) (transform-line line)))))))
-    (do
-        (string:join "\n" result)
-        (string:replace ~ "<delete-lf>\n" "")))
-
-#endif
+    (transform-page-base text identity "" "" transform-line))
