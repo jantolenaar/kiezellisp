@@ -21,13 +21,21 @@ namespace Kiezel
         public static bool AdaptiveCompilation = false;
         public static int CompilationThreshold = 50;
         
-#else
+
+        
+
+
+
+
+
+
+
+
+        #else
         public static bool AdaptiveCompilation = true;
         public static int CompilationThreshold = 50;
         #endif
-        public static bool ConsoleMode;
-        public static bool GraphicalMode;
-        public static bool EmbeddedMode;
+        public static string ProgramFeature;
         public static bool DebugMode;
         public static bool Mono;
         public static Readtable DefaultReadtable;
@@ -62,6 +70,24 @@ namespace Kiezel
             {
                 _Context = value;
             }
+        }
+
+        [Lisp("get-program")]
+        public static string GetProgramName()
+        {
+            var assembly = Assembly.GetEntryAssembly();
+            var fileVersion = FileVersionInfo.GetVersionInfo(assembly.Location);
+            var fileName = Path.GetFileNameWithoutExtension(fileVersion.FileName);
+            return fileName;
+        }
+
+        [Lisp("get-program")]
+        public static string GetLibraryName()
+        {
+            var assembly = Assembly.GetExecutingAssembly();
+            var fileVersion = FileVersionInfo.GetVersionInfo(assembly.Location);
+            var fileName = Path.GetFileNameWithoutExtension(fileVersion.FileName);
+            return fileName;
         }
 
         [Lisp("get-version")]
@@ -303,23 +329,9 @@ namespace Kiezel
 #if CLR45
             AddFeature("clr45");
 #endif
+            AddFeature(ProgramFeature);
 
             AddFeature("kiezellisp");
-
-            if (ConsoleMode)
-            {
-                AddFeature("console-mode");
-            }
-
-            if (GraphicalMode)
-            {
-                AddFeature("graphical-mode");
-            }
-
-            if (EmbeddedMode)
-            {
-                AddFeature("embedded-mode");
-            }
 
             if (Repl)
             {
@@ -358,6 +370,7 @@ namespace Kiezel
             Symbols.Features.VariableValue = null;
             Symbols.HelpHook.VariableValue = null;
             Symbols.I.ConstantValue = Complex.ImaginaryOne;
+            Symbols.InfoColor.Value = "gray";
             Symbols.InteractiveMode.ConstantValue = Repl;
             Symbols.It.VariableValue = null;
             Symbols.LazyImport.VariableValue = true;
@@ -369,6 +382,8 @@ namespace Kiezel
             Symbols.Package.VariableValue = LispPackage;
             Symbols.PackageNamePrefix.VariableValue = null;
             Symbols.PI.ConstantValue = Math.PI;
+            Symbols.PlaybackDelay.VariableValue = 100;
+            Symbols.PlaybackDelimiter.VariableValue = "<";
             Symbols.PrettyPrintHook.VariableValue = null;
             Symbols.PrintBase.VariableValue = 10;
             Symbols.PrintCompact.Value = true;
@@ -385,10 +400,10 @@ namespace Kiezel
             Symbols.ScriptDirectory.ReadonlyValue = NormalizePath(HomeDirectory);
             Symbols.ScriptName.ReadonlyValue = null;
             Symbols.StdErr.VariableValue = null;
-            Symbols.StdIn.ConstantValue = null;
-            Symbols.StdOut.ConstantValue = null;
-            Symbols.StdScr.ConstantValue = null;
-            Symbols.InfoColor.Value = "gray";
+            Symbols.StdIn.VariableValue = null;
+            Symbols.StdLog.VariableValue = null;
+            Symbols.StdOut.VariableValue = null;
+            Symbols.StdScr.VariableValue = null;
         }
 
         public static void RestartRuntimeSymbols()

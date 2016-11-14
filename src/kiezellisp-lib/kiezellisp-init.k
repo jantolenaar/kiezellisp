@@ -5,11 +5,15 @@
 ;;; kiezellisp-init.k
 ;;;
 
-#+(and unix (not repl))
-(setq $stderr "/tmp/stdlog")
+#if (and unix (not repl))
+(setq $stderr (open-log "/home/jan/temp/stdlog"))
+(setq $stdlog (open-log "/home/jan/temp/stdlog"))
+#endif
 
-#+(and windows (not repl))
-(setq $stderr "d:/temp/stdlog")
+#if (and windows (not repl))
+(setq $stderr (open-log "d:/temp/stdlog"))
+(setq $stdlog (open-log "d:/temp/stdlog"))
+#endif
 
 #if unix
 (let project-path "/home/jan/projects/")
@@ -37,7 +41,8 @@
 (require "shell")
 (require "unit-test")
 
+#if repl
 (apply set-help-path (map make-path (list
-                "kiezellisp/help" 
+                "kiezellisp/help"
                 "/home/jan/documents/help")))
-
+#endif

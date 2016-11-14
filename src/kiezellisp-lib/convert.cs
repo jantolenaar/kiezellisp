@@ -206,7 +206,7 @@ namespace Kiezel
         [Pure, Lisp("string")]
         public static string MakeString(params object[] objs)
         {
-            return MakeStringFromObj(objs);            
+            return MakeStringFromObj(false, objs);            
         }
 
         //
@@ -414,7 +414,7 @@ namespace Kiezel
             return arg == null ? defaultValue : (IApply)arg;
         }
 
-        public static string MakeStringFromObj(object obj)
+        public static string MakeStringFromObj(bool insertSpaces, object obj)
         {
             if (obj == null)
             {
@@ -456,15 +456,19 @@ namespace Kiezel
             else if (obj is IEnumerable)
             {
                 var buf = new StringWriter();
+                var space = "";
                 foreach (object item in ( ( IEnumerable ) obj ))
                 {
+                    buf.Write(space);
+                    space = insertSpaces ? " " : "";
+
                     if (item is DictionaryEntry)
                     {
-                        buf.Write(MakeStringFromObj(((DictionaryEntry)item).Value));
+                        buf.Write(MakeStringFromObj(false, ((DictionaryEntry)item).Value));
                     }
                     else
                     {
-                        buf.Write(MakeStringFromObj(item));
+                        buf.Write(MakeStringFromObj(false, item));
                     }
                 }
                 return buf.ToString();

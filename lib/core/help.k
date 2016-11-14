@@ -30,95 +30,112 @@
                           files))))
 
 (defmacro help (&optional (topic 'help))
-    `(show-help ',topic))
+    `(show-help ,(enquote topic)))
 
 (defmacro man (&optional (topic 'man))
-    `(show-man ',topic))
+    `(show-man ,(enquote topic)))
 
-#if graphical-mode
+(defun enquote(topic)
+    (if (cons? topic)
+        topic
+        (list 'quote topic)))
 
-(defun make-documentation-window (topic)
-    (let $stdout (window:open :buffer-height 999
-                              :tab-completion-enabled true
-                              :html-enabled true))
-    (print-line (transform-page-gfx (get-documentation topic)))
-    (print-line (string:repeat "-" (terminal:width)))
-    (.set-buffer-pos $stdout 0 0)
-    $stdout)
+#if kiezellisp-repl
 
 (defun show-help (topic)
-    (var win (make-documentation-window topic))
-    (var topics (list win))
-    (var index 0)
+    (task
+        (show-help-task topic true))
+    (void))
+
+(defun make-documentation-window ()
+    (text-window:open
+        :on-close text-window:send-interrupt-key
+        :caption "Kiezellisp Help"
+        :buffer-height 999))
+
+(defun fill-documentation-window (win text)
+    (with-window-suspended (win)
+        (.resize-buffer win (.buffer-width win) 999)
+        (.set-cursor-pos win 0)
+        (.clear-to-bot win)
+        (print-line win (transform-page-gui win text))
+        (print-line win (string:repeat "-" (.buffer-width win)))
+        (.resize-buffer win (.buffer-width win) (.buffer-height-used win))
+        (.set-window-pos win 0 0)
+        (.set-cursor-pos win 0)))
+
+(defun show-help-task (topic)
+    (let win (make-documentation-window))
+    (var topics (vector))
+    (var index -1)
     (letfun goto-new-topic (topic)
         (when topic
-            (while (> index 0)
-                (window:close (first topics))
-                (pop topics)
-                (decf index))
-            (setf win (make-documentation-window topic))
-            (push win topics)))
+            (when-let (text (get-documentation topic))
+                (incf index)
+                (.remove-range topics index (- (.count topics) index))
+                (.add topics (list topic text))
+                (fill-documentation-window win text))))
     (letfun command-key? (ch)
         (or (= ch #\slash)
             (= ch #\colon)))
     (letfun escape-key? (key)
-        (or (= key terminal-keys:ESCAPE)
-            (and (= key terminal-keys:BACK)
-                 (null? (nth (inc index) topics)))))
+        (or (= key keys:ESCAPE)
+            (and (= key keys:BACK)
+                 (zero? index))))
     (letfun back-key? (key)
-        (or (= key terminal-keys:BACK)
-            (= key terminal-keys:LEFT)))
+        (or (= key keys:BACK)
+            (= key keys:LEFT)))
     (letfun forward-key? (key)
-        (or (= key terminal-keys:RIGHT)
-            (= key terminal-keys:ENTER)))
+        (or (= key keys:RIGHT)
+            (= key keys:ENTER)))
     (letfun click-key? (key)
-        (= key terminal-keys:LBUTTON))
-    (try
-        (loop
-            (.bring-to-top win)
-            (let info (.read-key win))
-            (let key (.key-data info))
-            (let ch (.key-char info))
-            (let clicks (.mouse-clicks info))
-            (let x (.mouse-col info))
-            (let y (.mouse-row info))
-            ;(breakpoint)
-            (cond
-                ((escape-key? key)
-                    (return))
-                ((command-key? ch)
-                    (goto-new-topic (command-popup win "topic: ")))
-                ((forward-key? key)
-                    (when-let (right-win (nth (dec index) topics))
-                        (decf index)
-                        (setf win right-win)))
-                ((back-key? key)
-                    (when-let (left-win (nth (inc index) topics))
-                        (incf index)
-                        (setf win left-win)))
-                ((and (click-key? key)
-                      (> clicks 1))
-                    (goto-new-topic (.scrape-lisp-word-at win x y)))
-                ))
-        (finally
-            (terminal:close-all-windows))))
+        (= key keys:LBUTTON))
+    (goto-new-topic topic)
+    (loop
+        (let info (.read-key win))
+        (let key (.key-data info))
+        (let ch (.key-char info))
+        (let clicks (.mouse-clicks info))
+        (let x (.mouse-col info))
+        (let y (.mouse-row info))
+        (cond
+            ((command-key? ch)
+                (goto-new-topic (command-popup win "topic: ")))
+            ((escape-key? key)
+                (.close win)
+                (return))
+            ((forward-key? key)
+                (when (< (inc index) (.count topics))
+                    (incf index)
+                    (fill-documentation-window win (second (elt topics index)))))
+            ((back-key? key)
+                (when (> index 0)
+                    (decf index)
+                    (fill-documentation-window win (second (elt topics index)))))
+            ((and (click-key? key)
+                  (> clicks 1))
+                (goto-new-topic (.scrape-lisp-word-at win x y)))
 
-(defun command-popup (win-orig prompt)
-    (let w (.width win-orig))
-    (let h (.height win-orig))
-    (using (win (window:open :top (- h 2) :height 2))
-        (.write win (string:repeat "-" w))
-        ;(.draw-line $stdscr 0 0 w 0)
-        (.set-cursor-pos win 0 1)
-        (setf (.bold win) true)
-        (.write win prompt)
-        (setf (.bold win) false)
-        (let str (.read win :max-chars 20))
-        (return str)))
+                )))
+
+(defun command-popup (win prompt)
+    (let w (.buffer-width win))
+    (let y (+ (.window-top win) (.window-height win) -2))
+    (let saved (.copy-buffer win))
+    (.set-cursor-top win y)
+    (.set-cursor-left win 0)
+    (.clear-to-bot win)
+    (.write win (string:repeat "=" w))
+    (.write win prompt)
+    (let str (.read win :max-chars (- w 1 (.length prompt))
+                        :code-completion true))
+    (.paste win 0 0 saved)
+    (when (not (null? str))
+        (return (.trim str))))
 
 #endif
 
-#if console-mode
+#if kiezellisp-con
 
 (defun show-help (topic)
     (show-man topic))
@@ -126,7 +143,9 @@
 #endif
 
 (defun show-man (topic)
-    (more (transform-page (get-documentation topic)))
+    (if-let (doc (get-documentation topic))
+          (more (transform-page doc))
+        (more "No documentation available."))
     (void))
 
 (setf $help-hook show-help)
@@ -156,7 +175,7 @@
                       topic
                     (make-symbol topic)))
     (let text (or (get-documentation-from-file target)
-                  (get-runtime-documentation target)))
+                  #;(get-runtime-documentation target)))
     text)
 
 (defun get-documentation-from-file (topic)
@@ -232,28 +251,33 @@
     (print (margin))
     (write-line syn :escape false))
 
-#if graphical-mode
+#if kiezellisp-repl
 
-(defun transform-line-gfx (text)
-    (let bold-pattern1 #/\*\*(\S*?)\*\*/)
-    (let bold-pattern2 #/__(\S*?)__/)
-    (let italic-pattern1 #/\*(\S*?)\*/)
-    (let italic-pattern2 #/_(\S*?)_/)
-    (let code-pattern #/`(\S*?)`/)
-    (do
-        text
-        (.regex-replace ~ bold-pattern1 @"<b>\1</b>")
-        (.regex-replace ~ bold-pattern2 @"<b>\1</b>")
-        (.regex-replace ~ italic-pattern1 @"<i>\1</i>")
-        (.regex-replace ~ italic-pattern2 @"<i>\1</i>")
-        (.regex-replace ~ code-pattern @"<u><i>\1</i></u>")
-        ))
-
-(defun bold-gfx (text)
-    (string "<b>" text "</b>"))
-
-(defun transform-page-gfx (text)
-    (transform-page-base text bold-gfx "<i>" "</i>" transform-line-gfx))
+(defun transform-page-gui (win text)
+    (letfun transform-line-gui (text)
+        (let bold-pattern1 #/\*\*(\S*?)\*\*/)
+        (let bold-pattern2 #/__(\S*?)__/)
+        (let italic-pattern1 #/\*(\S*?)\*/)
+        (let italic-pattern2 #/_(\S*?)_/)
+        (let code-pattern #/`(\S*?)`/)
+        (let b (.format-html win "b" @"\1"))
+        (let i (.format-html win "i" @"\1"))
+        (let ui (.format-html win "u" i))
+        (do
+            text
+            (.regex-replace ~ bold-pattern1 b)
+            (.regex-replace ~ bold-pattern2 b)
+            (.regex-replace ~ italic-pattern1 i)
+            (.regex-replace ~ italic-pattern2 i)
+            (.regex-replace ~ code-pattern ui)
+            ))
+    (letfun bold-gui (text)
+        (.format-html win "b" text))
+    (let i (.format-html win "i" "x"))
+    (let j (.index-of i "x"))
+    (let i1 (.substring i 0 j))
+    (let i2 (.substring i (inc j)))
+    (transform-page-base text bold-gui i1 i2 transform-line-gui))
 
 #endif
 

@@ -50,7 +50,8 @@
 
 (defun declaration? (form)
     (and (cons? form)
-         (find (first form) '(let var hidden-var letfun future lazy multiple-let multiple-var))))
+         (find (first form) '(let var hidden-var letfun letmacro let-symbol-macro
+                                  future lazy multiple-let multiple-var))))
 
 (defmacro do? (&body forms)
     (let count (length forms))
@@ -182,10 +183,11 @@
         (let result (gentemp))
         `(when $tracing
             (let ,result ,expr)
-            (write-line (string
+            (let message (string
                             ,(write-to-string expr :escape true)
                             " => "
-                            (write-to-string ,result :escape true)) :stream $stderr))))
+                            (write-to-string ,result :escape true)))
+            (print-trace message))))
 
 ;;;
 ;;; generic methods
@@ -347,4 +349,4 @@
              (number? (second numbers))
              (= (second numbers) 1))
         `(dec ,(first numbers))
-        original-form))        
+        original-form))

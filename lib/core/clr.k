@@ -59,11 +59,11 @@
 (import "System.Text.RegularExpressions.RegexOptions")
 (import "System.TimeSpan")
 
-#if graphical-mode
+#if kiezellisp-repl
 (import "System.Drawing.Color")
 #endif
 
-#if console-mode
+#if kiezellisp-con
 (import "System.Console")
 #endif
 

@@ -1,8 +1,17 @@
 # Change Log
 
+## 2016/11/14
+
+*   Refactored `kiezellisp-gfx` into `kiezellisp-repl` and `kiezellisp-gui`.
+*   Removed `terminal` class (`kiezellisp-repl`).
+*   Changed `window` class to `text-window` (`kiezellisp-repl`).
+*   Added `open-log`.
+*   Added `show-log-window` and `hide-log-window` (`kiezellisp-repl`).
+*   Changed `print` and `print-line`.
+
 ## 2016/10/24
 
-*   Added tab expansion to kiezellisp-con.
+*   Added intellisense tab expansion to kiezellisp-con.
 *   Changed `help` from function to macro.
 *   Added `man` macro.
 *   Added `CTRL+C` to copy the REPL input line to the clipboard.

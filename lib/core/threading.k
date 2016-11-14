@@ -11,9 +11,13 @@
         "parallel-foreach"
         "parallel-list"
         "task"
+        "fork"
     ))
 
 (in-package "lisp")
+
+(defmacro fork (&body forms)
+    `(system:create-thread (lambda () ,@forms)))
 
 (defmacro task (&body forms)
     `(system:create-task (lambda () ,@forms)))
@@ -30,7 +34,6 @@
     `(do
         ,@decls
         (list ,@vars)))
-
 
 (defmacro delay (&body forms)
     `(system:create-delayed-expression (lambda () ,@forms)))

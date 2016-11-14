@@ -87,6 +87,20 @@ namespace Kiezel
             return CreateTaskWithContext(code, new ThreadContext(specials), start);
         }
 
+        [Lisp("system:create-thread")]
+        public static object CreateThread(ThreadFunc code)
+        {
+            return CreateThread(code, true);
+        }
+
+        [Lisp("system:create-thread")]
+        public static object CreateThread(ThreadFunc code, bool start)
+        {
+            var specials = GetCurrentThread().SpecialStack;
+            return CreateThreadWithContext(code, new ThreadContext(specials), start);
+        }
+
+
         [Lisp("system:enable-benchmark")]
         public static void EnableBenchmark(bool flag)
         {
@@ -174,9 +188,15 @@ namespace Kiezel
                     CurrentThreadContext = context;
                     return code();
                 }
+                catch (InterruptException)
+                {
+                    return null;
+                }
                 catch (Exception ex)
                 {
-                    throw UnwindExceptionIntoNewException(ex);
+                    var ex2 = UnwindExceptionIntoNewException(ex);
+                    Runtime.PrintError(ex.ToString());
+                    throw ex2;
                 }
                 finally
                 {
@@ -186,6 +206,41 @@ namespace Kiezel
 
             var task = new Task<object>(wrapper);
             context.Task = task;
+            if (start)
+            {
+                context.Start();
+            }
+
+            return context;
+        }
+
+        public static object CreateThreadWithContext(ThreadFunc code, ThreadContext context, bool start)
+        {
+            ThreadStart wrapper = () =>
+            {
+                try
+                {
+                    CurrentThreadContext = context;
+                    context.ThreadResult = code();
+                }
+                catch (InterruptException)
+                {
+
+                }
+                catch (Exception ex)
+                {
+                    var ex2 = UnwindExceptionIntoNewException(ex);
+                    Runtime.PrintError(ex.ToString());
+                    throw ex2;
+                }
+                finally
+                {
+                    CurrentThreadContext = null;
+                }
+            };
+
+            var thread = new Thread(wrapper);
+            context.Thread = thread;
             if (start)
             {
                 context.Start();
@@ -267,6 +322,8 @@ namespace Kiezel
         public int NestingDepth = 0;
         public SpecialVariables SpecialStack = null;
         public Task<object> Task;
+        public Thread Thread;
+        public object ThreadResult;
 
         public ThreadContext(SpecialVariables specialStack)
         {
@@ -277,7 +334,14 @@ namespace Kiezel
         {
             get
             {
-                return Task.IsCompleted;
+                if (Task != null)
+                {
+                    return Task.IsCompleted;
+                }
+                else
+                {
+                    return Thread.ThreadState == System.Threading.ThreadState.Stopped;
+                }
             }
         }
 
@@ -301,19 +365,43 @@ namespace Kiezel
         public object GetResult()
         {
             Start();
-            return Task.Result;
+            if (Task != null)
+            {
+                return Task.Result;
+            }
+            else
+            {
+                Thread.Join();
+                return ThreadResult;
+            }
         }
 
         public void Start()
         {
-            if (Task.Status == TaskStatus.Created)
+            if (Task != null)
             {
-                try
+                if (Task.Status == TaskStatus.Created)
                 {
-                    Task.Start();
+                    try
+                    {
+                        Task.Start();
+                    }
+                    catch
+                    {
+                    }
                 }
-                catch
+            }
+            else
+            {
+                if (Thread.ThreadState == System.Threading.ThreadState.Unstarted)
                 {
+                    try
+                    {
+                        Thread.Start();
+                    }
+                    catch
+                    {
+                    }
                 }
             }
         }

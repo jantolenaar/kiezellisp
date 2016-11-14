@@ -8,7 +8,7 @@
     (:export
         "$pprint-left-margin"
         "$pprint-right-margin"
-        "pprint"    
+        "pprint"
     ))
 
 (in-package "lisp")
@@ -76,7 +76,7 @@
       (or 1 :align)
       (psetf 2)
       (psetq 2)
-      (quote 1)     
+      (quote 1)
       (return 1)
       (return-from 2)
       (return-if 1)
@@ -136,7 +136,7 @@ $print-escape and $print-base.
                   a))
 
     (var config (rest (find sym pprint-form-settings :key first)))
-    (if (and config 
+    (if (and config
              (not (rest config)))
         (setf (rest config) '(:indent)))
 
@@ -162,7 +162,7 @@ $print-escape and $print-base.
     (let b (second expr))
     (let c (third expr))
     (let d (fourth expr))
-    
+
     (when (eq a 'quote)
         (print "'")
         (with-indent (1)
@@ -269,7 +269,7 @@ $print-escape and $print-base.
 (defun pprint-cond (expr)
     (print "(" (first expr) " ")
     (with-default-indent ()
-        (loop 
+        (loop
             (for cond-case in (rest expr))
             (print-line)
             (pprint-left-margin)
@@ -283,12 +283,12 @@ $print-escape and $print-base.
 
 (defun pprint-case (expr)
     (let target (second expr))
-    (let cases (rest (rest expr)))  
+    (let cases (rest (rest expr)))
     (print "(" (first expr) " ")
     (with-default-indent (2)
         (pprint target))
     (with-default-indent ()
-        (loop 
+        (loop
             (for case in cases)
             (print-line)
             (pprint-left-margin)
@@ -324,7 +324,7 @@ $print-escape and $print-base.
         (let key (write-to-string (first kv)))
         (print key " ")
         (with-indent ((inc (length key)))
-            (pprint (second kv)))           
+            (pprint (second kv)))
         (setf newline true)))
 
 (defun pprint-formatted-code (expr config)
@@ -333,7 +333,7 @@ $print-escape and $print-base.
     (let head (write-to-string (first expr)))
     (var tail (rest expr))
     (write head :escape false)
-    (let $pprint-left-margin 
+    (let $pprint-left-margin
             (if (find :align (rest config))
                   (+ $pprint-left-margin 1 (.length head) 1)
                 (+ $pprint-left-margin $pprint-indent-size)))
@@ -387,7 +387,7 @@ $print-escape and $print-base.
 
 (defun pprint-prototype-items-vertically (seq newline)
     (loop
-        (for key in (prototype:keys seq))
+        (for key in (sort (prototype:keys seq)))
         (when newline
             (print-line)
             (pprint-left-margin))
@@ -410,7 +410,7 @@ $print-escape and $print-base.
 ;;; Lisp Syntax Colors
 ;;;
 
-(defconstant $syntax-color-builtin 		0x0000ff) 
+(defconstant $syntax-color-builtin 		0x0000ff)
 (defconstant $syntax-color-comment 		0xb22222)
 (defconstant $syntax-color-form 		0xda70d6)
 (defconstant $syntax-color-constant 	0x0000ff)
@@ -420,5 +420,3 @@ $print-escape and $print-base.
 (defconstant $syntax-color-string 		0xbc7711)
 (defconstant $syntax-color-conditional  0xb22222)
 (defconstant $syntax-color-debug        0x0000ff)
-
-

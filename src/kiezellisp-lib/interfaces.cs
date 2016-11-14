@@ -26,4 +26,10 @@ namespace Kiezel
     {
         void WriteLog(string style, string msg);
     }
+
+    public interface IHtmlWriter
+    {
+        string Format(string style, string msg);
+    }
+
 }

@@ -15,7 +15,7 @@ namespace Kiezel
         {
             RuntimeConsole.ResetRuntimeFunctionImp = RuntimeConsole.Reset;
             RuntimeConsole.ResetDisplayFunctionImp = RuntimeConsole.ReplResetDisplay;
-            RuntimeConsole.ReadLineFunctionImp = RuntimeConsole.ReplReadLine;
+            RuntimeConsole.ReadFunctionImp = RuntimeConsole.ReplRead;
 
             Thread.CurrentThread.CurrentCulture = CultureInfo.InvariantCulture;
 
@@ -32,9 +32,10 @@ namespace Kiezel
             Runtime.Reset();
             Runtime.RestartBuiltins(typeof(RuntimeConsole));
             Symbols.StdScr.ConstantValue = null;
-            Symbols.StdOut.ConstantValue = Console.Out;
             Symbols.StdErr.VariableValue = Console.Out;
-            Symbols.StdIn.ConstantValue = Console.In;
+            Symbols.StdLog.VariableValue = Console.Out;
+            Symbols.StdOut.VariableValue = Console.Out;
+            Symbols.StdIn.VariableValue = Console.In;
             Runtime.RestartLoadFiles(level);
         }
 

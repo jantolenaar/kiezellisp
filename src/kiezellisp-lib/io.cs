@@ -94,20 +94,70 @@ namespace Kiezel
             }
         }
 
+        static bool EndsWithLf(object item)
+        {
+            return (item is String && ((string)item).EndsWith("\n")) || (item is Char && ((char)item) == '\n');
+        }
+
+        [Lisp("say")]
+        public static void Say(params object[] items)
+        {
+            PrintHelper(true, true, items);
+        }
+
         [Lisp("print")]
         public static void Print(params object[] items)
         {
-            foreach (object item in items)
-            {
-                Write(item, Symbols.Escape, false);
-            }
+            PrintHelper(false, false, items);
         }
 
-        [Lisp("print-line")]
+        [Lisp("print-line", "println")]
         public static void PrintLine(params object[] items)
         {
-            Print(items);
-            Print("\n");
+            PrintHelper(true, false, items);
+        }
+
+        public static void PrintHelper(bool crlf, bool insertSpace, object[] items)
+        {
+            var first = 0;
+            object stream = ConvertToTextWriter(MissingValue);
+
+            if (items.Length > 0 && (items[0] is TextWriter || items[0] is IHasTextWriter))
+            {
+                stream = items[0];
+                first = 1;
+            }
+
+            //if (stream is LogTextWriter)
+            {
+                // Need single Write/WriteLine.
+                using (var stream2 = new StringWriter())
+                {
+                    PrintHelper(stream2, false, insertSpace, first, items);
+                    Write(stream2.ToString(), crlf, Symbols.Stream, stream, Symbols.Escape, false);
+                }
+            }
+            //else
+            //{
+            //    PrintHelper(stream, crlf, first, items);
+            //}
+        }
+
+        public static void PrintHelper(object stream, bool crlf, bool insertSpace, int first, object[] items)
+        {            
+            for (var i = first; i < items.Length; ++i)
+            {
+                var item = items[i];
+                Write(item, Symbols.Stream, stream, Symbols.Escape, false);
+                if (insertSpace && !EndsWithLf(item))
+                {
+                    Write(' ', Symbols.Stream, stream, Symbols.Escape, false);
+                }
+            }
+            if (crlf)
+            {
+                Write('\n', Symbols.Stream, stream, Symbols.Escape, false);
+            }
         }
 
         [Lisp("read-char")]
@@ -237,19 +287,19 @@ namespace Kiezel
             }
         }
 
-        [Lisp("read-line")]
+        [Lisp("read-line", "readln")]
         public static object ReadLine(TextReader stream)
         {
             return ReadLine(stream, true);
         }
 
-        [Lisp("read-line")]
+        [Lisp("read-line", "readln")]
         public static object ReadLine(TextReader stream, object eofErrorp)
         {
             return ReadLine(stream, eofErrorp, null);
         }
 
-        [Lisp("read-line")]
+        [Lisp("read-line", "readln")]
         public static object ReadLine(TextReader stream, object eofErrorp, object eofValue)
         {
             var parser = AcquireReader(stream);
@@ -391,7 +441,7 @@ namespace Kiezel
             Write(item, false, kwargs);
         }
 
-        [Lisp("write-line")]
+        [Lisp("write-line", "writeln")]
         public static void WriteLine(object item, params object[] kwargs)
         {
             Write(item, true, kwargs);
@@ -410,6 +460,29 @@ namespace Kiezel
             }
         }
 
+        [Lisp("open-log")]
+        public static TextWriter OpenLog(string path)
+        {
+            return new LogTextWriter(path);
+        }
+
+        public static object AssertStream(object stream)
+        {
+            if (stream == MissingValue)
+            {
+                stream = GetDynamic(Symbols.StdOut);
+            }
+
+            if (stream == null)
+            {
+                return TextWriter.Null;
+            }
+            else
+            {
+                return stream;
+            }
+        }
+
         public static TextWriter ConvertToTextWriter(object stream)
         {
             if (stream == MissingValue)
@@ -420,11 +493,6 @@ namespace Kiezel
             if (stream == null)
             {
                 return null;
-            }
-            else if (stream is string)
-            {
-                // This writer must be closed by the caller of this function.
-                return OpenLogTextWriter((string)stream);
             }
             else if (stream is IHasTextWriter)
             {
@@ -543,55 +611,6 @@ namespace Kiezel
         public static string NormalizePath(string path)
         {
             return path == null ? "" : path.Replace("\\", "/");
-        }
-
-        public static TextWriter OpenLogTextWriter(string name)
-        {
-            // .NET filestreams cannot really be shared by processes for logging, because
-            // each process has its own idea of the end of the file when appending. So they
-            // overwrite each others data.
-            // This function opens/writes/closes the file for each writelog call.
-            // It relies on a IOException in the case of file sharing problems.
-
-            if (String.IsNullOrWhiteSpace(name))
-            {
-                return null;
-            }
-
-            for (int i = 0; i < 100; ++i)
-            {
-                DateTime date = DateTime.Now.Date;
-                string file = name + date.ToString("-yyyy-MM-dd") + ".log";
-                string dir = Path.GetDirectoryName(file);
-                Directory.CreateDirectory(dir);
-
-                try
-                {
-                    var fs = new FileStream(file, FileMode.Append, FileAccess.Write, FileShare.Read);
-                    try
-                    {
-                        var stream = new StreamWriter(fs);
-                        return stream;
-                    }
-                    catch
-                    {
-                        fs.Close();
-                        throw;
-                    }
-                }
-                catch (Exception ex)
-                {
-                    if (ex.Message.IndexOf("used by another") == -1)
-                    {
-                        throw;
-                    }
-
-                    // Give other process a chance to finish writing
-                    System.Threading.Thread.Sleep(10);
-                }
-            }
-
-            return null;
         }
 
         public static void PrettyPrintLine(object stream, object left, object right, object obj)
@@ -731,7 +750,10 @@ namespace Kiezel
             {
                 var brackets = ToBool(GetDynamic(Symbols.PrintVectorWithBrackets));
                 var buf = new StringWriter();
-                buf.Write(brackets ? "[" : "#v(");
+                if (escape)
+                {
+                    buf.Write(brackets ? "[" : "#v(");
+                }
                 var space = "";
                 foreach (object item in ( IList ) obj)
                 {
@@ -739,13 +761,19 @@ namespace Kiezel
                     buf.Write(ToPrintString(item, escape, radix));
                     space = " ";
                 }
-                buf.Write(brackets ? "]" : ")");
+                if (escape)
+                {
+                    buf.Write(brackets ? "]" : ")");
+                }
                 return buf.ToString();
             }
             else if (obj is IList)
             {
                 var buf = new StringWriter();
-                buf.Write("[");
+                if (escape)
+                {
+                    buf.Write("[");
+                }
                 var space = "";
                 foreach (object item in ( IList ) obj)
                 {
@@ -753,7 +781,10 @@ namespace Kiezel
                     buf.Write(ToPrintString(item, escape, radix));
                     space = " ";
                 }
-                buf.Write("]");
+                if (escape)
+                {
+                    buf.Write("]");
+                }
                 return buf.ToString();
             }
             else if (obj is Prototype)
@@ -769,7 +800,7 @@ namespace Kiezel
                     buf.Write(ToPrintString(supers));
                     space = " ";
                 }
-                foreach (string key in ToIter( proto.Keys ))
+                foreach (string key in ToIter( Sort(proto.Keys) ))
                 {
                     buf.Write(space);
                     if (!key.StartsWith("["))
@@ -813,7 +844,7 @@ namespace Kiezel
 
             if (loadVerbose && file.IndexOf("kiezellisp") == -1)
             {
-                PrintLog(";;; Loading ", file, " from ", path);
+                PrintLine("Loading ", file, " from ", path);
             }
 
             var scriptDirectory = NormalizePath(Path.GetDirectoryName(path));
@@ -885,8 +916,7 @@ namespace Kiezel
                         var result = Execute(code);
                         if (loadPrint)
                         {
-                            var err = GetDynamic(Symbols.StdErr);
-                            PrintLogColor(err, "info", ToPrintString(result));
+                            PrintLine(ToPrintString(result));
                         }
                     }
                 }
@@ -1112,4 +1142,88 @@ namespace Kiezel
             Name = name;
         }
     };
+
+    public class LogTextWriter: TextWriter
+    {
+        // .NET filestreams cannot really be shared by processes for logging, because
+        // each process has its own idea of the end of the file when appending. So they
+        // overwrite each others data.
+        // This function opens/writes/closes the file for each writelog call.
+        // It relies on a IOException in the case of file sharing problems.
+
+        string Name;
+
+        public LogTextWriter(string name)
+        {
+            Name = name;
+        }
+
+        public override void Write(string value)
+        {
+            using (var stream = Open())
+            {
+                stream.Write(value);
+            }
+        }
+
+        public override void WriteLine(string value)
+        {
+            using (var stream = Open())
+            {
+                stream.WriteLine(value);
+            }
+        }
+
+        TextWriter Open()
+        {
+            if (!String.IsNullOrWhiteSpace(Name))
+            {
+                for (int i = 0; i < 100; ++i)
+                {
+                    DateTime date = DateTime.Now.Date;
+                    string file = Name + date.ToString("-yyyy-MM-dd") + ".log";
+                    string dir = Path.GetDirectoryName(file);
+                    Directory.CreateDirectory(dir);
+
+                    try
+                    {
+                        var fs = new FileStream(file, FileMode.Append, FileAccess.Write, FileShare.Read);
+                        try
+                        {
+                            var stream = new StreamWriter(fs);
+                            return stream;
+                        }
+                        catch
+                        {
+                            fs.Close();
+                            throw;
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        if (ex.Message.IndexOf("used by another") == -1)
+                        {
+                            throw;
+                        }
+
+                        // Give other process a chance to finish writing
+                        System.Threading.Thread.Sleep(10);
+                    }
+                }
+            }
+
+            return TextWriter.Null;
+        }
+
+        public override System.Text.Encoding Encoding
+        {
+            get
+            {
+                throw new NotImplementedException();
+            }
+        }
+
+    }
+
+
 }

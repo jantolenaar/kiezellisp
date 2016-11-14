@@ -41,16 +41,21 @@ namespace Kiezel
  
         public static ResetRuntimeFunction ResetRuntimeFunctionImp = null;
 
-        public static ReadLineFunction ReadLineFunctionImp = null;
+        public static ReadLineFunction ReadFunctionImp = null;
 
-        public static TextWriter GetConsoleOut()
+        public static object GetConsoleOut()
         {
-            return (TextWriter)Symbols.StdOut.Value;
+            return Runtime.AssertStream(Symbols.StdOut.Value);
         }
 
-        public static TextWriter GetConsoleErr()
+        public static object GetConsoleLog()
         {
-            return (TextWriter)Symbols.StdErr.Value;
+            return Runtime.AssertStream(Symbols.StdLog.Value);
+        }
+
+        public static object GetConsoleErr()
+        {
+            return Runtime.AssertStream(Symbols.StdErr.Value);
         }
 
         public static bool IsNotDlrCode(string line)
@@ -165,6 +170,7 @@ namespace Kiezel
 
         public static void EvalPrintCommand(string data, bool debugging)
         {
+            var output = GetConsoleOut();
             bool leadingSpace = char.IsWhiteSpace(data, 0);
             Cons code = Runtime.ReadAllFromString(data);
 
@@ -186,7 +192,7 @@ namespace Kiezel
 
                 if (commandsPrefix.Count == 0)
                 {
-                    GetConsoleOut().WriteLine("Command not found");
+                    Runtime.PrintLine(output, "Command not found");
                     return;
                 }
                 else if (commandsExact.Count == 1)
@@ -199,12 +205,13 @@ namespace Kiezel
                 }
                 else
                 {
-                    GetConsoleOut().Write("Ambiguous command. Did you mean:");
+                    Runtime.PrintLine(output, "Ambiguous command. Did you mean:");
                     for (int i = 0; i < commandsPrefix.Count; ++i)
                     {
-                        GetConsoleOut().Write("{0} {1}", (i == 0 ? "" : i + 1 == commandsPrefix.Count ? " or" : ","), commandsPrefix[i]);
+                        var str = String.Format("{0} {1}", (i == 0 ? "" : i + 1 == commandsPrefix.Count ? " or" : ","), commandsPrefix[i]);
+                        Runtime.PrintLine(output, str);
                     }
-                    GetConsoleOut().WriteLine("?");
+                    Runtime.PrintLine(output, "?");
                     return;
                 }
 
@@ -257,39 +264,39 @@ namespace Kiezel
                     case ":globals":
                     {
                         var pattern = (string)Runtime.Second(code);
-                        Runtime.DumpDictionary(GetConsoleOut(), Runtime.GetGlobalVariablesDictionary(pattern));
+                        Runtime.DumpDictionary(output, Runtime.GetGlobalVariablesDictionary(pattern));
                         break;
                     }
 
                     case ":variables":
                     {
                         var pos = Runtime.Integerp(Runtime.Second(code)) ? (int)Runtime.Second(code) : 0;
-                        Runtime.DumpDictionary(GetConsoleOut(), Runtime.GetLexicalVariablesDictionary(pos));
+                        Runtime.DumpDictionary(output, Runtime.GetLexicalVariablesDictionary(pos));
                         break;
                     }
 
                     case ":$variables":
                     {
                         var pos = Runtime.Integerp(Runtime.Second(code)) ? (int)Runtime.Second(code) : 0;
-                        Runtime.DumpDictionary(GetConsoleOut(), Runtime.GetDynamicVariablesDictionary(pos));
+                        Runtime.DumpDictionary(output, Runtime.GetDynamicVariablesDictionary(pos));
                         break;
                     }
 
                     case ":backtrace":
                     {
-                        GetConsoleOut().WriteLine(Runtime.GetEvaluationStack());
+                        Runtime.PrintLine(output, Runtime.GetEvaluationStack());
                         break;
                     }
 
                     case ":Exception":
                     {
-                        GetConsoleOut().WriteLine(LastException.ToString());
+                        Runtime.PrintLine(output, LastException.ToString());
                         break;
                     }
 
                     case ":exception":
                     {
-                        GetConsoleOut().WriteLine(RemoveDlrReferencesFromException(LastException));
+                        Runtime.PrintLine(output, RemoveDlrReferencesFromException(LastException));
                         break;
                     }
 
@@ -329,7 +336,7 @@ namespace Kiezel
                         ResetRuntimeFunctionImp(level);
                         timer.Stop();
                         var time = timer.ElapsedMilliseconds;
-                        Runtime.PrintLog("Startup time: ", time, "ms");
+                        Runtime.PrintTrace("Startup time: ", time, "ms");
                         break;
                     }
 
@@ -343,6 +350,7 @@ namespace Kiezel
 
         public static string ReadCommand(bool debugging = false)
         {
+            var output = GetConsoleOut();
             var data = "";
 
             while (String.IsNullOrWhiteSpace(data))
@@ -353,18 +361,22 @@ namespace Kiezel
                 var package = Runtime.CurrentPackage();
                 if (state.Count == 1)
                 {
-                    GetConsoleOut().WriteLine();
+                    Runtime.PrintLine(output);
                     prompt = System.String.Format("{0} {1} {2}> ", package.Name, counter, debugText);
                 }
                 else
                 {
-                    GetConsoleOut().WriteLine();
+                    Runtime.PrintLine(output);
                     prompt = System.String.Format("{0} {1} {2}: {3} > ", package.Name, counter, debugText, state.Count - 1);
                 }
 
-                GetConsoleOut().Write(prompt);
+                Runtime.Print(output, prompt);
 
-                data = ReadLineFunctionImp();
+                while ((data = ReadFunctionImp()) == null)
+                {
+                }
+
+                Runtime.PrintLine(output);
 
                 if (String.IsNullOrWhiteSpace(data))
                 {
@@ -432,14 +444,14 @@ namespace Kiezel
                 catch (InterruptException)
                 {
                     // Effect of Ctrl+D
-                    GetConsoleOut().WriteLine("Interrupt.");
+                    Runtime.PrintStream(GetConsoleErr(), "error", "Interrupt.\n");
                 }
                 catch (Exception ex)
                 {
                     //ClearKeyboardBuffer();
                     ex = Runtime.UnwindException(ex);
                     LastException = ex;
-                    GetConsoleOut().WriteLine(ex.Message);
+                    Runtime.PrintStream(GetConsoleErr(), "error", ex.Message + "\n");
                     state.Push(Runtime.SaveStackAndFrame());
                 } 
             }
@@ -447,6 +459,8 @@ namespace Kiezel
 
         public static void RunCommand(Action<object> func, Cons lispCode, bool showTime = false, bool smartParens = false)
         {
+            var output = GetConsoleOut();
+
             if (lispCode != null)
             {
                 var head = Runtime.First(lispCode) as Symbol;
@@ -477,8 +491,8 @@ namespace Kiezel
                         Runtime.SetSymbolValue(Symbols.It, val);
                         if (val != VOID.Value)
                         {
-                            GetConsoleOut().Write("it: ");
-                            Runtime.PrettyPrintLine(GetConsoleOut(), 4, null, val);
+                            Runtime.PrintStream(output, "", "it: ");
+                            Runtime.PrettyPrintLine(output, 4, null, val);
                         }
                     }
                     else
@@ -490,7 +504,7 @@ namespace Kiezel
                 var time = timer.ElapsedMilliseconds;
                 if (showTime)
                 {
-                    GetConsoleOut().WriteLine("Elapsed time: {0} ms", time);
+                    Runtime.PrintStream(GetConsoleLog(), "info", Runtime.MakeString("Elapsed time: ", time, " ms\n"));
                 }
             }
             else

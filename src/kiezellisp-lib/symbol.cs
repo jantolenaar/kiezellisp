@@ -802,6 +802,10 @@ namespace Kiezel
 
         public static Symbol PI;
 
+        public static Symbol PlaybackDelay;
+
+        public static Symbol PlaybackDelimiter;
+
         public static Symbol Pow;
 
         public static Symbol Pretty;
@@ -887,6 +891,8 @@ namespace Kiezel
         public static Symbol StdErr;
 
         public static Symbol StdIn;
+
+        public static Symbol StdLog;
 
         public static Symbol StdOut;
 
@@ -1059,6 +1065,8 @@ namespace Kiezel
             PackageNamePrefix = MakeSymbol("$package-name-prefix");
             Padding = MakeSymbol(":padding");
             Params = MakeSymbol("&params");
+            PlaybackDelay = MakeSymbol("$playback-delay");
+            PlaybackDelimiter = MakeSymbol("$playback-delimiter");
             Pow = MakeSymbol("math:pow");
             Pretty = MakeSymbol(":pretty");
             PrettyPrintHook = MakeSymbol("$pprint-hook");
@@ -1100,6 +1108,7 @@ namespace Kiezel
             SpecialVariable = MakeSymbol("special-variable");
             StdErr = MakeSymbol("$stderr");
             StdIn = MakeSymbol("$stdin");
+            StdLog = MakeSymbol("$stdlog");
             StdOut = MakeSymbol("$stdout");
             StdScr = MakeSymbol("$stdscr");
             Str = MakeSymbol("string");

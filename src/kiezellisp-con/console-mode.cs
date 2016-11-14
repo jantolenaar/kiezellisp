@@ -29,16 +29,39 @@ namespace Kiezel
                     ++count;
                     if (count == height)
                     {
-                        Console.Write("(Press 'q' or ESC to cancel, any other key to continue)");
-                        var info = Console.ReadKey(true);
-                        Console.Write("\r");
-                        Console.Write("                                                       ");
-                        Console.Write("\r");
-                        height = Console.WindowHeight - 1;
-                        count = 0;
-                        if (info.Key == ConsoleKey.Escape || info.Key == ConsoleKey.Q)
+                        var prompt = "(Press ' ' or ENTER to continue, 'q' or ESC to quit)";
+                        Console.Write(prompt);
+                        while (true)
                         {
-                            return;
+                            var info = Console.ReadKey(true);
+                            if (info.Modifiers == 0)
+                            {
+                                if (info.Key == ConsoleKey.Spacebar)
+                                {
+                                    Console.Write("\r");
+                                    Console.Write(new String(' ', prompt.Length));
+                                    Console.Write("\r");
+                                    height = Console.WindowHeight - 1;
+                                    count = 0;
+                                    break;
+                                }
+                                else if (info.Key == ConsoleKey.Enter)
+                                {
+                                    Console.Write("\r");
+                                    Console.Write(new String(' ', prompt.Length));
+                                    Console.Write("\r");
+                                    height = 1;
+                                    count = 0;
+                                    break;
+                                }
+                                else if (info.Key == ConsoleKey.Escape || info.Key == ConsoleKey.Q)
+                                {
+                                    Console.Write("\r");
+                                    Console.Write(new String(' ', prompt.Length));
+                                    Console.Write("\r");
+                                    return;
+                                }
+                            }
                         }
                     }
                 }
@@ -50,11 +73,11 @@ namespace Kiezel
             Console.Clear();
         }
 
-        public static string ReplReadLine()
+        public static string ReplRead()
         {
             try
             {
-                var s = ReplReadLineImp();
+                var s = ReplReadImp();
                 return s;
             }
             catch (Exception)
@@ -67,7 +90,7 @@ namespace Kiezel
             }
         }
 
-        public static string ReplReadLineImp()
+        public static string ReplReadImp()
         {
             var top = Console.CursorTop;
             var left = Console.CursorLeft;
@@ -183,7 +206,6 @@ namespace Kiezel
                     }
                     case ConsoleKey.Enter:
                     {
-                        writeChar('\n');
                         var s = new string(buffer.ToArray());
                         if (mod != ConsoleModifiers.Control && IsCompleteSourceCode(s))
                         {
@@ -191,6 +213,7 @@ namespace Kiezel
                         }
                         else
                         {
+                            writeChar('\n');
                             buffer.Add('\n');
                             ++pos;
                             ++len;
@@ -247,7 +270,10 @@ namespace Kiezel
                     {
                         buffer = new List<char>();
                         pos = len = buffer.Count;
-                        break;
+                        Paint();
+                        Erase();
+                        Console.SetCursorPosition(col, row);
+                        return null;
                     }
                     case ConsoleKey.Tab:
                     {
@@ -356,9 +382,7 @@ namespace Kiezel
 
         public static void RunConsoleMode(CommandLineOptions options)
         {
-            Runtime.ConsoleMode = true;
-            Runtime.GraphicalMode = false;
-            Runtime.EmbeddedMode = false;
+            Runtime.ProgramFeature = "kiezellisp-con";
             Runtime.DebugMode = options.Debug;
             Runtime.Repl = options.Repl;
             Runtime.OptimizerEnabled = !Runtime.DebugMode;

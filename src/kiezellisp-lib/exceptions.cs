@@ -22,6 +22,11 @@ namespace Kiezel
     {
     }
 
+    public class ExitOnCloseException: Exception
+    {
+
+    }
+
     public class LispException : Exception
     {
         public LispException(string msg)

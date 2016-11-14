@@ -10,6 +10,6 @@
 (require "system")
 (require "shell")
 
+#if repl
 (set-help-path "../help")
-
-
+#endif

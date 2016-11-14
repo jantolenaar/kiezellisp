@@ -178,7 +178,7 @@ namespace Kiezel
             {
                 bool printCompact = Runtime.ToBool(Runtime.GetDynamic(Symbols.PrintCompact));
 
-                if (printCompact)
+                if (escape && printCompact)
                 {
                     var first = Runtime.First(this);
                     var second = Runtime.Second(this);
@@ -201,7 +201,11 @@ namespace Kiezel
 
             var buf = new StringWriter();
 
-            buf.Write("(");
+            if (escape)
+            {
+                buf.Write("(");
+            }
+
             Cons list = this;
             bool needcomma = false;
 
@@ -214,10 +218,13 @@ namespace Kiezel
 
                 buf.Write(Runtime.ToPrintString(list.Car, escape, radix));
 
-                if (list.cdr is IEnumerator || list.cdr is DelayedExpression)
+                if (escape)
                 {
-                    buf.Write(" ...");
-                    break;
+                    if (list.cdr is IEnumerator || list.cdr is DelayedExpression)
+                    {
+                        buf.Write(" ...");
+                        break;
+                    }
                 }
 
                 needcomma = true;
@@ -225,7 +232,10 @@ namespace Kiezel
                 list = list.Cdr;
             }
 
-            buf.Write(")");
+            if (escape)
+            {
+                buf.Write(")");
+            }
 
             return buf.ToString();
         }

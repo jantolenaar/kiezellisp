@@ -15,9 +15,7 @@ namespace Kiezel
 
         public static void Init(bool debugMode = false)
         {
-            Runtime.EmbeddedMode = true;
-            Runtime.GraphicalMode = false;
-            Runtime.ConsoleMode = false;
+            Runtime.ProgramFeature = "kiezellisp-lib";
             Runtime.DebugMode = debugMode;
             Runtime.Repl = false;
             Runtime.OptimizerEnabled = !Runtime.DebugMode;

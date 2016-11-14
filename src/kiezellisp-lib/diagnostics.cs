@@ -433,10 +433,43 @@ namespace Kiezel
             if (DebugMode && ToBool(GetDynamic(Symbols.EnableWarnings)))
             {
                 var stream = GetDynamic(Symbols.StdErr);
-                var text = ";;; Warning: " + MakeString(args);
-                PrintLogColor(stream, "warning", text);
+                var text = "Warning: " + MakeString(args) + "\n";
+                PrintStream(stream, "warning", text);
             }
         }
+
+        [Lisp("print-error")]
+        public static void PrintError(params object[] args)
+        {
+            var stream = GetDynamic(Symbols.StdErr);
+            PrintStream(stream, "error", MakeString(args) + "\n");
+        }
+
+        [Lisp("print-trace")]
+        public static void PrintTrace(params object[] args)
+        {
+            var stream = GetDynamic(Symbols.StdLog);
+            PrintStream(stream, "info", MakeString(args) + "\n");
+        }
+
+        public static void PrintStream(object stream, string style, string msg)
+        {
+            if (stream is IHtmlWriter)
+            {
+                var msg2 = ((IHtmlWriter)stream).Format(style, msg);
+                Write(msg2, Symbols.Stream, stream, Symbols.Escape, false);
+            }
+            else if (stream is ILogWriter)
+            {
+                var log = (ILogWriter)stream;
+                log.WriteLog(style, msg);
+            }
+            else
+            {
+                Write(msg, Symbols.Stream, stream, Symbols.Escape, false);
+            }
+        }
+
 
         [Lisp("throw-error")]
         public static void ThrowError(params object[] args)
@@ -548,11 +581,6 @@ namespace Kiezel
             }
         }
 
-        public static int GetConsoleWidth()
-        {
-            return 80;
-        }
-
         public static string GetEvaluationStack()
         {
             var index = 0;
@@ -576,7 +604,7 @@ namespace Kiezel
                     {
                         var form = (Cons)item;
                         var leader = prefix.PadLeft(3, ' ');
-                        buf.WriteLine("{0} {1}", leader, ToPrintString(form).Shorten(GetConsoleWidth() - leader.Length - 1));
+                        buf.WriteLine("{0} {1}", leader, ToPrintString(form).Shorten(80 - leader.Length - 1));
                         prefix = "";
                     }
                 }
@@ -641,25 +669,6 @@ namespace Kiezel
         {
             var z = GetDescription(a);
             return z.GetValue("function-syntax");
-        }
-
-        public static void PrintLog(params object[] args)
-        {
-            var stream = GetDynamic(Symbols.StdErr);
-            PrintLogColor(stream, "", MakeString(args));
-        }
-
-        public static void PrintLogColor(object stream, string color, string msg)
-        {
-            if (stream is ILogWriter)
-            {
-                var log = (ILogWriter)stream;
-                log.WriteLog(color, msg);
-            }
-            else
-            {
-                WriteLine(msg, Symbols.Stream, stream, Symbols.Escape, false);
-            }
         }
 
   

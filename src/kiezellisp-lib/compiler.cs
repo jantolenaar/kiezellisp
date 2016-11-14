@@ -939,8 +939,8 @@ namespace Kiezel
             CheckMinLength(form, 3);
             CheckMaxLength(form, 4);
             var testExpr = Compile(Second(form), scope);
-            var thenExpr = Compile(Third(form), scope);
-            var elseExpr = Compile(Fourth(form), scope);
+            var thenExpr = Expression.Convert(Compile(Third(form), scope), typeof(object));
+            var elseExpr = Expression.Convert(Compile(Fourth(form), scope), typeof(object));
             var test = WrapBooleanTest(testExpr);
             return Expression.Condition(test, thenExpr, elseExpr);
         }
