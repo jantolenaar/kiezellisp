@@ -1,21 +1,55 @@
+﻿#region Header
+
 // Copyright (C) Jan Tolenaar. See the file LICENSE for details.
 
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.IO;
+#endregion Header
 
 namespace Kiezel
 {
+    using System.Collections.Generic;
+    using System.Diagnostics;
+    using System.IO;
+
     public partial class Runtime
     {
+        #region Fields
+
         public static List<ProfilingEntry> ProfilingEntries = null;
         public static Stopwatch ProfilingTimer = Stopwatch.StartNew();
+
+        #endregion Fields
+
+        #region Methods
 
         [Lisp("profiler.close-session")]
         public static void CloseProfilingSession()
         {
             StopTimer();
             ProfilingEntries = null;
+        }
+
+        public static int LogBeginCall(Cons form)
+        {
+            if (ProfilingEntries != null)
+            {
+                long time = ReadTimer();
+                int index = ProfilingEntries.Count;
+                ProfilingEntries.Add(new ProfilingEntry(index + 1, time, form));
+                return index;
+            }
+            else
+            {
+                return -1;
+            }
+        }
+
+        public static void LogEndCall(int index)
+        {
+            if (ProfilingEntries != null && index != -1)
+            {
+                long time = ReadTimer();
+                ProfilingEntries[index].End = time;
+            }
         }
 
         [Lisp("profiler.open-session")]
@@ -83,36 +117,22 @@ namespace Kiezel
             ProfilingTimer.Stop();
         }
 
-        public static int LogBeginCall(Cons form)
-        {
-            if (ProfilingEntries != null)
-            {
-                long time = ReadTimer();
-                int index = ProfilingEntries.Count;
-                ProfilingEntries.Add(new ProfilingEntry(index + 1, time, form));
-                return index;
-            }
-            else
-            {
-                return -1;
-            }
-        }
+        #endregion Methods
 
-        public static void LogEndCall(int index)
-        {
-            if (ProfilingEntries != null && index != -1)
-            {
-                long time = ReadTimer();
-                ProfilingEntries[index].End = time;
-            }
-        }
+        #region Nested Types
 
         public class ProfilingEntry
         {
+            #region Fields
+
             public long End;
             public Cons Form;
             public long SeqNr;
             public long Start;
+
+            #endregion Fields
+
+            #region Constructors
 
             public ProfilingEntry(int seqnr, long time, Cons form)
             {
@@ -121,6 +141,10 @@ namespace Kiezel
                 End = -1;
                 Form = form;
             }
+
+            #endregion Constructors
         }
+
+        #endregion Nested Types
     }
 }

@@ -4,12 +4,12 @@
 
 #endregion Header
 
-using System;
-using System.IO;
-using System.Reflection;
-
 namespace Kiezel
 {
+    using System;
+    using System.IO;
+    using System.Reflection;
+
     public class CommandLineOptions
     {
         #region Fields
@@ -68,7 +68,7 @@ namespace Kiezel
 
         #endregion Constructors
 
-        #region Private Methods
+        #region Methods
 
         T Init<T>(string key, T defaultValue)
         {
@@ -82,12 +82,12 @@ namespace Kiezel
             }
         }
 
-        #endregion Private Methods
+        #endregion Methods
     }
 
     public partial class RuntimeRepl
     {
-        #region Public Methods
+        #region Methods
 
         public static string GetReplConfigurationFile()
         {
@@ -237,6 +237,6 @@ namespace Kiezel
             return dict;
         }
 
-        #endregion Public Methods
+        #endregion Methods
     }
 }

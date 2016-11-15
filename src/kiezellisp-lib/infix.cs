@@ -1,16 +1,20 @@
+﻿#region Header
+
 // Copyright (C) Jan Tolenaar. See the file LICENSE for details.
 
-using System;
+#endregion Header
 
 namespace Kiezel
 {
+    using System;
+
     public class Infix
     {
+        #region Fields
+
         public int Index;
-
         public string InfixStr;
-
-        public string[] Opers =
+        public string[] Opers = 
             {
                 "(",
                 ")",
@@ -48,8 +52,11 @@ namespace Kiezel
 
                 "="
             };
-
         public Vector Tokens;
+
+        #endregion Fields
+
+        #region Constructors
 
         public Infix(string str)
         {
@@ -57,7 +64,15 @@ namespace Kiezel
             Tokens = Scanner(str);
         }
 
+        #endregion Constructors
+
+        #region Delegates
+
         private delegate object CompileHelper();
+
+        #endregion Delegates
+
+        #region Properties
 
         private object NextToken
         {
@@ -88,6 +103,10 @@ namespace Kiezel
                 }
             }
         }
+
+        #endregion Properties
+
+        #region Methods
 
         public static object CompileString(string str)
         {
@@ -601,5 +620,7 @@ namespace Kiezel
                 }
             }
         }
+
+        #endregion Methods
     }
 }

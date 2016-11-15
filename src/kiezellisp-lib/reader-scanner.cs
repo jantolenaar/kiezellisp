@@ -1,36 +1,37 @@
+﻿#region Header
+
 // Copyright (C) Jan Tolenaar. See the file LICENSE for details.
 
-using System;
-using System.Collections;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Text;
-using System.Text.RegularExpressions;
+#endregion Header
 
 namespace Kiezel
 {
+    using System;
+    using System.Collections;
+    using System.Collections.Generic;
+    using System.IO;
+    using System.Linq;
+    using System.Text;
+    using System.Text.RegularExpressions;
+
     [RestrictedImport]
-    public class LispReader: IDisposable
+    public class LispReader : IDisposable
     {
+        #region Fields
+
         public TextReader Stream;
 
         private int col = 0;
-        private int line = 0;
-        private int symbolSuppression = 0;
-        private int lastChar = 0;
-        private bool haveUnreadChar = false;
-        private StringBuilder lineBuffer = new StringBuilder();
         private bool haveCompleteLine = false;
+        private bool haveUnreadChar = false;
+        private int lastChar = 0;
+        private int line = 0;
+        private StringBuilder lineBuffer = new StringBuilder();
+        private int symbolSuppression = 0;
 
-        void IDisposable.Dispose()
-        {
-            if (Stream != null)
-            {
-                Stream.Close();
-                Stream = null;
-            }
-        }
+        #endregion Fields
+
+        #region Properties
 
         public bool IsEof
         {
@@ -40,280 +41,9 @@ namespace Kiezel
             }
         }
 
-        public IEnumerable ReadAllEnum()
-        {
-            while (true)
-            {
-                var expr = Read(EOF.Value);
-                if (expr == EOF.Value)
-                {
-                    break;
-                }
-                yield return expr;
-            }
-        }
+        #endregion Properties
 
-        public void UnreadChar()
-        {
-            if (haveUnreadChar)
-            {
-                throw MakeScannerException("Too many calls to unread-char.");
-            }
-            if (!IsEof)
-            {
-                haveUnreadChar = true;
-            }
-        }
-
-        public char PeekChar()
-        {
-            return PeekChar(null);
-        }
-
-        public char PeekChar(object type)
-        {
-            if (type is bool || type == null)
-            {
-                var flag = Runtime.ToBool(type);
-                if (flag)
-                {
-                    var ch = SkipWhitespace();
-                    return ch;
-                }
-                else
-                {
-                    var ch = ReadChar();
-                    UnreadChar();
-                    return ch;
-                }
-            }
-            else if (type is Char)
-            {
-                var target = (char)type;
-                while (true)
-                {
-                    var ch = ReadChar();
-                    if (IsEof || ch == target)
-                    {
-                        UnreadChar();
-                        return ch;
-                    }
-                }
-            }
-            else
-            {
-                throw MakeScannerException("peek-char: invalid type '{0}'", type);
-            }
-        }
-
-        public char ReadChar()
-        {
-            if (lastChar == -1 || Stream == null)
-            {
-                return (char)0;
-            }
-            else if (haveUnreadChar)
-            {
-                haveUnreadChar = false;
-                return (char)lastChar;
-            }
-            else
-            {
-                int ch = Stream.Read();
-                if (ch == -1)
-                {
-                    Stream = null;
-                    haveCompleteLine = true;
-                    lastChar = ch;
-                    return (char)0;
-                }
-                else if (ch == '\n')
-                {
-                    haveCompleteLine = true;
-                    ++line;
-                    col = 0;
-                    lastChar = ch;
-                    return '\n';
-                }
-                else
-                {
-                    if (haveCompleteLine)
-                    {
-                        haveCompleteLine = false;
-                        lineBuffer.Clear();
-                    }
-                    ++col;
-                    lastChar = ch;
-                    lineBuffer.Append((char)lastChar);
-                    return (char)lastChar; 
-                }
-            }
-        }
-
-        public object Read()
-        {
-            var obj = Read(EOF.Value);
-            if (obj == EOF.Value)
-            {
-                throw MakeScannerException("EOF: unexpected end");
-            }
-            return obj;
-        }
-
-        public object Read(object eofValue)
-        {
-            object obj;
-            while ((obj = MaybeRead(eofValue)) == VOID.Value)
-            {
-            }
-            return obj;
-        }
-
-        public Cons ReadAll()
-        {
-            return Runtime.AsList(ReadAllEnum());
-        }
-
-        public Cons ReadDelimitedList(string terminator)
-        {
-            if (terminator.Length != 1)
-            {
-                throw MakeScannerException("Terminator string must contain exactly one character: {0}", terminator);
-            }
-
-            var term = terminator[0];
-
-            while (true)
-            {
-                SkipWhitespace();
-                var ch = ReadChar();
-                if (IsEof)
-                {
-                    throw MakeScannerException("EOF: missing terminator: '{0}'", terminator);
-                }
-                if (ch == term)
-                {
-                    return null;
-                }              
-                UnreadChar();
-                var first = MaybeRead();
-                if (first != VOID.Value)
-                {
-                    var rest = (Cons)ReadDelimitedList(terminator);
-                    return Runtime.MakeCons(first, rest);
-                }
-            }
-        }
-
-        public string ReadLine()
-        {
-            var buf = new StringBuilder();
-            while (true)
-            {
-                var ch = ReadChar();
-                if (IsEof)
-                {
-                    if (buf.Length == 0)
-                    {
-                        return null;
-                    }
-                    else
-                    {
-                        break;
-                    }
-                }
-                else if (ch == '\n')
-                {
-                    break;
-                }
-                buf.Append(ch);
-            }
-            return buf.ToString();
-        }
-
-        public string ReadToken()
-        {
-            var buf = new StringBuilder();
-
-            if (IsEof)
-            {
-                throw MakeScannerException("EOF: expected token");
-            }
-
-            while (true)
-            {
-                var code = ReadChar();
-
-                if (IsEof)
-                {
-                    break;
-                }
-
-                var item = GetEntry(code);
-
-                if (item.Type == CharacterType.SingleEscape)
-                {
-                    var code2 = ReadChar();
-                    if (IsEof)
-                    {
-                        throw MakeScannerException("EOF: expected character after '{0}'", item.Character);
-                    }
-                    buf.Append(code2);
-                }
-                else if (item.Type == CharacterType.MultipleEscape)
-                {
-                    while (true)
-                    {
-                        var code2 = ReadChar();
-                        if (IsEof)
-                        {
-                            throw MakeScannerException("EOF: expected character '{0}'", item.Character);
-                        }
-                        if (code2 == code)
-                        {
-                            break;
-                        }
-                        buf.Append(code2);
-                    }
-                }
-                else if (item.Type == CharacterType.Constituent || item.Type == CharacterType.NonTerminatingMacro)
-                {
-                    buf.Append(code);
-                }
-                else
-                {
-                    UnreadChar();
-                    break;
-                }
-            }
-
-            var token = buf.ToString();
-
-            if (token == "")
-            {
-                throw MakeScannerException("Empty token???");
-            }
-
-            return token;
-        }
-
-        public char SkipWhitespace()
-        {
-            while (true)
-            {
-                var ch = ReadChar();
-                if (IsEof)
-                {
-                    return ch;
-                }
-                var item = GetEntry(ch);
-                if (item.Type != CharacterType.Whitespace)
-                {
-                    UnreadChar();
-                    return ch;
-                }
-            }
-        }
+        #region Methods
 
         public int GrepShortLambdaParameters(Cons form)
         {
@@ -355,6 +85,15 @@ namespace Kiezel
             return last;
         }
 
+        void IDisposable.Dispose()
+        {
+            if (Stream != null)
+            {
+                Stream.Close();
+                Stream = null;
+            }
+        }
+
         public LispException MakeScannerException(string message)
         {
             var l = line + 1;
@@ -365,7 +104,7 @@ namespace Kiezel
             }
             var s = lineBuffer.ToString();
             return new LispException("Line {0} column {1}: {2}\n{3}", l, c, s, message);
-//            return new LispException("Line {0} column {1}: {2}\n{3}", line + 1, col, "", message);
+            //            return new LispException("Line {0} column {1}: {2}\n{3}", line + 1, col, "", message);
         }
 
         public LispException MakeScannerException(string fmt, params object[] args)
@@ -485,41 +224,6 @@ namespace Kiezel
             else
             {
                 return Runtime.FindSymbol(token);
-            }
-        }
-
-        bool EndsWith(List<char> chars, string str)
-        {
-            var m = chars.Count;
-            var n = str.Length;
-            if (m >= n)
-            {               
-                for (int i = m - n, j = 0; j < n; ++i, ++j)
-                {
-                    if (chars[i] != str[j])
-                    {
-                        return false;
-                    }
-                }
-                return true;
-            }
-            else
-            {
-                return false;
-            }
-        }
-
-        string StringWithoutTerminator(List<char> chars, string terminator)
-        {
-            var m = chars.Count;
-            var n = terminator.Length;
-            if (m >= n)
-            {
-                return new string(chars.GetRange(0, m - n).ToArray());
-            }
-            else
-            {
-                return "";
             }
         }
 
@@ -684,7 +388,7 @@ namespace Kiezel
                 throw MakeScannerException("expected ')' character");
             }
 
-            // The list is treated as a single form! 
+            // The list is treated as a single form!
             // So the entire thing is (like) one function call.
             var form = ReadDelimitedList(delimiter);
             var lastIndex = GrepShortLambdaParameters(form);
@@ -849,6 +553,84 @@ namespace Kiezel
             }
         }
 
+        public char PeekChar()
+        {
+            return PeekChar(null);
+        }
+
+        public char PeekChar(object type)
+        {
+            if (type is bool || type == null)
+            {
+                var flag = Runtime.ToBool(type);
+                if (flag)
+                {
+                    var ch = SkipWhitespace();
+                    return ch;
+                }
+                else
+                {
+                    var ch = ReadChar();
+                    UnreadChar();
+                    return ch;
+                }
+            }
+            else if (type is Char)
+            {
+                var target = (char)type;
+                while (true)
+                {
+                    var ch = ReadChar();
+                    if (IsEof || ch == target)
+                    {
+                        UnreadChar();
+                        return ch;
+                    }
+                }
+            }
+            else
+            {
+                throw MakeScannerException("peek-char: invalid type '{0}'", type);
+            }
+        }
+
+        public object Read()
+        {
+            var obj = Read(EOF.Value);
+            if (obj == EOF.Value)
+            {
+                throw MakeScannerException("EOF: unexpected end");
+            }
+            return obj;
+        }
+
+        public object Read(object eofValue)
+        {
+            object obj;
+            while ((obj = MaybeRead(eofValue)) == VOID.Value)
+            {
+            }
+            return obj;
+        }
+
+        public Cons ReadAll()
+        {
+            return Runtime.AsList(ReadAllEnum());
+        }
+
+        public IEnumerable ReadAllEnum()
+        {
+            while (true)
+            {
+                var expr = Read(EOF.Value);
+                if (expr == EOF.Value)
+                {
+                    break;
+                }
+                yield return expr;
+            }
+        }
+
         public string ReadBlockComment(string startDelimiter, string endDelimiter)
         {
             var buffer = new List<char>();
@@ -879,6 +661,81 @@ namespace Kiezel
             }
 
             return StringWithoutTerminator(buffer, endDelimiter);
+        }
+
+        public char ReadChar()
+        {
+            if (lastChar == -1 || Stream == null)
+            {
+                return (char)0;
+            }
+            else if (haveUnreadChar)
+            {
+                haveUnreadChar = false;
+                return (char)lastChar;
+            }
+            else
+            {
+                int ch = Stream.Read();
+                if (ch == -1)
+                {
+                    Stream = null;
+                    haveCompleteLine = true;
+                    lastChar = ch;
+                    return (char)0;
+                }
+                else if (ch == '\n')
+                {
+                    haveCompleteLine = true;
+                    ++line;
+                    col = 0;
+                    lastChar = ch;
+                    return '\n';
+                }
+                else
+                {
+                    if (haveCompleteLine)
+                    {
+                        haveCompleteLine = false;
+                        lineBuffer.Clear();
+                    }
+                    ++col;
+                    lastChar = ch;
+                    lineBuffer.Append((char)lastChar);
+                    return (char)lastChar;
+                }
+            }
+        }
+
+        public Cons ReadDelimitedList(string terminator)
+        {
+            if (terminator.Length != 1)
+            {
+                throw MakeScannerException("Terminator string must contain exactly one character: {0}", terminator);
+            }
+
+            var term = terminator[0];
+
+            while (true)
+            {
+                SkipWhitespace();
+                var ch = ReadChar();
+                if (IsEof)
+                {
+                    throw MakeScannerException("EOF: missing terminator: '{0}'", terminator);
+                }
+                if (ch == term)
+                {
+                    return null;
+                }
+                UnreadChar();
+                var first = MaybeRead();
+                if (first != VOID.Value)
+                {
+                    var rest = (Cons)ReadDelimitedList(terminator);
+                    return Runtime.MakeCons(first, rest);
+                }
+            }
         }
 
         public string ReadInfixExpressionString()
@@ -914,6 +771,32 @@ namespace Kiezel
             return buf.ToString();
         }
 
+        public string ReadLine()
+        {
+            var buf = new StringBuilder();
+            while (true)
+            {
+                var ch = ReadChar();
+                if (IsEof)
+                {
+                    if (buf.Length == 0)
+                    {
+                        return null;
+                    }
+                    else
+                    {
+                        break;
+                    }
+                }
+                else if (ch == '\n')
+                {
+                    break;
+                }
+                buf.Append(ch);
+            }
+            return buf.ToString();
+        }
+
         public object ReadSuppressed()
         {
             try
@@ -924,6 +807,123 @@ namespace Kiezel
             finally
             {
                 --symbolSuppression;
+            }
+        }
+
+        public string ReadToken()
+        {
+            var buf = new StringBuilder();
+
+            if (IsEof)
+            {
+                throw MakeScannerException("EOF: expected token");
+            }
+
+            while (true)
+            {
+                var code = ReadChar();
+
+                if (IsEof)
+                {
+                    break;
+                }
+
+                var item = GetEntry(code);
+
+                if (item.Type == CharacterType.SingleEscape)
+                {
+                    var code2 = ReadChar();
+                    if (IsEof)
+                    {
+                        throw MakeScannerException("EOF: expected character after '{0}'", item.Character);
+                    }
+                    buf.Append(code2);
+                }
+                else if (item.Type == CharacterType.MultipleEscape)
+                {
+                    while (true)
+                    {
+                        var code2 = ReadChar();
+                        if (IsEof)
+                        {
+                            throw MakeScannerException("EOF: expected character '{0}'", item.Character);
+                        }
+                        if (code2 == code)
+                        {
+                            break;
+                        }
+                        buf.Append(code2);
+                    }
+                }
+                else if (item.Type == CharacterType.Constituent || item.Type == CharacterType.NonTerminatingMacro)
+                {
+                    buf.Append(code);
+                }
+                else
+                {
+                    UnreadChar();
+                    break;
+                }
+            }
+
+            var token = buf.ToString();
+
+            if (token == "")
+            {
+                throw MakeScannerException("Empty token???");
+            }
+
+            return token;
+        }
+
+        public char SkipWhitespace()
+        {
+            while (true)
+            {
+                var ch = ReadChar();
+                if (IsEof)
+                {
+                    return ch;
+                }
+                var item = GetEntry(ch);
+                if (item.Type != CharacterType.Whitespace)
+                {
+                    UnreadChar();
+                    return ch;
+                }
+            }
+        }
+
+        public void UnreadChar()
+        {
+            if (haveUnreadChar)
+            {
+                throw MakeScannerException("Too many calls to unread-char.");
+            }
+            if (!IsEof)
+            {
+                haveUnreadChar = true;
+            }
+        }
+
+        bool EndsWith(List<char> chars, string str)
+        {
+            var m = chars.Count;
+            var n = str.Length;
+            if (m >= n)
+            {
+                for (int i = m - n, j = 0; j < n; ++i, ++j)
+                {
+                    if (chars[i] != str[j])
+                    {
+                        return false;
+                    }
+                }
+                return true;
+            }
+            else
+            {
+                return false;
             }
         }
 
@@ -956,5 +956,21 @@ namespace Kiezel
             }
             return arg;
         }
+
+        string StringWithoutTerminator(List<char> chars, string terminator)
+        {
+            var m = chars.Count;
+            var n = terminator.Length;
+            if (m >= n)
+            {
+                return new string(chars.GetRange(0, m - n).ToArray());
+            }
+            else
+            {
+                return "";
+            }
+        }
+
+        #endregion Methods
     }
 }

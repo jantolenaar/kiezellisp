@@ -1,37 +1,7 @@
-//   Copyright (c) Microsoft Corporation.  All rights reserved.
-/*============================================================
-** Class: BigRational
-**
-** Purpose:
-** --------
-** This class is used to represent an arbitrary precision
-** BigRational number
-**
-** A rational number (commonly called a fraction) is a ratio
-** between two integers.  For example (3/6) = (2/4) = (1/2)
-**
-** Arithmetic
-** ----------
-** a/b = c/d, iff ad = bc
-** a/b + c/d  == (ad + bc)/bd
-** a/b - c/d  == (ad - bc)/bd
-** a/b % c/d  == (ad % bc)/bd
-** a/b * c/d  == (ac)/(bd)
-** a/b / c/d  == (ad)/(bc)
-** -(a/b)     == (-a)/b
-** (a/b)^(-1) == b/a, if a != 0
-**
-** Reduction Algorithm
-** ------------------------
-** Euclid's algorithm is used to simplify the fraction.
-** Calculating the greatest common divisor of two n-digit
-** numbers can be found in
-**
-** O(n(log n)^5 (log log n)) steps as n -> +infinity
-============================================================*/
-
+﻿//   Copyright (c) Microsoft Corporation.  All rights reserved.
 namespace Numerics
 {
+    // BigRational
     using System;
     using System.Globalization;
     using System.Numerics;
@@ -40,196 +10,34 @@ namespace Numerics
     using System.Security.Permissions;
     using System.Text;
 
-
     [Serializable]
     [ComVisible(false)]
     public struct BigRational : IComparable, IComparable<BigRational>, IDeserializationCallback, IEquatable<BigRational>, ISerializable
     {
-        // ---- SECTION:  members supporting exposed properties -------------*
-        private BigInteger m_numerator;
+        #region Fields
+
+        private const String c_solidus = @"/";
+        private const int DecimalMaxScale = 28;
+        private const int DecimalScaleMask = 0x00FF0000;
+        private const int DecimalSignMask = unchecked((int)0x80000000);
+        private const int DoubleMaxScale = 308;
+
+        private static readonly BigInteger s_bnDecimalMaxValue = (BigInteger)Decimal.MaxValue;
+        private static readonly BigInteger s_bnDecimalMinValue = (BigInteger)Decimal.MinValue;
+        private static readonly BigInteger s_bnDecimalPrecision = BigInteger.Pow(10, DecimalMaxScale);
+        private static readonly BigInteger s_bnDoubleMaxValue = (BigInteger)Double.MaxValue;
+        private static readonly BigInteger s_bnDoubleMinValue = (BigInteger)Double.MinValue;
+        private static readonly BigInteger s_bnDoublePrecision = BigInteger.Pow(10, DoubleMaxScale);
+        private static readonly BigRational s_brMinusOne = new BigRational(BigInteger.MinusOne);
+        private static readonly BigRational s_brOne = new BigRational(BigInteger.One);
+        private static readonly BigRational s_brZero = new BigRational(BigInteger.Zero);
 
         private BigInteger m_denominator;
 
-        private static readonly BigRational s_brZero = new BigRational(BigInteger.Zero);
-        private static readonly BigRational s_brOne = new BigRational(BigInteger.One);
-        private static readonly BigRational s_brMinusOne = new BigRational(BigInteger.MinusOne);
+        // ---- SECTION:  members supporting exposed properties -------------*
+        private BigInteger m_numerator;
 
-        // ---- SECTION:  members for public support ---------*
-
-        #region Members for Internal Support
-
-        [StructLayout(LayoutKind.Explicit)]
-        public struct DoubleUlong
-        {
-            [FieldOffset(0)]
-            public double dbl;
-
-            [FieldOffset(0)]
-            public ulong uu;
-        }
-
-        private const int DoubleMaxScale = 308;
-        private static readonly BigInteger s_bnDoublePrecision = BigInteger.Pow(10, DoubleMaxScale);
-        private static readonly BigInteger s_bnDoubleMaxValue = (BigInteger)Double.MaxValue;
-        private static readonly BigInteger s_bnDoubleMinValue = (BigInteger)Double.MinValue;
-
-        [StructLayout(LayoutKind.Explicit)]
-        public struct DecimalUInt32
-        {
-            [FieldOffset(0)]
-            public Decimal dec;
-
-            [FieldOffset(0)]
-            public int flags;
-        }
-
-        private const int DecimalScaleMask = 0x00FF0000;
-        private const int DecimalSignMask = unchecked((int)0x80000000);
-        private const int DecimalMaxScale = 28;
-        private static readonly BigInteger s_bnDecimalPrecision = BigInteger.Pow(10, DecimalMaxScale);
-        private static readonly BigInteger s_bnDecimalMaxValue = (BigInteger)Decimal.MaxValue;
-        private static readonly BigInteger s_bnDecimalMinValue = (BigInteger)Decimal.MinValue;
-
-        private const String c_solidus = @"/";
-
-        #endregion Members for Internal Support
-
-        // ---- SECTION: public properties --------------*
-
-        #region Public Properties
-
-        public static BigRational Zero
-        {
-            get
-            {
-                return s_brZero;
-            }
-        }
-
-        public static BigRational One
-        {
-            get
-            {
-                return s_brOne;
-            }
-        }
-
-        public static BigRational MinusOne
-        {
-            get
-            {
-                return s_brMinusOne;
-            }
-        }
-
-        public Int32 Sign
-        {
-            get
-            {
-                return m_numerator.Sign;
-            }
-        }
-
-        public BigInteger Numerator
-        {
-            get
-            {
-                return m_numerator;
-            }
-        }
-
-        public BigInteger Denominator
-        {
-            get
-            {
-                return m_denominator;
-            }
-        }
-
-        #endregion Public Properties
-
-        // ---- SECTION: public instance methods --------------*
-
-        #region Public Instance Methods
-
-        // GetWholePart() and GetFractionPart()
-        //
-        // BigRational == Whole, Fraction
-        //  0/2        ==     0,  0/2
-        //  1/2        ==     0,  1/2
-        // -1/2        ==     0, -1/2
-        //  1/1        ==     1,  0/1
-        // -1/1        ==    -1,  0/1
-        // -3/2        ==    -1, -1/2
-        //  3/2        ==     1,  1/2
-        public BigInteger GetWholePart()
-        {
-            return BigInteger.Divide(m_numerator, m_denominator);
-        }
-
-        public BigRational GetFractionPart()
-        {
-            return new BigRational(BigInteger.Remainder(m_numerator, m_denominator), m_denominator);
-        }
-
-        public override bool Equals(Object obj)
-        {
-            if (obj == null)
-                return false;
-
-            if (!(obj is BigRational))
-                return false;
-            return this.Equals((BigRational)obj);
-        }
-
-        public override int GetHashCode()
-        {
-            return (m_numerator / Denominator).GetHashCode();
-        }
-
-        // IComparable
-        int IComparable.CompareTo(Object obj)
-        {
-            if (obj == null)
-                return 1;
-            if (!(obj is BigRational))
-                throw new ArgumentException("Argument must be of type BigRational", "obj");
-            return Compare(this, (BigRational)obj);
-        }
-
-        // IComparable<BigRational>
-        public int CompareTo(BigRational other)
-        {
-            return Compare(this, other);
-        }
-
-        // Object.ToString
-        public override String ToString()
-        {
-            StringBuilder ret = new StringBuilder();
-            ret.Append(m_numerator.ToString("R", CultureInfo.InvariantCulture));
-            ret.Append(c_solidus);
-            ret.Append(Denominator.ToString("R", CultureInfo.InvariantCulture));
-            return ret.ToString();
-        }
-
-        // IEquatable<BigRational>
-        // a/b = c/d, iff ad = bc
-        public Boolean Equals(BigRational other)
-        {
-            if (this.Denominator == other.Denominator)
-            {
-                return m_numerator == other.m_numerator;
-            }
-            else
-            {
-                return (m_numerator * other.Denominator) == (Denominator * other.m_numerator);
-            }
-        }
-
-        #endregion Public Instance Methods
-
-        // -------- SECTION: constructors -----------------*
+        #endregion Fields
 
         #region Constructors
 
@@ -366,207 +174,72 @@ namespace Numerics
             Simplify();
         }
 
+        private BigRational(SerializationInfo info, StreamingContext context)
+        {
+            if (info == null)
+            {
+                throw new ArgumentNullException("info");
+            }
+
+            m_numerator = (BigInteger)info.GetValue("Numerator", typeof(BigInteger));
+            m_denominator = (BigInteger)info.GetValue("Denominator", typeof(BigInteger));
+        }
+
         #endregion Constructors
 
-        // -------- SECTION: public static methods -----------------*
+        #region Properties
 
-        #region Public Static Methods
-
-        public static BigRational Abs(BigRational r)
+        public static BigRational MinusOne
         {
-            return (r.m_numerator.Sign < 0 ? new BigRational(BigInteger.Abs(r.m_numerator), r.Denominator) : r);
-        }
-
-        public static BigRational Negate(BigRational r)
-        {
-            return new BigRational(BigInteger.Negate(r.m_numerator), r.Denominator);
-        }
-
-        public static BigRational Invert(BigRational r)
-        {
-            return new BigRational(r.Denominator, r.m_numerator);
-        }
-
-        public static BigRational Add(BigRational x, BigRational y)
-        {
-            return x + y;
-        }
-
-        public static BigRational Subtract(BigRational x, BigRational y)
-        {
-            return x - y;
-        }
-
-        public static BigRational Multiply(BigRational x, BigRational y)
-        {
-            return x * y;
-        }
-
-        public static BigRational Divide(BigRational dividend, BigRational divisor)
-        {
-            return dividend / divisor;
-        }
-
-        public static BigRational Remainder(BigRational dividend, BigRational divisor)
-        {
-            return dividend % divisor;
-        }
-
-        public static BigRational DivRem(BigRational dividend, BigRational divisor, out BigRational remainder)
-        {
-            // a/b / c/d  == (ad)/(bc)
-            // a/b % c/d  == (ad % bc)/bd
-
-            // (ad) and (bc) need to be calculated for both the division and the remainder operations.
-            BigInteger ad = dividend.m_numerator * divisor.Denominator;
-            BigInteger bc = dividend.Denominator * divisor.m_numerator;
-            BigInteger bd = dividend.Denominator * divisor.Denominator;
-
-            remainder = new BigRational(ad % bc, bd);
-            return new BigRational(ad, bc);
-        }
-
-        public static BigRational Pow(BigRational baseValue, BigInteger exponent)
-        {
-            if (exponent.Sign == 0)
+            get
             {
-                // 0^0 -> 1
-                // n^0 -> 1
-                return BigRational.One;
+                return s_brMinusOne;
             }
-            else if (exponent.Sign < 0)
+        }
+
+        public static BigRational One
+        {
+            get
             {
-                if (baseValue == BigRational.Zero)
-                {
-                    throw new ArgumentException("cannot raise zero to a negative power", "baseValue");
-                }
-                // n^(-e) -> (1/n)^e
-                baseValue = BigRational.Invert(baseValue);
-                exponent = BigInteger.Negate(exponent);
+                return s_brOne;
             }
+        }
 
-            BigRational result = baseValue;
-            while (exponent > BigInteger.One)
+        public static BigRational Zero
+        {
+            get
             {
-                result = result * baseValue;
-                exponent--;
+                return s_brZero;
             }
-
-            return result;
         }
 
-        // Least Common Denominator (LCD)
-        //
-        // The LCD is the least common multiple of the two denominators.  For instance, the LCD of
-        // {1/2, 1/4} is 4 because the least common multiple of 2 and 4 is 4.  Likewise, the LCD
-        // of {1/2, 1/3} is 6.
-        //
-        // To find the LCD:
-        //
-        // 1) Find the Greatest Common Divisor (GCD) of the denominators
-        // 2) Multiply the denominators together
-        // 3) Divide the product of the denominators by the GCD
-        public static BigInteger LeastCommonDenominator(BigRational x, BigRational y)
+        public BigInteger Denominator
         {
-            // LCD( a/b, c/d ) == (bd) / gcd(b,d)
-            return (x.Denominator * y.Denominator) / BigInteger.GreatestCommonDivisor(x.Denominator, y.Denominator);
+            get
+            {
+                return m_denominator;
+            }
         }
 
-        public static int Compare(BigRational r1, BigRational r2)
+        public BigInteger Numerator
         {
-            //     a/b = c/d, iff ad = bc
-            return BigInteger.Compare(r1.m_numerator * r2.Denominator, r2.m_numerator * r1.Denominator);
+            get
+            {
+                return m_numerator;
+            }
         }
 
-        #endregion Public Static Methods
-
-        #region Operator Overloads
-
-        public static bool operator ==(BigRational x, BigRational y)
+        public Int32 Sign
         {
-            return Compare(x, y) == 0;
+            get
+            {
+                return m_numerator.Sign;
+            }
         }
 
-        public static bool operator !=(BigRational x, BigRational y)
-        {
-            return Compare(x, y) != 0;
-        }
+        #endregion Properties
 
-        public static bool operator <(BigRational x, BigRational y)
-        {
-            return Compare(x, y) < 0;
-        }
-
-        public static bool operator <=(BigRational x, BigRational y)
-        {
-            return Compare(x, y) <= 0;
-        }
-
-        public static bool operator >(BigRational x, BigRational y)
-        {
-            return Compare(x, y) > 0;
-        }
-
-        public static bool operator >=(BigRational x, BigRational y)
-        {
-            return Compare(x, y) >= 0;
-        }
-
-        public static BigRational operator +(BigRational r)
-        {
-            return r;
-        }
-
-        public static BigRational operator -(BigRational r)
-        {
-            return new BigRational(-r.m_numerator, r.Denominator);
-        }
-
-        public static BigRational operator ++(BigRational r)
-        {
-            return r + BigRational.One;
-        }
-
-        public static BigRational operator --(BigRational r)
-        {
-            return r - BigRational.One;
-        }
-
-        public static BigRational operator +(BigRational r1, BigRational r2)
-        {
-            // a/b + c/d  == (ad + bc)/bd
-            return new BigRational((r1.m_numerator * r2.Denominator) + (r1.Denominator * r2.m_numerator), (r1.Denominator * r2.Denominator));
-        }
-
-        public static BigRational operator -(BigRational r1, BigRational r2)
-        {
-            // a/b - c/d  == (ad - bc)/bd
-            return new BigRational((r1.m_numerator * r2.Denominator) - (r1.Denominator * r2.m_numerator), (r1.Denominator * r2.Denominator));
-        }
-
-        public static BigRational operator *(BigRational r1, BigRational r2)
-        {
-            // a/b * c/d  == (ac)/(bd)
-            return new BigRational((r1.m_numerator * r2.m_numerator), (r1.Denominator * r2.Denominator));
-        }
-
-        public static BigRational operator /(BigRational r1, BigRational r2)
-        {
-            // a/b / c/d  == (ad)/(bc)
-            return new BigRational((r1.m_numerator * r2.Denominator), (r1.Denominator * r2.m_numerator));
-        }
-
-        public static BigRational operator %(BigRational r1, BigRational r2)
-        {
-            // a/b % c/d  == (ad % bc)/bd
-            return new BigRational((r1.m_numerator * r2.Denominator) % (r1.Denominator * r2.m_numerator), (r1.Denominator * r2.Denominator));
-        }
-
-        #endregion Operator Overloads
-
-        // ----- SECTION: explicit conversions from BigRational to numeric base types  ----------------*
-
-        #region explicit conversions from BigRational
+        #region Methods
 
         [CLSCompliant(false)]
         public static explicit operator SByte(BigRational value)
@@ -701,12 +374,6 @@ namespace Numerics
             throw new OverflowException("Value was either too large or too small for a Decimal.");
         }
 
-        #endregion explicit conversions from BigRational
-
-        // ----- SECTION: implicit conversions from numeric base types to BigRational  ----------------*
-
-        #region implicit conversions to BigRational
-
         [CLSCompliant(false)]
         public static implicit operator BigRational(SByte value)
         {
@@ -771,11 +438,256 @@ namespace Numerics
             return new BigRational(value);
         }
 
-        #endregion implicit conversions to BigRational
+        public static bool operator !=(BigRational x, BigRational y)
+        {
+            return Compare(x, y) != 0;
+        }
 
-        // ----- SECTION: private serialization instance methods  ----------------*
+        public static BigRational operator %(BigRational r1, BigRational r2)
+        {
+            // a/b % c/d  == (ad % bc)/bd
+            return new BigRational((r1.m_numerator * r2.Denominator) % (r1.Denominator * r2.m_numerator), (r1.Denominator * r2.Denominator));
+        }
 
-        #region serialization
+        public static BigRational operator *(BigRational r1, BigRational r2)
+        {
+            // a/b * c/d  == (ac)/(bd)
+            return new BigRational((r1.m_numerator * r2.m_numerator), (r1.Denominator * r2.Denominator));
+        }
+
+        public static BigRational operator +(BigRational r)
+        {
+            return r;
+        }
+
+        public static BigRational operator +(BigRational r1, BigRational r2)
+        {
+            // a/b + c/d  == (ad + bc)/bd
+            return new BigRational((r1.m_numerator * r2.Denominator) + (r1.Denominator * r2.m_numerator), (r1.Denominator * r2.Denominator));
+        }
+
+        public static BigRational operator ++(BigRational r)
+        {
+            return r + BigRational.One;
+        }
+
+        public static BigRational operator -(BigRational r)
+        {
+            return new BigRational(-r.m_numerator, r.Denominator);
+        }
+
+        public static BigRational operator -(BigRational r1, BigRational r2)
+        {
+            // a/b - c/d  == (ad - bc)/bd
+            return new BigRational((r1.m_numerator * r2.Denominator) - (r1.Denominator * r2.m_numerator), (r1.Denominator * r2.Denominator));
+        }
+
+        public static BigRational operator --(BigRational r)
+        {
+            return r - BigRational.One;
+        }
+
+        public static BigRational operator /(BigRational r1, BigRational r2)
+        {
+            // a/b / c/d  == (ad)/(bc)
+            return new BigRational((r1.m_numerator * r2.Denominator), (r1.Denominator * r2.m_numerator));
+        }
+
+        public static bool operator <(BigRational x, BigRational y)
+        {
+            return Compare(x, y) < 0;
+        }
+
+        public static bool operator <=(BigRational x, BigRational y)
+        {
+            return Compare(x, y) <= 0;
+        }
+
+        public static bool operator ==(BigRational x, BigRational y)
+        {
+            return Compare(x, y) == 0;
+        }
+
+        public static bool operator >(BigRational x, BigRational y)
+        {
+            return Compare(x, y) > 0;
+        }
+
+        public static bool operator >=(BigRational x, BigRational y)
+        {
+            return Compare(x, y) >= 0;
+        }
+
+        public static BigRational Abs(BigRational r)
+        {
+            return (r.m_numerator.Sign < 0 ? new BigRational(BigInteger.Abs(r.m_numerator), r.Denominator) : r);
+        }
+
+        public static BigRational Add(BigRational x, BigRational y)
+        {
+            return x + y;
+        }
+
+        public static int Compare(BigRational r1, BigRational r2)
+        {
+            //     a/b = c/d, iff ad = bc
+            return BigInteger.Compare(r1.m_numerator * r2.Denominator, r2.m_numerator * r1.Denominator);
+        }
+
+        public static BigRational Divide(BigRational dividend, BigRational divisor)
+        {
+            return dividend / divisor;
+        }
+
+        public static BigRational DivRem(BigRational dividend, BigRational divisor, out BigRational remainder)
+        {
+            // a/b / c/d  == (ad)/(bc)
+            // a/b % c/d  == (ad % bc)/bd
+
+            // (ad) and (bc) need to be calculated for both the division and the remainder operations.
+            BigInteger ad = dividend.m_numerator * divisor.Denominator;
+            BigInteger bc = dividend.Denominator * divisor.m_numerator;
+            BigInteger bd = dividend.Denominator * divisor.Denominator;
+
+            remainder = new BigRational(ad % bc, bd);
+            return new BigRational(ad, bc);
+        }
+
+        public static BigRational Invert(BigRational r)
+        {
+            return new BigRational(r.Denominator, r.m_numerator);
+        }
+
+        // Least Common Denominator (LCD)
+        //
+        // The LCD is the least common multiple of the two denominators.  For instance, the LCD of
+        // {1/2, 1/4} is 4 because the least common multiple of 2 and 4 is 4.  Likewise, the LCD
+        // of {1/2, 1/3} is 6.
+        //
+        // To find the LCD:
+        //
+        // 1) Find the Greatest Common Divisor (GCD) of the denominators
+        // 2) Multiply the denominators together
+        // 3) Divide the product of the denominators by the GCD
+        public static BigInteger LeastCommonDenominator(BigRational x, BigRational y)
+        {
+            // LCD( a/b, c/d ) == (bd) / gcd(b,d)
+            return (x.Denominator * y.Denominator) / BigInteger.GreatestCommonDivisor(x.Denominator, y.Denominator);
+        }
+
+        public static BigRational Multiply(BigRational x, BigRational y)
+        {
+            return x * y;
+        }
+
+        public static BigRational Negate(BigRational r)
+        {
+            return new BigRational(BigInteger.Negate(r.m_numerator), r.Denominator);
+        }
+
+        public static BigRational Pow(BigRational baseValue, BigInteger exponent)
+        {
+            if (exponent.Sign == 0)
+            {
+                // 0^0 -> 1
+                // n^0 -> 1
+                return BigRational.One;
+            }
+            else if (exponent.Sign < 0)
+            {
+                if (baseValue == BigRational.Zero)
+                {
+                    throw new ArgumentException("cannot raise zero to a negative power", "baseValue");
+                }
+                // n^(-e) -> (1/n)^e
+                baseValue = BigRational.Invert(baseValue);
+                exponent = BigInteger.Negate(exponent);
+            }
+
+            BigRational result = baseValue;
+            while (exponent > BigInteger.One)
+            {
+                result = result * baseValue;
+                exponent--;
+            }
+
+            return result;
+        }
+
+        public static BigRational Remainder(BigRational dividend, BigRational divisor)
+        {
+            return dividend % divisor;
+        }
+
+        public static BigRational Subtract(BigRational x, BigRational y)
+        {
+            return x - y;
+        }
+
+        // IComparable<BigRational>
+        public int CompareTo(BigRational other)
+        {
+            return Compare(this, other);
+        }
+
+        public override bool Equals(Object obj)
+        {
+            if (obj == null)
+                return false;
+
+            if (!(obj is BigRational))
+                return false;
+            return this.Equals((BigRational)obj);
+        }
+
+        // IEquatable<BigRational>
+        // a/b = c/d, iff ad = bc
+        public Boolean Equals(BigRational other)
+        {
+            if (this.Denominator == other.Denominator)
+            {
+                return m_numerator == other.m_numerator;
+            }
+            else
+            {
+                return (m_numerator * other.Denominator) == (Denominator * other.m_numerator);
+            }
+        }
+
+        public BigRational GetFractionPart()
+        {
+            return new BigRational(BigInteger.Remainder(m_numerator, m_denominator), m_denominator);
+        }
+
+        public override int GetHashCode()
+        {
+            return (m_numerator / Denominator).GetHashCode();
+        }
+
+        // GetWholePart() and GetFractionPart()
+        //
+        // BigRational == Whole, Fraction
+        //  0/2        ==     0,  0/2
+        //  1/2        ==     0,  1/2
+        // -1/2        ==     0, -1/2
+        //  1/1        ==     1,  0/1
+        // -1/1        ==    -1,  0/1
+        // -3/2        ==    -1, -1/2
+        //  3/2        ==     1,  1/2
+        public BigInteger GetWholePart()
+        {
+            return BigInteger.Divide(m_numerator, m_denominator);
+        }
+
+        // IComparable
+        int IComparable.CompareTo(Object obj)
+        {
+            if (obj == null)
+                return 1;
+            if (!(obj is BigRational))
+                throw new ArgumentException("Argument must be of type BigRational", "obj");
+            return Compare(this, (BigRational)obj);
+        }
 
         void IDeserializationCallback.OnDeserialization(Object sender)
         {
@@ -814,84 +726,52 @@ namespace Numerics
             info.AddValue("Denominator", m_denominator);
         }
 
-        private BigRational(SerializationInfo info, StreamingContext context)
+        // Object.ToString
+        public override String ToString()
         {
-            if (info == null)
-            {
-                throw new ArgumentNullException("info");
-            }
-
-            m_numerator = (BigInteger)info.GetValue("Numerator", typeof(BigInteger));
-            m_denominator = (BigInteger)info.GetValue("Denominator", typeof(BigInteger));
+            StringBuilder ret = new StringBuilder();
+            ret.Append(m_numerator.ToString("R", CultureInfo.InvariantCulture));
+            ret.Append(c_solidus);
+            ret.Append(Denominator.ToString("R", CultureInfo.InvariantCulture));
+            return ret.ToString();
         }
 
-        #endregion serialization
-
-        // ----- SECTION: private instance utility methods ----------------*
-
-        #region instance helper methods
-
-        private void Simplify()
+        private static int CbitHighZero(ulong uu)
         {
-            // * if the numerator is {0, +1, -1} then the fraction is already reduced
-            // * if the denominator is {+1} then the fraction is already reduced
-            if (m_numerator == BigInteger.Zero)
-            {
-                m_denominator = BigInteger.One;
-            }
-
-            BigInteger gcd = BigInteger.GreatestCommonDivisor(m_numerator, m_denominator);
-            if (gcd > BigInteger.One)
-            {
-                m_numerator = m_numerator / gcd;
-                m_denominator = Denominator / gcd;
-            }
+            if ((uu & 0xFFFFFFFF00000000) == 0)
+                return 32 + CbitHighZero((uint)uu);
+            return CbitHighZero((uint)(uu >> 32));
         }
 
-        #endregion instance helper methods
-
-        // ----- SECTION: private static utility methods -----------------*
-
-        #region static helper methods
-
-        private static bool SafeCastToDouble(BigInteger value)
+        private static int CbitHighZero(uint u)
         {
-            return s_bnDoubleMinValue <= value && value <= s_bnDoubleMaxValue;
-        }
+            if (u == 0)
+                return 32;
 
-        private static bool SafeCastToDecimal(BigInteger value)
-        {
-            return s_bnDecimalMinValue <= value && value <= s_bnDecimalMaxValue;
-        }
-
-        private static void SplitDoubleIntoParts(double dbl, out int sign, out int exp, out ulong man, out bool isFinite)
-        {
-            DoubleUlong du;
-            du.uu = 0;
-            du.dbl = dbl;
-
-            sign = 1 - ((int)(du.uu >> 62) & 2);
-            man = du.uu & 0x000FFFFFFFFFFFFF;
-            exp = (int)(du.uu >> 52) & 0x7FF;
-            if (exp == 0)
+            int cbit = 0;
+            if ((u & 0xFFFF0000) == 0)
             {
-                // Denormalized number.
-                isFinite = true;
-                if (man != 0)
-                    exp = -1074;
+                cbit += 16;
+                u <<= 16;
             }
-            else if (exp == 0x7FF)
+            if ((u & 0xFF000000) == 0)
             {
-                // NaN or Infinite.
-                isFinite = false;
-                exp = Int32.MaxValue;
+                cbit += 8;
+                u <<= 8;
             }
-            else
+            if ((u & 0xF0000000) == 0)
             {
-                isFinite = true;
-                man |= 0x0010000000000000; // mask in the implied leading 53rd significand bit
-                exp -= 1075;
+                cbit += 4;
+                u <<= 4;
             }
+            if ((u & 0xC0000000) == 0)
+            {
+                cbit += 2;
+                u <<= 2;
+            }
+            if ((u & 0x80000000) == 0)
+                cbit += 1;
+            return cbit;
         }
 
         private static double GetDoubleFromParts(int sign, int exp, ulong man)
@@ -950,45 +830,100 @@ namespace Numerics
             return du.dbl;
         }
 
-        private static int CbitHighZero(ulong uu)
+        private static bool SafeCastToDecimal(BigInteger value)
         {
-            if ((uu & 0xFFFFFFFF00000000) == 0)
-                return 32 + CbitHighZero((uint)uu);
-            return CbitHighZero((uint)(uu >> 32));
+            return s_bnDecimalMinValue <= value && value <= s_bnDecimalMaxValue;
         }
 
-        private static int CbitHighZero(uint u)
+        private static bool SafeCastToDouble(BigInteger value)
         {
-            if (u == 0)
-                return 32;
-
-            int cbit = 0;
-            if ((u & 0xFFFF0000) == 0)
-            {
-                cbit += 16;
-                u <<= 16;
-            }
-            if ((u & 0xFF000000) == 0)
-            {
-                cbit += 8;
-                u <<= 8;
-            }
-            if ((u & 0xF0000000) == 0)
-            {
-                cbit += 4;
-                u <<= 4;
-            }
-            if ((u & 0xC0000000) == 0)
-            {
-                cbit += 2;
-                u <<= 2;
-            }
-            if ((u & 0x80000000) == 0)
-                cbit += 1;
-            return cbit;
+            return s_bnDoubleMinValue <= value && value <= s_bnDoubleMaxValue;
         }
 
-        #endregion static helper methods
+        private static void SplitDoubleIntoParts(double dbl, out int sign, out int exp, out ulong man, out bool isFinite)
+        {
+            DoubleUlong du;
+            du.uu = 0;
+            du.dbl = dbl;
+
+            sign = 1 - ((int)(du.uu >> 62) & 2);
+            man = du.uu & 0x000FFFFFFFFFFFFF;
+            exp = (int)(du.uu >> 52) & 0x7FF;
+            if (exp == 0)
+            {
+                // Denormalized number.
+                isFinite = true;
+                if (man != 0)
+                    exp = -1074;
+            }
+            else if (exp == 0x7FF)
+            {
+                // NaN or Infinite.
+                isFinite = false;
+                exp = Int32.MaxValue;
+            }
+            else
+            {
+                isFinite = true;
+                man |= 0x0010000000000000; // mask in the implied leading 53rd significand bit
+                exp -= 1075;
+            }
+        }
+
+        private void Simplify()
+        {
+            // * if the numerator is {0, +1, -1} then the fraction is already reduced
+            // * if the denominator is {+1} then the fraction is already reduced
+            if (m_numerator == BigInteger.Zero)
+            {
+                m_denominator = BigInteger.One;
+            }
+
+            BigInteger gcd = BigInteger.GreatestCommonDivisor(m_numerator, m_denominator);
+            if (gcd > BigInteger.One)
+            {
+                m_numerator = m_numerator / gcd;
+                m_denominator = Denominator / gcd;
+            }
+        }
+
+        #endregion Methods
+
+        #region Nested Types
+
+        [StructLayout(LayoutKind.Explicit)]
+        public struct DecimalUInt32
+        {
+            [FieldOffset(0)]
+            public Decimal dec;
+            [FieldOffset(0)]
+            public int flags;
+        }
+
+        [StructLayout(LayoutKind.Explicit)]
+        public struct DoubleUlong
+        {
+            [FieldOffset(0)]
+            public double dbl;
+            [FieldOffset(0)]
+            public ulong uu;
+        }
+
+        #endregion Nested Types
+
+        #region Other
+
+        // ---- SECTION:  members for public support ---------*
+        // ---- SECTION: public properties --------------*
+        // ---- SECTION: public instance methods --------------*
+        // -------- SECTION: constructors -----------------*
+        // -------- SECTION: public static methods -----------------*
+        // ----- SECTION: explicit conversions from BigRational to numeric base types  ----------------*
+        // ----- SECTION: implicit conversions from numeric base types to BigRational  ----------------*
+        // ----- SECTION: private serialization instance methods  ----------------*
+        // ----- SECTION: private instance utility methods ----------------*
+        // ----- SECTION: private static utility methods -----------------*
+
+        #endregion Other
     }
-    // BigRational
-} // namespace Numerics
+}

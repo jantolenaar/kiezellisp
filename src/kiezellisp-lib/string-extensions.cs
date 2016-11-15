@@ -1,24 +1,52 @@
+﻿#region Header
+
 // Copyright (C) Jan Tolenaar. See the file LICENSE for details.
 
-using System;
-using System.Collections;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Text;
-using System.Text.RegularExpressions;
-using System.Web;
-using System.Dynamic;
-using System.Linq.Expressions;
+#endregion Header
 
 namespace Kiezel
 {
+    using System;
+    using System.Collections;
+    using System.Collections.Generic;
+    using System.Dynamic;
+    using System.IO;
+    using System.Linq;
+    using System.Linq.Expressions;
+    using System.Text;
+    using System.Text.RegularExpressions;
+    using System.Web;
+
+    public class Kwarg
+    {
+        #region Fields
+
+        public object Value;
+
+        #endregion Fields
+
+        #region Constructors
+
+        public Kwarg(object value)
+        {
+            Value = value;
+        }
+
+        #endregion Constructors
+    }
+
     public class RegexPlus : Regex, IApply, IDynamicMetaObjectProvider
     {
+        #region Constructors
+
         public RegexPlus(string pattern, RegexOptions options)
             : base(pattern, options)
         {
         }
+
+        #endregion Constructors
+
+        #region Methods
 
         object IApply.Apply(object[] args)
         {
@@ -35,10 +63,107 @@ namespace Kiezel
             return new GenericApplyMetaObject<RegexPlus>(parameter, this);
         }
 
+        #endregion Methods
+    }
+
+    public partial class Runtime
+    {
+        #region Methods
+
+        public static object[] RegexBind(Match match)
+        {
+            if (match.Success)
+            {
+                var v = new Vector();
+
+                foreach (Group group in match.Groups)
+                {
+                    v.Add(group.Value);
+                }
+
+                return AsArray(v);
+            }
+            else
+            {
+                return new object[ 0 ];
+            }
+        }
+
+        #endregion Methods
+
+        #region Nested Types
+
+        public class FunctionMatcher
+        {
+            #region Fields
+
+            private IApply transform;
+
+            #endregion Fields
+
+            #region Constructors
+
+            public FunctionMatcher(IApply transform)
+            {
+                this.transform = transform;
+            }
+
+            #endregion Constructors
+
+            #region Methods
+
+            public string Evaluate(Match match)
+            {
+                string result = Runtime.MakeString(transform.Apply(RegexBind(match)));
+                return result;
+            }
+
+            #endregion Methods
+        }
+
+        public class StringMatcher
+        {
+            #region Fields
+
+            private string replacement;
+
+            #endregion Fields
+
+            #region Constructors
+
+            public StringMatcher(string replacement)
+            {
+                this.replacement = replacement;
+            }
+
+            #endregion Constructors
+
+            #region Methods
+
+            public string Evaluate(Match match)
+            {
+                string result = replacement;
+
+                for (int i = 0; i < match.Groups.Count; ++i)
+                {
+                    string v = match.Groups[i].Value;
+                    string t = Symbols.NumberedVariables[i].Name;
+                    result = result.Replace(t, v);
+                }
+
+                return result;
+            }
+
+            #endregion Methods
+        }
+
+        #endregion Nested Types
     }
 
     public static class StringExtensions
     {
+        #region Methods
+
         public static string Capitalize(this string str)
         {
             char[] chars = new char[ str.Length ];
@@ -103,6 +228,18 @@ namespace Kiezel
             }
         }
 
+        public static Regex GetRegex(object pattern)
+        {
+            if (pattern is string)
+            {
+                return new Regex((string)pattern);
+            }
+            else
+            {
+                return (Regex)pattern;
+            }
+        }
+
         public static string HtmlDecode(this string str)
         {
             return HttpUtility.HtmlDecode(str);
@@ -111,46 +248,6 @@ namespace Kiezel
         public static string HtmlEncode(this string str)
         {
             return HttpUtility.HtmlEncode(str);
-        }
-
-        static bool WordWrapBreak(char ch)
-        {
-            return char.IsWhiteSpace(ch);
-        }
-
-        public static string WordWrap(this string text, int width)
-        {
-            // Wraps on white space boundary
-            var buf = new StringBuilder();
-            var pos = 0;
-            while (pos + width < text.Length)
-            {               
-                if (WordWrapBreak(text[pos]))
-                {
-                    ++pos;
-                    continue;
-                }
-                var end = pos + width;
-                if (!WordWrapBreak(text[end]))
-                {
-                    while (!WordWrapBreak(text[end - 1]))
-                    {                       
-                        --end;
-                        if (end == pos)
-                        {
-                            end = pos + width;
-                            break;
-                        }
-                    }
-
-                }
-                buf.Append(text.Substring(pos, end - pos));
-                buf.Append("\n");
-                pos = end;
-            }
-            buf.Append(text.Substring(pos));
-            return buf.ToString();
-
         }
 
         public static string Indent(this string text, string prefix)
@@ -342,6 +439,35 @@ namespace Kiezel
             return buf.ToString();
         }
 
+        public static Cons MakeMatchResult(Match match)
+        {
+            Cons result = null;
+            if (match.Success)
+            {
+                for (int i = match.Groups.Count - 1; i >= 0; --i)
+                {
+                    var group = match.Groups[i];
+                    result = new Cons(group.Value, result);
+                }
+            }
+            return result;
+        }
+
+        public static string MakeWildcardRegexString(string pattern)
+        {
+            var star = "<<sadaskdSTARadfgjkdlf>>";
+            var qm = "<<sdkjlfQUESTIONMARKsdalwe>>";
+
+            var pattern2 = "^" + pattern
+                                .Replace("*", star)
+                                .Replace("?", qm)
+                                .RegexEncode()
+                                .Replace(star, "(.*?)")
+                                .Replace(qm, "(.*)") + "$";
+
+            return pattern2;
+        }
+
         public static string Next(this string str)
         {
             return Runtime.IncrementString(str);
@@ -455,6 +581,19 @@ namespace Kiezel
         public static string Right(this string s, int count)
         {
             return s.Substring(s.Length - Math.Min(count, s.Length));
+        }
+
+        public static string Shorten(this string str, int maxLength, string insert = "...")
+        {
+            int extra = insert == null ? 0 : insert.Length;
+            if (str.Length > maxLength)
+            {
+                return str.Substring(0, maxLength - extra) + insert;
+            }
+            else
+            {
+                return str;
+            }
         }
 
         public static string[] Split(this string str)
@@ -574,135 +713,50 @@ namespace Kiezel
             return HttpUtility.UrlEncode(str);
         }
 
-        public static string MakeWildcardRegexString(string pattern)
-        {
-            var star = "<<sadaskdSTARadfgjkdlf>>";
-            var qm = "<<sdkjlfQUESTIONMARKsdalwe>>";
-
-            var pattern2 = "^" + pattern
-                                .Replace("*", star)
-                                .Replace("?", qm)
-                                .RegexEncode()
-                                .Replace(star, "(.*?)")
-                                .Replace(qm, "(.*)") + "$";
-
-            return pattern2;
-        }
-
         public static Cons WildcardMatch(this string str, string pattern)
         {
             return RegexMatch(str, MakeWildcardRegexString(pattern));
         }
 
-        public static Regex GetRegex(object pattern)
+        public static string WordWrap(this string text, int width)
         {
-            if (pattern is string)
+            // Wraps on white space boundary
+            var buf = new StringBuilder();
+            var pos = 0;
+            while (pos + width < text.Length)
             {
-                return new Regex((string)pattern);
-            }
-            else
-            {
-                return (Regex)pattern;
-            }
-        }
-
-        public static Cons MakeMatchResult(Match match)
-        {
-            Cons result = null;
-            if (match.Success)
-            {
-                for (int i = match.Groups.Count - 1; i >= 0; --i)
+                if (WordWrapBreak(text[pos]))
                 {
-                    var group = match.Groups[i];
-                    result = new Cons(group.Value, result);
+                    ++pos;
+                    continue;
                 }
-            }
-            return result;
-        }
-
-        public static string Shorten(this string str, int maxLength, string insert = "...")
-        {
-            int extra = insert == null ? 0 : insert.Length;
-            if (str.Length > maxLength)
-            {
-                return str.Substring(0, maxLength - extra) + insert;
-            }
-            else
-            {
-                return str;
-            }
-        }
-    }
-
-    public partial class Runtime
-    {
-        public static object[] RegexBind(Match match)
-        {
-            if (match.Success)
-            {
-                var v = new Vector();
-
-                foreach (Group group in match.Groups)
+                var end = pos + width;
+                if (!WordWrapBreak(text[end]))
                 {
-                    v.Add(group.Value);
+                    while (!WordWrapBreak(text[end - 1]))
+                    {
+                        --end;
+                        if (end == pos)
+                        {
+                            end = pos + width;
+                            break;
+                        }
+                    }
+
                 }
-
-                return AsArray(v);
+                buf.Append(text.Substring(pos, end - pos));
+                buf.Append("\n");
+                pos = end;
             }
-            else
-            {
-                return new object[ 0 ];
-            }
+            buf.Append(text.Substring(pos));
+            return buf.ToString();
         }
 
-        public class FunctionMatcher
+        static bool WordWrapBreak(char ch)
         {
-            private IApply transform;
-
-            public FunctionMatcher(IApply transform)
-            {
-                this.transform = transform;
-            }
-
-            public string Evaluate(Match match)
-            {
-                string result = Runtime.MakeString(transform.Apply(RegexBind(match)));
-                return result;
-            }
+            return char.IsWhiteSpace(ch);
         }
 
-        public class StringMatcher
-        {
-            private string replacement;
-
-            public StringMatcher(string replacement)
-            {
-                this.replacement = replacement;
-            }
-
-            public string Evaluate(Match match)
-            {
-                string result = replacement;
-
-                for (int i = 0; i < match.Groups.Count; ++i)
-                {
-                    string v = match.Groups[i].Value;
-                    string t = Symbols.NumberedVariables[i].Name;
-                    result = result.Replace(t, v);
-                }
-
-                return result;
-            }
-        }
-    }
-
-    public class Kwarg
-    {
-        public object Value;
-
-        public Kwarg(object value)
-        {
-            Value = value;
-        }
+        #endregion Methods
     }
 }

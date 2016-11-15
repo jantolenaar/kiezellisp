@@ -1,13 +1,15 @@
+﻿#region Header
+
 // Copyright (C) Jan Tolenaar. See the file LICENSE for details.
 
-using System;
-using System.Collections.Generic;
+#endregion Header
 
 namespace Kiezel
 {
-    public delegate object ReadtableHandler(LispReader stream,char ch);
+    using System;
+    using System.Collections.Generic;
 
-    public delegate object ReadtableHandler2(LispReader stream,string ch,int arg);
+    #region Enumerations
 
     public enum CharacterType
     {
@@ -20,28 +22,29 @@ namespace Kiezel
         NonTerminatingMacro
     }
 
+    #endregion Enumerations
+
+    #region Delegates
+
+    public delegate object ReadtableHandler(LispReader stream,char ch);
+
+    public delegate object ReadtableHandler2(LispReader stream,string ch,int arg);
+
+    #endregion Delegates
+
     public class EOF
     {
+        #region Fields
+
         public static EOF Value = new EOF();
-    }
 
-    public class ReverseOrder: IComparer<string>
-    {
-        #region IComparer implementation
-
-        public int Compare(string x, string y)
-        {
-            return string.Compare(y, x);
-        }
-
-        #endregion
-
-
-
+        #endregion Fields
     }
 
     public class Readtable
     {
+        #region Fields
+
         public static ReadtableEntry DefaultItem = new ReadtableEntry
         {
             Type = CharacterType.Constituent
@@ -49,6 +52,10 @@ namespace Kiezel
 
         public ReadtableEntry[] Items;
         public Dictionary<char, ReadtableEntry> OtherItems;
+
+        #endregion Fields
+
+        #region Constructors
 
         public Readtable()
         {
@@ -59,6 +66,10 @@ namespace Kiezel
             }
             OtherItems = new Dictionary<char, ReadtableEntry>();
         }
+
+        #endregion Constructors
+
+        #region Methods
 
         public void DefineMacro(string ch, CharacterType type = CharacterType.TerminatingMacro)
         {
@@ -175,15 +186,23 @@ namespace Kiezel
             item.Handler2 = null;
             item.Type = type;
         }
+
+        #endregion Methods
     }
 
     public class ReadtableEntry
     {
+        #region Fields
+
         public char Character;
-        public SortedList<string,ReadtableHandler2> DispatchReadtable;
+        public SortedList<string, ReadtableHandler2> DispatchReadtable;
         public ReadtableHandler Handler;
         public ReadtableHandler2 Handler2;
         public CharacterType Type;
+
+        #endregion Fields
+
+        #region Methods
 
         public ReadtableEntry Clone()
         {
@@ -202,10 +221,26 @@ namespace Kiezel
             }
             return dest;
         }
+
+        #endregion Methods
+    }
+
+    public class ReverseOrder : IComparer<string>
+    {
+        #region Methods
+
+        public int Compare(string x, string y)
+        {
+            return string.Compare(y, x);
+        }
+
+        #endregion Methods
     }
 
     public partial class Runtime
     {
+        #region Methods
+
         [Lisp("copy-readtable")]
         public static Readtable CopyReadtable(params object[] kwargs)
         {
@@ -229,6 +264,65 @@ namespace Kiezel
                 }
             }
             return dest;
+        }
+
+        public static Readtable GetReadtable()
+        {
+            var readtable = (Readtable)GetDynamic(Symbols.Readtable);
+            return readtable;
+        }
+
+        public static Readtable GetStandardReadtable()
+        {
+            var table = new Readtable();
+            table.Init();
+            return table;
+        }
+
+        public static string GetWordFromString(string text, int index, Func<char,bool> wordCharTest)
+        {
+            var i = index;
+
+            while (i > 0)
+            {
+                var ch = text[i - 1];
+                if (!wordCharTest(ch))
+                {
+                    break;
+                }
+                --i;
+            }
+
+            var j = index;
+            while (j < text.Length)
+            {
+                var ch = text[j];
+                if (!wordCharTest(ch))
+                {
+                    break;
+                }
+                ++j;
+            }
+
+            var word = text.Substring(i, j - i);
+            return word;
+        }
+
+        public static bool IsLispWordChar(char ch)
+        {
+            return ch != '.' && IsWordChar(ch);
+        }
+
+        public static bool IsWordChar(char ch)
+        {
+            var item = DefaultReadtable.GetEntry(ch);
+            return item.Type == CharacterType.Constituent;
+        }
+
+        public static bool MustEscapeChar(char ch)
+        {
+            var item = DefaultReadtable.GetEntry(ch);
+            return item.Type != CharacterType.Constituent && item.Type != CharacterType.NonTerminatingMacro;
         }
 
         [Lisp("set-dispatch-macro-character")]
@@ -274,71 +368,15 @@ namespace Kiezel
             return VOID.Value;
         }
 
-        public static Readtable GetReadtable()
-        {
-            var readtable = (Readtable)GetDynamic(Symbols.Readtable);
-            return readtable;
-        }
-
-        public static Readtable GetStandardReadtable()
-        {
-            var table = new Readtable();
-            table.Init();
-            return table;
-        }
-
-        public static bool IsWordChar(char ch)
-        {
-            var item = DefaultReadtable.GetEntry(ch);
-            return item.Type == CharacterType.Constituent;
-        }
-
-        public static bool IsLispWordChar(char ch)
-        {
-            return ch != '.' && IsWordChar(ch);
-        }
-
-
-        public static string GetWordFromString(string text, int index, Func<char,bool> wordCharTest)
-        {
-            var i = index;
-
-            while (i > 0)
-            {
-                var ch = text[i - 1];
-                if (!wordCharTest(ch))
-                {
-                    break;
-                }
-                --i;
-            }
-
-            var j = index;
-            while (j < text.Length)
-            {
-                var ch = text[j];
-                if (!wordCharTest(ch))
-                {
-                    break;
-                }
-                ++j;
-            }
-
-            var word = text.Substring(i, j - i);
-            return word;
-
-        }
-
-
-        public static bool MustEscapeChar(char ch)
-        {
-            var item = DefaultReadtable.GetEntry(ch);
-            return item.Type != CharacterType.Constituent && item.Type != CharacterType.NonTerminatingMacro;
-        }
+        #endregion Methods
     }
 
     public class VOID
     {
+        #region Fields
+
         public static VOID Value = new VOID();
+
+        #endregion Fields
     }
 }

@@ -1,11 +1,17 @@
+﻿#region Header
+
 // Copyright (C) Jan Tolenaar. See the file LICENSE for details.
 
-using System.IO;
+#endregion Header
 
 namespace Kiezel
 {
+    using System.IO;
+
     public static class PathExtensions
     {
+        #region Methods
+
         [Extends(typeof(Path))]
         public static string Combine(string path1, string path2)
         {
@@ -13,15 +19,15 @@ namespace Kiezel
         }
 
         [Extends(typeof(Path))]
-        public static string GetFullPath(string path)
-        {
-            return GetUnixName(Path.GetFullPath(path));
-        }
-
-        [Extends(typeof(Path))]
         public static string GetDirectoryName(string path)
         {
             return GetUnixName(Path.GetDirectoryName(path));
+        }
+
+        [Extends(typeof(Path))]
+        public static string GetFullPath(string path)
+        {
+            return GetUnixName(Path.GetFullPath(path));
         }
 
         [Extends(typeof(Path))]
@@ -35,5 +41,7 @@ namespace Kiezel
         {
             return name.Replace("/", "\\");
         }
+
+        #endregion Methods
     }
 }

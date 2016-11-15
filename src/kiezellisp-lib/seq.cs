@@ -1,21 +1,31 @@
+﻿#region Header
+
 // Copyright (C) Jan Tolenaar. See the file LICENSE for details.
 
-using System;
-using System.Collections;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using ActionFunc = System.Action<object>;
-using CompareFunc = System.Func<object, object, int>;
-using KeyFunc = System.Func<object, object>;
-
-using PredicateFunc = System.Func<object, bool>;
-using TestFunc = System.Func<object, object, bool>;
+#endregion Header
 
 namespace Kiezel
 {
+    using System;
+    using System.Collections;
+    using System.Collections.Generic;
+    using System.Linq;
+    using System.Threading.Tasks;
+
+    using ActionFunc = System.Action<object>;
+
+    using CompareFunc = System.Func<object, object, int>;
+
+    using KeyFunc = System.Func<object, object>;
+
+    using PredicateFunc = System.Func<object, bool>;
+
+    using TestFunc = System.Func<object, object, bool>;
+
     public partial class Runtime
     {
+        #region Methods
+
         [Lisp("adjoin")]
         public static Cons Adjoin(object item, IEnumerable seq)
         {
@@ -77,7 +87,6 @@ namespace Kiezel
                 throw new NotImplementedException();
             }
         }
-
 
         [Lisp("copy-seq")]
         public static Cons CopySeq(IEnumerable seq)
@@ -331,6 +340,11 @@ namespace Kiezel
             return AsLazyList(SeqBase.Map(func, seqs));
         }
 
+        public static Cons Map(KeyFunc func, params IEnumerable[] seqs)
+        {
+            return AsLazyList(SeqBase.Map(func, seqs));
+        }
+
         [Lisp("max")]
         public static object Max(IEnumerable seq, params object[] args)
         {
@@ -396,7 +410,6 @@ namespace Kiezel
             }
             return false;
         }
-
 
         [Lisp("parallel-each")]
         public static void ParallelEach(IApply action, IEnumerable seq)
@@ -498,8 +511,6 @@ namespace Kiezel
             return Range(0, Int32.MaxValue, 1);
         }
 
-  
-
         [Lisp("reduce")]
         public static object Reduce(IApply reducer, IEnumerable seq, params object[] args)
         {
@@ -507,6 +518,23 @@ namespace Kiezel
             var seed = kwargs[0];
             var key = GetClosure(kwargs[1]);
             return SeqBase.ReduceSeq(reducer, seq, seed, key);
+        }
+
+        public static object ReduceSeq(Func<object, object, object> reducer, IEnumerable seq, object seed, IApply key)
+        {
+            var result = seed;
+            foreach (object x in ToIter( seq ))
+            {
+                if (result == MissingValue)
+                {
+                    result = Funcall(key, x);
+                }
+                else
+                {
+                    result = reducer(result, Funcall(key, x));
+                }
+            }
+            return result == MissingValue ? null : result;
         }
 
         [Lisp("reductions")]
@@ -580,7 +608,6 @@ namespace Kiezel
             return Range(1, Int32.MaxValue, 1);
         }
 
- 
         [Lisp("shuffle")]
         public static Cons Shuffle(IEnumerable seq)
         {
@@ -684,29 +711,6 @@ namespace Kiezel
             return AsLazyList(SeqBase.Zip(seqs));
         }
 
- 
-        public static Cons Map(KeyFunc func, params IEnumerable[] seqs)
-        {
-            return AsLazyList(SeqBase.Map(func, seqs));
-        }
-
-        public static object ReduceSeq(Func<object, object, object> reducer, IEnumerable seq, object seed, IApply key)
-        {
-            var result = seed;
-            foreach (object x in ToIter( seq ))
-            {
-                if (result == MissingValue)
-                {
-                    result = Funcall(key, x);
-                }
-                else
-                {
-                    result = reducer(result, Funcall(key, x));
-                }
-            }
-            return result == MissingValue ? null : result;
-        }
-
-   
+        #endregion Methods
     }
 }

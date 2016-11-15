@@ -1,15 +1,25 @@
+﻿#region Header
+
 // Copyright (C) Jan Tolenaar. See the file LICENSE for details.
 
-using System;
+#endregion Header
 
 namespace Kiezel
 {
+    using System;
+
     public class CommandLineOptions
     {
-        public string ScriptName;
-        public Cons UserArguments;
+        #region Fields
+
         public bool Debug;
         public bool Repl;
+        public string ScriptName;
+        public Cons UserArguments;
+
+        #endregion Fields
+
+        #region Constructors
 
         public CommandLineOptions()
         {
@@ -18,10 +28,14 @@ namespace Kiezel
             Debug = true;
             Repl = true;
         }
+
+        #endregion Constructors
     }
 
     public partial class RuntimeConsole
     {
+        #region Methods
+
         public static CommandLineOptions ParseArgs(string[] args)
         {
             var parser = new CommandLineParser();
@@ -66,6 +80,7 @@ namespace Kiezel
 
             return options;
         }
+
+        #endregion Methods
     }
 }
-

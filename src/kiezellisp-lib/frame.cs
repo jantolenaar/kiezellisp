@@ -1,15 +1,25 @@
+﻿#region Header
+
 // Copyright (C) Jan Tolenaar. See the file LICENSE for details.
 
-using System.Collections;
-using System.Collections.Generic;
+#endregion Header
 
 namespace Kiezel
 {
+    using System.Collections;
+    using System.Collections.Generic;
+
     public class Frame : IEnumerable
     {
+        #region Fields
+
         public Frame Link;
         public List<Symbol> Names;
         public List<object> Values;
+
+        #endregion Fields
+
+        #region Constructors
 
         public Frame()
         {
@@ -28,6 +38,10 @@ namespace Kiezel
             Names = template.Names;
             Values = args;
         }
+
+        #endregion Constructors
+
+        #region Methods
 
         public IEnumerator GetEnumerator()
         {
@@ -103,12 +117,20 @@ namespace Kiezel
 
             return null;
         }
+
+        #endregion Methods
     }
 
     public class FrameAndScope
     {
+        #region Fields
+
         public Frame Frame;
         public AnalysisScope Scope;
+
+        #endregion Fields
+
+        #region Constructors
 
         public FrameAndScope()
         {
@@ -117,5 +139,7 @@ namespace Kiezel
             Scope.IsFileScope = true;
             Scope.IsBlockScope = true;
         }
+
+        #endregion Constructors
     }
 }

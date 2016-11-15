@@ -1,26 +1,29 @@
-﻿// Copyright (C) Jan Tolenaar. See the file LICENSE for details.
+﻿#region Header
 
-using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.Globalization;
-using System.Reflection;
-using System.Threading;
-using System.Linq;
-using System.Text;
-using System.IO;
+// Copyright (C) Jan Tolenaar. See the file LICENSE for details.
+
+#endregion Header
 
 namespace Kiezel
 {
+    using System;
+    using System.Collections.Generic;
+    using System.Diagnostics;
+    using System.Globalization;
+    using System.IO;
+    using System.Linq;
+    using System.Reflection;
+    using System.Text;
+    using System.Threading;
+
     [RestrictedImport]
     public partial class RuntimeConsoleBase
     {
-        public delegate void ResetDisplayFunction();
+        #region Fields
 
-        public delegate void ResetRuntimeFunction(int level);
-
-        public delegate string ReadLineFunction();
-
+        public static ReplHistory History = new ReplHistory();
+        public static Exception LastException = null;
+        public static ReadLineFunction ReadFunctionImp = null;
         public static string[] ReplCommands = new string[]
         {
             ":clear", ":continue", ":globals", ":quit",
@@ -28,119 +31,24 @@ namespace Kiezel
             ":top", ":exception", ":Exception", ":force",
             ":describe", ":reset", ":time"
         };
-
-        public static ReplHistory History = new ReplHistory();
-
+        public static ResetDisplayFunction ResetDisplayFunctionImp = null;
+        public static ResetRuntimeFunction ResetRuntimeFunctionImp = null;
         public static Stack<ThreadContextState> state;
-
         public static Stopwatch timer = Stopwatch.StartNew();
 
-        public static Exception LastException = null;
+        #endregion Fields
 
-        public static ResetDisplayFunction ResetDisplayFunctionImp = null;
- 
-        public static ResetRuntimeFunction ResetRuntimeFunctionImp = null;
+        #region Delegates
 
-        public static ReadLineFunction ReadFunctionImp = null;
+        public delegate string ReadLineFunction();
 
-        public static object GetConsoleOut()
-        {
-            return Runtime.AssertStream(Symbols.StdOut.Value);
-        }
+        public delegate void ResetDisplayFunction();
 
-        public static object GetConsoleLog()
-        {
-            return Runtime.AssertStream(Symbols.StdLog.Value);
-        }
+        public delegate void ResetRuntimeFunction(int level);
 
-        public static object GetConsoleErr()
-        {
-            return Runtime.AssertStream(Symbols.StdErr.Value);
-        }
+        #endregion Delegates
 
-        public static bool IsNotDlrCode(string line)
-        {
-            return line.IndexOf("CallSite") == -1
-            && line.IndexOf("System.Dynamic") == -1
-            && line.IndexOf("Microsoft.Scripting") == -1;
-        }
-
-        public static string RemoveDlrReferencesFromException(Exception ex)
-        {
-            return String.Join("\n", ex.ToString().Split('\n').Where(IsNotDlrCode));
-        }
-
-        public static int[] GetIntegerArgs(string lispCode)
-        {
-            var results = new List<int>();
-            foreach (var expr in Runtime.ReadAllFromString( lispCode ))
-            {
-                results.Add(Convert.ToInt32(Runtime.Eval(expr)));
-            }
-            return results.ToArray();
-        }
-
-        public static bool IsCompleteSourceCode(string data)
-        {
-            Cons code;
-
-            return ParseCompleteSourceCode(data, out code);
-        }
-
-        public static bool ParseCompleteSourceCode(string data, out Cons code)
-        {
-            code = null;
-
-            if (data.Trim() == "")
-            {
-                return true;
-            }
-
-            try
-            {
-                code = Runtime.ReadAllFromString(data);
-                return true;
-            }
-            catch (LispException ex)
-            {
-                return !ex.Message.Contains("EOF:");
-            }
-        }
-
-        public static List<string> GetCompletions(string prefix)
-        {
-            var nameset = new HashSet<string>();
-
-            foreach (string s in ReplCommands)
-            {
-                if (s.StartsWith(prefix))
-                {
-                    nameset.Add(s);
-                }
-            }
-
-            Runtime.FindCompletions(prefix, nameset);
-
-            var names = nameset.ToList();
-
-            if (names.Count == 0)
-            {
-                names.Add(prefix);
-            }
-            names.Sort();
-            if (names.Count > 50)
-            {
-                names = names.GetRange(0, 50);
-                names.Add("*** Too many completions ***");
-            }
-            return names;
-        }
-
-        public static void Quit()
-        {
-            History.Close();
-            Environment.Exit(0);
-        }
+        #region Methods
 
         [Lisp("breakpoint")]
         public static void Breakpoint()
@@ -165,8 +73,6 @@ namespace Kiezel
                 state = oldState;
             }
         }
-
-
 
         public static void EvalPrintCommand(string data, bool debugging)
         {
@@ -348,6 +254,100 @@ namespace Kiezel
             }
         }
 
+        public static List<string> GetCompletions(string prefix)
+        {
+            var nameset = new HashSet<string>();
+
+            foreach (string s in ReplCommands)
+            {
+                if (s.StartsWith(prefix))
+                {
+                    nameset.Add(s);
+                }
+            }
+
+            Runtime.FindCompletions(prefix, nameset);
+
+            var names = nameset.ToList();
+
+            if (names.Count == 0)
+            {
+                names.Add(prefix);
+            }
+            names.Sort();
+            if (names.Count > 50)
+            {
+                names = names.GetRange(0, 50);
+                names.Add("*** Too many completions ***");
+            }
+            return names;
+        }
+
+        public static object GetConsoleErr()
+        {
+            return Runtime.AssertStream(Symbols.StdErr.Value);
+        }
+
+        public static object GetConsoleLog()
+        {
+            return Runtime.AssertStream(Symbols.StdLog.Value);
+        }
+
+        public static object GetConsoleOut()
+        {
+            return Runtime.AssertStream(Symbols.StdOut.Value);
+        }
+
+        public static int[] GetIntegerArgs(string lispCode)
+        {
+            var results = new List<int>();
+            foreach (var expr in Runtime.ReadAllFromString( lispCode ))
+            {
+                results.Add(Convert.ToInt32(Runtime.Eval(expr)));
+            }
+            return results.ToArray();
+        }
+
+        public static bool IsCompleteSourceCode(string data)
+        {
+            Cons code;
+
+            return ParseCompleteSourceCode(data, out code);
+        }
+
+        public static bool IsNotDlrCode(string line)
+        {
+            return line.IndexOf("CallSite") == -1
+            && line.IndexOf("System.Dynamic") == -1
+            && line.IndexOf("Microsoft.Scripting") == -1;
+        }
+
+        public static bool ParseCompleteSourceCode(string data, out Cons code)
+        {
+            code = null;
+
+            if (data.Trim() == "")
+            {
+                return true;
+            }
+
+            try
+            {
+                code = Runtime.ReadAllFromString(data);
+                return true;
+            }
+            catch (LispException ex)
+            {
+                return !ex.Message.Contains("EOF:");
+            }
+        }
+
+        public static void Quit()
+        {
+            History.Close();
+            Environment.Exit(0);
+        }
+
         public static string ReadCommand(bool debugging = false)
         {
             var output = GetConsoleOut();
@@ -453,8 +453,13 @@ namespace Kiezel
                     LastException = ex;
                     Runtime.PrintStream(GetConsoleErr(), "error", ex.Message + "\n");
                     state.Push(Runtime.SaveStackAndFrame());
-                } 
+                }
             }
+        }
+
+        public static string RemoveDlrReferencesFromException(Exception ex)
+        {
+            return String.Join("\n", ex.ToString().Split('\n').Where(IsNotDlrCode));
         }
 
         public static void RunCommand(Action<object> func, Cons lispCode, bool showTime = false, bool smartParens = false)
@@ -513,7 +518,6 @@ namespace Kiezel
             }
         }
 
-
+        #endregion Methods
     }
-
 }

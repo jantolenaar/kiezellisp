@@ -1,5 +1,9 @@
 # Change Log
 
+## 2016/11/15
+
+*   Reformatting by NArrange.
+
 ## 2016/11/14
 
 *   Refactored `kiezellisp-gfx` into `kiezellisp-repl` and `kiezellisp-gui`.

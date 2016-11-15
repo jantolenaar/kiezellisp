@@ -1,26 +1,39 @@
+﻿#region Header
+
 // Copyright (C) Jan Tolenaar. See the file LICENSE for details.
 
-using System;
-using System.Collections;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq.Expressions;
-using System.Numerics;
-using System.Text;
-using Numerics;
-using ActionFunc = System.Action<object>;
-using CompareFunc = System.Func<object, object, int>;
-using JustFunc = System.Func<object>;
-using KeyFunc = System.Func<object, object>;
-
-using PredicateFunc = System.Func<object, bool>;
-using TestFunc = System.Func<object, object, bool>;
-using ThreadFunc = System.Func<object>;
+#endregion Header
 
 namespace Kiezel
 {
+    using System;
+    using System.Collections;
+    using System.Collections.Generic;
+    using System.IO;
+    using System.Linq.Expressions;
+    using System.Numerics;
+    using System.Text;
+
+    using Numerics;
+
+    using ActionFunc = System.Action<object>;
+
+    using CompareFunc = System.Func<object, object, int>;
+
+    using JustFunc = System.Func<object>;
+
+    using KeyFunc = System.Func<object, object>;
+
+    using PredicateFunc = System.Func<object, bool>;
+
+    using TestFunc = System.Func<object, object, bool>;
+
+    using ThreadFunc = System.Func<object>;
+
     public partial class Runtime
     {
+        #region Methods
+
         [Lisp("as-big-integer")]
         public static BigInteger AsBigInteger(object a)
         {
@@ -104,29 +117,6 @@ namespace Kiezel
             }
         }
 
-        [Lisp("as-single")]
-        public static float AsSingle(object a)
-        {
-            if (a is float)
-            {
-                return (float)a;
-            }
-            else if (a is BigInteger)
-            {
-                var n = (BigInteger)a;
-                return (float)n;
-            }
-            else if (a is BigRational)
-            {
-                var n = (BigRational)a;
-                return (float)n;
-            }
-            else
-            {
-                return Convert.ToSingle(a);
-            }
-        }
-
         [Lisp("as-double")]
         public static double AsDouble(object a)
         {
@@ -199,20 +189,33 @@ namespace Kiezel
                 return Convert.ToInt64(a);
             }
         }
-        //
-        // typecasts
-        //
 
-        [Pure, Lisp("string")]
-        public static string MakeString(params object[] objs)
+        [Lisp("as-single")]
+        public static float AsSingle(object a)
         {
-            return MakeStringFromObj(false, objs);            
+            if (a is float)
+            {
+                return (float)a;
+            }
+            else if (a is BigInteger)
+            {
+                var n = (BigInteger)a;
+                return (float)n;
+            }
+            else if (a is BigRational)
+            {
+                var n = (BigRational)a;
+                return (float)n;
+            }
+            else
+            {
+                return Convert.ToSingle(a);
+            }
         }
 
         //
         // Used by ChangeTypeMethod
         //
-
         public static object ChangeType(object value, Type targetType)
         {
             if (value == null)
@@ -414,6 +417,16 @@ namespace Kiezel
             return arg == null ? defaultValue : (IApply)arg;
         }
 
+        //
+        // typecasts
+        //
+        [Pure,
+        Lisp("string")]
+        public static string MakeString(params object[] objs)
+        {
+            return MakeStringFromObj(false, objs);
+        }
+
         public static string MakeStringFromObj(bool insertSpaces, object obj)
         {
             if (obj == null)
@@ -599,5 +612,7 @@ namespace Kiezel
                 throw new LispException("Cannot cast to String: {0}", ToPrintString(obj));
             }
         }
+
+        #endregion Methods
     }
 }

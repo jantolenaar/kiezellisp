@@ -1,13 +1,20 @@
-using System;
-using System.Collections;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
+﻿#region Header
+
+// Copyright (C) Jan Tolenaar. See the file LICENSE for details.
+
+#endregion Header
 
 namespace Kiezel
 {
+    using System;
+    using System.Collections;
+    using System.Collections.Generic;
+    using System.Linq;
+    using System.Text;
+
     public partial class Runtime
     {
+        #region Methods
 
         [Lisp("caar")]
         public static object Caar(Cons list)
@@ -53,6 +60,11 @@ namespace Kiezel
 
         [Lisp("first")]
         public static object First(IEnumerable seq)
+        {
+            return Nth(0, seq);
+        }
+
+        public static object First(object seq)
         {
             return Nth(0, seq);
         }
@@ -142,6 +154,11 @@ namespace Kiezel
             return Nth(1, seq);
         }
 
+        public static object Second(object seq)
+        {
+            return Nth(1, seq);
+        }
+
         [Lisp("set-car")]
         public static object SetCar(Cons list, object item)
         {
@@ -182,34 +199,6 @@ namespace Kiezel
             return SetNth(seq, 3, item);
         }
 
-        [Lisp("set-second")]
-        public static object SetSecond(IEnumerable seq, object item)
-        {
-            return SetNth(seq, 1, item);
-        }
-
-        [Lisp("set-third")]
-        public static object SetThird(IEnumerable seq, object item)
-        {
-            return SetNth(seq, 2, item);
-        }
-
-        [Lisp("third")]
-        public static object Third(IEnumerable seq)
-        {
-            return Nth(2, seq);
-        }
-
-        public static object First(object seq)
-        {
-            return Nth(0, seq);
-        }
-
-        public static object Second(object seq)
-        {
-            return Nth(1, seq);
-        }
-
         public static object SetNth(object seq, int pos, object item)
         {
             if (seq is Cons)
@@ -228,13 +217,29 @@ namespace Kiezel
             throw new LispException("Cannot setf on: {0}", ToPrintString(seq));
         }
 
+        [Lisp("set-second")]
+        public static object SetSecond(IEnumerable seq, object item)
+        {
+            return SetNth(seq, 1, item);
+        }
+
+        [Lisp("set-third")]
+        public static object SetThird(IEnumerable seq, object item)
+        {
+            return SetNth(seq, 2, item);
+        }
+
+        [Lisp("third")]
+        public static object Third(IEnumerable seq)
+        {
+            return Nth(2, seq);
+        }
+
         public static object Third(object seq)
         {
             return Nth(2, seq);
         }
 
-
-
+        #endregion Methods
     }
-
 }

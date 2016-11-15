@@ -1,37 +1,46 @@
+﻿#region Header
+
 // Copyright (C) Jan Tolenaar. See the file LICENSE for details.
 
-using System;
-using System.Collections;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.Dynamic;
-using System.Linq;
-using System.Linq.Expressions;
-using System.Reflection;
+#endregion Header
 
 namespace Kiezel
 {
-    public struct CandidateMethod<T> where T : MethodBase
-    {
-        public bool CreatedParamArray;
+    using System;
+    using System.Collections;
+    using System.Collections.Generic;
+    using System.Diagnostics;
+    using System.Dynamic;
+    using System.Linq;
+    using System.Linq.Expressions;
+    using System.Reflection;
 
+    public struct CandidateMethod<T>
+        where T : MethodBase
+    {
+        #region Fields
+
+        public bool CreatedParamArray;
         public T Method;
+
+        #endregion Fields
+
+        #region Constructors
 
         public CandidateMethod(T method, bool createdParamArray)
         {
             Method = method;
             CreatedParamArray = createdParamArray;
         }
+
+        #endregion Constructors
     }
 
     public static partial class Runtime
     {
-        public static object ArgumentValue(object arg)
-        {
-            return arg is DynamicMetaObject ? ((DynamicMetaObject)arg).Value : arg;
-        }
+        #region Fields
 
-        public static TypeCode[] TypeCodes =
+        public static TypeCode[] TypeCodes = 
             {
                 TypeCode.Int16, TypeCode.UInt32,
                 TypeCode.Int16, TypeCode.Int32,
@@ -73,6 +82,15 @@ namespace Kiezel
                 TypeCode.UInt64, TypeCode.Double,
                 TypeCode.UInt64, TypeCode.Decimal,
             };
+
+        #endregion Fields
+
+        #region Methods
+
+        public static object ArgumentValue(object arg)
+        {
+            return arg is DynamicMetaObject ? ((DynamicMetaObject)arg).Value : arg;
+        }
 
         public static bool CanConvertFrom(Type type1, Type type2)
         {
@@ -347,10 +365,9 @@ namespace Kiezel
         // restrictions merged in, but BindingRestrictions.Merge doesn't add
         // duplicates.
         //
-        public static DynamicMetaObject CreateThrow
-                (DynamicMetaObject target, DynamicMetaObject[] args,
-                 BindingRestrictions moreTests,
-                 Type exception, params object[] exceptionArgs)
+        public static DynamicMetaObject CreateThrow(DynamicMetaObject target, DynamicMetaObject[] args,
+            BindingRestrictions moreTests,
+            Type exception, params object[] exceptionArgs)
         {
             Expression[] argExprs = null;
             Type[] argTypes = Type.EmptyTypes;
@@ -445,7 +462,6 @@ namespace Kiezel
             return GetIndexingExpression(target, indexes, out valueType);
         }
 
-        
         public static Expression GetIndexingExpression(
             DynamicMetaObject target,
             DynamicMetaObject[] indexes, out Type valueType)
@@ -542,7 +558,8 @@ namespace Kiezel
             return restrictions;
         }
 
-        public static void InsertInMostSpecificOrder<T>(List<CandidateMethod<T>> candidates, T method, bool createdParamArray) where T : MethodBase
+        public static void InsertInMostSpecificOrder<T>(List<CandidateMethod<T>> candidates, T method, bool createdParamArray)
+            where T : MethodBase
         {
             var insertPoint = candidates.Count;
             var p1 = method.GetParameters();
@@ -744,17 +761,30 @@ namespace Kiezel
             }
         }
 
+        #endregion Methods
+
+        #region Nested Types
+
         public struct CandidateProperty
         {
-            public bool CreatedParamArray;
+            #region Fields
 
+            public bool CreatedParamArray;
             public PropertyInfo Property;
+
+            #endregion Fields
+
+            #region Constructors
 
             public CandidateProperty(PropertyInfo property, bool createdParamArray)
             {
                 Property = property;
                 CreatedParamArray = createdParamArray;
             }
+
+            #endregion Constructors
         }
+
+        #endregion Nested Types
     }
 }

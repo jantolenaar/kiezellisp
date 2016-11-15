@@ -1,11 +1,31 @@
+﻿#region Header
+
 // Copyright (C) Jan Tolenaar. See the file LICENSE for details.
 
-using System;
+#endregion Header
 
 namespace Kiezel
 {
+    using System;
+
     public partial class Runtime
     {
+        #region Fields
+
+        public static IApply CompareApply = new CompareApplyWrapper();
+        public static IApply EqualApply = new EqualApplyWrapper();
+        public static IApply IdentityApply = new IdentityApplyWrapper();
+        public static IApply StructurallyEqualApply = new StructurallyEqualApplyWrapper();
+
+        #endregion Fields
+
+        #region Methods
+
+        public static object Apply(IApply func, object[] args)
+        {
+            return func.Apply(args);
+        }
+
         [Lisp("apply")]
         public static IApply ApplyStar(IApply func)
         {
@@ -27,11 +47,6 @@ namespace Kiezel
             };
             return new ApplyWrapper2(c);
         }
-
-        public static IApply IdentityApply = new IdentityApplyWrapper();
-        public static IApply EqualApply = new EqualApplyWrapper();
-        public static IApply StructurallyEqualApply = new StructurallyEqualApplyWrapper();
-        public static IApply CompareApply = new CompareApplyWrapper();
 
         [Lisp("compose")]
         public static IApply Compose(params IApply[] funcs)
@@ -96,14 +111,11 @@ namespace Kiezel
             }
         }
 
-        public static object Apply(IApply func, object[] args)
-        {
-            return func.Apply(args);
-        }
-
         public static object Identity(object a)
         {
             return a;
         }
+
+        #endregion Methods
     }
 }

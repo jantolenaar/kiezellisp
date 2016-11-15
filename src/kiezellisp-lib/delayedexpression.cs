@@ -1,13 +1,23 @@
+﻿#region Header
+
 // Copyright (C) Jan Tolenaar. See the file LICENSE for details.
 
-using System;
+#endregion Header
 
 namespace Kiezel
 {
+    using System;
+
     public class DelayedExpression
     {
+        #region Fields
+
         public IApply Recipe;
         public object Result;
+
+        #endregion Fields
+
+        #region Constructors
 
         public DelayedExpression(IApply code)
         {
@@ -15,10 +25,9 @@ namespace Kiezel
             Result = null;
         }
 
-        public override string ToString()
-        {
-            return System.String.Format("DelayedExpr Result={0}", Runtime.ToPrintString(Result));
-        }
+        #endregion Constructors
+
+        #region Methods
 
         public object GetValue()
         {
@@ -29,10 +38,19 @@ namespace Kiezel
             }
             return Result;
         }
+
+        public override string ToString()
+        {
+            return System.String.Format("DelayedExpr Result={0}", Runtime.ToPrintString(Result));
+        }
+
+        #endregion Methods
     }
 
     public partial class Runtime
     {
+        #region Methods
+
         [Lisp("system:create-delayed-expression")]
         public static DelayedExpression CreateDelayedExpression(IApply func)
         {
@@ -82,5 +100,7 @@ namespace Kiezel
         {
             return expr.GetValue();
         }
+
+        #endregion Methods
     }
 }

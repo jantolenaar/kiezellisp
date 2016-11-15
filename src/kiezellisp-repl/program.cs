@@ -4,21 +4,37 @@
 
 #endregion Header
 
-using System;
-using System.Globalization;
-using System.Threading;
-using System.Windows.Forms;
-
-using ThreadFunc = System.Func<object>;
-
-[assembly: CLSCompliant(false)]
-
 namespace Kiezel
 {
+    using System;
+    using System.Globalization;
+    using System.Threading;
+    using System.Windows.Forms;
+
+    using ThreadFunc = System.Func<object>;
+
     [RestrictedImport]
     public partial class RuntimeRepl : RuntimeConsoleBase
     {
-        #region Private Methods
+        #region Methods
+
+        public static void Reset(int level)
+        {
+            Runtime.Reset();
+            Runtime.RestartBuiltins(typeof(RuntimeRepl));
+            Symbols.StdScr.VariableValue = StdScr;
+            Symbols.StdOut.VariableValue = StdScr;
+            Symbols.StdLog.VariableValue = StdScr;
+            Symbols.StdErr.VariableValue = StdScr;
+            Symbols.StdIn.VariableValue = StdScr;
+            Runtime.RestartLoadFiles(level);
+        }
+
+        [Lisp("terminal-stream?")]
+        public static bool TerminalStreamp(object stream)
+        {
+            return stream is TextWindow || stream is TextWindowTextWriter;
+        }
 
         [STAThread]
         static void Main(string[] args)
@@ -40,28 +56,6 @@ namespace Kiezel
             }
         }
 
-        #endregion Private Methods
-
-        #region Public Methods
-
-        public static void Reset(int level)
-        {
-            Runtime.Reset();
-            Runtime.RestartBuiltins(typeof(RuntimeRepl));
-            Symbols.StdScr.VariableValue = StdScr;
-            Symbols.StdOut.VariableValue = StdScr;
-            Symbols.StdLog.VariableValue = StdScr;
-            Symbols.StdErr.VariableValue = StdScr;
-            Symbols.StdIn.VariableValue = StdScr;
-            Runtime.RestartLoadFiles(level);
-        }
-
-        [Lisp("terminal-stream?")]
-        public static bool TerminalStreamp(object stream)
-        {
-            return stream is TextWindow || stream is TextWindowTextWriter;
-        }
-
-        #endregion Public Methods
+        #endregion Methods
     }
 }

@@ -4,19 +4,20 @@
 
 #endregion Header
 
-using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.Globalization;
-using System.Linq;
-using System.Reflection;
-using System.Threading;
-using System.Windows.Forms;
-
 namespace Kiezel
 {
+    using System;
+    using System.Collections.Generic;
+    using System.Diagnostics;
+    using System.Globalization;
+    using System.Linq;
+    using System.Reflection;
+    using System.Threading;
+    using System.Windows.Forms;
+
     public partial class RuntimeRepl
     {
+        #region Methods
 
         [Lisp("more")]
         public static void More(string text)
@@ -62,6 +63,25 @@ namespace Kiezel
             }
         }
 
+        [Lisp("playback")]
+        public static void Playback(string script, params object[] args)
+        {
+            var kwargs = Runtime.ParseKwargs(args, new string[] { "window", "delay", "delimiter" });
+            var window = (TextWindow)(kwargs[0] ?? StdScr);
+            var delay = (int)(kwargs[1] ?? Runtime.GetDynamic(Symbols.PlaybackDelay));
+            var prefix = (string)(kwargs[2] ?? Runtime.GetDynamic(Symbols.PlaybackDelimiter));
+            var suffix = GetSuffixFromPrefix(prefix);
+            var list = GetPlaybackList(script, prefix, suffix);
+            foreach (var key in list)
+            {
+                window.SendKey(key);
+                if (delay > 0)
+                {
+                    Runtime.Sleep(delay);
+                }
+            }
+        }
+
         public static string ReplRead()
         {
             return StdScr.Read();
@@ -101,29 +121,15 @@ namespace Kiezel
             return null;
         }
 
-        [Lisp("playback")]
-        public static void Playback(string script, params object[] args)
+        internal static Keys GetKeyCode(string name)
         {
-            var kwargs = Runtime.ParseKwargs(args, new string[] { "window", "delay", "delimiter" });
-            var window = (TextWindow)(kwargs[0] ?? StdScr);
-            var delay = (int)(kwargs[1] ?? Runtime.GetDynamic(Symbols.PlaybackDelay));
-            var prefix = (string)(kwargs[2] ?? Runtime.GetDynamic(Symbols.PlaybackDelimiter));
-            var suffix = GetSuffixFromPrefix(prefix);
-            var list = GetPlaybackList(script, prefix, suffix);
-            foreach (var key in list)
+            switch (name)
             {
-                window.SendKey(key);
-                if (delay > 0)
+                default:
                 {
-                    Runtime.Sleep(delay);
+                    return (Keys)Runtime.TryConvertToEnumType(typeof(Keys), name);
                 }
             }
-        }
-
-        internal static string GetSuffixFromPrefix(string prefix)
-        {
-            var s = new String(prefix.Reverse().ToArray());
-            return s.Replace("[", "]").Replace("{", "}").Replace("(", ")").Replace("<", ">");
         }
 
         internal static List<KeyInfo> GetPlaybackList(string text, string prefix, string suffix)
@@ -139,6 +145,12 @@ namespace Kiezel
                 }
             }
             return v;
+        }
+
+        internal static string GetSuffixFromPrefix(string prefix)
+        {
+            var s = new String(prefix.Reverse().ToArray());
+            return s.Replace("[", "]").Replace("{", "}").Replace("(", ")").Replace("<", ">");
         }
 
         internal static void ParseKeyStrokes(string text, string prefix, string suffix, List<KeyInfo> keys)
@@ -177,19 +189,8 @@ namespace Kiezel
             {
                 keys.Add(new KeyInfo(ch));
             }
-
         }
 
-        internal static Keys GetKeyCode(string name)
-        {
-            switch (name)
-            {
-                default:
-                {
-                    return (Keys)Runtime.TryConvertToEnumType(typeof(Keys), name);
-                }
-            }
-        }
-
+        #endregion Methods
     }
 }

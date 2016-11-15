@@ -1,27 +1,118 @@
+﻿#region Header
+
 // Copyright (C) Jan Tolenaar. See the file LICENSE for details.
 
-using System;
-using System.Collections;
-using System.Collections.Generic;
-using System.IO;
-using System.Reflection;
-using System.Linq;
-using System.Diagnostics;
+#endregion Header
 
 namespace Kiezel
 {
+    using System;
+    using System.Collections;
+    using System.Collections.Generic;
+    using System.Diagnostics;
+    using System.IO;
+    using System.Linq;
+    using System.Reflection;
+
     public partial class Runtime
     {
+        #region Methods
+
         [Lisp("as-prototype")]
         public static Prototype AsPrototype(object obj)
         {
             return AsPrototype(obj, false);
         }
 
+        public static Prototype AsPrototype(object obj, bool caseInsensitive)
+        {
+            if (obj is Prototype)
+            {
+                var dict = ConvertToLispDictionary(((Prototype)obj).Dict, caseInsensitive);
+                return Prototype.FromDictionary(dict);
+            }
+            else if (obj is IDictionary)
+            {
+                var dict = ConvertToLispDictionary((IDictionary)obj, caseInsensitive);
+                return Prototype.FromDictionary(dict);
+            }
+            else if (obj is Type)
+            {
+                var dict = ConvertToDictionary((Type)obj, null, false);
+                return Prototype.FromDictionary(dict);
+            }
+            else
+            {
+                var dict = ConvertToDictionary(obj.GetType(), obj, false);
+                return Prototype.FromDictionary(dict);
+            }
+        }
+
         [Lisp("as-prototype-ci")]
         public static Prototype AsPrototypeIgnoreCase(object obj)
         {
             return AsPrototype(obj, true);
+        }
+
+        public static void Assert(bool testResult, params object[] args)
+        {
+            if (!testResult)
+            {
+                var text = MakeString(args);
+                throw new AssertFailedException(text);
+            }
+        }
+
+        public static PrototypeDictionary ConvertToDictionary(Type type, object obj, bool showNonPublic)
+        {
+            var flags = BindingFlags.Public | (obj == null ? BindingFlags.Static : BindingFlags.Instance) | BindingFlags.FlattenHierarchy;
+
+            if (showNonPublic)
+            {
+                flags |= BindingFlags.NonPublic;
+            }
+            var members = type.GetMembers(flags);
+            var dict = new PrototypeDictionary();
+
+            foreach (var m in members)
+            {
+                var name = m.Name;
+                object value = null;
+
+                try
+                {
+                    if (m is PropertyInfo)
+                    {
+                        var p = (PropertyInfo)m;
+                        if (p.GetGetMethod() != null && p.GetGetMethod().GetParameters().Length == 0)
+                        {
+                            value = p.GetValue(obj, new object[ 0 ]);
+                            dict[name.LispName()] = value;
+                        }
+                    }
+                    else if (m is FieldInfo)
+                    {
+                        var f = (FieldInfo)m;
+                        value = f.GetValue(obj);
+                        dict[name.LispName()] = value;
+                    }
+                }
+                catch
+                {
+                }
+            }
+
+            return dict;
+        }
+
+        public static PrototypeDictionary ConvertToLispDictionary(IDictionary obj, bool caseInsensitive)
+        {
+            var dict = new PrototypeDictionary(caseInsensitive);
+            foreach (DictionaryEntry item in obj)
+            {
+                dict[item.Key] = item.Value;
+            }
+            return dict;
         }
 
         [Lisp("describe")]
@@ -35,6 +126,24 @@ namespace Kiezel
         {
             var description = GetDescription(obj, showNonPublic);
             WriteLine(description, Symbols.Pretty, true);
+        }
+
+        public static void DumpDictionary(object stream, Prototype prototype)
+        {
+            if (prototype == null)
+            {
+                return;
+            }
+
+            var dict = prototype.Dict;
+
+            foreach (string key in ToIter( SeqBase.Sort( dict.Keys, CompareApply, IdentityApply ) ))
+            {
+                object val = dict[key];
+                string line = String.Format("{0} => ", key);
+                Write(line, Symbols.Escape, false, Symbols.Stream, stream);
+                PrettyPrintLine(stream, line.Length, null, val);
+            }
         }
 
         [Lisp("get-description")]
@@ -257,23 +366,6 @@ namespace Kiezel
             return result;
         }
 
-        public static Exception UnwindException(Exception ex)
-        {
-            while (ex.InnerException != null && ex is System.Reflection.TargetInvocationException)
-            {
-                ex = ex.InnerException;
-            }
-            return ex;
-        }
-
-        public static Exception UnwindExceptionIntoNewException(Exception ex)
-        {
-            var ex2 = UnwindException(ex);
-            string str = GetDiagnostics(ex2).Indent(">>> ");
-            var ex3 = new LispException(str, ex2);
-            return ex3;
-        }
-
         [Lisp("get-diagnostics")]
         public static string GetDiagnostics(Exception exception)
         {
@@ -325,6 +417,63 @@ namespace Kiezel
             }
 
             return Prototype.FromDictionary(env);
+        }
+
+        public static string GetEvaluationStack()
+        {
+            var index = 0;
+            var prefix = "";
+            var buf = new StringWriter();
+            var saved = SaveStackAndFrame();
+            try
+            {
+                DefDynamic(Symbols.PrintCompact, true);
+
+                foreach (object item in ToIter( CurrentThreadContext.EvaluationStack ))
+                {
+                    // Every function call adds the source code form
+                    // Every lambda call adds the outer frame (not null) and specialvariables (maybe null)
+                    if (item is Frame)
+                    {
+                        ++index;
+                        prefix = index.ToString() + ":";
+                    }
+                    else if (item is Cons)
+                    {
+                        var form = (Cons)item;
+                        var leader = prefix.PadLeft(3, ' ');
+                        buf.WriteLine("{0} {1}", leader, ToPrintString(form).Shorten(80 - leader.Length - 1));
+                        prefix = "";
+                    }
+                }
+            }
+            finally
+            {
+                RestoreStackAndFrame(saved);
+            }
+            return buf.ToString();
+        }
+
+        public static Frame GetFrameAt(int pos)
+        {
+            if (pos <= 0)
+            {
+                return CurrentThreadContext.Frame;
+            }
+
+            var index = 0;
+            foreach (object item in ToIter( CurrentThreadContext.EvaluationStack ))
+            {
+                if (item is Frame)
+                {
+                    ++index;
+                    if (pos == index)
+                    {
+                        return (Frame)item;
+                    }
+                }
+            }
+            return null;
         }
 
         [Lisp("get-global-symbols")]
@@ -427,217 +576,6 @@ namespace Kiezel
             return Prototype.FromDictionary(env);
         }
 
-        [Lisp("print-warning")]
-        public static void PrintWarning(params object[] args)
-        {
-            if (DebugMode && ToBool(GetDynamic(Symbols.EnableWarnings)))
-            {
-                var stream = GetDynamic(Symbols.StdErr);
-                var text = "Warning: " + MakeString(args) + "\n";
-                PrintStream(stream, "warning", text);
-            }
-        }
-
-        [Lisp("print-error")]
-        public static void PrintError(params object[] args)
-        {
-            var stream = GetDynamic(Symbols.StdErr);
-            PrintStream(stream, "error", MakeString(args) + "\n");
-        }
-
-        [Lisp("print-trace")]
-        public static void PrintTrace(params object[] args)
-        {
-            var stream = GetDynamic(Symbols.StdLog);
-            PrintStream(stream, "info", MakeString(args) + "\n");
-        }
-
-        public static void PrintStream(object stream, string style, string msg)
-        {
-            if (stream is IHtmlWriter)
-            {
-                var msg2 = ((IHtmlWriter)stream).Format(style, msg);
-                Write(msg2, Symbols.Stream, stream, Symbols.Escape, false);
-            }
-            else if (stream is ILogWriter)
-            {
-                var log = (ILogWriter)stream;
-                log.WriteLog(style, msg);
-            }
-            else
-            {
-                Write(msg, Symbols.Stream, stream, Symbols.Escape, false);
-            }
-        }
-
-
-        [Lisp("throw-error")]
-        public static void ThrowError(params object[] args)
-        {
-            var text = MakeString(args);
-            throw new LispException(text);
-        }
-
-        public static void Assert(bool testResult, params object[] args)
-        {
-            if (!testResult)
-            {
-                var text = MakeString(args);
-                throw new AssertFailedException(text);
-            }
-        }
-
-        public static Prototype AsPrototype(object obj, bool caseInsensitive)
-        {
-            if (obj is Prototype)
-            {
-                var dict = ConvertToLispDictionary(((Prototype)obj).Dict, caseInsensitive);
-                return Prototype.FromDictionary(dict);
-            }
-            else if (obj is IDictionary)
-            {
-                var dict = ConvertToLispDictionary((IDictionary)obj, caseInsensitive);
-                return Prototype.FromDictionary(dict);
-            }
-            else if (obj is Type)
-            {
-                var dict = ConvertToDictionary((Type)obj, null, false);
-                return Prototype.FromDictionary(dict);
-            }
-            else
-            {
-                var dict = ConvertToDictionary(obj.GetType(), obj, false);
-                return Prototype.FromDictionary(dict);
-            }
-        }
-
-        public static PrototypeDictionary ConvertToDictionary(Type type, object obj, bool showNonPublic)
-        {
-            var flags = BindingFlags.Public | (obj == null ? BindingFlags.Static : BindingFlags.Instance) | BindingFlags.FlattenHierarchy;
-
-            if (showNonPublic)
-            {
-                flags |= BindingFlags.NonPublic;
-            }
-            var members = type.GetMembers(flags);
-            var dict = new PrototypeDictionary();
-
-            foreach (var m in members)
-            {
-                var name = m.Name;
-                object value = null;
-
-                try
-                {
-                    if (m is PropertyInfo)
-                    {
-                        var p = (PropertyInfo)m;
-                        if (p.GetGetMethod() != null && p.GetGetMethod().GetParameters().Length == 0)
-                        {
-                            value = p.GetValue(obj, new object[ 0 ]);
-                            dict[name.LispName()] = value;
-                        }
-                    }
-                    else if (m is FieldInfo)
-                    {
-                        var f = (FieldInfo)m;
-                        value = f.GetValue(obj);
-                        dict[name.LispName()] = value;
-                    }
-                }
-                catch
-                {
-                }
-            }
-
-            return dict;
-        }
-
-        public static PrototypeDictionary ConvertToLispDictionary(IDictionary obj, bool caseInsensitive)
-        {
-            var dict = new PrototypeDictionary(caseInsensitive);
-            foreach (DictionaryEntry item in obj)
-            {
-                dict[item.Key] = item.Value;
-            }
-            return dict;
-        }
-
-        public static void DumpDictionary(object stream, Prototype prototype)
-        {
-            if (prototype == null)
-            {
-                return;
-            }
-
-            var dict = prototype.Dict;
-
-            foreach (string key in ToIter( SeqBase.Sort( dict.Keys, CompareApply, IdentityApply ) ))
-            {
-                object val = dict[key];
-                string line = String.Format("{0} => ", key);
-                Write(line, Symbols.Escape, false, Symbols.Stream, stream);
-                PrettyPrintLine(stream, line.Length, null, val);
-            }
-        }
-
-        public static string GetEvaluationStack()
-        {
-            var index = 0;
-            var prefix = "";
-            var buf = new StringWriter();
-            var saved = SaveStackAndFrame();
-            try
-            {
-                DefDynamic(Symbols.PrintCompact, true);
-
-                foreach (object item in ToIter( CurrentThreadContext.EvaluationStack ))
-                {
-                    // Every function call adds the source code form
-                    // Every lambda call adds the outer frame (not null) and specialvariables (maybe null)
-                    if (item is Frame)
-                    {
-                        ++index;
-                        prefix = index.ToString() + ":";
-                    }
-                    else if (item is Cons)
-                    {
-                        var form = (Cons)item;
-                        var leader = prefix.PadLeft(3, ' ');
-                        buf.WriteLine("{0} {1}", leader, ToPrintString(form).Shorten(80 - leader.Length - 1));
-                        prefix = "";
-                    }
-                }
-            }
-            finally
-            {
-                RestoreStackAndFrame(saved);
-            }
-            return buf.ToString();
-        }
-
-        public static Frame GetFrameAt(int pos)
-        {
-            if (pos <= 0)
-            {
-                return CurrentThreadContext.Frame;
-            }
-
-            var index = 0;
-            foreach (object item in ToIter( CurrentThreadContext.EvaluationStack ))
-            {
-                if (item is Frame)
-                {
-                    ++index;
-                    if (pos == index)
-                    {
-                        return (Frame)item;
-                    }
-                }
-            }
-            return null;
-        }
-
         public static SpecialVariables GetSpecialVariablesAt(int pos)
         {
             if (pos <= 0)
@@ -671,6 +609,73 @@ namespace Kiezel
             return z.GetValue("function-syntax");
         }
 
-  
+        [Lisp("print-error")]
+        public static void PrintError(params object[] args)
+        {
+            var stream = GetDynamic(Symbols.StdErr);
+            PrintStream(stream, "error", MakeString(args) + "\n");
+        }
+
+        public static void PrintStream(object stream, string style, string msg)
+        {
+            if (stream is IHtmlWriter)
+            {
+                var msg2 = ((IHtmlWriter)stream).Format(style, msg);
+                Write(msg2, Symbols.Stream, stream, Symbols.Escape, false);
+            }
+            else if (stream is ILogWriter)
+            {
+                var log = (ILogWriter)stream;
+                log.WriteLog(style, msg);
+            }
+            else
+            {
+                Write(msg, Symbols.Stream, stream, Symbols.Escape, false);
+            }
+        }
+
+        [Lisp("print-trace")]
+        public static void PrintTrace(params object[] args)
+        {
+            var stream = GetDynamic(Symbols.StdLog);
+            PrintStream(stream, "info", MakeString(args) + "\n");
+        }
+
+        [Lisp("print-warning")]
+        public static void PrintWarning(params object[] args)
+        {
+            if (DebugMode && ToBool(GetDynamic(Symbols.EnableWarnings)))
+            {
+                var stream = GetDynamic(Symbols.StdErr);
+                var text = "Warning: " + MakeString(args) + "\n";
+                PrintStream(stream, "warning", text);
+            }
+        }
+
+        [Lisp("throw-error")]
+        public static void ThrowError(params object[] args)
+        {
+            var text = MakeString(args);
+            throw new LispException(text);
+        }
+
+        public static Exception UnwindException(Exception ex)
+        {
+            while (ex.InnerException != null && ex is System.Reflection.TargetInvocationException)
+            {
+                ex = ex.InnerException;
+            }
+            return ex;
+        }
+
+        public static Exception UnwindExceptionIntoNewException(Exception ex)
+        {
+            var ex2 = UnwindException(ex);
+            string str = GetDiagnostics(ex2).Indent(">>> ");
+            var ex3 = new LispException(str, ex2);
+            return ex3;
+        }
+
+        #endregion Methods
     }
 }

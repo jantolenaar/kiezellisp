@@ -1,17 +1,28 @@
+﻿#region Header
+
 // Copyright (C) Jan Tolenaar. See the file LICENSE for details.
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Linq.Expressions;
-using System.Reflection;
-using System.Runtime.CompilerServices;
+
+#endregion Header
 
 namespace Kiezel
 {
+    using System;
+    using System.Collections.Generic;
+    using System.Linq;
+    using System.Linq.Expressions;
+    using System.Reflection;
+    using System.Runtime.CompilerServices;
+
+    #region Delegates
+
     public delegate Expression CompilerHelper(Cons form,AnalysisScope scope);
+
+    #endregion Delegates
 
     public partial class Runtime
     {
+        #region Fields
+
         public static MethodInfo AddEventHandlerMethod = RuntimeMethod("AddEventHandler");
         public static MethodInfo ApplyMethod = RuntimeMethod("Apply");
         public static MethodInfo AsListMethod = RuntimeMethod("AsList");
@@ -22,12 +33,12 @@ namespace Kiezel
         public static MethodInfo DefDynamicConstMethod = RuntimeMethod("DefDynamicConst");
         public static MethodInfo DefDynamicMethod = RuntimeMethod("DefDynamic");
         public static MethodInfo DefineCompilerMacroMethod = RuntimeMethod("DefineCompilerMacro");
-        public static MethodInfo DefineSymbolMacroMethod = RuntimeMethod("DefineSymbolMacro");
         public static MethodInfo DefineConstantMethod = RuntimeMethod("DefineConstant");
         public static MethodInfo DefineFunctionMethod = RuntimeMethod("DefineFunction");
         public static MethodInfo DefineMacroMethod = RuntimeMethod("DefineMacro");
         public static MethodInfo DefineMethodMethod = RuntimeMethod("DefineMethod");
         public static MethodInfo DefineMultiMethodMethod = RuntimeMethod("DefineMultiMethod");
+        public static MethodInfo DefineSymbolMacroMethod = RuntimeMethod("DefineSymbolMacro");
         public static MethodInfo DefineVariableMethod = RuntimeMethod("DefineVariable");
         public static MethodInfo EqualMethod = RuntimeMethod("Equal");
         public static Type GenericListType = GetTypeForImport("System.Collections.Generic.List`1", null);
@@ -36,6 +47,7 @@ namespace Kiezel
         public static MethodInfo GetLexicalMethod = RuntimeMethod("GetLexical");
         public static MethodInfo GetTaskResultMethod = RuntimeMethod("GetTaskResult");
         public static MethodInfo IsInstanceOfMethod = RuntimeMethod("IsInstanceOf");
+        public static Cons LambdaTemplate = null;
         public static MethodInfo LogBeginCallMethod = RuntimeMethod("LogBeginCall");
         public static MethodInfo LogEndCallMethod = RuntimeMethod("LogEndCall");
         public static MethodInfo MakeLambdaClosureMethod = RuntimeMethod(typeof(LambdaDefinition), "MakeLambdaClosure");
@@ -49,37 +61,9 @@ namespace Kiezel
         public static MethodInfo ToBoolMethod = RuntimeMethod("ToBool");
         public static MethodInfo UnwindExceptionMethod = RuntimeMethod("UnwindException");
 
-        [Lisp("system:optimizer")]
-        public static object Optimizer(object expr)
-        {
-            if (!(expr is Cons))
-            {
-                return expr;
-            }
-            var forms = (Cons)expr;
-            var head = First(expr) as Symbol;
-            if (head != null && head.Package == LispPackage)
-            {
-                var proc = head.Value as ImportedFunction;
-                if (proc != null && proc.Pure)
-                {
-                    if (head == Symbols.Quote)
-                    {
-                        expr = Second(forms);
-                    }
-                    else
-                    {
-                        var tail = Map(Optimizer, Cdr(forms));
-                        bool simple = SeqBase.Every(Literalp, tail);
-                        if (simple)
-                        {
-                            expr = ApplyStar(proc, tail);
-                        }
-                    }
-                }
-            }
-            return expr;
-        }
+        #endregion Fields
+
+        #region Methods
 
         public static Expression CallRuntime(MethodInfo method, params Expression[] exprs)
         {
@@ -576,13 +560,6 @@ namespace Kiezel
             }
         }
 
-        [Lisp("system:parse-parameter-list")]
-        public static Cons ParseParameterList(Cons args)
-        {
-            var signature = CompileFormalArgs(args, null, LambdaKind.Macro);
-            return AsList(signature.Names);
-        }
-
         public static LambdaSignature CompileFormalArgs(Cons args, AnalysisScope scope, LambdaKind kind)
         {
             var signature = new LambdaSignature(kind);
@@ -925,7 +902,6 @@ namespace Kiezel
 
                 return code;
             }
-
         }
 
         public static Expression CompileHiddenVar(Cons form, AnalysisScope scope)
@@ -965,21 +941,6 @@ namespace Kiezel
                 CheckMinLength(form, 2);
                 return CompileLambdaDef(null, Cdr(form), scope, LambdaKind.Function, out doc);
             }
-        }
-
-        public static Cons LambdaTemplate = null;
-
-        public static void InitLambdaTemplate()
-        {
-            LambdaTemplate = (Cons)ReadFromString(@"
-                    (do
-                        %1
-                        (label %recursion-label)
-                        (hidden-var %2 ~)
-                        (do
-                            %%3
-                            (do %%4))
-                        (label %function-exit))");
         }
 
         public static Expression CompileLambdaDef(Symbol name, Cons forms, AnalysisScope scope, LambdaKind kind, out string doc)
@@ -1089,50 +1050,6 @@ namespace Kiezel
             return CallRuntime(MakeLambdaClosureMethod, Expression.Constant(template, typeof(LambdaDefinition)));
         }
 
-        public static Expression CompileProg(Cons form, AnalysisScope scope)
-        {
-            CheckMinLength(form, 2);
-
-            if (Length(form) == 2)
-            {
-                PrintWarning("Prog body contains no forms.");
-            }
-
-            var bindings = Second(form);
-            var body = Cddr(form);
-            var names = new Vector();
-            var values = new Vector();
-
-            foreach (var binding in ToIter(bindings))
-            {
-                object name;
-                object value;
-
-                if (Listp(binding))
-                {
-                    name = First(binding);
-                    value = Second(binding);
-                }
-                else
-                {
-                    name = binding;
-                    value = null;
-                }
-
-                if (!Symbolp(name))
-                {
-                    throw new LispException("prog: invalid binding list: {0}", bindings);
-                }
-
-                names.Add(name);
-                values.Add(value);
-            }
-            var temp = GenTemp();
-            var args = MakeListStar(Symbols.Array, values);
-            var body4 = FormatCode(LambdaTemplate, args, temp, GetDeclarations(false, names, temp), body);
-            return Compile(body4, scope);
-        }
-
         public static Expression CompileLazyVar(Cons form, AnalysisScope scope)
         {
             return CompileVarInScope(form, scope, lazy: true, constant: true);
@@ -1205,7 +1122,6 @@ namespace Kiezel
             var macro = new SymbolMacro(Third(form));
             scope.DefineMacro(sym, macro, ScopeFlags.SymbolMacro | ScopeFlags.All);
             return Expression.Constant(null);
-
         }
 
         public static Expression CompileLexicalVarInScope(Cons form, AnalysisScope scope, bool native, bool future, bool lazy, bool constant)
@@ -1347,6 +1263,50 @@ namespace Kiezel
 
                 return Expression.Block(typeof(object), new ParameterExpression[] { temp }, tempAssign, result);
             }
+        }
+
+        public static Expression CompileProg(Cons form, AnalysisScope scope)
+        {
+            CheckMinLength(form, 2);
+
+            if (Length(form) == 2)
+            {
+                PrintWarning("Prog body contains no forms.");
+            }
+
+            var bindings = Second(form);
+            var body = Cddr(form);
+            var names = new Vector();
+            var values = new Vector();
+
+            foreach (var binding in ToIter(bindings))
+            {
+                object name;
+                object value;
+
+                if (Listp(binding))
+                {
+                    name = First(binding);
+                    value = Second(binding);
+                }
+                else
+                {
+                    name = binding;
+                    value = null;
+                }
+
+                if (!Symbolp(name))
+                {
+                    throw new LispException("prog: invalid binding list: {0}", bindings);
+                }
+
+                names.Add(name);
+                values.Add(value);
+            }
+            var temp = GenTemp();
+            var args = MakeListStar(Symbols.Array, values);
+            var body4 = FormatCode(LambdaTemplate, args, temp, GetDeclarations(false, names, temp), body);
+            return Compile(body4, scope);
         }
 
         public static Expression CompileQuote(Cons form, AnalysisScope scope)
@@ -1781,11 +1741,73 @@ namespace Kiezel
             return null;
         }
 
-        public static bool TryFindLabel(AnalysisScope scope, Symbol labelName)
+        public static Cons FormatCode(string template, params object[] args)
         {
-            AnalysisScope labelScope;
-            LabelTarget label;
-            return TryFindLabel(scope, labelName.LongName, out labelScope, out label);
+            var form = (Cons)ReadFromString(template);
+            return FormatCode(form, args);
+        }
+
+        public static Cons FormatCode(Cons template, params object[] args)
+        {
+            var result = new Vector();
+            foreach (var item in template)
+            {
+                if (item is Symbol)
+                {
+                    var sym = (Symbol)item;
+                    if (sym.Name.StartsWith("%%"))
+                    {
+                        int index;
+                        if (int.TryParse(sym.Name.Substring(2), out index))
+                        {
+                            result.AddRange((Cons)args[index - 1]);
+                            continue;
+                        }
+                    }
+                    else if (sym.Name.StartsWith("%"))
+                    {
+                        int index;
+                        if (int.TryParse(sym.Name.Substring(1), out index))
+                        {
+                            result.Add(args[index - 1]);
+                            continue;
+                        }
+                    }
+                }
+
+                if (item is Cons)
+                {
+                    result.Add(FormatCode((Cons)item, args));
+                    continue;
+                }
+                result.Add(item);
+            }
+            return AsList(result);
+        }
+
+        public static ImportedFunction GetBuiltinFunction(string name)
+        {
+            var sym = FindSymbol(name);
+            return (ImportedFunction)sym.Value;
+        }
+
+        public static Cons GetDeclarations(bool rawparams, Vector names, object values)
+        {
+            var i = 0;
+            var v = new Vector();
+            if (rawparams)
+            {
+                v.Add(MakeList(Symbols.Var, names[0], values));
+            }
+            else
+            {
+                foreach (var name in names)
+                {
+                    v.Add(MakeList(Symbols.Var, name, MakeList(Symbols.GetElt, values, i)));
+                    ++i;
+                }
+            }
+            return AsList(v);
         }
 
         public static Vector GetLambdaArgumentNames(LambdaSignature signature)
@@ -1812,29 +1834,56 @@ namespace Kiezel
             return v;
         }
 
-        public static Cons GetDeclarations(bool rawparams, Vector names, object values)
+        public static void InitLambdaTemplate()
         {
-            var i = 0;
-            var v = new Vector();
-            if (rawparams)
-            {
-                v.Add(MakeList(Symbols.Var, names[0], values));
-            }
-            else
-            {
-                foreach (var name in names)
-                {
-                    v.Add(MakeList(Symbols.Var, name, MakeList(Symbols.GetElt, values, i)));
-                    ++i;
-                }
-            }
-            return AsList(v);
+            LambdaTemplate = (Cons)ReadFromString(@"
+                    (do
+                        %1
+                        (label %recursion-label)
+                        (hidden-var %2 ~)
+                        (do
+                            %%3
+                            (do %%4))
+                        (label %function-exit))");
         }
 
-        public static ImportedFunction GetBuiltinFunction(string name)
+        [Lisp("system:optimizer")]
+        public static object Optimizer(object expr)
         {
-            var sym = FindSymbol(name);
-            return (ImportedFunction)sym.Value;
+            if (!(expr is Cons))
+            {
+                return expr;
+            }
+            var forms = (Cons)expr;
+            var head = First(expr) as Symbol;
+            if (head != null && head.Package == LispPackage)
+            {
+                var proc = head.Value as ImportedFunction;
+                if (proc != null && proc.Pure)
+                {
+                    if (head == Symbols.Quote)
+                    {
+                        expr = Second(forms);
+                    }
+                    else
+                    {
+                        var tail = Map(Optimizer, Cdr(forms));
+                        bool simple = SeqBase.Every(Literalp, tail);
+                        if (simple)
+                        {
+                            expr = ApplyStar(proc, tail);
+                        }
+                    }
+                }
+            }
+            return expr;
+        }
+
+        [Lisp("system:parse-parameter-list")]
+        public static Cons ParseParameterList(Cons args)
+        {
+            var signature = CompileFormalArgs(args, null, LambdaKind.Macro);
+            return AsList(signature.Names);
         }
 
         public static void RestartCompiler()
@@ -1879,7 +1928,6 @@ namespace Kiezel
             Symbols.Var.SpecialFormValue = new SpecialForm(CompileVar);
 
             InitLambdaTemplate();
-
         }
 
         public static MethodInfo RuntimeMethod(string name)
@@ -1891,6 +1939,13 @@ namespace Kiezel
         {
             var methods = type.GetMethods(BindingFlags.Static | BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
             return methods.First(x => x.Name == name);
+        }
+
+        public static bool TryFindLabel(AnalysisScope scope, Symbol labelName)
+        {
+            AnalysisScope labelScope;
+            LabelTarget label;
+            return TryFindLabel(scope, labelName.LongName, out labelScope, out label);
         }
 
         public static bool TryFindLabel(AnalysisScope scope, string labelName, out AnalysisScope labelScope, out LabelTarget label)
@@ -1965,64 +2020,33 @@ namespace Kiezel
             );
         }
 
-        public static Cons FormatCode(string template, params object[] args)
-        {
-            var form = (Cons)ReadFromString(template);
-            return FormatCode(form, args);
-        }
-
-        public static Cons FormatCode(Cons template, params object[] args)
-        {
-            var result = new Vector();
-            foreach (var item in template)
-            {
-                if (item is Symbol)
-                {
-                    var sym = (Symbol)item;
-                    if (sym.Name.StartsWith("%%"))
-                    {
-                        int index;
-                        if (int.TryParse(sym.Name.Substring(2), out index))
-                        {
-                            result.AddRange((Cons)args[index - 1]);
-                            continue;
-                        }
-                    }
-                    else if (sym.Name.StartsWith("%"))
-                    {
-                        int index;
-                        if (int.TryParse(sym.Name.Substring(1), out index))
-                        {
-                            result.Add(args[index - 1]);
-                            continue;
-                        }
-                    }
-                }
-
-                if (item is Cons)
-                {
-                    result.Add(FormatCode((Cons)item, args));
-                    continue;
-                }
-                result.Add(item);
-            }
-            return AsList(result);
-        }
-
+        #endregion Methods
     }
 
     public class SpecialForm
     {
+        #region Fields
+
         public CompilerHelper Helper;
+
+        #endregion Fields
+
+        #region Constructors
 
         public SpecialForm(CompilerHelper helper)
         {
             Helper = helper;
         }
 
+        #endregion Constructors
+
+        #region Methods
+
         public override string ToString()
         {
             return String.Format("SpecialForm Name=\"{0}.{1}\"", Helper.Method.DeclaringType, Helper.Method.Name);
         }
+
+        #endregion Methods
     }
 }

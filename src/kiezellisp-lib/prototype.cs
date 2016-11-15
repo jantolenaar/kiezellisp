@@ -1,22 +1,61 @@
+﻿#region Header
+
 // Copyright (C) Jan Tolenaar. See the file LICENSE for details.
 
-using System;
-using System.Collections;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Dynamic;
-using System.Linq;
-using System.Linq.Expressions;
-using System.Reflection;
+#endregion Header
 
 namespace Kiezel
 {
+    using System;
+    using System.Collections;
+    using System.Collections.Generic;
+    using System.ComponentModel;
+    using System.Dynamic;
+    using System.Linq;
+    using System.Linq.Expressions;
+    using System.Reflection;
+
+    public class CaseInsensitiveEqualityComparer : IEqualityComparer<object>
+    {
+        #region Fields
+
+        private CaseInsensitiveComparer comparer = CaseInsensitiveComparer.DefaultInvariant;
+
+        #endregion Fields
+
+        #region Methods
+
+        bool IEqualityComparer<object>.Equals(object x, object y)
+        {
+            return comparer.Compare(x, y) == 0;
+        }
+
+        int IEqualityComparer<object>.GetHashCode(object obj)
+        {
+            if (obj is string)
+            {
+                return obj.ToString().ToLowerInvariant().GetHashCode();
+            }
+            else
+            {
+                return obj.GetHashCode();
+            }
+        }
+
+        #endregion Methods
+    }
+
     [RestrictedImport]
     public class Prototype : IDynamicMetaObjectProvider, IEnumerable, IApply
     {
-        public PrototypeDictionary Dict = new PrototypeDictionary(false);
+        #region Fields
 
+        public PrototypeDictionary Dict = new PrototypeDictionary(false);
         public List<Prototype> Parents = new List<Prototype>();
+
+        #endregion Fields
+
+        #region Constructors
 
         [Lisp]
         public Prototype(params object[] args)
@@ -24,16 +63,11 @@ namespace Kiezel
             Create(args);
         }
 
-        DynamicMetaObject IDynamicMetaObjectProvider.GetMetaObject(Expression parameter)
-        {
-            return new PrototypeMetaObject(parameter, this);
-        }
+        #endregion Constructors
 
-        public Symbol ClassName
-        {
-            get;
-            set;
-        }
+        #region Properties
+
+        public Symbol ClassName { get; set; }
 
         [Lisp]
         public IEnumerable Keys
@@ -44,7 +78,11 @@ namespace Kiezel
             }
         }
 
-        public object this [object index]
+        #endregion Properties
+
+        #region Indexers
+
+        public object this[object index]
         {
             get
             {
@@ -55,6 +93,10 @@ namespace Kiezel
                 SetValue(index, value);
             }
         }
+
+        #endregion Indexers
+
+        #region Methods
 
         [Lisp]
         public static Prototype FromDictionary(PrototypeDictionary dict)
@@ -67,12 +109,60 @@ namespace Kiezel
             return proto;
         }
 
+        public void AddParent(Prototype parent)
+        {
+            if (parent != null)
+            {
+                Parents.Add(parent);
+            }
+        }
+
         [Lisp]
         public PrototypeDictionary AsDictionary()
         {
             var dict = new PrototypeDictionary();
             MergeInto(this, dict);
             return dict;
+        }
+
+        public void Create(object[] args)
+        {
+            if (args == null)
+            {
+                return;
+            }
+
+            int offset = 0;
+
+            if ((args.Length & 1) != 0)
+            {
+                offset = 1;
+
+                // Odd length: first item is type specification
+                var a = args[0];
+
+                if (Runtime.Listp(a))
+                {
+                    foreach (var b in Runtime.ToIter( a ))
+                    {
+                        ProcessTypeArg(b);
+                    }
+                }
+                else
+                {
+                    ProcessTypeArg(a);
+                }
+            }
+
+            for (var i = offset; i + 1 < args.Length; i += 2)
+            {
+                var key = GetKey(args[i]);
+                if (key != null)
+                {
+                    var value = args[i + 1];
+                    Dict[key] = value;
+                }
+            }
         }
 
         public IEnumerator GetEnumerator()
@@ -85,6 +175,18 @@ namespace Kiezel
             return h.GetEnumerator();
         }
 
+        public object GetKey(object key)
+        {
+            if (key is Symbol)
+            {
+                return ((Symbol)key).Name;
+            }
+            else
+            {
+                return key;
+            }
+        }
+
         [Lisp]
         public Cons GetParents(params object[] args)
         {
@@ -93,6 +195,33 @@ namespace Kiezel
             var v = new Vector();
             GetParents(v, inherited);
             return Runtime.AsList(v);
+        }
+
+        public void GetParents(Vector result, bool inherited)
+        {
+            foreach (var parent in Parents)
+            {
+                result.Add(parent);
+                if (inherited)
+                {
+                    parent.GetParents(result, inherited);
+                }
+            }
+        }
+
+        public void GetTypeNames(Vector result)
+        {
+            if (ClassName != null)
+            {
+                result.Add(ClassName);
+            }
+            else
+            {
+                foreach (var parent in Parents)
+                {
+                    parent.GetTypeNames(result);
+                }
+            }
         }
 
         [Lisp]
@@ -120,6 +249,28 @@ namespace Kiezel
         public object GetValue(object ident)
         {
             return GetValueFor(this, ident);
+        }
+
+        public object GetValueFor(Prototype target, object ident)
+        {
+            var name = GetKey(ident);
+            object result = null;
+
+            if (Dict.TryGetValue(name, out result))
+            {
+                return result;
+            }
+
+            foreach (var parent in Parents)
+            {
+                result = parent.GetValueFor(target, ident);
+                if (result != null)
+                {
+                    return result;
+                }
+            }
+
+            return null;
         }
 
         public bool HasInheritedProperty(object ident)
@@ -169,154 +320,9 @@ namespace Kiezel
             }
         }
 
-        [Lisp]
-        public void SetParents(IEnumerable parents)
+        DynamicMetaObject IDynamicMetaObjectProvider.GetMetaObject(Expression parameter)
         {
-            var newlist = new List<Prototype>();
-            foreach (Prototype p in Runtime.ToIter( parents ))
-            {
-                if (p != null)
-                {
-                    newlist.Add(p);
-                }
-            }
-            Parents = newlist;
-        }
-
-        public object SetValue(object name, object value)
-        {
-            Dict[GetKey(name)] = value;
-            return value;
-        }
-
-        public void AddParent(Prototype parent)
-        {
-            if (parent != null)
-            {
-                Parents.Add(parent);
-            }
-        }
-
-        public void Create(object[] args)
-        {
-            if (args == null)
-            {
-                return;
-            }
-
-            int offset = 0;
-
-            if ((args.Length & 1) != 0)
-            {
-                offset = 1;
-
-                // Odd length: first item is type specification
-                var a = args[0];
-
-                if (Runtime.Listp(a))
-                {
-                    foreach (var b in Runtime.ToIter( a ))
-                    {
-                        ProcessTypeArg(b);
-                    }
-                }
-                else
-                {
-                    ProcessTypeArg(a);
-                }
-            }
-
-            for (var i = offset; i + 1 < args.Length; i += 2)
-            {
-                var key = GetKey(args[i]);
-                if (key != null)
-                {
-                    var value = args[i + 1];
-                    Dict[key] = value;
-                }
-            }
-        }
-
-        public void ProcessTypeArg(object a)
-        {
-            if (a is Prototype)
-            {
-                AddParent((Prototype)a);
-            }
-            else if (a is Symbol)
-            {
-                var type = Runtime.GetType((Symbol)a) as Prototype;
-                if (type == null)
-                {
-                    throw new LispException("Type not found or not a prototype/structure: {0}", a);
-                }
-                AddParent(type);
-            }
-            else
-            {
-                throw new LispException("Invalid type specifier in prototype constructor: {0}", a);
-            }
-        }
-
-        public object GetKey(object key)
-        {
-            if (key is Symbol)
-            {
-                return ((Symbol)key).Name;
-            }
-            else
-            {
-                return key;
-            }
-        }
-
-        public void GetParents(Vector result, bool inherited)
-        {
-            foreach (var parent in Parents)
-            {
-                result.Add(parent);
-                if (inherited)
-                {
-                    parent.GetParents(result, inherited);
-                }
-            }
-        }
-
-        public void GetTypeNames(Vector result)
-        {
-            if (ClassName != null)
-            {
-                result.Add(ClassName);
-            }
-            else
-            {
-                foreach (var parent in Parents)
-                {
-                    parent.GetTypeNames(result);
-                }
-            }
-        }
-
-        public object GetValueFor(Prototype target, object ident)
-        {
-            var name = GetKey(ident);
-            object result = null;
-
-            if (Dict.TryGetValue(name, out result))
-            {
-                return result;
-            }
-
-            foreach (var parent in Parents)
-            {
-                result = parent.GetValueFor(target, ident);
-                if (result != null)
-                {
-                    return result;
-                }
-            }
-
-            return null;
+            return new PrototypeMetaObject(parameter, this);
         }
 
         public bool IsSubTypeOf(Prototype proto)
@@ -352,10 +358,55 @@ namespace Kiezel
                 parent.MergeInto(original, dict);
             }
         }
+
+        public void ProcessTypeArg(object a)
+        {
+            if (a is Prototype)
+            {
+                AddParent((Prototype)a);
+            }
+            else if (a is Symbol)
+            {
+                var type = Runtime.GetType((Symbol)a) as Prototype;
+                if (type == null)
+                {
+                    throw new LispException("Type not found or not a prototype/structure: {0}", a);
+                }
+                AddParent(type);
+            }
+            else
+            {
+                throw new LispException("Invalid type specifier in prototype constructor: {0}", a);
+            }
+        }
+
+        [Lisp]
+        public void SetParents(IEnumerable parents)
+        {
+            var newlist = new List<Prototype>();
+            foreach (Prototype p in Runtime.ToIter( parents ))
+            {
+                if (p != null)
+                {
+                    newlist.Add(p);
+                }
+            }
+            Parents = newlist;
+        }
+
+        public object SetValue(object name, object value)
+        {
+            Dict[GetKey(name)] = value;
+            return value;
+        }
+
+        #endregion Methods
     }
 
     public class PrototypeDictionary : Dictionary<object, object>
     {
+        #region Constructors
+
         public PrototypeDictionary()
         {
         }
@@ -364,11 +415,19 @@ namespace Kiezel
             : base(caseInsensitive ? new CaseInsensitiveEqualityComparer() : null)
         {
         }
+
+        #endregion Constructors
     }
 
     public class PrototypeMetaObject : GenericApplyMetaObject<Prototype>
     {
+        #region Fields
+
         public Prototype Proto;
+
+        #endregion Fields
+
+        #region Constructors
 
         public PrototypeMetaObject(Expression parameter, Prototype proto)
             : base(parameter, proto)
@@ -376,9 +435,13 @@ namespace Kiezel
             this.Proto = proto;
         }
 
-        public override DynamicMetaObject BindInvokeMember(InvokeMemberBinder binder, DynamicMetaObject[] args)
+        #endregion Constructors
+
+        #region Methods
+
+        public override DynamicMetaObject BindGetMember(GetMemberBinder binder)
         {
-            // Handles (.member obj)
+            // Handles (attr obj 'member)
             MethodInfo method = typeof(Prototype).GetMethod("GetValue");
             var index = Expression.Constant(binder.Name);
             var expr = Expression.Call(Expression.Convert(this.Expression, typeof(Prototype)), method, index);
@@ -386,9 +449,9 @@ namespace Kiezel
             return new DynamicMetaObject(Runtime.EnsureObjectResult(expr), restrictions);
         }
 
-        public override DynamicMetaObject BindGetMember(GetMemberBinder binder)
+        public override DynamicMetaObject BindInvokeMember(InvokeMemberBinder binder, DynamicMetaObject[] args)
         {
-            // Handles (attr obj 'member)
+            // Handles (.member obj)
             MethodInfo method = typeof(Prototype).GetMethod("GetValue");
             var index = Expression.Constant(binder.Name);
             var expr = Expression.Call(Expression.Convert(this.Expression, typeof(Prototype)), method, index);
@@ -404,27 +467,7 @@ namespace Kiezel
             var restrictions = BindingRestrictions.GetTypeRestriction(this.Expression, typeof(Prototype));
             return new DynamicMetaObject(Runtime.EnsureObjectResult(expr), restrictions);
         }
-    }
 
-    public class CaseInsensitiveEqualityComparer : IEqualityComparer<object>
-    {
-        private CaseInsensitiveComparer comparer = CaseInsensitiveComparer.DefaultInvariant;
-
-        bool IEqualityComparer<object>.Equals(object x, object y)
-        {
-            return comparer.Compare(x, y) == 0;
-        }
-
-        int IEqualityComparer<object>.GetHashCode(object obj)
-        {
-            if (obj is string)
-            {
-                return obj.ToString().ToLowerInvariant().GetHashCode();
-            }
-            else
-            {
-                return obj.GetHashCode();
-            }
-        }
+        #endregion Methods
     }
 }

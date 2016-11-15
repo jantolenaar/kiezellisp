@@ -1,21 +1,27 @@
+﻿#region Header
+
 // Copyright (C) Jan Tolenaar. See the file LICENSE for details.
 
-using System;
-using System.Collections.Generic;
-using System.Text.RegularExpressions;
+#endregion Header
 
 namespace Kiezel
 {
+    using System;
+    using System.Collections.Generic;
+    using System.Text.RegularExpressions;
 
     public class CommandLineParser
     {
+        #region Fields
+
         private string[] args;
-
         private int endOfOptions;
-
         private List<Option> options = new List<Option>();
-
         private Dictionary<string, string> values;
+
+        #endregion Fields
+
+        #region Enumerations
 
         [Flags]
         public enum Flags
@@ -27,6 +33,10 @@ namespace Kiezel
             Long = 8,
             Short = 16,
         }
+
+        #endregion Enumerations
+
+        #region Methods
 
         public void AddOption(string spec1, string spec2)
         {
@@ -224,15 +234,29 @@ namespace Kiezel
             options.Add(option);
         }
 
+        #endregion Methods
+
+        #region Nested Types
+
         public class Option
         {
+            #region Fields
+
             public Flags Flags;
             public string LongName;
             public string ShortName;
 
+            #endregion Fields
+
+            #region Constructors
+
             public Option()
             {
             }
+
+            #endregion Constructors
+
+            #region Methods
 
             public bool Match(bool longName, string str, out string value)
             {
@@ -279,6 +303,10 @@ namespace Kiezel
                     return false;
                 }
             }
+
+            #endregion Methods
         }
+
+        #endregion Nested Types
     }
 }

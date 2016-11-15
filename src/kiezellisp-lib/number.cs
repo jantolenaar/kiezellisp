@@ -1,15 +1,22 @@
+﻿#region Header
+
 // Copyright (C) Jan Tolenaar. See the file LICENSE for details.
 
-using System;
-using System.Globalization;
-using System.Numerics;
-using Numerics;
+#endregion Header
 
 namespace Kiezel
 {
+    using System;
+    using System.Globalization;
+    using System.Numerics;
+
+    using Numerics;
+
     [RestrictedImport]
     public abstract class Number
     {
+        #region Fields
+
         private static int a = (int)'a';
         private static int A = (int)'A';
         private static int nine = (int)'9';
@@ -17,12 +24,16 @@ namespace Kiezel
         private static int Z = (int)'Z';
         private static int zero = (int)'0';
 
-        static public bool CanShrink(BigRational d)
+        #endregion Fields
+
+        #region Methods
+
+        public static bool CanShrink(BigRational d)
         {
             return (d.Denominator == 1);
         }
 
-        static public bool CanShrink(Int64 d)
+        public static bool CanShrink(Int64 d)
         {
             if (Int32.MinValue <= d && d <= Int32.MaxValue)
             {
@@ -34,7 +45,7 @@ namespace Kiezel
             }
         }
 
-        static public bool CanShrink(BigInteger d)
+        public static bool CanShrink(BigInteger d)
         {
             if (Int64.MinValue <= d && d <= Int64.MaxValue)
             {
@@ -331,5 +342,7 @@ namespace Kiezel
 
             return true;
         }
+
+        #endregion Methods
     }
 }

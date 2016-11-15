@@ -1,35 +1,29 @@
+﻿#region Header
+
 // Copyright (C) Jan Tolenaar. See the file LICENSE for details.
 
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Linq.Expressions;
-using System.Reflection;
-using System.Runtime.CompilerServices;
+#endregion Header
 
 namespace Kiezel
 {
+    using System;
+    using System.Collections.Generic;
+    using System.IO;
+    using System.Linq;
+    using System.Linq.Expressions;
+    using System.Reflection;
+    using System.Runtime.CompilerServices;
+
     public partial class Runtime
     {
-        public static BindingFlags ImportBindingFlags = BindingFlags.IgnoreCase | BindingFlags.Static | BindingFlags.Instance | BindingFlags.Public | BindingFlags.FlattenHierarchy;
+        #region Fields
 
+        public static BindingFlags ImportBindingFlags = BindingFlags.IgnoreCase | BindingFlags.Static | BindingFlags.Instance | BindingFlags.Public | BindingFlags.FlattenHierarchy;
         public static Assembly LastUsedAssembly = null;
 
-        public static object GetStaticPropertyValue(Type type, object ident)
-        {
-            var flags = BindingFlags.IgnoreCase | BindingFlags.Static | BindingFlags.Public;
-            var name = GetDesignatedString(ident).LispToPascalCaseName();
-            var member = type.GetProperty(name, flags);
-            if (member != null)
-            {
-                return member.GetValue(null);
-            }
-            else
-            {
-                return null;
-            }
-        }
+        #endregion Fields
+
+        #region Methods
 
         [Lisp("add-event-handler")]
         public static void AddEventHandler(System.Reflection.EventInfo eventinfo, object target, IApply func)
@@ -37,86 +31,6 @@ namespace Kiezel
             var type = eventinfo.EventHandlerType;
             var dlg = ConvertToDelegate(type, func);
             eventinfo.AddEventHandler(target, dlg);
-        }
-
-        //[Lisp("get-namespace-types")]
-        public static List<Type> GetNamespaceTypes(string pattern)
-        {
-            var allTypes = new List<Type>();
-            foreach (Assembly asm in AppDomain.CurrentDomain.GetAssemblies())
-            {
-                var types = asm.GetTypes();
-                allTypes.AddRange(types.Where(t => NamespaceOrClassNameMatch(pattern, t)));
-            }
-            return allTypes;
-        }
-
-        [Lisp("import")]
-        public static Package Import(string typeName, params object[] args)
-        {
-            var kwargs = ParseKwargs(args, new string[] { "package-name", "package-name-prefix", "extends-package-name", "type-parameters" }, null, null, null, null);
-            var typeParameters = ToIter((Cons)kwargs[3]).Cast<Symbol>().Select(GetType).Cast<Type>().ToArray();
-            var type = GetTypeForImport(typeName, typeParameters);
-            var prefix = GetDesignatedString(kwargs[1] ?? GetDynamic(Symbols.PackageNamePrefix));
-            var packageName = GetDesignatedString(kwargs[0] ?? prefix + type.Name.LispName());
-            var packageName2 = GetDesignatedString(kwargs[2]);
-
-            return Import(type, packageName, packageName2);
-        }
-
-        //[Lisp( "import-namespace" )]
-        public static void ImportNamespace(string namespaceName, params object[] args)
-        {
-            var kwargs = ParseKwargs(args, new string[] { "package-name-prefix" });
-            var packageNamePrefix = (string)kwargs[0] ?? "";
-            var types = GetNamespaceTypes(namespaceName);
-            foreach (var type in types)
-            {
-                var packageName = packageNamePrefix + type.Name.LispName();
-                Import(type, packageName, null);
-            }
-        }
-
-        [Lisp("reference")]
-        public static void Reference(string assemblyName)
-        {
-            var a = assemblyName;
-            if (a.IndexOf(",") == -1 && Path.GetExtension(a) != ".dll")
-            {
-                a = a + ".dll";
-            }
-
-            try
-            {
-                a = FindFileInPath(a);
-                Assembly.LoadFile(a);
-            }
-            catch
-            {
-                try
-                {
-                    Assembly.LoadFrom(a);
-                }
-                catch
-                {
-                    try
-                    {
-                        Assembly.Load(a);
-                    }
-                    catch
-                    {
-                        try
-                        {
-                            Assembly.LoadFile(a);
-                        }
-                        catch
-                        {
-                            a = FindFileInPath(a);
-                            Assembly.LoadFile(a);
-                        }
-                    }
-                }
-            }
         }
 
         public static bool ExtendsType(MethodInfo method, Type type)
@@ -201,6 +115,33 @@ namespace Kiezel
             return MakeListStar(name, AsList(buf));
         }
 
+        //[Lisp("get-namespace-types")]
+        public static List<Type> GetNamespaceTypes(string pattern)
+        {
+            var allTypes = new List<Type>();
+            foreach (Assembly asm in AppDomain.CurrentDomain.GetAssemblies())
+            {
+                var types = asm.GetTypes();
+                allTypes.AddRange(types.Where(t => NamespaceOrClassNameMatch(pattern, t)));
+            }
+            return allTypes;
+        }
+
+        public static object GetStaticPropertyValue(Type type, object ident)
+        {
+            var flags = BindingFlags.IgnoreCase | BindingFlags.Static | BindingFlags.Public;
+            var name = GetDesignatedString(ident).LispToPascalCaseName();
+            var member = type.GetProperty(name, flags);
+            if (member != null)
+            {
+                return member.GetValue(null);
+            }
+            else
+            {
+                return null;
+            }
+        }
+
         public static Type GetTypeForImport(string typeName, Type[] typeParameters)
         {
             if (typeParameters != null && typeParameters.Length != 0)
@@ -237,6 +178,19 @@ namespace Kiezel
             }
 
             return type;
+        }
+
+        [Lisp("import")]
+        public static Package Import(string typeName, params object[] args)
+        {
+            var kwargs = ParseKwargs(args, new string[] { "package-name", "package-name-prefix", "extends-package-name", "type-parameters" }, null, null, null, null);
+            var typeParameters = ToIter((Cons)kwargs[3]).Cast<Symbol>().Select(GetType).Cast<Type>().ToArray();
+            var type = GetTypeForImport(typeName, typeParameters);
+            var prefix = GetDesignatedString(kwargs[1] ?? GetDynamic(Symbols.PackageNamePrefix));
+            var packageName = GetDesignatedString(kwargs[0] ?? prefix + type.Name.LispName());
+            var packageName2 = GetDesignatedString(kwargs[2]);
+
+            return Import(type, packageName, packageName2);
         }
 
         public static Package Import(Type type, string packageName, string extendsPackageName)
@@ -454,7 +408,7 @@ namespace Kiezel
                     var builtin = new ImportedFunction(members[0].Name, members[0].DeclaringType, getters, false);
                     sym.FunctionValue = builtin;
                 }
-                
+
                 if (setters.Length != 0)
                 {
                     // create getter symbol for setf/setq
@@ -469,6 +423,19 @@ namespace Kiezel
             }
 
             return false;
+        }
+
+        //[Lisp( "import-namespace" )]
+        public static void ImportNamespace(string namespaceName, params object[] args)
+        {
+            var kwargs = ParseKwargs(args, new string[] { "package-name-prefix" });
+            var packageNamePrefix = (string)kwargs[0] ?? "";
+            var types = GetNamespaceTypes(namespaceName);
+            foreach (var type in types)
+            {
+                var packageName = packageNamePrefix + type.Name.LispName();
+                Import(type, packageName, null);
+            }
         }
 
         public static object InvokeMember(object target, string name, params object[] args)
@@ -488,6 +455,48 @@ namespace Kiezel
                 return true;
             }
             return false;
+        }
+
+        [Lisp("reference")]
+        public static void Reference(string assemblyName)
+        {
+            var a = assemblyName;
+            if (a.IndexOf(",") == -1 && Path.GetExtension(a) != ".dll")
+            {
+                a = a + ".dll";
+            }
+
+            try
+            {
+                a = FindFileInPath(a);
+                Assembly.LoadFile(a);
+            }
+            catch
+            {
+                try
+                {
+                    Assembly.LoadFrom(a);
+                }
+                catch
+                {
+                    try
+                    {
+                        Assembly.Load(a);
+                    }
+                    catch
+                    {
+                        try
+                        {
+                            Assembly.LoadFile(a);
+                        }
+                        catch
+                        {
+                            a = FindFileInPath(a);
+                            Assembly.LoadFile(a);
+                        }
+                    }
+                }
+            }
         }
 
         public static MemberInfo ResolveGenericMethod(MemberInfo member)
@@ -541,5 +550,7 @@ namespace Kiezel
                 }
             }
         }
+
+        #endregion Methods
     }
 }

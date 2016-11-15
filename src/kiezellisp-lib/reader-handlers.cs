@@ -1,19 +1,40 @@
+﻿#region Header
+
 // Copyright (C) Jan Tolenaar. See the file LICENSE for details.
-using System.Numerics;
-using System.Text.RegularExpressions;
+
+#endregion Header
 
 namespace Kiezel
 {
+    using System.Numerics;
+    using System.Text.RegularExpressions;
+
     public partial class Runtime
     {
+        #region Fields
+
         public static string[] StringPatterns = new string[]
         {
             @"\<\%(.*?)\%\>",
             @"\<\!(.*?)\!\>",
             @"\$\{(.*?)\}",
         };
-
         public static Regex InterpolationStringPatterns = new Regex("|".Join(StringPatterns), RegexOptions.Singleline);
+
+        #endregion Fields
+
+        #region Enumerations
+
+        public enum BranchMode
+        {
+            False = 0,
+            True = 1,
+            Eval = 2
+        }
+
+        #endregion Enumerations
+
+        #region Methods
 
         public static bool EvalFeatureExpr(object expr)
         {
@@ -157,6 +178,58 @@ namespace Kiezel
             return VOID.Value;
         }
 
+        public static Symbol ReadBranch(LispReader stream, bool hasTest, BranchMode mode, ref Vector branch)
+        {
+            var haveFeatures = false;
+
+            if (hasTest)
+            {
+                var test = stream.Read();
+                switch (mode)
+                {
+                    case BranchMode.False:
+                    {
+                        haveFeatures = false;
+                        break;
+                    }
+                    case BranchMode.True:
+                    {
+                        haveFeatures = true;
+                        break;
+                    }
+                    case BranchMode.Eval:
+                    default:
+                    {
+                        haveFeatures = EvalFeatureExpr(test);
+                        break;
+                    }
+                }
+            }
+            else
+            {
+                haveFeatures = mode == BranchMode.True;
+            }
+
+            if (haveFeatures)
+            {
+                branch = new Vector();
+            }
+
+            while (true)
+            {
+                var obj = haveFeatures ? stream.Read() : stream.ReadSuppressed();
+
+                if (obj == Symbols.HashElif || obj == Symbols.HashElse || obj == Symbols.HashEndif)
+                {
+                    return (Symbol)obj;
+                }
+                else if (haveFeatures)
+                {
+                    branch.Add(obj);
+                }
+            }
+        }
+
         public static object ReadCharacterHandler(LispReader stream, string ch, int arg)
         {
             stream.UnreadChar();
@@ -194,6 +267,21 @@ namespace Kiezel
             return new Complex(real, imag);
         }
 
+        public static object ReadElifExprHandler(LispReader stream, string ch, int arg)
+        {
+            return Symbols.HashElif;
+        }
+
+        public static object ReadElseExprHandler(LispReader stream, string ch, int arg)
+        {
+            return Symbols.HashElse;
+        }
+
+        public static object ReadEndifExprHandler(LispReader stream, string ch, int arg)
+        {
+            return Symbols.HashEndif;
+        }
+
         public static object ReadExecuteHandler(LispReader stream, string ch, int arg)
         {
             var expr = stream.Read();
@@ -214,6 +302,35 @@ namespace Kiezel
         {
             stream.ReadSuppressed();
             return VOID.Value;
+        }
+
+        public static object ReadIfExprHandler(LispReader stream, string ch, int arg)
+        {
+            Vector branch = null;
+            var term = ReadBranch(stream, true, BranchMode.Eval, ref branch);
+            while (term == Symbols.HashElif)
+            {
+                var haveBranch = branch != null;
+                term = ReadBranch(stream, true, haveBranch ? BranchMode.False : BranchMode.Eval, ref branch);
+            }
+            if (term == Symbols.HashElse)
+            {
+                var haveBranch = branch != null;
+                term = ReadBranch(stream, false, haveBranch ? BranchMode.False : BranchMode.True, ref branch);
+            }
+            if (term != Symbols.HashEndif)
+            {
+                throw stream.MakeScannerException("EOF: Missing #endif");
+            }
+
+            if (branch != null && branch.Count > 0)
+            {
+                return MakeListStar(Symbols.CompileTimeBranch, branch);
+            }
+            else
+            {
+                return VOID.Value;
+            }
         }
 
         public static object ReadInfixHandler(LispReader stream, string ch, int arg)
@@ -300,110 +417,6 @@ namespace Kiezel
             }
         }
 
-        public enum BranchMode
-        {
-            False = 0,
-            True = 1,
-            Eval = 2
-        }
-
-        public static object ReadIfExprHandler(LispReader stream, string ch, int arg)
-        {
-            Vector branch = null;
-            var term = ReadBranch(stream, true, BranchMode.Eval, ref branch);
-            while (term == Symbols.HashElif)
-            {
-                var haveBranch = branch != null;
-                term = ReadBranch(stream, true, haveBranch ? BranchMode.False : BranchMode.Eval, ref branch);
-            }
-            if (term == Symbols.HashElse)
-            {
-                var haveBranch = branch != null;
-                term = ReadBranch(stream, false, haveBranch ? BranchMode.False : BranchMode.True, ref branch);
-            }
-            if (term != Symbols.HashEndif)
-            {
-                throw stream.MakeScannerException("EOF: Missing #endif");
-            }
-
-            if (branch != null && branch.Count > 0)
-            {
-                return MakeListStar(Symbols.CompileTimeBranch, branch);
-            }
-            else
-            {
-                return VOID.Value;
-            }
-        }
-
-        public static Symbol ReadBranch(LispReader stream, bool hasTest, BranchMode mode, ref Vector branch)
-        {
-            var haveFeatures = false;
-
-            if (hasTest)
-            {
-                var test = stream.Read();
-                switch (mode)
-                {
-                    case BranchMode.False:
-                    {
-                        haveFeatures = false;
-                        break;
-                    }
-                    case BranchMode.True:
-                    {
-                        haveFeatures = true;
-                        break;
-                    }
-                    case BranchMode.Eval:
-                    default:
-                    {
-                        haveFeatures = EvalFeatureExpr(test);
-                        break;
-                    }
-                }
-            }
-            else
-            {
-                haveFeatures = mode == BranchMode.True;
-            }
-
-            if (haveFeatures)
-            {
-                branch = new Vector();
-            }
-
-            while (true)
-            {
-                var obj = haveFeatures ? stream.Read() : stream.ReadSuppressed();
-
-                if (obj == Symbols.HashElif || obj == Symbols.HashElse || obj == Symbols.HashEndif)
-                {
-                    return (Symbol)obj;
-                }
-                else if (haveFeatures)
-                {
-                    branch.Add(obj);
-                }
-            }
-
-        }
-
-        public static object ReadElifExprHandler(LispReader stream, string ch, int arg)
-        {
-            return Symbols.HashElif;
-        }
-
-        public static object ReadElseExprHandler(LispReader stream, string ch, int arg)
-        {
-            return Symbols.HashElse;
-        }
-
-        public static object ReadEndifExprHandler(LispReader stream, string ch, int arg)
-        {
-            return Symbols.HashEndif;
-        }
-
         public static object ReadPrototypeHandler(LispReader stream, char ch)
         {
             var list = stream.ReadDelimitedList("}");
@@ -416,6 +429,11 @@ namespace Kiezel
             var exp1 = stream.Read();
             var exp2 = QuasiQuoteExpandRest(exp1);
             return exp2;
+        }
+
+        public static object ReadQuasiQuoteLambdaExpressionHandler(LispReader stream, string ch, int arg)
+        {
+            return stream.ParseShortLambdaExpression(true, ")");
         }
 
         public static object ReadQuoteHandler(LispReader stream, char ch)
@@ -436,11 +454,6 @@ namespace Kiezel
             return stream.ParseShortLambdaExpression(false, ")");
         }
 
-        public static object ReadQuasiQuoteLambdaExpressionHandler(LispReader stream, string ch, int arg)
-        {
-            return stream.ParseShortLambdaExpression(true, ")");
-        }
-
         public static object ReadSpecialStringHandler(LispReader stream, string ch, int arg)
         {
             var str = stream.ParseSpecialString();
@@ -457,6 +470,17 @@ namespace Kiezel
         {
             // C# string @"..."
             return ParseInterpolateString(stream.ParseMultiLineString());
+        }
+
+        public static object ReadStructHandler(LispReader stream, string ch, int arg)
+        {
+            if (stream.ReadChar() != '(')
+            {
+                throw stream.MakeScannerException("Invalid #s() expression");
+            }
+            var list = stream.ReadDelimitedList(")");
+            var obj = new Prototype(AsArray(list));
+            return obj;
         }
 
         public static object ReadUninternedSymbolHandler(LispReader stream, string ch, int arg)
@@ -500,16 +524,6 @@ namespace Kiezel
             return obj;
         }
 
-        public static object ReadStructHandler(LispReader stream, string ch, int arg)
-        {
-            if (stream.ReadChar() != '(')
-            {
-                throw stream.MakeScannerException("Invalid #s() expression");
-            }
-            var list = stream.ReadDelimitedList(")");
-            var obj = new Prototype(AsArray(list));
-            return obj;
-        }
-
+        #endregion Methods
     }
 }

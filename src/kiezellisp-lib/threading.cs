@@ -1,34 +1,53 @@
+﻿#region Header
+
 // Copyright (C) Jan Tolenaar. See the file LICENSE for details.
 
-using System;
-using System.Collections;
-using System.Collections.Concurrent;
-using System.Diagnostics;
-using System.Net;
-using System.Net.Sockets;
-using System.Threading;
-using System.Threading.Tasks;
-using ThreadFunc = System.Func<object>;
+#endregion Header
 
 namespace Kiezel
 {
+    using System;
+    using System.Collections;
+    using System.Collections.Concurrent;
+    using System.Diagnostics;
+    using System.Net;
+    using System.Net.Sockets;
+    using System.Threading;
+    using System.Threading.Tasks;
+
+    using ThreadFunc = System.Func<object>;
+
     public struct ThreadContextState
     {
+        #region Fields
+
         public Cons EvaluationStack;
         public Frame Frame;
         public int NestingDepth;
         public SpecialVariables SpecialStack;
+
+        #endregion Fields
     }
 
     public class GeneratorThreadContext : ThreadContext, IEnumerable
     {
+        #region Fields
+
         public BlockingCollection<object> list;
 
-        public GeneratorThreadContext(int capacity) :
-            base(Runtime.GetCurrentThread().SpecialStack)
+        #endregion Fields
+
+        #region Constructors
+
+        public GeneratorThreadContext(int capacity)
+            : base(Runtime.GetCurrentThread().SpecialStack)
         {
             list = new BlockingCollection<object>(capacity);
         }
+
+        #endregion Constructors
+
+        #region Methods
 
         IEnumerator IEnumerable.GetEnumerator()
         {
@@ -51,11 +70,44 @@ namespace Kiezel
         {
             list.CompleteAdding();
         }
+
+        #endregion Methods
     }
 
     public partial class Runtime
     {
+        #region Fields
+
         public static TcpListener CommandListenerSocket = null;
+
+        #endregion Fields
+
+        #region Methods
+
+        public static GeneratorThreadContext CheckGeneratorThreadContext(ThreadContext ctx)
+        {
+            var context = ctx as GeneratorThreadContext;
+
+            if (context == null)
+            {
+                throw new LispException("Thread is not a generator thread");
+            }
+
+            return (GeneratorThreadContext)context;
+        }
+
+        [Lisp("start-listener")]
+        public static void CreateCommandListener()
+        {
+            var port = (int)GetDynamic(Symbols.ReplListenerPort);
+            CreateCommandListener(port);
+        }
+
+        [Lisp("start-listener")]
+        public static void CreateCommandListener(int port)
+        {
+            Task.Factory.StartNew(Listener, port);
+        }
 
         [Lisp("system:create-generator")]
         public static object CreateGenerator(ThreadFunc code, params object[] kwargs)
@@ -85,98 +137,6 @@ namespace Kiezel
         {
             var specials = GetCurrentThread().SpecialStack;
             return CreateTaskWithContext(code, new ThreadContext(specials), start);
-        }
-
-        [Lisp("system:create-thread")]
-        public static object CreateThread(ThreadFunc code)
-        {
-            return CreateThread(code, true);
-        }
-
-        [Lisp("system:create-thread")]
-        public static object CreateThread(ThreadFunc code, bool start)
-        {
-            var specials = GetCurrentThread().SpecialStack;
-            return CreateThreadWithContext(code, new ThreadContext(specials), start);
-        }
-
-
-        [Lisp("system:enable-benchmark")]
-        public static void EnableBenchmark(bool flag)
-        {
-            if (flag)
-            {
-                Process.GetCurrentProcess().ProcessorAffinity = new IntPtr(1);
-                Process.GetCurrentProcess().PriorityClass = ProcessPriorityClass.High;
-                Thread.CurrentThread.Priority = ThreadPriority.Highest;
-            }
-            else
-            {
-                Process.GetCurrentProcess().ProcessorAffinity = new IntPtr(0);
-                Process.GetCurrentProcess().PriorityClass = ProcessPriorityClass.Normal;
-                Thread.CurrentThread.Priority = ThreadPriority.Normal;
-            }
-        }
-
-        [Lisp("system:get-current-thread")]
-        public static ThreadContext GetCurrentThread()
-        {
-            return CurrentThreadContext;
-        }
-
-        [Lisp("system:get-task-result")]
-        public static object GetTaskResult(ThreadContext task)
-        {
-            return task.GetResult();
-        }
-
-        [Lisp("resume")]
-        public static object Resume(ThreadContext ctx)
-        {
-            var context = CheckGeneratorThreadContext(ctx);
-            return context.Resume();
-        }
-
-        //[Lisp("send")]
-        public static int Send(string text)
-        {
-            return Send(text, 8080);
-        }
-
-        //[Lisp( "send" )]
-        public static int Send(string text, int port)
-        {
-            using (var socket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp))
-            {
-                socket.Connect(new IPEndPoint(IPAddress.Loopback, port));
-                var data = System.Text.Encoding.ASCII.GetBytes(text);
-                return socket.Send(data);
-            }
-        }
-
-        [Lisp("sleep")]
-        public static void Sleep(int msec)
-        {
-            System.Threading.Thread.Sleep(msec);
-        }
-
-        [Lisp("yield")]
-        public static void Yield(object item)
-        {
-            var context = CheckGeneratorThreadContext(CurrentThreadContext);
-            context.Yield(item);
-        }
-
-        public static GeneratorThreadContext CheckGeneratorThreadContext(ThreadContext ctx)
-        {
-            var context = ctx as GeneratorThreadContext;
-
-            if (context == null)
-            {
-                throw new LispException("Thread is not a generator thread");
-            }
-
-            return (GeneratorThreadContext)context;
         }
 
         public static object CreateTaskWithContext(ThreadFunc code, ThreadContext context, bool start)
@@ -214,6 +174,19 @@ namespace Kiezel
             return context;
         }
 
+        [Lisp("system:create-thread")]
+        public static object CreateThread(ThreadFunc code)
+        {
+            return CreateThread(code, true);
+        }
+
+        [Lisp("system:create-thread")]
+        public static object CreateThread(ThreadFunc code, bool start)
+        {
+            var specials = GetCurrentThread().SpecialStack;
+            return CreateThreadWithContext(code, new ThreadContext(specials), start);
+        }
+
         public static object CreateThreadWithContext(ThreadFunc code, ThreadContext context, bool start)
         {
             ThreadStart wrapper = () =>
@@ -247,6 +220,35 @@ namespace Kiezel
             }
 
             return context;
+        }
+
+        [Lisp("system:enable-benchmark")]
+        public static void EnableBenchmark(bool flag)
+        {
+            if (flag)
+            {
+                Process.GetCurrentProcess().ProcessorAffinity = new IntPtr(1);
+                Process.GetCurrentProcess().PriorityClass = ProcessPriorityClass.High;
+                Thread.CurrentThread.Priority = ThreadPriority.Highest;
+            }
+            else
+            {
+                Process.GetCurrentProcess().ProcessorAffinity = new IntPtr(0);
+                Process.GetCurrentProcess().PriorityClass = ProcessPriorityClass.Normal;
+                Thread.CurrentThread.Priority = ThreadPriority.Normal;
+            }
+        }
+
+        [Lisp("system:get-current-thread")]
+        public static ThreadContext GetCurrentThread()
+        {
+            return CurrentThreadContext;
+        }
+
+        [Lisp("system:get-task-result")]
+        public static object GetTaskResult(ThreadContext task)
+        {
+            return task.GetResult();
         }
 
         public static void Listener(object state)
@@ -288,8 +290,41 @@ namespace Kiezel
             }
         }
 
-        static void InsertExternalCommand(string str)
+        [Lisp("resume")]
+        public static object Resume(ThreadContext ctx)
         {
+            var context = CheckGeneratorThreadContext(ctx);
+            return context.Resume();
+        }
+
+        //[Lisp("send")]
+        public static int Send(string text)
+        {
+            return Send(text, 8080);
+        }
+
+        //[Lisp( "send" )]
+        public static int Send(string text, int port)
+        {
+            using (var socket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp))
+            {
+                socket.Connect(new IPEndPoint(IPAddress.Loopback, port));
+                var data = System.Text.Encoding.ASCII.GetBytes(text);
+                return socket.Send(data);
+            }
+        }
+
+        [Lisp("sleep")]
+        public static void Sleep(int msec)
+        {
+            System.Threading.Thread.Sleep(msec);
+        }
+
+        [Lisp("yield")]
+        public static void Yield(object item)
+        {
+            var context = CheckGeneratorThreadContext(CurrentThreadContext);
+            context.Yield(item);
         }
 
         private static void AbortCommandListener()
@@ -301,49 +336,106 @@ namespace Kiezel
             }
         }
 
-        [Lisp("start-listener")]
-        public static void CreateCommandListener()
+        static void InsertExternalCommand(string str)
         {
-            var port = (int)GetDynamic(Symbols.ReplListenerPort);
-            CreateCommandListener(port);
         }
 
-        [Lisp("start-listener")]
-        public static void CreateCommandListener(int port)
+        #endregion Methods
+    }
+
+    public class SpecialVariables
+    {
+        #region Fields
+
+        public bool Constant;
+        public SpecialVariables Link;
+        public Symbol Sym;
+        public object _value;
+
+        #endregion Fields
+
+        #region Constructors
+
+        public SpecialVariables(Symbol sym, bool constant, object value, SpecialVariables link)
         {
-            Task.Factory.StartNew(Listener, port);
+            Sym = sym;
+            Constant = constant;
+            Value = value;
+            Link = link;
         }
+
+        #endregion Constructors
+
+        #region Properties
+
+        public object CheckedValue
+        {
+            set
+            {
+                if (Constant)
+                {
+                    throw new LispException("Cannot assign to constant: {0}", Sym);
+                }
+
+                _value = value;
+            }
+        }
+
+        public object Value
+        {
+            get
+            {
+                return _value;
+            }
+            set
+            {
+                _value = value;
+            }
+        }
+
+        #endregion Properties
+
+        #region Methods
+
+        public static SpecialVariables Clone(SpecialVariables var)
+        {
+            if (var == null)
+            {
+                return null;
+            }
+            else
+            {
+                return new SpecialVariables(var.Sym, var.Constant, var.Value, Clone(var.Link));
+            }
+        }
+
+        #endregion Methods
     }
 
     public class ThreadContext
     {
-        public Frame _Frame = null;
+        #region Fields
+
         public Cons EvaluationStack = null;
         public int NestingDepth = 0;
         public SpecialVariables SpecialStack = null;
         public Task<object> Task;
         public Thread Thread;
         public object ThreadResult;
+        public Frame _Frame = null;
+
+        #endregion Fields
+
+        #region Constructors
 
         public ThreadContext(SpecialVariables specialStack)
         {
             this.SpecialStack = SpecialVariables.Clone(specialStack);
         }
 
-        public bool IsCompleted
-        {
-            get
-            {
-                if (Task != null)
-                {
-                    return Task.IsCompleted;
-                }
-                else
-                {
-                    return Thread.ThreadState == System.Threading.ThreadState.Stopped;
-                }
-            }
-        }
+        #endregion Constructors
+
+        #region Properties
 
         public Frame Frame
         {
@@ -362,6 +454,25 @@ namespace Kiezel
             }
         }
 
+        public bool IsCompleted
+        {
+            get
+            {
+                if (Task != null)
+                {
+                    return Task.IsCompleted;
+                }
+                else
+                {
+                    return Thread.ThreadState == System.Threading.ThreadState.Stopped;
+                }
+            }
+        }
+
+        #endregion Properties
+
+        #region Methods
+
         public object GetResult()
         {
             Start();
@@ -373,36 +484,6 @@ namespace Kiezel
             {
                 Thread.Join();
                 return ThreadResult;
-            }
-        }
-
-        public void Start()
-        {
-            if (Task != null)
-            {
-                if (Task.Status == TaskStatus.Created)
-                {
-                    try
-                    {
-                        Task.Start();
-                    }
-                    catch
-                    {
-                    }
-                }
-            }
-            else
-            {
-                if (Thread.ThreadState == System.Threading.ThreadState.Unstarted)
-                {
-                    try
-                    {
-                        Thread.Start();
-                    }
-                    catch
-                    {
-                    }
-                }
             }
         }
 
@@ -448,58 +529,37 @@ namespace Kiezel
 
             return saved;
         }
-    }
 
-    public class SpecialVariables
-    {
-        public object _value;
-        public bool Constant;
-        public SpecialVariables Link;
-        public Symbol Sym;
-
-        public SpecialVariables(Symbol sym, bool constant, object value, SpecialVariables link)
+        public void Start()
         {
-            Sym = sym;
-            Constant = constant;
-            Value = value;
-            Link = link;
-        }
-
-        public object CheckedValue
-        {
-            set
+            if (Task != null)
             {
-                if (Constant)
+                if (Task.Status == TaskStatus.Created)
                 {
-                    throw new LispException("Cannot assign to constant: {0}", Sym);
+                    try
+                    {
+                        Task.Start();
+                    }
+                    catch
+                    {
+                    }
                 }
-
-                _value = value;
-            }
-        }
-
-        public object Value
-        {
-            get
-            {
-                return _value;
-            }
-            set
-            {
-                _value = value;
-            }
-        }
-
-        public static SpecialVariables Clone(SpecialVariables var)
-        {
-            if (var == null)
-            {
-                return null;
             }
             else
             {
-                return new SpecialVariables(var.Sym, var.Constant, var.Value, Clone(var.Link));
+                if (Thread.ThreadState == System.Threading.ThreadState.Unstarted)
+                {
+                    try
+                    {
+                        Thread.Start();
+                    }
+                    catch
+                    {
+                    }
+                }
             }
         }
+
+        #endregion Methods
     }
 }

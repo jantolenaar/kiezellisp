@@ -1,13 +1,21 @@
-using System;
-using System.Collections;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
+﻿#region Header
+
+// Copyright (C) Jan Tolenaar. See the file LICENSE for details.
+
+#endregion Header
 
 namespace Kiezel
 {
+    using System;
+    using System.Collections;
+    using System.Collections.Generic;
+    using System.Linq;
+    using System.Text;
+
     public partial class Runtime
     {
+        #region Methods
+
         [Lisp("as-array")]
         public static Array AsArray(IEnumerable seq, Symbol type)
         {
@@ -149,6 +157,19 @@ namespace Kiezel
             return AsMultipleElements(seq, -1);
         }
 
+        [Lisp("as-prototype")]
+        public static Prototype AsPrototype(IEnumerable seq, IApply keyFunc, IApply valueFunc)
+        {
+            var dict = new Prototype();
+            foreach (var item in ToIter( seq ))
+            {
+                var k = Funcall(keyFunc, item);
+                var v = Funcall(valueFunc, item);
+                dict.SetValue(k, v);
+            }
+            return dict;
+        }
+
         [Lisp("as-vector")]
         public static Vector AsVector(IEnumerable seq)
         {
@@ -182,6 +203,17 @@ namespace Kiezel
             var c = t2.GetConstructors();
             var x = c[2].Invoke(new object[] { AsArray(seq, type) });
             return x;
+        }
+
+        public static IEnumerable ConvertToEnumerable(IEnumerable<object> seq)
+        {
+            if (seq != null)
+            {
+                foreach (object item in seq)
+                {
+                    yield return item;
+                }
+            }
         }
 
         [Lisp("as-enumerable")]
@@ -239,29 +271,6 @@ namespace Kiezel
             return SeqBase.Range(start, end + step, step);
         }
 
-
-        public static IEnumerable ConvertToEnumerable(IEnumerable<object> seq)
-        {
-            if (seq != null)
-            {
-                foreach (object item in seq)
-                {
-                    yield return item;
-                }
-            }
-        }
-
-        [Lisp("as-prototype")]
-        public static Prototype AsPrototype(IEnumerable seq, IApply keyFunc, IApply valueFunc)
-        {
-            var dict = new Prototype();
-            foreach (var item in ToIter( seq ))
-            {
-                var k = Funcall(keyFunc, item);
-                var v = Funcall(valueFunc, item);
-                dict.SetValue(k, v);
-            }
-            return dict;
-        }
+        #endregion Methods
     }
 }

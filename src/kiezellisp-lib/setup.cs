@@ -1,60 +1,63 @@
+﻿#region Header
+
 // Copyright (C) Jan Tolenaar. See the file LICENSE for details.
 
-using System;
-using System.Collections;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.IO;
-using System.Linq;
-using System.Numerics;
-using System.Reflection;
+#endregion Header
 
 namespace Kiezel
 {
+    using System;
+    using System.Collections;
+    using System.Collections.Generic;
+    using System.Diagnostics;
+    using System.IO;
+    using System.Linq;
+    using System.Numerics;
+    using System.Reflection;
+
     public partial class Runtime
     {
-        [ThreadStatic]
-        public static ThreadContext _Context = null;
+        #region Fields
 
         public static Dictionary<Type, List<Type>> AbstractTypes;
-        #if DEBUG
-        public static bool AdaptiveCompilation = false;
-        public static int CompilationThreshold = 50;
-        
-
-        
-
-
-
-
-
-
-
-
-        #else
-        public static bool AdaptiveCompilation = true;
-        public static int CompilationThreshold = 50;
-        #endif
-        public static string ProgramFeature;
         public static bool DebugMode;
-        public static bool Mono;
         public static Readtable DefaultReadtable;
         public static Dictionary<object, string> Documentation;
         public static long GentempCounter = 0;
         public static string HomeDirectory = Directory.GetCurrentDirectory();
-        public static bool Repl;
         public static Package KeywordPackage;
         public static Package LispDocPackage;
         public static Package LispPackage;
+        public static Missing MissingValue = Missing.Value;
+        public static bool Mono;
         public static bool OptimizerEnabled;
+        public static string ProgramFeature;
         public static bool ReadDecimalNumbers;
+        public static bool Repl;
+        public static string ScriptName;
         public static bool SetupMode;
         public static Stopwatch StopWatch = Stopwatch.StartNew();
         public static Package TempPackage;
         public static Cons UserArguments;
-        public static string ScriptName;
         public static Package UserPackage;
-        public static Missing MissingValue = Missing.Value;
+        [ThreadStatic]
+        public static ThreadContext _Context = null;
+
+        #endregion Fields
+
+        #if DEBUG
+
+        public static bool AdaptiveCompilation = false;
+        public static int CompilationThreshold = 50;
+
+        #else
+
+        public static bool AdaptiveCompilation = true;
+        public static int CompilationThreshold = 50;
+
+        #endif
+
+        #region Properties
 
         public static ThreadContext CurrentThreadContext
         {
@@ -72,19 +75,50 @@ namespace Kiezel
             }
         }
 
-        [Lisp("get-program")]
-        public static string GetProgramName()
+        #endregion Properties
+
+        #region Methods
+
+        public static void AddFeature(string name)
         {
-            var assembly = Assembly.GetEntryAssembly();
-            var fileVersion = FileVersionInfo.GetVersionInfo(assembly.Location);
-            var fileName = Path.GetFileNameWithoutExtension(fileVersion.FileName);
-            return fileName;
+            var key = MakeSymbol(":", name);
+            Symbols.Features.Value = MakeCons(key, (Cons)Symbols.Features.Value);
+        }
+
+        [Lisp("exit")]
+        public static void Exit()
+        {
+            Environment.Exit(0);
+        }
+
+        [Lisp("exit")]
+        public static void Exit(int code)
+        {
+            Environment.Exit(code);
+        }
+
+        public static string GetApplicationInitFile()
+        {
+            // application config file is same folder as kiezellisp-lib.dll
+            var assembly = Assembly.GetExecutingAssembly();
+            var root = assembly.Location;
+            var dir = Path.GetDirectoryName(root);
+            return PathExtensions.Combine(dir, "kiezellisp-init");
         }
 
         [Lisp("get-program")]
         public static string GetLibraryName()
         {
             var assembly = Assembly.GetExecutingAssembly();
+            var fileVersion = FileVersionInfo.GetVersionInfo(assembly.Location);
+            var fileName = Path.GetFileNameWithoutExtension(fileVersion.FileName);
+            return fileName;
+        }
+
+        [Lisp("get-program")]
+        public static string GetProgramName()
+        {
+            var assembly = Assembly.GetEntryAssembly();
             var fileVersion = FileVersionInfo.GetVersionInfo(assembly.Location);
             var fileName = Path.GetFileNameWithoutExtension(fileVersion.FileName);
             return fileName;
@@ -101,39 +135,6 @@ namespace Kiezel
             #else
             return String.Format("{0} {1}.{2} (Release Build {3} - {4:yyyy-MM-dd})", fileVersion.ProductName, fileVersion.FileMajorPart, fileVersion.FileMinorPart, fileVersion.FileBuildPart, date);
             #endif
-        }
-
-        [Lisp("exit")]
-        public static void Exit()
-        {
-            Environment.Exit(0);
-        }
-
-        [Lisp("exit")]
-        public static void Exit(int code)
-        {
-            Environment.Exit(code);
-        }
-
-        [Lisp("set-read-decimal-numbers")]
-        public static void SetReadDecimalNumbers(bool flag)
-        {
-            ReadDecimalNumbers = flag;
-        }
-
-        public static void AddFeature(string name)
-        {
-            var key = MakeSymbol(":", name);
-            Symbols.Features.Value = MakeCons(key, (Cons)Symbols.Features.Value);
-        }
-
-        public static string GetApplicationInitFile()
-        {
-            // application config file is same folder as kiezellisp-lib.dll
-            var assembly = Assembly.GetExecutingAssembly();
-            var root = assembly.Location;
-            var dir = Path.GetDirectoryName(root);
-            return PathExtensions.Combine(dir, "kiezellisp-init");
         }
 
         public static bool HasFeature(string feature)
@@ -275,6 +276,11 @@ namespace Kiezel
             }
         }
 
+        public static void RestartRuntimeSymbols()
+        {
+            Symbols.MacroexpandHook.VariableValue = Symbols.Funcall.Value;
+        }
+
         public static void RestartSettings()
         {
             if (Type.GetType("Mono.Runtime") != null)
@@ -322,13 +328,13 @@ namespace Kiezel
                 AddFeature("x86");
             }
 
-#if CLR40
+            #if CLR40
             AddFeature( "clr40" );
-#endif
+            #endif
 
-#if CLR45
+            #if CLR45
             AddFeature("clr45");
-#endif
+            #endif
             AddFeature(ProgramFeature);
 
             AddFeature("kiezellisp");
@@ -406,11 +412,6 @@ namespace Kiezel
             Symbols.StdScr.VariableValue = null;
         }
 
-        public static void RestartRuntimeSymbols()
-        {
-            Symbols.MacroexpandHook.VariableValue = Symbols.Funcall.Value;
-        }
-
         public static void RestartVariables()
         {
             ReadDecimalNumbers = true;
@@ -422,10 +423,18 @@ namespace Kiezel
             Packages = new Dictionary<string, Package>();
             PackagesByType = new Dictionary<Type, Package>();
             Types = new Dictionary<Symbol, object>();
-            
+
             InitRandom();
 
             DefaultReadtable = GetStandardReadtable();
         }
+
+        [Lisp("set-read-decimal-numbers")]
+        public static void SetReadDecimalNumbers(bool flag)
+        {
+            ReadDecimalNumbers = flag;
+        }
+
+        #endregion Methods
     }
 }

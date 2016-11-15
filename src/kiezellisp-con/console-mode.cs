@@ -1,20 +1,26 @@
+﻿#region Header
+
 // Copyright (C) Jan Tolenaar. See the file LICENSE for details.
 
-using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.Globalization;
-using System.Reflection;
-using System.Threading;
-using System.Linq;
-using System.Text;
-using System.IO;
+#endregion Header
 
 namespace Kiezel
 {
+    using System;
+    using System.Collections.Generic;
+    using System.Diagnostics;
+    using System.Globalization;
+    using System.IO;
+    using System.Linq;
+    using System.Reflection;
+    using System.Text;
+    using System.Threading;
+
     [RestrictedImport]
-    public partial class RuntimeConsole: RuntimeConsoleBase
+    public partial class RuntimeConsole : RuntimeConsoleBase
     {
+        #region Methods
+
         [Lisp("more")]
         public static void More(string text)
         {
@@ -66,11 +72,6 @@ namespace Kiezel
                     }
                 }
             }
-        }
-
-        public static void ReplResetDisplay()
-        {
-            Console.Clear();
         }
 
         public static string ReplRead()
@@ -167,7 +168,7 @@ namespace Kiezel
                     }
                 }
             };
-           
+
             while (true)
             {
                 Paint();
@@ -218,7 +219,7 @@ namespace Kiezel
                             ++pos;
                             ++len;
                         }
-                        break;                    
+                        break;
                     }
                     case ConsoleKey.Home:
                     {
@@ -278,7 +279,7 @@ namespace Kiezel
                     case ConsoleKey.Tab:
                     {
                         MoveBackOverSpaces();
-                        var text = new string(buffer.GetRange(0, pos).ToArray());                      
+                        var text = new string(buffer.GetRange(0, pos).ToArray());
                         var searchTerm = Runtime.GetWordFromString(text, pos, Runtime.IsLispWordChar);
                         var completions = RuntimeConsoleBase.GetCompletions(searchTerm);
                         var posOrig = pos;
@@ -380,6 +381,11 @@ namespace Kiezel
             }
         }
 
+        public static void ReplResetDisplay()
+        {
+            Console.Clear();
+        }
+
         public static void RunConsoleMode(CommandLineOptions options)
         {
             Runtime.ProgramFeature = "kiezellisp-con";
@@ -400,7 +406,6 @@ namespace Kiezel
             ReadEvalPrintLoop(commandOptionArgument: options.ScriptName, initialized: false);
         }
 
-
+        #endregion Methods
     }
-
 }

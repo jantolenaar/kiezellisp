@@ -1,14 +1,20 @@
+﻿#region Header
+
 // Copyright (C) Jan Tolenaar. See the file LICENSE for details.
 
-using System;
-using System.Collections;
-using System.Collections.Generic;
-using System.Dynamic;
-using System.Linq.Expressions;
-using System.Reflection;
+#endregion Header
 
 namespace Kiezel
 {
+    using System;
+    using System.Collections;
+    using System.Collections.Generic;
+    using System.Dynamic;
+    using System.Linq.Expressions;
+    using System.Reflection;
+
+    #region Enumerations
+
     public enum LambdaKind
     {
         Function,
@@ -16,11 +22,191 @@ namespace Kiezel
         Macro
     }
 
+    #endregion Enumerations
+
+    public class ApplyWrapper : IApply, IDynamicMetaObjectProvider
+    {
+        #region Fields
+
+        private IApply Proc;
+
+        #endregion Fields
+
+        #region Constructors
+
+        public ApplyWrapper(IApply proc)
+        {
+            Proc = proc;
+        }
+
+        #endregion Constructors
+
+        #region Methods
+
+        object IApply.Apply(object[] args)
+        {
+            return Runtime.ApplyStar(Proc, args[0]);
+        }
+
+        DynamicMetaObject IDynamicMetaObjectProvider.GetMetaObject(Expression parameter)
+        {
+            return new GenericApplyMetaObject<ApplyWrapper>(parameter, this);
+        }
+
+        #endregion Methods
+    }
+
+    public class ApplyWrapper2 : IApply, IDynamicMetaObjectProvider
+    {
+        #region Fields
+
+        private Func<object[], object> Proc;
+
+        #endregion Fields
+
+        #region Constructors
+
+        public ApplyWrapper2(Func<object[], object> proc)
+        {
+            Proc = proc;
+        }
+
+        #endregion Constructors
+
+        #region Methods
+
+        object IApply.Apply(object[] args)
+        {
+            return Proc(args);
+        }
+
+        DynamicMetaObject IDynamicMetaObjectProvider.GetMetaObject(Expression parameter)
+        {
+            return new GenericApplyMetaObject<ApplyWrapper2>(parameter, this);
+        }
+
+        #endregion Methods
+    }
+
+    public class CompareApplyWrapper : IApply
+    {
+        #region Methods
+
+        object IApply.Apply(object[] args)
+        {
+            return Runtime.Compare(args[0], args[1]);
+        }
+
+        #endregion Methods
+    }
+
+    public class EqualApplyWrapper : IApply
+    {
+        #region Methods
+
+        object IApply.Apply(object[] args)
+        {
+            return Runtime.Equal(args);
+        }
+
+        #endregion Methods
+    }
+
+    public class GenericApplyMetaObject<T> : DynamicMetaObject
+    {
+        #region Fields
+
+        public T lambda;
+
+        #endregion Fields
+
+        #region Constructors
+
+        public GenericApplyMetaObject(Expression objParam, T lambda)
+            : base(objParam, BindingRestrictions.Empty, lambda)
+        {
+            this.lambda = lambda;
+        }
+
+        #endregion Constructors
+
+        #region Methods
+
+        public override DynamicMetaObject BindInvoke(InvokeBinder binder, DynamicMetaObject[] args)
+        {
+            // TODO: optimize lambda calls
+            MethodInfo method = typeof(IApply).GetMethod("Apply");
+            var list = new List<Expression>();
+            foreach (var arg in args)
+            {
+                list.Add(Runtime.ConvertArgument(arg, typeof(object)));
+            }
+            var callArg = Expression.NewArrayInit(typeof(object), list);
+            var expr = Expression.Call(Expression.Convert(this.Expression, typeof(T)), method, callArg);
+            var restrictions = BindingRestrictions.GetTypeRestriction(this.Expression, typeof(T));
+            return new DynamicMetaObject(Runtime.EnsureObjectResult(expr), restrictions);
+        }
+
+        #endregion Methods
+    }
+
+    public class IdentityApplyWrapper : IApply
+    {
+        #region Methods
+
+        object IApply.Apply(object[] args)
+        {
+            return Runtime.Identity(args);
+        }
+
+        #endregion Methods
+    }
+
+    public class LambdaApplyMetaObject : DynamicMetaObject
+    {
+        #region Fields
+
+        public LambdaClosure lambda;
+
+        #endregion Fields
+
+        #region Constructors
+
+        public LambdaApplyMetaObject(Expression objParam, LambdaClosure lambda)
+            : base(objParam, BindingRestrictions.Empty, lambda)
+        {
+            this.lambda = lambda;
+        }
+
+        #endregion Constructors
+
+        #region Methods
+
+        public override DynamicMetaObject BindInvoke(InvokeBinder binder, DynamicMetaObject[] args)
+        {
+            var restrictions = BindingRestrictions.Empty;
+            var callArgs = LambdaHelpers.FillDataFrame(lambda.Definition.Signature, args, ref restrictions);
+            MethodInfo method = typeof(LambdaClosure).GetMethod("ApplyLambdaFast", BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
+            var expr = Expression.Call(Expression.Convert(this.Expression, typeof(LambdaClosure)), method, callArgs);
+            restrictions = BindingRestrictions.GetInstanceRestriction(this.Expression, this.Value).Merge(restrictions);
+            return new DynamicMetaObject(Runtime.EnsureObjectResult(expr), restrictions);
+        }
+
+        #endregion Methods
+    }
+
     public class LambdaClosure : IDynamicMetaObjectProvider, IApply, ISyntax
     {
+        #region Fields
+
         public LambdaDefinition Definition;
         public Frame Frame;
+        public BindingRestrictions GenericRestrictions;
         public object Owner;
+
+        #endregion Fields
+
+        #region Properties
 
         public MultiMethod Generic
         {
@@ -30,8 +216,6 @@ namespace Kiezel
             }
         }
 
-        public BindingRestrictions GenericRestrictions;
-
         public LambdaKind Kind
         {
             get
@@ -40,62 +224,9 @@ namespace Kiezel
             }
         }
 
-        public object ApplyLambdaFast(object[] args)
-        {
-            // Entrypoint used by compiler after rearranging args.
-            return ApplyLambdaBind(null, args, true, null, null);
-        }
+        #endregion Properties
 
-        object IApply.Apply(object[] args)
-        {
-            // Entrypoint when called via funcall or apply or map etc.
-            if (Kind == LambdaKind.Macro)
-            {
-                var form = (Cons)args[0];
-                var env = args[1];
-                return ApplyLambdaBind(null, Runtime.AsArray(Runtime.Cdr(form)), false, env, form);
-                // throw new LispException("Invalid macro call.");
-            }
-            else if (Definition.Signature.ArgModifier == Symbols.RawParams)
-            {
-                return ApplyLambdaBind(null, args, true, null, null);
-            }
-            else
-            {
-                return ApplyLambdaBind(null, args, false, null, null);
-            }
-        }
-
-        DynamicMetaObject IDynamicMetaObjectProvider.GetMetaObject(Expression parameter)
-        {
-            return new LambdaApplyMetaObject(parameter, this);
-        }
-
-        Cons ISyntax.GetSyntax(Symbol context)
-        {
-            if (Definition.Syntax != null)
-            {
-                return new Cons(Definition.Syntax, null);
-            }
-            else
-            {
-                return null;
-            }
-        }
-
-        public override string ToString()
-        {
-            var name = Definition.Name;
-
-            if (Kind == LambdaKind.Macro)
-            {
-                return String.Format("Macro Name=\"{0}\"", name == null ? "" : name.Name);
-            }
-            else
-            {
-                return String.Format("Lambda Name=\"{0}\"", name == null ? "" : name.Name);
-            }
-        }
+        #region Methods
 
         public object ApplyLambdaBind(Cons lambdaList, object[] args, bool bound, object env, Cons wholeMacroForm)
         {
@@ -122,6 +253,12 @@ namespace Kiezel
             context.Frame = saved;
 
             return result;
+        }
+
+        public object ApplyLambdaFast(object[] args)
+        {
+            // Entrypoint used by compiler after rearranging args.
+            return ApplyLambdaBind(null, args, true, null, null);
         }
 
         public Exception FillDataFrame(LambdaSignature signature, object[] input, object[] output, int offsetOutput, object env, Cons wholeMacroForm)
@@ -274,6 +411,43 @@ namespace Kiezel
             return null;
         }
 
+        object IApply.Apply(object[] args)
+        {
+            // Entrypoint when called via funcall or apply or map etc.
+            if (Kind == LambdaKind.Macro)
+            {
+                var form = (Cons)args[0];
+                var env = args[1];
+                return ApplyLambdaBind(null, Runtime.AsArray(Runtime.Cdr(form)), false, env, form);
+                // throw new LispException("Invalid macro call.");
+            }
+            else if (Definition.Signature.ArgModifier == Symbols.RawParams)
+            {
+                return ApplyLambdaBind(null, args, true, null, null);
+            }
+            else
+            {
+                return ApplyLambdaBind(null, args, false, null, null);
+            }
+        }
+
+        DynamicMetaObject IDynamicMetaObjectProvider.GetMetaObject(Expression parameter)
+        {
+            return new LambdaApplyMetaObject(parameter, this);
+        }
+
+        Cons ISyntax.GetSyntax(Symbol context)
+        {
+            if (Definition.Syntax != null)
+            {
+                return new Cons(Definition.Syntax, null);
+            }
+            else
+            {
+                return null;
+            }
+        }
+
         public object[] MakeArgumentFrame(object[] input, object env, Cons wholeMacroForm)
         {
             var sig = Definition.Signature;
@@ -288,15 +462,37 @@ namespace Kiezel
             FillDataFrame(sig, input, output, 0, env, wholeMacroForm);
             return output;
         }
+
+        public override string ToString()
+        {
+            var name = Definition.Name;
+
+            if (Kind == LambdaKind.Macro)
+            {
+                return String.Format("Macro Name=\"{0}\"", name == null ? "" : name.Name);
+            }
+            else
+            {
+                return String.Format("Lambda Name=\"{0}\"", name == null ? "" : name.Name);
+            }
+        }
+
+        #endregion Methods
     }
 
     public class LambdaDefinition
     {
+        #region Fields
+
         public Symbol Name;
         public Func<Cons, object, object[], object> Proc;
         public LambdaSignature Signature;
         public Cons Source;
         public Cons Syntax;
+
+        #endregion Fields
+
+        #region Methods
 
         public static LambdaClosure MakeLambdaClosure(LambdaDefinition def)
         {
@@ -308,129 +504,14 @@ namespace Kiezel
 
             return closure;
         }
-    }
 
-    public class ApplyWrapper : IApply, IDynamicMetaObjectProvider
-    {
-        private IApply Proc;
-
-        public ApplyWrapper(IApply proc)
-        {
-            Proc = proc;
-        }
-
-        object IApply.Apply(object[] args)
-        {
-            return Runtime.ApplyStar(Proc, args[0]);
-        }
-
-        DynamicMetaObject IDynamicMetaObjectProvider.GetMetaObject(Expression parameter)
-        {
-            return new GenericApplyMetaObject<ApplyWrapper>(parameter, this);
-        }
-    }
-
-    public class ApplyWrapper2 : IApply, IDynamicMetaObjectProvider
-    {
-        private Func<object[], object> Proc;
-
-        public ApplyWrapper2(Func<object[], object> proc)
-        {
-            Proc = proc;
-        }
-
-        object IApply.Apply(object[] args)
-        {
-            return Proc(args);
-        }
-
-        DynamicMetaObject IDynamicMetaObjectProvider.GetMetaObject(Expression parameter)
-        {
-            return new GenericApplyMetaObject<ApplyWrapper2>(parameter, this);
-        }
-    }
-
-    public class IdentityApplyWrapper : IApply
-    {
-        object IApply.Apply(object[] args)
-        {
-            return Runtime.Identity(args);
-        }
-    }
-
-    public class EqualApplyWrapper : IApply
-    {
-        object IApply.Apply(object[] args)
-        {
-            return Runtime.Equal(args);
-        }
-    }
-
-    public class StructurallyEqualApplyWrapper : IApply
-    {
-        object IApply.Apply(object[] args)
-        {
-            return Runtime.StructurallyEqual(args[0], args[1]);
-        }
-    }
-
-    public class CompareApplyWrapper : IApply
-    {
-        object IApply.Apply(object[] args)
-        {
-            return Runtime.Compare(args[0], args[1]);
-        }
-    }
-
-    public class GenericApplyMetaObject<T> : DynamicMetaObject
-    {
-        public T lambda;
-
-        public GenericApplyMetaObject(Expression objParam, T lambda)
-            : base(objParam, BindingRestrictions.Empty, lambda)
-        {
-            this.lambda = lambda;
-        }
-
-        public override DynamicMetaObject BindInvoke(InvokeBinder binder, DynamicMetaObject[] args)
-        {
-            // TODO: optimize lambda calls
-            MethodInfo method = typeof(IApply).GetMethod("Apply");
-            var list = new List<Expression>();
-            foreach (var arg in args)
-            {
-                list.Add(Runtime.ConvertArgument(arg, typeof(object)));
-            }
-            var callArg = Expression.NewArrayInit(typeof(object), list);
-            var expr = Expression.Call(Expression.Convert(this.Expression, typeof(T)), method, callArg);
-            var restrictions = BindingRestrictions.GetTypeRestriction(this.Expression, typeof(T));
-            return new DynamicMetaObject(Runtime.EnsureObjectResult(expr), restrictions);
-        }
-    }
-
-    public class LambdaApplyMetaObject : DynamicMetaObject
-    {
-        public LambdaClosure lambda;
-
-        public LambdaApplyMetaObject(Expression objParam, LambdaClosure lambda)
-            : base(objParam, BindingRestrictions.Empty, lambda)
-        {
-            this.lambda = lambda;
-        }
-
-        public override DynamicMetaObject BindInvoke(InvokeBinder binder, DynamicMetaObject[] args)
-        {
-            var restrictions = BindingRestrictions.Empty;
-            var callArgs = LambdaHelpers.FillDataFrame(lambda.Definition.Signature, args, ref restrictions);
-            MethodInfo method = typeof(LambdaClosure).GetMethod("ApplyLambdaFast", BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
-            var expr = Expression.Call(Expression.Convert(this.Expression, typeof(LambdaClosure)), method, callArgs);
-            restrictions = BindingRestrictions.GetInstanceRestriction(this.Expression, this.Value).Merge(restrictions);
-            return new DynamicMetaObject(Runtime.EnsureObjectResult(expr), restrictions);
-        }
+        #endregion Methods
     }
 
     public class LambdaHelpers
     {
+        #region Methods
+
         public static Expression FillDataFrame(LambdaSignature signature, DynamicMetaObject[] input, ref BindingRestrictions restrictions)
         {
             var elementType = typeof(object);
@@ -636,6 +717,19 @@ namespace Kiezel
 
             return restrictions;
         }
+
+        #endregion Methods
     }
-        
+
+    public class StructurallyEqualApplyWrapper : IApply
+    {
+        #region Methods
+
+        object IApply.Apply(object[] args)
+        {
+            return Runtime.StructurallyEqual(args[0], args[1]);
+        }
+
+        #endregion Methods
+    }
 }

@@ -1,13 +1,19 @@
+﻿#region Header
+
 // Copyright (C) Jan Tolenaar. See the file LICENSE for details.
 
-using System;
-using System.Collections.Generic;
-using System.Linq;
+#endregion Header
 
 namespace Kiezel
 {
+    using System;
+    using System.Collections.Generic;
+    using System.Linq;
+
     public partial class Runtime
     {
+        #region Methods
+
         public static object ConvertToEnumType(Type enumType, object value)
         {
             var result = TryConvertToEnumType(enumType, value);
@@ -58,7 +64,7 @@ namespace Kiezel
         }
 
         public static object[] ParseKwargs(bool allowOtherArgs, object[] args, string[] names,
-                                           params object[] defaults)
+            params object[] defaults)
         {
             int count = names.Length;
             var kwargs = new object[ count ];
@@ -90,12 +96,6 @@ namespace Kiezel
                 }
             }
             return kwargs;
-        }
-
-        public static AnalysisScope ReplGetCurrentAnalysisScope()
-        {
-            var scope = ReconstructAnalysisScope(CurrentThreadContext.Frame);
-            return scope;
         }
 
         public static AnalysisScope ReconstructAnalysisScope(Frame context, AnalysisScope consoleScope = null)
@@ -143,6 +143,12 @@ namespace Kiezel
                 scope = top;
             }
 
+            return scope;
+        }
+
+        public static AnalysisScope ReplGetCurrentAnalysisScope()
+        {
+            var scope = ReconstructAnalysisScope(CurrentThreadContext.Frame);
             return scope;
         }
 
@@ -239,5 +245,7 @@ namespace Kiezel
             // used by compiler generated code
             return CurrentThreadContext.Frame.TryGetValue(sym);
         }
+
+        #endregion Methods
     }
 }

@@ -1,17 +1,27 @@
-﻿// Copyright (C) Jan Tolenaar. See the file LICENSE for details.
+﻿#region Header
 
-using System;
-using System.IO;
-using System.Collections.Generic;
-using System.Text;
+// Copyright (C) Jan Tolenaar. See the file LICENSE for details.
+
+#endregion Header
 
 namespace Kiezel
 {
+    using System;
+    using System.Collections.Generic;
+    using System.IO;
+    using System.Text;
+
     public class ReplHistory
     {
+        #region Fields
+
         private int cursor;
-        private List<string> lines;
         private string histfile;
+        private List<string> lines;
+
+        #endregion Fields
+
+        #region Constructors
 
         public ReplHistory()
         {
@@ -37,7 +47,7 @@ namespace Kiezel
             if (app != null)
             {
                 histfile = PathExtensions.Combine(dir, app) + ".history";
-            
+
                 if (File.Exists(histfile))
                 {
                     foreach (var ln in File.ReadAllLines(histfile))
@@ -49,6 +59,10 @@ namespace Kiezel
             }
         }
 
+        #endregion Constructors
+
+        #region Properties
+
         public int Count
         {
             get
@@ -56,6 +70,10 @@ namespace Kiezel
                 return lines.Count;
             }
         }
+
+        #endregion Properties
+
+        #region Methods
 
         public void Append(string s)
         {
@@ -106,7 +124,7 @@ namespace Kiezel
                     Clear(25);
 
                     foreach (string s in lines)
-                    {                       
+                    {
                         sw.WriteLine(s.Replace("\n", "<CRLF>"));
                     }
                 }
@@ -149,8 +167,6 @@ namespace Kiezel
             return Line(cursor);
         }
 
+        #endregion Methods
     }
-
 }
-
-

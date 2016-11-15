@@ -1,20 +1,33 @@
+﻿#region Header
+
 // Copyright (C) Jan Tolenaar. See the file LICENSE for details.
 
-using System;
-using System.Collections;
-using System.Linq;
-using CompareFunc = System.Func<object, object, int>;
-using JustFunc = System.Func<object>;
-using KeyFunc = System.Func<object, object>;
-using PredicateFunc = System.Func<object, bool>;
-using TestFunc = System.Func<object, object, bool>;
+#endregion Header
 
 namespace Kiezel
 {
+    using System;
+    using System.Collections;
+    using System.Linq;
+
+    using CompareFunc = System.Func<object, object, int>;
+
+    using JustFunc = System.Func<object>;
+
+    using KeyFunc = System.Func<object, object>;
+
+    using PredicateFunc = System.Func<object, bool>;
+
+    using TestFunc = System.Func<object, object, bool>;
+
     public partial class Runtime
     {
+        #region Nested Types
+
         public class SeqBase
         {
+            #region Methods
+
             public static bool Any(IApply predicate, IEnumerable seq, IApply key)
             {
                 foreach (var v in ToIter( seq ))
@@ -550,6 +563,21 @@ namespace Kiezel
                 }
             }
 
+            public static IEnumerable MergeSort(Vector seq, IApply test, IApply key)
+            {
+                if (seq == null || seq.Count <= 1)
+                {
+                    return seq;
+                }
+
+                int middle = seq.Count / 2;
+                Vector left = seq.GetRange(0, middle);
+                Vector right = seq.GetRange(middle, seq.Count - middle);
+                var left2 = MergeSort(left, test, key);
+                var right2 = MergeSort(right, test, key);
+                return Merge(left2, right2, test, key);
+            }
+
             public static object Mismatch(IEnumerable seq1, IEnumerable seq2, IApply test, IApply key)
             {
                 IEnumerator iter1 = ToIter(seq1).GetEnumerator();
@@ -578,27 +606,6 @@ namespace Kiezel
                 {
                     return position;
                 }
-            }
-
-
-            public static IEnumerable Sort(IEnumerable seq, IApply test, IApply key)
-            {
-                return MergeSort(AsVector(seq), test, key);
-            }
-
-            public static IEnumerable MergeSort(Vector seq, IApply test, IApply key)
-            {
-                if (seq == null || seq.Count <= 1)
-                {
-                    return seq;
-                }
-
-                int middle = seq.Count / 2;
-                Vector left = seq.GetRange(0, middle);
-                Vector right = seq.GetRange(middle, seq.Count - middle);
-                var left2 = MergeSort(left, test, key);
-                var right2 = MergeSort(right, test, key);
-                return Merge(left2, right2, test, key);
             }
 
             public static IEnumerable ParallelMap(IApply action, IEnumerable seq)
@@ -827,6 +834,11 @@ namespace Kiezel
                 return AsList(v2);
             }
 
+            public static IEnumerable Sort(IEnumerable seq, IApply test, IApply key)
+            {
+                return MergeSort(AsVector(seq), test, key);
+            }
+
             public static void SplitAt(int count, IEnumerable seq, out Cons left, out Cons right)
             {
                 if (seq == null)
@@ -1009,6 +1021,10 @@ namespace Kiezel
 
                 return ConvertToEnumerable(new UnisonEnumerator(seqs));
             }
+
+            #endregion Methods
         }
+
+        #endregion Nested Types
     }
 }

@@ -1,11 +1,17 @@
+﻿#region Header
+
 // Copyright (C) Jan Tolenaar. See the file LICENSE for details.
 
-using System.Linq.Expressions;
+#endregion Header
 
 namespace Kiezel
 {
+    using System.Linq.Expressions;
+
     public partial class Runtime
     {
+        #region Methods
+
         [Lisp("attr")]
         public static object Attr(object target, object attr)
         {
@@ -56,5 +62,7 @@ namespace Kiezel
                 return result;
             }
         }
+
+        #endregion Methods
     }
 }

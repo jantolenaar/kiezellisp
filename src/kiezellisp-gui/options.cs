@@ -1,16 +1,26 @@
+﻿#region Header
+
 // Copyright (C) Jan Tolenaar. See the file LICENSE for details.
 
-using System;
-using System.Reflection;
-using System.IO;
+#endregion Header
 
 namespace Kiezel
 {
+    using System;
+    using System.IO;
+    using System.Reflection;
+
     public class CommandLineOptions
     {
-        public string ScriptName;
+        #region Fields
+
         public bool Debug;
+        public string ScriptName;
         public Cons UserArguments;
+
+        #endregion Fields
+
+        #region Constructors
 
         public CommandLineOptions()
         {
@@ -19,10 +29,12 @@ namespace Kiezel
             UserArguments = null;
         }
 
+        #endregion Constructors
     }
 
     public partial class RuntimeGui
     {
+        #region Methods
 
         public static CommandLineOptions ParseArgs(string[] args)
         {
@@ -55,6 +67,7 @@ namespace Kiezel
 
             return options;
         }
+
+        #endregion Methods
     }
 }
-

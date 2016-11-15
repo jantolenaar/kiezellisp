@@ -4,19 +4,19 @@
 
 #endregion Header
 
-using System;
-using System.Collections;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.Drawing;
-using System.Globalization;
-using System.IO;
-using System.Reflection;
-using System.Threading;
-using System.Windows.Forms;
-
 namespace Kiezel
 {
+    using System;
+    using System.Collections;
+    using System.Collections.Generic;
+    using System.Diagnostics;
+    using System.Drawing;
+    using System.Globalization;
+    using System.IO;
+    using System.Reflection;
+    using System.Threading;
+    using System.Windows.Forms;
+
     #region Enumerations
 
     public enum FrameType
@@ -127,23 +127,23 @@ namespace Kiezel
 
     public partial class RuntimeRepl
     {
-        #region Static Fields
+        #region Fields
 
-        public static CommandLineOptions Options;
-        public static ReplTextForm TerminalWindow;
         public static FrameCharacters Acs;
-        public static int CharWidth;
         public static int CharHeight;
-        public static int LineHeight;
+        public static int CharWidth;
         public static Font[] Fonts;
+        public static Keys InterruptKey = Keys.Control | Keys.D;
+        public static int LineHeight;
+        public static CommandLineOptions Options;
         public static Keys PseudoKeyForMouseWheel = Keys.F24;
         public static Keys PseudoKeyForResizeEvent = Keys.Escape | Keys.Control | Keys.Alt | Keys.Shift;
-        public static Keys InterruptKey = Keys.Control | Keys.D;
         public static TextWindow StdScr;
+        public static ReplTextForm TerminalWindow;
 
-        #endregion Static Fields
+        #endregion Fields
 
-        #region Public Properties
+        #region Properties
 
         public static Color DefaultBackColor { get; set; }
 
@@ -173,9 +173,9 @@ namespace Kiezel
 
         public static int Width { get; set; }
 
-        #endregion Public Properties
+        #endregion Properties
 
-        #region Public Methods
+        #region Methods
 
         public static void CloseWindow(TextWindow win)
         {
@@ -271,7 +271,7 @@ namespace Kiezel
                 new Font(name, size, FontStyle.Strikeout | FontStyle.Underline | FontStyle.Bold),
                 new Font(name, size, FontStyle.Strikeout | FontStyle.Underline | FontStyle.Italic),
                 new Font(name, size, FontStyle.Strikeout | FontStyle.Underline | FontStyle.Italic | FontStyle.Bold),
-            };              
+            };
 
             var form = new Form();
             var graphics = form.CreateGraphics();
@@ -344,12 +344,12 @@ namespace Kiezel
             Acs = new FrameCharacters(set);
         }
 
-        #endregion Public Methods
+        #endregion Methods
     }
 
     public class TextStyle
     {
-        #region Constants
+        #region Fields
 
         public const int Bold = 1;
         public const int FontMask = 0xFF;
@@ -361,7 +361,7 @@ namespace Kiezel
         public const int Strikeout = 8;
         public const int Underline = 4;
 
-        #endregion Constants
+        #endregion Fields
     }
 
     public class TextWindowCreateArgs
@@ -457,7 +457,7 @@ namespace Kiezel
 
         #endregion Constructors
 
-        #region Public Properties
+        #region Properties
 
         public Color BackColor { get; set; }
 
@@ -469,7 +469,7 @@ namespace Kiezel
 
         public string Caption { get; set; }
 
-        public IApply OnCloseFunction { get; set; }
+        public bool CodeCompletion { get; set; }
 
         public Color ForeColor { get; set; }
 
@@ -479,13 +479,13 @@ namespace Kiezel
 
         public int Left { get; set; }
 
+        public IApply OnCloseFunction { get; set; }
+
         public bool Owned { get; set; }
 
         public bool Resizable { get; set; }
 
         public bool Scrollable { get; set; }
-
-        public bool CodeCompletion { get; set; }
 
         public int Top { get; set; }
 
@@ -493,6 +493,6 @@ namespace Kiezel
 
         public int Width { get; set; }
 
-        #endregion Public Properties
+        #endregion Properties
     }
 }

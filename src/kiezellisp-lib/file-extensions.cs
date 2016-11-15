@@ -1,12 +1,18 @@
+﻿#region Header
+
 // Copyright (C) Jan Tolenaar. See the file LICENSE for details.
 
-using System.IO;
-using System.Text;
+#endregion Header
 
 namespace Kiezel
 {
+    using System.IO;
+    using System.Text;
+
     public static class FileExtensions
     {
+        #region Methods
+
         [Extends(typeof(File))]
         public static string ReadAllText(string path)
         {
@@ -22,17 +28,10 @@ namespace Kiezel
         }
 
         [Extends(typeof(File))]
-        public static void WriteAllText(string path, string contents)
+        public static string[] ReadSharedAllLines(string path)
         {
-            contents = contents.ConvertToExternalLineEndings();
-            File.WriteAllText(path, contents);
-        }
-
-        [Extends(typeof(File))]
-        public static void WriteAllText(string path, string contents, Encoding encoding)
-        {
-            contents = contents.ConvertToExternalLineEndings();
-            File.WriteAllText(path, contents, encoding);
+            var contents = ReadSharedAllText(path);
+            return contents.Split('\n');
         }
 
         [Extends(typeof(File))]
@@ -49,10 +48,19 @@ namespace Kiezel
         }
 
         [Extends(typeof(File))]
-        public static string[] ReadSharedAllLines(string path)
+        public static void WriteAllText(string path, string contents)
         {
-            var contents = ReadSharedAllText(path);
-            return contents.Split('\n');
+            contents = contents.ConvertToExternalLineEndings();
+            File.WriteAllText(path, contents);
         }
+
+        [Extends(typeof(File))]
+        public static void WriteAllText(string path, string contents, Encoding encoding)
+        {
+            contents = contents.ConvertToExternalLineEndings();
+            File.WriteAllText(path, contents, encoding);
+        }
+
+        #endregion Methods
     }
 }

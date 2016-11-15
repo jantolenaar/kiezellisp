@@ -1,19 +1,19 @@
+﻿#region Header
+
 // Copyright (C) Jan Tolenaar. See the file LICENSE for details.
 
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Linq.Expressions;
+#endregion Header
 
 namespace Kiezel
 {
+    using System;
+    using System.Collections.Generic;
+    using System.Linq;
+    using System.Linq.Expressions;
+
     public partial class Runtime
     {
-
-        public static bool LooksLikeFunction(Symbol head)
-        {
-            return (Runtime.Functionp(head.Value) || head.SpecialFormValue != null || head.MacroValue != null) && !Runtime.Prototypep(head.Value);
-        }
+        #region Methods
 
         public static void FindCompletions(string prefix, HashSet<string> nameset)
         {
@@ -31,7 +31,6 @@ namespace Kiezel
 
                 return;
             }
-
 
             var currentPackage = CurrentPackage();
             VerifyNoMissingSymbols(currentPackage);
@@ -127,9 +126,13 @@ namespace Kiezel
                     }
                 }
             }
-
         }
 
+        public static bool LooksLikeFunction(Symbol head)
+        {
+            return (Runtime.Functionp(head.Value) || head.SpecialFormValue != null || head.MacroValue != null) && !Runtime.Prototypep(head.Value);
+        }
+
+        #endregion Methods
     }
 }
-

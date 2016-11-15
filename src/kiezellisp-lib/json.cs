@@ -1,13 +1,19 @@
+﻿#region Header
+
 // Copyright (C) Jan Tolenaar. See the file LICENSE for details.
 
-using System;
-using System.Collections;
-using System.Text;
+#endregion Header
 
 namespace Kiezel
 {
+    using System;
+    using System.Collections;
+    using System.Text;
+
     public class JsonDecoder
     {
+        #region Fields
+
         private char ch;
         private char eofChar = Convert.ToChar(0);
         private int index;
@@ -15,6 +21,10 @@ namespace Kiezel
         private string token;
         private bool tokenIsNumber;
         private bool tokenIsString;
+
+        #endregion Fields
+
+        #region Methods
 
         public object Decode(string encodedText)
         {
@@ -311,11 +321,19 @@ namespace Kiezel
 
             return vector;
         }
+
+        #endregion Methods
     }
 
     public class JsonEncoder
     {
+        #region Fields
+
         private StringBuilder buf = new StringBuilder();
+
+        #endregion Fields
+
+        #region Methods
 
         public string Encode(object value)
         {
@@ -393,5 +411,7 @@ namespace Kiezel
             str = str.Replace("\t", @"\t");
             return str;
         }
+
+        #endregion Methods
     }
 }

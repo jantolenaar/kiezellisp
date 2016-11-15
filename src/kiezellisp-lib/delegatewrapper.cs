@@ -1,19 +1,33 @@
+﻿#region Header
+
 // Copyright (C) Jan Tolenaar. See the file LICENSE for details.
 
-using System;
-using System.Collections;
-using System.Collections.Generic;
+#endregion Header
 
 namespace Kiezel
 {
+    using System;
+    using System.Collections;
+    using System.Collections.Generic;
+
     public class DelegateWrapper : IComparer, IEqualityComparer, IEqualityComparer<object>
     {
+        #region Fields
+
         private IApply function;
+
+        #endregion Fields
+
+        #region Constructors
 
         public DelegateWrapper(IApply function)
         {
             this.function = function;
         }
+
+        #endregion Constructors
+
+        #region Methods
 
         public int Compare(object item1, object item2)
         {
@@ -33,6 +47,11 @@ namespace Kiezel
         public object Obj()
         {
             return Runtime.Funcall(function);
+        }
+
+        public object ObjA_Obj(object[] items)
+        {
+            return Runtime.ApplyStar(function, new object[] { items });
         }
 
         public object Obj_Apply_Enumerable(IEnumerable item)
@@ -95,14 +114,11 @@ namespace Kiezel
             Runtime.Funcall(function, item);
         }
 
-        public object ObjA_Obj(object[] items)
-        {
-            return Runtime.ApplyStar(function, new object[] { items });
-        }
-
         public void Void()
         {
             Runtime.Funcall(function);
         }
+
+        #endregion Methods
     }
 }

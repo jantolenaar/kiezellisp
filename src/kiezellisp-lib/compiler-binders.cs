@@ -1,26 +1,41 @@
+﻿#region Header
+
 // Copyright (C) Jan Tolenaar. See the file LICENSE for details.
 
-using System;
-using System.Collections.Concurrent;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.Dynamic;
-using System.Linq.Expressions;
-using System.Reflection;
-using System.Runtime.CompilerServices;
+#endregion Header
 
 namespace Kiezel
 {
+    using System;
+    using System.Collections.Concurrent;
+    using System.Collections.Generic;
+    using System.Diagnostics;
+    using System.Dynamic;
+    using System.Linq.Expressions;
+    using System.Reflection;
+    using System.Runtime.CompilerServices;
+
+    //InvokeMemberBinderKey
     public class InvokeMemberBinderKey
     {
+        #region Fields
+
         private int _count;
         private string _name;
+
+        #endregion Fields
+
+        #region Constructors
 
         public InvokeMemberBinderKey(string name, int count)
         {
             _name = name;
             _count = count;
         }
+
+        #endregion Constructors
+
+        #region Properties
 
         public int Count
         {
@@ -38,6 +53,10 @@ namespace Kiezel
             }
         }
 
+        #endregion Properties
+
+        #region Methods
+
         public override bool Equals(object obj)
         {
             InvokeMemberBinderKey key = obj as InvokeMemberBinderKey;
@@ -49,14 +68,22 @@ namespace Kiezel
             // Stolen from DLR sources when it overrode GetHashCode on binders.
             return 0x28000000 ^ _name.GetHashCode() ^ _count.GetHashCode();
         }
+
+        #endregion Methods
     }
 
     public class KiezelGetIndexBinder : GetIndexBinder
     {
+        #region Constructors
+
         public KiezelGetIndexBinder(int count)
             : base(Runtime.GetCallInfo(count))
         {
         }
+
+        #endregion Constructors
+
+        #region Methods
 
         public override DynamicMetaObject FallbackGetIndex(
             DynamicMetaObject target, DynamicMetaObject[] indexes,
@@ -93,14 +120,22 @@ namespace Kiezel
             var restrictions = Runtime.GetTargetArgsRestrictions(target, indexes, false);
             return new DynamicMetaObject(Runtime.EnsureObjectResult(indexingExpr), restrictions);
         }
+
+        #endregion Methods
     }
 
     public class KiezelGetMemberBinder : GetMemberBinder
     {
+        #region Constructors
+
         public KiezelGetMemberBinder(string name)
             : base(name, true)
         {
         }
+
+        #endregion Constructors
+
+        #region Methods
 
         public override DynamicMetaObject FallbackGetMember(DynamicMetaObject target, DynamicMetaObject errorSuggestion)
         {
@@ -111,7 +146,6 @@ namespace Kiezel
                 return Defer(target);
             }
 
-
             var flags = BindingFlags.IgnoreCase | BindingFlags.Instance | BindingFlags.Public | BindingFlags.FlattenHierarchy;
             var name = this.Name.LispToPascalCaseName();
             var members = target.LimitType.GetMember(name, flags);
@@ -121,7 +155,6 @@ namespace Kiezel
                 var id = target.LimitType.Name + "." + name;
                 return Runtime.CheckTargetNullReference(target, "Cannot get property on null reference:" + id + "(null)");
             }
-
 
             if (members.Length == 1 && (members[0] is PropertyInfo || members[0] is FieldInfo))
             {
@@ -143,14 +176,22 @@ namespace Kiezel
                     "Property or field not found: " + target.LimitType.Name + "." + name + Runtime.CollectParameterInfo(target));
             }
         }
+
+        #endregion Methods
     }
 
     public class KiezelInvokeBinder : InvokeBinder
     {
+        #region Constructors
+
         public KiezelInvokeBinder(int count)
             : base(Runtime.GetCallInfo(count))
         {
         }
+
+        #endregion Constructors
+
+        #region Methods
 
         public override DynamicMetaObject FallbackInvoke(
             DynamicMetaObject target, DynamicMetaObject[] args,
@@ -211,14 +252,23 @@ namespace Kiezel
                 typeof(InvalidOperationException),
                 "Not invokable: " + Runtime.CollectParameterInfo(target, args));
         }
+
+        #endregion Methods
     }
 
     public class KiezelInvokeMemberBinder : InvokeMemberBinder
     {
+        #region Constructors
+
         public KiezelInvokeMemberBinder(string name, int count)
             : base(name, true, Runtime.GetCallInfo(count))
-        { // true = ignoreCase
+        {
+            // true = ignoreCase
         }
+
+        #endregion Constructors
+
+        #region Methods
 
         public override DynamicMetaObject FallbackInvoke(
             DynamicMetaObject target, DynamicMetaObject[] args,
@@ -255,7 +305,7 @@ namespace Kiezel
 
             if (target.Value == null)
             {
-                return Runtime.CheckTargetNullReference(target, 
+                return Runtime.CheckTargetNullReference(target,
                     "Cannot invoke a method on a null reference:"
                     + limitType.FullName + "." + name + Runtime.CollectParameterInfo(target, args));
             }
@@ -347,14 +397,22 @@ namespace Kiezel
                 return new DynamicMetaObject(Runtime.EnsureObjectResult(expr), restrictions);
             }
         }
+
+        #endregion Methods
     }
 
     public class KiezelSetIndexBinder : SetIndexBinder
     {
+        #region Constructors
+
         public KiezelSetIndexBinder(int count)
             : base(Runtime.GetCallInfo(count))
         {
         }
+
+        #endregion Constructors
+
+        #region Methods
 
         public override DynamicMetaObject FallbackSetIndex(
             DynamicMetaObject target, DynamicMetaObject[] indexes,
@@ -392,14 +450,22 @@ namespace Kiezel
 
             return new DynamicMetaObject(Runtime.EnsureObjectResult(setIndexExpr), restrictions);
         }
+
+        #endregion Methods
     }
 
     public class KiezelSetMemberBinder : SetMemberBinder
     {
+        #region Constructors
+
         public KiezelSetMemberBinder(string name)
             : base(name, true)
         {
         }
+
+        #endregion Constructors
+
+        #region Methods
 
         public override DynamicMetaObject FallbackSetMember(
             DynamicMetaObject target, DynamicMetaObject value,
@@ -462,10 +528,14 @@ namespace Kiezel
                     "Property or field not found: " + target.LimitType.Name + "." + name + Runtime.CollectParameterInfo(target));
             }
         }
+
+        #endregion Methods
     }
 
     public partial class Runtime
     {
+        #region Fields
+
         public static ConcurrentDictionary<int, CallInfo> _getCallInfo;
         public static ConcurrentDictionary<int, CallSiteBinder> _getIndexBinders;
         public static ConcurrentDictionary<string, CallSiteBinder> _getMemberBinders;
@@ -473,6 +543,10 @@ namespace Kiezel
         public static ConcurrentDictionary<InvokeMemberBinderKey, CallSiteBinder> _invokeMemberBinders;
         public static ConcurrentDictionary<int, CallSiteBinder> _setIndexBinders;
         public static ConcurrentDictionary<string, CallSiteBinder> _setMemberBinders;
+
+        #endregion Fields
+
+        #region Methods
 
         public static CallInfo GetCallInfo(int count)
         {
@@ -554,6 +628,7 @@ namespace Kiezel
             _invokeBinders = new ConcurrentDictionary<int, CallSiteBinder>();
             _invokeMemberBinders = new ConcurrentDictionary<InvokeMemberBinderKey, CallSiteBinder>();
         }
+
+        #endregion Methods
     }
-    //InvokeMemberBinderKey
 }

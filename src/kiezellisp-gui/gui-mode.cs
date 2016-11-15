@@ -1,18 +1,23 @@
+﻿#region Header
+
 // Copyright (C) Jan Tolenaar. See the file LICENSE for details.
 
-using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.Globalization;
-using System.Linq;
-using System.Reflection;
-using System.Threading;
+#endregion Header
 
 namespace Kiezel
 {
+    using System;
+    using System.Collections.Generic;
+    using System.Diagnostics;
+    using System.Globalization;
+    using System.Linq;
+    using System.Reflection;
+    using System.Threading;
 
     public partial class RuntimeGui
     {
+        #region Methods
+
         public static void RunGuiMode(CommandLineOptions options)
         {
             Runtime.ProgramFeature = "kiezellisp-gui";
@@ -33,8 +38,8 @@ namespace Kiezel
             {
                 Runtime.PrintTrace(Runtime.GetDiagnostics(ex));
             }
-
         }
 
+        #endregion Methods
     }
 }

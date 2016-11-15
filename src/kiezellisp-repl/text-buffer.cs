@@ -4,19 +4,43 @@
 
 #endregion Header
 
-using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.Drawing;
-using System.Globalization;
-using System.IO;
-using System.Linq;
-using System.Reflection;
-using System.Text;
-using System.Threading;
-
 namespace Kiezel
 {
+    using System;
+    using System.Collections.Generic;
+    using System.Diagnostics;
+    using System.Drawing;
+    using System.Globalization;
+    using System.IO;
+    using System.Linq;
+    using System.Reflection;
+    using System.Text;
+    using System.Threading;
+
+    public struct TextBufferItem
+    {
+        #region Fields
+
+        public Color Bg;
+        public char Code;
+        public Color Fg;
+        public int FontIndex;
+
+        #endregion Fields
+
+        #region Constructors
+
+        public TextBufferItem(char code, Color fg, Color bg, int fontIndex)
+        {
+            Code = code;
+            Fg = fg;
+            Bg = bg;
+            FontIndex = fontIndex;
+        }
+
+        #endregion Constructors
+    }
+
     public class TextBuffer
     {
         #region Fields
@@ -41,7 +65,7 @@ namespace Kiezel
 
         #endregion Constructors
 
-        #region Public Properties
+        #region Properties
 
         public Color BackColor { get; set; }
 
@@ -55,7 +79,13 @@ namespace Kiezel
 
         public int Size { get; set; }
 
-        public TextBufferItem this [int pos]
+        public int Width { get; set; }
+
+        #endregion Properties
+
+        #region Indexers
+
+        public TextBufferItem this[int pos]
         {
             get
             {
@@ -74,7 +104,7 @@ namespace Kiezel
             }
         }
 
-        public TextBufferItem this [int col, int row]
+        public TextBufferItem this[int col, int row]
         {
             get
             {
@@ -99,16 +129,9 @@ namespace Kiezel
             }
         }
 
-        public int Width { get; set; }
+        #endregion Indexers
 
-        #endregion Public Properties
-
-        #region Public Methods
-
-        public void ClearRect(int x, int y, int w, int h)
-        {
-            FillRect(x, y, w, h, ' ', ForeColor, BackColor);
-        }
+        #region Methods
 
         public static void CopyArray(Array adst, int wdst, int xdst, int ydst, Array asrc, int wsrc, int xsrc, int ysrc, int w, int h)
         {
@@ -136,16 +159,16 @@ namespace Kiezel
             }
         }
 
+        public void ClearRect(int x, int y, int w, int h)
+        {
+            FillRect(x, y, w, h, ' ', ForeColor, BackColor);
+        }
+
         public TextBuffer Copy(int x, int y, int w, int h)
         {
             var buf = new TextBuffer(w, h, ForeColor, BackColor);
             buf.CopyRect(0, 0, this, x, y, w, h);
             return buf;
-        }
-
-        public void Paste(int x, int y, TextBuffer src)
-        {
-            CopyRect(x, y, src, 0, 0, src.Width, src.Height);
         }
 
         public void CopyRect(int xdst, int ydst, TextBuffer bsrc, int x, int y, int w, int h)
@@ -172,64 +195,52 @@ namespace Kiezel
             }
         }
 
-        internal void SetMark(int pos)
+        public char Get(int col, int row)
         {
-            if (pos == -1)
-            {
-                Mark = Bound = -1;
-            }
-            else if (Mark == -1)
-            {
-                Mark = Bound = pos;
-            }
-            else
-            {
-                Bound = pos;
-            }
+            var pos = row * Width + col;
+            return Data[pos].Code;
         }
 
-        internal string GetSelection(bool insertlf)
+        public void Get(int col, int row, out char ch, out Color fg, out Color bg, out int fontIndex)
         {
-            return GetString(Mark, Bound, insertlf);
+            var pos = row * Width + col;
+            ch = Data[pos].Code;
+            fg = Data[pos].Fg;
+            bg = Data[pos].Bg;
+            fontIndex = Data[pos].FontIndex;
         }
 
-        internal string GetString(int beg, int end, bool insertlf)
+        public void Paste(int x, int y, TextBuffer src)
         {
-            if (beg > end)
-            {
-                var tmp = beg;
-                beg = end;
-                end = tmp;
-            }
-
-            var buf = new StringWriter();
-            for (int p = beg; p < end; ++p)
-            {
-                if (insertlf && p != beg && p % Width == 0)
-                {
-                    buf.Write('\n');
-                }
-                buf.Write(this[p].Code);
-            }
-            return buf.ToString();
+            CopyRect(x, y, src, 0, 0, src.Width, src.Height);
         }
 
-        internal bool Selected(int col, int row)
+        public int Scroll(int lines)
         {
-            if (Mark < Bound)
+            lines = Math.Min(lines, Height);
+            CopyRect(0, 0, this, 0, lines, Width, Height - lines);
+            ClearRect(0, Height - lines, Width, lines);
+            if (Mark != -1)
             {
-                var p = col + Width * row;
-                return (Mark <= p && p < Bound);
+                Mark = Math.Max(0, Mark - lines * Width);
             }
-            else if (Mark > Bound)
+            if (Bound != -1)
             {
-                var p = col + Width * row;
-                return (Bound <= p && p < Mark);
+                Bound = Math.Max(0, Bound - lines * Width);
             }
-            else
+            return lines;
+        }
+
+        public void Set(int col, int row, char ch, Color fg, Color bg, int fontIndex)
+        {
+            var pos = row * Width + col;
+            if (ch != (char)0)
             {
-                return false;
+                Data[pos].Code = ch;
             }
+            Data[pos].Fg = fg;
+            Data[pos].Bg = bg;
+            Data[pos].FontIndex = fontIndex;
         }
 
         internal string FindColorLine(int col, int end, int row, out Color fg, out Color bg, out int fontIndex)
@@ -277,79 +288,72 @@ namespace Kiezel
                 {
                     break;
                 }
-                    
+
                 line.Append(item.Code);
             }
             return line.ToString();
         }
 
-        public char Get(int col, int row)
+        internal string GetSelection(bool insertlf)
         {
-            var pos = row * Width + col;
-            return Data[pos].Code;
+            return GetString(Mark, Bound, insertlf);
         }
 
-        public void Get(int col, int row, out char ch, out Color fg, out Color bg, out int fontIndex)
+        internal string GetString(int beg, int end, bool insertlf)
         {
-            var pos = row * Width + col;
-            ch = Data[pos].Code;
-            fg = Data[pos].Fg;
-            bg = Data[pos].Bg;
-            fontIndex = Data[pos].FontIndex;
-        }
-
-        public int Scroll(int lines)
-        {
-            lines = Math.Min(lines, Height);
-            CopyRect(0, 0, this, 0, lines, Width, Height - lines);
-            ClearRect(0, Height - lines, Width, lines);
-            if (Mark != -1)
+            if (beg > end)
             {
-                Mark = Math.Max(0, Mark - lines * Width);
+                var tmp = beg;
+                beg = end;
+                end = tmp;
             }
-            if (Bound != -1)
+
+            var buf = new StringWriter();
+            for (int p = beg; p < end; ++p)
             {
-                Bound = Math.Max(0, Bound - lines * Width);
+                if (insertlf && p != beg && p % Width == 0)
+                {
+                    buf.Write('\n');
+                }
+                buf.Write(this[p].Code);
             }
-            return lines;
+            return buf.ToString();
         }
 
-        public void Set(int col, int row, char ch, Color fg, Color bg, int fontIndex)
+        internal bool Selected(int col, int row)
         {
-            var pos = row * Width + col;
-            if (ch != (char)0)
+            if (Mark < Bound)
             {
-                Data[pos].Code = ch;
+                var p = col + Width * row;
+                return (Mark <= p && p < Bound);
             }
-            Data[pos].Fg = fg;
-            Data[pos].Bg = bg;
-            Data[pos].FontIndex = fontIndex;
+            else if (Mark > Bound)
+            {
+                var p = col + Width * row;
+                return (Bound <= p && p < Mark);
+            }
+            else
+            {
+                return false;
+            }
         }
 
-        #endregion Public Methods
-    }
-
-    public struct TextBufferItem
-    {
-        #region Fields
-
-        public Color Bg;
-        public char Code;
-        public Color Fg;
-        public int FontIndex;
-
-        #endregion Fields
-
-        #region Constructors
-
-        public TextBufferItem(char code, Color fg, Color bg, int fontIndex)
+        internal void SetMark(int pos)
         {
-            Code = code;
-            Fg = fg;
-            Bg = bg;
-            FontIndex = fontIndex;
+            if (pos == -1)
+            {
+                Mark = Bound = -1;
+            }
+            else if (Mark == -1)
+            {
+                Mark = Bound = pos;
+            }
+            else
+            {
+                Bound = pos;
+            }
         }
 
-        #endregion Constructors
+        #endregion Methods
     }
 }

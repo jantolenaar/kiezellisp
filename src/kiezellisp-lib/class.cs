@@ -1,11 +1,23 @@
-using System;
-using System.Collections.Generic;
+﻿#region Header
+
+// Copyright (C) Jan Tolenaar. See the file LICENSE for details.
+
+#endregion Header
 
 namespace Kiezel
 {
+    using System;
+    using System.Collections.Generic;
+
     public partial class Runtime
     {
+        #region Fields
+
         public static Dictionary<Symbol, object> Types;
+
+        #endregion Fields
+
+        #region Methods
 
         [Lisp("find-type")]
         public static object FindType(Symbol name)
@@ -53,5 +65,7 @@ namespace Kiezel
             Types[name] = type;
             return type;
         }
+
+        #endregion Methods
     }
 }

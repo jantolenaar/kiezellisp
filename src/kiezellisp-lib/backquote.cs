@@ -1,42 +1,18 @@
+﻿#region Header
+
 // Copyright (C) Jan Tolenaar. See the file LICENSE for details.
 
-using System.Collections;
-
-using KeyFunc = System.Func<object, object>;
+#endregion Header
 
 namespace Kiezel
 {
+    using System.Collections;
+
+    using KeyFunc = System.Func<object, object>;
+
     public partial class Runtime
     {
-        public static object QuasiQuoteExpandRest(object expr)
-        {
-            Cons list = expr as Cons;
-
-            if (!(expr is Cons) || list == null)
-            {
-                // not a list or empty
-                if (Symbolp(expr) && !Keywordp(expr))
-                {
-                    return MakeList(Symbols.bqQuote, expr);
-                }
-                else
-                {
-                    return expr;
-                }
-            }
-
-            if (First(list) == Symbols.Unquote)
-            {
-                return Second(list);
-            }
-
-            if (First(list) == Symbols.UnquoteSplicing)
-            {
-                throw new LispException("`,@args is illegal syntax");
-            }
-
-            return QuasiQuoteExpandList(list);
-        }
+        #region Methods
 
         public static object QuasiQuoteExpandList(Cons list)
         {
@@ -108,7 +84,98 @@ namespace Kiezel
             }
         }
 
+        public static object QuasiQuoteExpandRest(object expr)
+        {
+            Cons list = expr as Cons;
+
+            if (!(expr is Cons) || list == null)
+            {
+                // not a list or empty
+                if (Symbolp(expr) && !Keywordp(expr))
+                {
+                    return MakeList(Symbols.bqQuote, expr);
+                }
+                else
+                {
+                    return expr;
+                }
+            }
+
+            if (First(list) == Symbols.Unquote)
+            {
+                return Second(list);
+            }
+
+            if (First(list) == Symbols.UnquoteSplicing)
+            {
+                throw new LispException("`,@args is illegal syntax");
+            }
+
+            return QuasiQuoteExpandList(list);
+        }
+
+        #endregion Methods
+
         #if XXX
+
+        // When BQ-ATTACH-APPEND is called, the OP should be #:BQ-APPEND
+        // or #:BQ-NCONC.  This produces a form (op item result) but
+        // some simplifications are done on the fly:
+        //
+        //  (op '(a b c) '(d e f g)) => '(a b c d e f g)
+        //  (op item 'nil) => item, provided item is not a splicable frob
+        //  (op item 'nil) => (op item), if item is a splicable frob
+        //  (op item (op a b c)) => (op item a b c)
+        public static Cons AttachAppend( Symbol op, object item, Cons result )
+        {
+            if ( NullOrQuoted( item ) && NullOrQuoted( result ) )
+            {
+                return MakeList( Symbols.bqQuote, Append( (Cons) Second( item ), (Cons) Second( result ) ) );
+            }
+            else if ( result == null || StructurallyEqual( result, bqQuoteNil ) )
+            {
+                return (Cons)item;
+            }
+            else if ( Consp( result ) && First( result ) == op )
+            {
+                return MakeListStar( op, item, Cdr( result ) );
+            }
+            else
+            {
+                return MakeList( op, item, result );
+            }
+        }
+
+        // The effect of BQ-ATTACH-CONSES is to produce a form as if by
+        // `(LIST* ,@items ,result) but some simplifications are done
+        // on the fly.
+        //
+        //  (LIST* 'a 'b 'c 'd) => '(a b c . d)
+        //  (LIST* a b c 'nil) => (LIST a b c)
+        //  (LIST* a b c (LIST* d e f g)) => (LIST* a b c d e f g)
+        //  (LIST* a b c (LIST d e f g)) => (LIST a b c d e f g)
+        public static Cons AttachConses(Cons items, Cons result)
+        {
+            if ( Every( NullOrQuoted, items ) && NullOrQuoted( result ) )
+            {
+                return MakeList( Symbols.bqQuote, Append( Map( Second, items ), (Cons) Second( result ) ) );
+            }
+            else if ( result == null || StructurallyEqual( result, bqQuoteNil ) )
+            {
+                return new Cons( Symbols.bqList, items );
+            }
+            else if ( Consp( result ) && ( Car( result ) == Symbols.bqList || Car( result ) == Symbols.bqListStar ) )
+            {
+                return new Cons( Car( result ), Append( items, Cdr( result ) ) );
+            }
+            else
+            {
+                return new Cons( Symbols.bqList, Append( items, MakeList( result ) ) );
+            }
+        }
+
+        public static Cons bqQuoteNil = MakeList( Symbols.bqQuote, null );
+
         public static object MapTree(KeyFunc fn, object x)
         {
             if (Consp(x))
@@ -129,6 +196,23 @@ namespace Kiezel
             {
                 return fn(x);
             }
+        }
+
+        public static bool NullOrQuoted( object x )
+        {
+            if ( x == null )
+            {
+                return true;
+            }
+
+            var y = ( Cons ) x;
+
+            if ( y != null && Car( y ) == Symbols.bqQuote )
+            {
+                return true;
+            }
+
+            return false;
         }
 
         [Lisp( "simplify" )]
@@ -185,83 +269,6 @@ namespace Kiezel
             return result;
         }
 
-        public static bool NullOrQuoted( object x )
-        {
-            if ( x == null )
-            {
-                return true;
-            }
-
-            var y = ( Cons ) x;
-
-            if ( y != null && Car( y ) == Symbols.bqQuote )
-            {
-                return true;
-            }
-
-            return false;
-        }
-
-        public static Cons bqQuoteNil = MakeList( Symbols.bqQuote, null );
-
-        // When BQ-ATTACH-APPEND is called, the OP should be #:BQ-APPEND
-        // or #:BQ-NCONC.  This produces a form (op item result) but
-        // some simplifications are done on the fly:
-        //
-        //  (op '(a b c) '(d e f g)) => '(a b c d e f g)
-        //  (op item 'nil) => item, provided item is not a splicable frob
-        //  (op item 'nil) => (op item), if item is a splicable frob
-        //  (op item (op a b c)) => (op item a b c)
-
-        public static Cons AttachAppend( Symbol op, object item, Cons result )
-        {
-            if ( NullOrQuoted( item ) && NullOrQuoted( result ) )
-            {
-                return MakeList( Symbols.bqQuote, Append( (Cons) Second( item ), (Cons) Second( result ) ) );
-            }
-            else if ( result == null || StructurallyEqual( result, bqQuoteNil ) )
-            {
-                return (Cons)item;
-            }
-            else if ( Consp( result ) && First( result ) == op )
-            {
-                return MakeListStar( op, item, Cdr( result ) );
-            }
-            else
-            {
-                return MakeList( op, item, result );
-            }
-        }
-
-        // The effect of BQ-ATTACH-CONSES is to produce a form as if by
-        // `(LIST* ,@items ,result) but some simplifications are done
-        // on the fly.
-        //
-        //  (LIST* 'a 'b 'c 'd) => '(a b c . d)
-        //  (LIST* a b c 'nil) => (LIST a b c)
-        //  (LIST* a b c (LIST* d e f g)) => (LIST* a b c d e f g)
-        //  (LIST* a b c (LIST d e f g)) => (LIST a b c d e f g)
-
-        public static Cons AttachConses (Cons items, Cons result)
-        {
-            if ( Every( NullOrQuoted, items ) && NullOrQuoted( result ) )
-            {
-                return MakeList( Symbols.bqQuote, Append( Map( Second, items ), (Cons) Second( result ) ) );
-            }
-            else if ( result == null || StructurallyEqual( result, bqQuoteNil ) )
-            {
-                return new Cons( Symbols.bqList, items );
-            }
-            else if ( Consp( result ) && ( Car( result ) == Symbols.bqList || Car( result ) == Symbols.bqListStar ) )
-            {
-                return new Cons( Car( result ), Append( items, Cdr( result ) ) );
-            }
-            else
-            {
-                return new Cons( Symbols.bqList, Append( items, MakeList( result ) ) );
-            }
-        }
-
-#endif
+        #endif
     }
 }

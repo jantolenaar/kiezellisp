@@ -1,17 +1,23 @@
+﻿#region Header
+
 // Copyright (C) Jan Tolenaar. See the file LICENSE for details.
 
-using System;
-using System.Collections.Generic;
-using System.Dynamic;
-using System.Linq;
-using System.Linq.Expressions;
-using System.Reflection;
-using System.Runtime.CompilerServices;
+#endregion Header
 
 namespace Kiezel
 {
+    using System;
+    using System.Collections.Generic;
+    using System.Dynamic;
+    using System.Linq;
+    using System.Linq.Expressions;
+    using System.Reflection;
+    using System.Runtime.CompilerServices;
+
     public class AccessorLambda : IDynamicMetaObjectProvider, IApply
     {
+        #region Fields
+
         public string Members;
         public bool Nullable;
         public Func<object> Proc0;
@@ -22,11 +28,19 @@ namespace Kiezel
         public Func<object, object, object, object, object, object> Proc5;
         public Func<object, object, object, object, object, object, object> Proc6;
 
+        #endregion Fields
+
+        #region Constructors
+
         public AccessorLambda(bool nullable, string members)
         {
             Members = members;
             Nullable = nullable;
         }
+
+        #endregion Constructors
+
+        #region Methods
 
         object IApply.Apply(object[] args)
         {
@@ -111,11 +125,6 @@ namespace Kiezel
             return new AccessorLambdaMetaObject(parameter, this);
         }
 
-        public override string ToString()
-        {
-            return String.Format("AccessorLambda Name=\"{0}\" Nullable=\"{1}\"", Members, Nullable);
-        }
-
         public Delegate MakeExpressionProc(int argCount)
         {
             var args = new ParameterExpression[ argCount ];
@@ -127,17 +136,34 @@ namespace Kiezel
             var proc = Runtime.CompileToDelegate(code, args);
             return proc;
         }
+
+        public override string ToString()
+        {
+            return String.Format("AccessorLambda Name=\"{0}\" Nullable=\"{1}\"", Members, Nullable);
+        }
+
+        #endregion Methods
     }
 
     public class AccessorLambdaMetaObject : DynamicMetaObject
     {
+        #region Fields
+
         public AccessorLambda Lambda;
+
+        #endregion Fields
+
+        #region Constructors
 
         public AccessorLambdaMetaObject(Expression parameter, AccessorLambda lambda)
             : base(parameter, BindingRestrictions.Empty, lambda)
         {
             this.Lambda = lambda;
         }
+
+        #endregion Constructors
+
+        #region Methods
 
         public static Expression MakeExpression(bool nullable, string members, Expression[] args)
         {
@@ -204,10 +230,14 @@ namespace Kiezel
             var restrictions = BindingRestrictions.GetInstanceRestriction(this.Expression, this.Value);
             return new DynamicMetaObject(code, restrictions);
         }
+
+        #endregion Methods
     }
 
     public class ImportedConstructor : IDynamicMetaObjectProvider, IApply
     {
+        #region Fields
+
         public Type DeclaringType;
         public ConstructorInfo[] Members;
         public dynamic Proc0;
@@ -223,6 +253,10 @@ namespace Kiezel
         public dynamic Proc7;
         public dynamic Proc8;
         public dynamic Proc9;
+
+        #endregion Fields
+
+        #region Constructors
 
         public ImportedConstructor(ConstructorInfo[] members)
         {
@@ -243,13 +277,9 @@ namespace Kiezel
             Proc12 = this;
         }
 
-        public bool HasKiezelMethods
-        {
-            get
-            {
-                return Members.Any(x => x.DeclaringType.FullName.IndexOf("Kiezel") != -1);
-            }
-        }
+        #endregion Constructors
+
+        #region Properties
 
         public string FullName
         {
@@ -258,6 +288,18 @@ namespace Kiezel
                 return String.Format("{0}.{1}", DeclaringType, DeclaringType.Name);
             }
         }
+
+        public bool HasKiezelMethods
+        {
+            get
+            {
+                return Members.Any(x => x.DeclaringType.FullName.IndexOf("Kiezel") != -1);
+            }
+        }
+
+        #endregion Properties
+
+        #region Methods
 
         object IApply.Apply(object[] args)
         {
@@ -344,17 +386,29 @@ namespace Kiezel
         {
             return String.Format("BuiltinConstructor Method=\"{0}.{1}\"", Members[0].DeclaringType, Members[0].Name);
         }
+
+        #endregion Methods
     }
 
     public class ImportedConstructorMetaObject : DynamicMetaObject
     {
+        #region Fields
+
         public ImportedConstructor runtimeModel;
+
+        #endregion Fields
+
+        #region Constructors
 
         public ImportedConstructorMetaObject(Expression objParam, ImportedConstructor runtimeModel)
             : base(objParam, BindingRestrictions.Empty, runtimeModel)
         {
             this.runtimeModel = runtimeModel;
         }
+
+        #endregion Constructors
+
+        #region Methods
 
         public override DynamicMetaObject BindInvoke(InvokeBinder binder, DynamicMetaObject[] args)
         {
@@ -386,15 +440,23 @@ namespace Kiezel
             return new DynamicMetaObject(Runtime.EnsureObjectResult(Expression.New(ctor, callArgs)), restrictions);
         }
 
+        #endregion Methods
+
+        #region Other
+
         //public override DynamicMetaObject BindConvert( ConvertBinder binder )
         //{
         //    var expr = Expression.Constant( RuntimeHelpers.CreateDelegate( runtimeModel.Runtime, runtimeModel.Members[ 0 ] ) );
         //    return new DynamicMetaObject( expr, this.Restrictions );
         //}
+
+        #endregion Other
     }
 
     public class ImportedFunction : IDynamicMetaObjectProvider, IApply, ISyntax
     {
+        #region Fields
+
         public MethodInfo[] BuiltinExtensionMembers;
         public Type DeclaringType;
         public MethodInfo[] ExternalExtensionMembers;
@@ -415,6 +477,10 @@ namespace Kiezel
         public dynamic Proc9;
         public bool Pure;
 
+        #endregion Fields
+
+        #region Constructors
+
         public ImportedFunction(string name, Type declaringType)
         {
             Init();
@@ -433,6 +499,10 @@ namespace Kiezel
             Pure = pure;
         }
 
+        #endregion Constructors
+
+        #region Properties
+
         public string FullName
         {
             get
@@ -448,6 +518,10 @@ namespace Kiezel
                 return Members.Any(x => x.DeclaringType.FullName.IndexOf("Kiezel") != -1);
             }
         }
+
+        #endregion Properties
+
+        #region Methods
 
         object IApply.Apply(object[] args)
         {
@@ -530,19 +604,21 @@ namespace Kiezel
             return new ImportedFunctionMetaObject(parameter, this);
         }
 
-        Cons ISyntax.GetSyntax(Symbol context)
+        public void Init()
         {
-            var v = new Vector();
-            foreach (var m in Members)
-            {
-                v.Add(Runtime.GetMethodSyntax(m, context));
-            }
-            return Runtime.AsList(Runtime.SeqBase.Distinct(v, Runtime.StructurallyEqualApply));
-        }
-
-        public override string ToString()
-        {
-            return String.Format("Function Name=\"{0}.{1}\"", DeclaringType, Name);
+            Proc0 = this;
+            Proc1 = this;
+            Proc2 = this;
+            Proc3 = this;
+            Proc4 = this;
+            Proc5 = this;
+            Proc6 = this;
+            Proc7 = this;
+            Proc8 = this;
+            Proc9 = this;
+            Proc10 = this;
+            Proc11 = this;
+            Proc12 = this;
         }
 
         public bool IsProperOrExtensionInstanceMethod(MethodInfo method)
@@ -558,16 +634,31 @@ namespace Kiezel
             return false;
         }
 
-        public bool TryBindInvokeBestMethod(bool restrictionOnTargetInstance, DynamicMetaObject target, DynamicMetaObject[] args, out DynamicMetaObject result)
+        Cons ISyntax.GetSyntax(Symbol context)
         {
-            DynamicMetaObject argsFirst = null;
-            DynamicMetaObject[] argsRest = null;
-            return TryBindInvokeBestMethod(false, restrictionOnTargetInstance, target, args, argsFirst, argsRest, out result);
+            var v = new Vector();
+            foreach (var m in Members)
+            {
+                v.Add(Runtime.GetMethodSyntax(m, context));
+            }
+            return Runtime.AsList(Runtime.SeqBase.Distinct(v, Runtime.StructurallyEqualApply));
+        }
+
+        public override string ToString()
+        {
+            return String.Format("Function Name=\"{0}.{1}\"", DeclaringType, Name);
         }
 
         public bool TryBindInvokeBestInstanceMethod(bool restrictionOnTargetInstance, DynamicMetaObject target, DynamicMetaObject argsFirst, DynamicMetaObject[] argsRest, out DynamicMetaObject result)
         {
             return TryBindInvokeBestMethod(true, restrictionOnTargetInstance, target, null, argsFirst, argsRest, out result);
+        }
+
+        public bool TryBindInvokeBestMethod(bool restrictionOnTargetInstance, DynamicMetaObject target, DynamicMetaObject[] args, out DynamicMetaObject result)
+        {
+            DynamicMetaObject argsFirst = null;
+            DynamicMetaObject[] argsRest = null;
+            return TryBindInvokeBestMethod(false, restrictionOnTargetInstance, target, args, argsFirst, argsRest, out result);
         }
 
         public bool TryBindInvokeBestMethod(bool instanceMethodsOnly, bool restrictionOnTargetInstance, DynamicMetaObject target, DynamicMetaObject[] args, DynamicMetaObject argsFirst, DynamicMetaObject[] argsRest, out DynamicMetaObject result)
@@ -697,33 +788,28 @@ namespace Kiezel
             return true;
         }
 
-        public void Init()
-        {
-            Proc0 = this;
-            Proc1 = this;
-            Proc2 = this;
-            Proc3 = this;
-            Proc4 = this;
-            Proc5 = this;
-            Proc6 = this;
-            Proc7 = this;
-            Proc8 = this;
-            Proc9 = this;
-            Proc10 = this;
-            Proc11 = this;
-            Proc12 = this;
-        }
+        #endregion Methods
     }
 
     public class ImportedFunctionMetaObject : DynamicMetaObject
     {
+        #region Fields
+
         public ImportedFunction runtimeModel;
+
+        #endregion Fields
+
+        #region Constructors
 
         public ImportedFunctionMetaObject(Expression objParam, ImportedFunction runtimeModel)
             : base(objParam, BindingRestrictions.Empty, runtimeModel)
         {
             this.runtimeModel = runtimeModel;
         }
+
+        #endregion Constructors
+
+        #region Methods
 
         public override DynamicMetaObject BindInvoke(InvokeBinder binder, DynamicMetaObject[] args)
         {
@@ -735,10 +821,16 @@ namespace Kiezel
             return result;
         }
 
+        #endregion Methods
+
+        #region Other
+
         //public override DynamicMetaObject BindConvert( ConvertBinder binder )
         //{
         //    var expr = Expression.Constant( RuntimeHelpers.CreateDelegate( runtimeModel.Runtime, runtimeModel.Members[ 0 ] ) );
         //    return new DynamicMetaObject( expr, this.Restrictions );
         //}
+
+        #endregion Other
     }
 }

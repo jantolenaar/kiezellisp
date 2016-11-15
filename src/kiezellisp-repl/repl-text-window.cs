@@ -4,11 +4,11 @@
 
 #endregion Header
 
-using System;
-using System.Windows.Forms;
-
 namespace Kiezel
 {
+    using System;
+    using System.Windows.Forms;
+
     public class ReplTextWindow : TextWindow
     {
         #region Constructors
@@ -21,7 +21,7 @@ namespace Kiezel
 
         #endregion Constructors
 
-        #region Private Methods
+        #region Methods
 
         void CmdEnterData()
         {
@@ -90,6 +90,6 @@ namespace Kiezel
             AddEditHandler(Keys.F1, CmdHelp);
         }
 
-        #endregion Private Methods
+        #endregion Methods
     }
 }

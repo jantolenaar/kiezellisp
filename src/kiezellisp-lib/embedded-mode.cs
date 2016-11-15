@@ -1,17 +1,33 @@
+﻿#region Header
+
 // Copyright (C) Jan Tolenaar. See the file LICENSE for details.
 
-using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.Globalization;
-using System.Linq;
-using System.Reflection;
-using System.Threading;
+#endregion Header
 
 namespace Kiezel
 {
+    using System;
+    using System.Collections.Generic;
+    using System.Diagnostics;
+    using System.Globalization;
+    using System.Linq;
+    using System.Reflection;
+    using System.Threading;
+
     public class EmbeddedMode
     {
+        #region Methods
+
+        public static object Funcall(string functionName, params object[] args)
+        {
+            var sym = Runtime.FindSymbol(functionName);
+            return Runtime.Apply(sym, args);
+        }
+
+        public static string GetDiagnostics(Exception ex)
+        {
+            return Runtime.GetDiagnostics(ex);
+        }
 
         public static void Init(bool debugMode = false)
         {
@@ -23,16 +39,6 @@ namespace Kiezel
             Runtime.RestartLoadFiles(0);
         }
 
-        public static string GetDiagnostics(Exception ex)
-        {
-            return Runtime.GetDiagnostics(ex);
-        }
-
-        public static object Funcall(string functionName, params object[] args)
-        {
-            var sym = Runtime.FindSymbol(functionName);
-            return Runtime.Apply(sym, args);
-        }
+        #endregion Methods
     }
-
 }

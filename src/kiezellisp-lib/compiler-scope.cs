@@ -1,12 +1,18 @@
+﻿#region Header
+
 // Copyright (C) Jan Tolenaar. See the file LICENSE for details.
 
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Linq.Expressions;
+#endregion Header
 
 namespace Kiezel
 {
+    using System;
+    using System.Collections.Generic;
+    using System.Linq;
+    using System.Linq.Expressions;
+
+    #region Enumerations
+
     [Flags]
     public enum ScopeFlags
     {
@@ -23,39 +29,32 @@ namespace Kiezel
         All = 31
     }
 
+    #endregion Enumerations
+
     public class AnalysisScope
     {
-        public HashSet<Symbol> FreeVariables;
-
-        public bool IsBlockScope;
-
-        public bool IsFileScope;
-
-        public bool IsLambda;
-
-        public string Name;
-
-        public List<Symbol> Names = null;
-
-        public AnalysisScope Parent;
-
-        public ParameterExpression TagBodySaved;
-
-        public List<LabelTarget> Labels = new List<LabelTarget>();
-
-        public ParameterExpression Tilde;
-
-        public bool UsesDynamicVariables = false;
-
-        public bool UsesFramedVariables = false;
-
-        public bool UsesTilde = false;
-
-        public bool UsesTildeHere = false;
-
-        public List<ScopeEntry> Variables = new List<ScopeEntry>();
+        #region Fields
 
         public bool AnyLabelsCreated;
+        public HashSet<Symbol> FreeVariables;
+        public bool IsBlockScope;
+        public bool IsFileScope;
+        public bool IsLambda;
+        public List<LabelTarget> Labels = new List<LabelTarget>();
+        public string Name;
+        public List<Symbol> Names = null;
+        public AnalysisScope Parent;
+        public ParameterExpression TagBodySaved;
+        public ParameterExpression Tilde;
+        public bool UsesDynamicVariables = false;
+        public bool UsesFramedVariables = false;
+        public bool UsesTilde = false;
+        public bool UsesTildeHere = false;
+        public List<ScopeEntry> Variables = new List<ScopeEntry>();
+
+        #endregion Fields
+
+        #region Constructors
 
         public AnalysisScope()
         {
@@ -67,6 +66,10 @@ namespace Kiezel
             Parent = parent;
             Name = name;
         }
+
+        #endregion Constructors
+
+        #region Properties
 
         public List<ParameterExpression> Parameters
         {
@@ -82,6 +85,22 @@ namespace Kiezel
             {
                 return Labels.Count != 0;
             }
+        }
+
+        #endregion Properties
+
+        #region Methods
+
+        public void ChangeNativeToFrameLocal(ScopeEntry entry)
+        {
+            if (Names == null)
+            {
+                Names = new List<Symbol>();
+            }
+
+            UsesFramedVariables = true;
+            Names.Add(entry.Key);
+            entry.Value = Names.Count - 1;
         }
 
         public void CheckVariables()
@@ -116,11 +135,6 @@ namespace Kiezel
             }
         }
 
-        public void DefineMacro(Symbol sym, object macro, ScopeFlags flags)
-        {
-            Variables.Add(new ScopeEntry(this, sym, macro, flags));
-        }
-
         public int DefineFrameLocal(Symbol sym, ScopeFlags flags)
         {
             if (Names == null)
@@ -135,16 +149,9 @@ namespace Kiezel
             return Names.Count - 1;
         }
 
-        public void ChangeNativeToFrameLocal(ScopeEntry entry)
+        public void DefineMacro(Symbol sym, object macro, ScopeFlags flags)
         {
-            if (Names == null)
-            {
-                Names = new List<Symbol>();
-            }
-
-            UsesFramedVariables = true;
-            Names.Add(entry.Key);
-            entry.Value = Names.Count - 1;
+            Variables.Add(new ScopeEntry(this, sym, macro, flags));
         }
 
         public ParameterExpression DefineNativeLocal(Symbol sym, ScopeFlags flags, Type type = null)
@@ -155,22 +162,18 @@ namespace Kiezel
             return parameter;
         }
 
+        public bool FindDuplicate(Symbol name)
+        {
+            var entry = FindLocal(name);
+            return entry != null && entry.Scope == this;
+        }
+
         public bool FindLocal(Symbol sym, ScopeFlags reason)
         {
             int depth;
             ScopeEntry entry;
             return FindLocal(sym, reason, out depth, out entry);
         }
-
-        bool LexicalSymEqual(Symbol sym1, Symbol sym2)
-        {
-            if (sym1 == sym2)
-            {
-                return true;
-            }
-            return false;
-        }
-
 
         public bool FindLocal(Symbol sym, ScopeFlags reason, out int depth, out ScopeEntry entry)
         {
@@ -250,12 +253,6 @@ namespace Kiezel
             return false;
         }
 
-        public bool FindDuplicate(Symbol name)
-        {
-            var entry = FindLocal(name);
-            return entry != null && entry.Scope == this;
-        }
-
         public ScopeEntry FindLocal(Symbol name)
         {
             int depth;
@@ -281,14 +278,31 @@ namespace Kiezel
                 Runtime.PrintWarning(error, " ", sym.Name, " in ", context);
             }
         }
+
+        bool LexicalSymEqual(Symbol sym1, Symbol sym2)
+        {
+            if (sym1 == sym2)
+            {
+                return true;
+            }
+            return false;
+        }
+
+        #endregion Methods
     }
 
     public class ScopeEntry
     {
-        public AnalysisScope Scope;
+        #region Fields
+
         public ScopeFlags Flags;
         public Symbol Key;
+        public AnalysisScope Scope;
         public object Value;
+
+        #endregion Fields
+
+        #region Constructors
 
         public ScopeEntry(AnalysisScope scope, Symbol key, object value, ScopeFlags flags)
         {
@@ -298,37 +312,9 @@ namespace Kiezel
             Flags = flags;
         }
 
-        public int Index
-        {
-            get
-            { 
-                return (Value is Int32) ? (Int32)Value : -1;
-            }
-        }
+        #endregion Constructors
 
-        public LambdaClosure MacroValue
-        {
-            get
-            { 
-                return Value as LambdaClosure; 
-            }
-        }
-
-        public SymbolMacro SymbolMacroValue
-        {
-            get
-            { 
-                return Value as SymbolMacro; 
-            }
-        }
-
-        public ParameterExpression Parameter
-        {
-            get
-            {
-                return Value as ParameterExpression;
-            }
-        }
+        #region Properties
 
         public bool Assigned
         {
@@ -354,11 +340,35 @@ namespace Kiezel
             }
         }
 
+        public int Index
+        {
+            get
+            {
+                return (Value is Int32) ? (Int32)Value : -1;
+            }
+        }
+
         public bool Initialized
         {
             get
             {
                 return (Flags & ScopeFlags.Initialized) != 0;
+            }
+        }
+
+        public LambdaClosure MacroValue
+        {
+            get
+            {
+                return Value as LambdaClosure;
+            }
+        }
+
+        public ParameterExpression Parameter
+        {
+            get
+            {
+                return Value as ParameterExpression;
             }
         }
 
@@ -369,5 +379,15 @@ namespace Kiezel
                 return (Flags & ScopeFlags.Referenced) != 0;
             }
         }
+
+        public SymbolMacro SymbolMacroValue
+        {
+            get
+            {
+                return Value as SymbolMacro;
+            }
+        }
+
+        #endregion Properties
     }
 }

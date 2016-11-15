@@ -1,12 +1,24 @@
+﻿#region Header
+
 // Copyright (C) Jan Tolenaar. See the file LICENSE for details.
 
-using System;
-using System.Threading;
+#endregion Header
 
 namespace Kiezel
 {
+    using System;
+    using System.Threading;
+
     public partial class Runtime
     {
+        #region Methods
+
+        [Lisp("add-macro-to-environment")]
+        public static void AddMacroToEnvironment(Symbol localName, Symbol globalName, AnalysisScope env)
+        {
+            env.DefineMacro(localName, globalName.CompilerValue, ScopeFlags.All);
+        }
+
         [Lisp("code-walk")]
         public static object CodeWalk(object form, Func<object, object> transform)
         {
@@ -152,6 +164,43 @@ namespace Kiezel
             }
         }
 
+        public static Cons CodeWalkListTry(Cons forms, Func<object, AnalysisScope, object> transform, AnalysisScope env)
+        {
+            if (forms == null)
+            {
+                return null;
+            }
+            else
+            {
+                object result;
+                if (forms.Car is Cons)
+                {
+                    var list = (Cons)forms.Car;
+                    var head = First(list);
+                    if (head == Symbols.Catch)
+                    {
+                        // catch (sym type) expr...
+                        result = CodeWalkListAt(2, list, transform, env);
+                    }
+                    else if (head == Symbols.Finally)
+                    {
+                        // finally expr...
+                        result = CodeWalkListAt(1, list, transform, env);
+                    }
+                    else
+                    {
+                        result = CodeWalk(list, transform, env);
+                    }
+                }
+                else
+                {
+                    result = CodeWalk(forms.Car, transform, env);
+                }
+
+                return MakeCons(result, CodeWalkListTry(forms.Cdr, transform, env));
+            }
+        }
+
         [Lisp("eval")]
         public static object Eval(object expr, FrameAndScope env)
         {
@@ -251,73 +300,6 @@ namespace Kiezel
             return CodeWalk(form, MacroExpand, env);
         }
 
-        [Lisp("make-environment")]
-        public static AnalysisScope MakeEnvironment()
-        {
-            return new AnalysisScope(null, "env");
-        }
-
-        [Lisp("make-environment")]
-        public static AnalysisScope MakeEnvironment(AnalysisScope env)
-        {
-            return new AnalysisScope(env, "env");
-        }
-
-        [Lisp("make-extended-environment")]
-        public static FrameAndScope MakeExtendedEnvironment()
-        {
-            return new FrameAndScope();
-        }
-
-        [Lisp("add-macro-to-environment")]
-        public static void AddMacroToEnvironment(Symbol localName, Symbol globalName, AnalysisScope env)
-        {
-            env.DefineMacro(localName, globalName.CompilerValue, ScopeFlags.All);
-        }
-
-        public static Cons CodeWalkListTry(Cons forms, Func<object, AnalysisScope, object> transform, AnalysisScope env)
-        {
-            if (forms == null)
-            {
-                return null;
-            }
-            else
-            {
-                object result;
-                if (forms.Car is Cons)
-                {
-                    var list = (Cons)forms.Car;
-                    var head = First(list);
-                    if (head == Symbols.Catch)
-                    {
-                        // catch (sym type) expr...
-                        result = CodeWalkListAt(2, list, transform, env);
-                    }
-                    else if (head == Symbols.Finally)
-                    {
-                        // finally expr...
-                        result = CodeWalkListAt(1, list, transform, env);
-                    }
-                    else
-                    {
-                        result = CodeWalk(list, transform, env);
-                    }
-                }
-                else
-                {
-                    result = CodeWalk(forms.Car, transform, env);
-                }
-
-                return MakeCons(result, CodeWalkListTry(forms.Cdr, transform, env));
-            }
-        }
-
-        public static bool TryMacroExpand(object expr, AnalysisScope env, out object result)
-        {
-            result = MacroExpandBase(expr, env);
-            return result != expr;
-        }
-
         public static object MacroExpandBase(object expr, AnalysisScope env)
         {
             var sym = expr as Symbol;
@@ -362,5 +344,31 @@ namespace Kiezel
 
             return expr;
         }
+
+        [Lisp("make-environment")]
+        public static AnalysisScope MakeEnvironment()
+        {
+            return new AnalysisScope(null, "env");
+        }
+
+        [Lisp("make-environment")]
+        public static AnalysisScope MakeEnvironment(AnalysisScope env)
+        {
+            return new AnalysisScope(env, "env");
+        }
+
+        [Lisp("make-extended-environment")]
+        public static FrameAndScope MakeExtendedEnvironment()
+        {
+            return new FrameAndScope();
+        }
+
+        public static bool TryMacroExpand(object expr, AnalysisScope env, out object result)
+        {
+            result = MacroExpandBase(expr, env);
+            return result != expr;
+        }
+
+        #endregion Methods
     }
 }

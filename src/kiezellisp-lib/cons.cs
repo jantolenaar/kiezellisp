@@ -1,15 +1,25 @@
+﻿#region Header
+
 // Copyright (C) Jan Tolenaar. See the file LICENSE for details.
 
-using System;
-using System.Collections;
-using System.IO;
+#endregion Header
 
 namespace Kiezel
 {
+    using System;
+    using System.Collections;
+    using System.IO;
+
     public class Cons : IEnumerable, IPrintsValue
     {
+        #region Fields
+
         internal object car;
         internal object cdr;
+
+        #endregion Fields
+
+        #region Constructors
 
         public Cons()
         {
@@ -22,6 +32,10 @@ namespace Kiezel
             car = first;
             cdr = second;
         }
+
+        #endregion Constructors
+
+        #region Properties
 
         public object Car
         {
@@ -98,7 +112,11 @@ namespace Kiezel
             }
         }
 
-        public object this [int index]
+        #endregion Properties
+
+        #region Indexers
+
+        public object this[int index]
         {
             get
             {
@@ -159,6 +177,22 @@ namespace Kiezel
                     list.Car = value;
                 }
             }
+        }
+
+        #endregion Indexers
+
+        #region Methods
+
+        public bool Contains(object value)
+        {
+            foreach (object item in this)
+            {
+                if (Runtime.Equal(item, value))
+                {
+                    return true;
+                }
+            }
+            return false;
         }
 
         IEnumerator IEnumerable.GetEnumerator()
@@ -240,29 +274,30 @@ namespace Kiezel
             return buf.ToString();
         }
 
-        public bool Contains(object value)
-        {
-            foreach (object item in this)
-            {
-                if (Runtime.Equal(item, value))
-                {
-                    return true;
-                }
-            }
-            return false;
-        }
+        #endregion Methods
+
+        #region Nested Types
 
         private class ListEnumerator : IEnumerator
         {
-            // This enumerator does NOT keep a reference to the start of the list.
+            #region Fields
 
+            // This enumerator does NOT keep a reference to the start of the list.
             public bool initialized = false;
             public Cons list;
+
+            #endregion Fields
+
+            #region Constructors
 
             public ListEnumerator(Cons list)
             {
                 this.list = list;
             }
+
+            #endregion Constructors
+
+            #region Properties
 
             public object Current
             {
@@ -271,6 +306,10 @@ namespace Kiezel
                     return list == null ? null : list.Car;
                 }
             }
+
+            #endregion Properties
+
+            #region Methods
 
             public bool MoveNext()
             {
@@ -297,12 +336,17 @@ namespace Kiezel
             {
                 throw new NotImplementedException();
             }
+
+            #endregion Methods
         }
+
+        #endregion Nested Types
     }
 
     public partial class Runtime
     {
- 
+        #region Methods
+
         [Lisp("copy-tree")]
         public static object CopyTree(object a)
         {
@@ -329,6 +373,23 @@ namespace Kiezel
             return new Cons(item, delayedExpression);
         }
 
+        public static Cons MakeCons(object a, IEnumerator seq)
+        {
+            return new Cons(a, seq);
+        }
+
+        public static Cons MakeCons(IEnumerator seq)
+        {
+            if (seq != null && seq.MoveNext())
+            {
+                return new Cons(seq.Current, seq);
+            }
+            else
+            {
+                return null;
+            }
+        }
+
         [Lisp("list", "bq:list")]
         public static Cons MakeList(params object[] items)
         {
@@ -353,21 +414,6 @@ namespace Kiezel
             return list;
         }
 
-        public static Cons MakeCons(object a, IEnumerator seq)
-        {
-            return new Cons(a, seq);
-        }
-
-        public static Cons MakeCons(IEnumerator seq)
-        {
-            if (seq != null && seq.MoveNext())
-            {
-                return new Cons(seq.Current, seq);
-            }
-            else
-            {
-                return null;
-            }
-        }
+        #endregion Methods
     }
 }

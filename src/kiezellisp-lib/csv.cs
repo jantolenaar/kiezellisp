@@ -1,19 +1,24 @@
+﻿#region Header
+
 // Copyright (C) Jan Tolenaar. See the file LICENSE for details.
 
-using System;
-using System.Collections;
-using System.Globalization;
-using System.IO;
-using System.Text;
+#endregion Header
 
 namespace Kiezel
 {
+    using System;
+    using System.Collections;
+    using System.Globalization;
+    using System.IO;
+    using System.Text;
+
     ////////////////////////////////////////////////////////////////////////////////////////////////////
     /// Functions to handle comma or tab separated files.
     ////////////////////////////////////////////////////////////////////////////////////////////////////
-
     public partial class Runtime
     {
+        #region Methods
+
         [Lisp("csv:read-string-to-grid")]
         public static Vector CsvReadStringToGrid(string str)
         {
@@ -193,5 +198,7 @@ namespace Kiezel
                 return value.ToString();
             }
         }
+
+        #endregion Methods
     }
 }

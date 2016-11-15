@@ -1,28 +1,142 @@
+﻿#region Header
+
 // Copyright (C) Jan Tolenaar. See the file LICENSE for details.
-using System;
-using System.Collections;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Numerics;
-using System.Text.RegularExpressions;
-using System.Runtime.CompilerServices;
-using System.Windows;
+
+#endregion Header
 
 namespace Kiezel
 {
+    using System;
+    using System.Collections;
+    using System.Collections.Generic;
+    using System.IO;
+    using System.Linq;
+    using System.Numerics;
+    using System.Runtime.CompilerServices;
+    using System.Text.RegularExpressions;
+    using System.Windows;
+
+    public class CharacterRepresentation
+    {
+        #region Fields
+
+        public char Code;
+        public string EscapeString;
+        public string Name;
+
+        #endregion Fields
+
+        #region Constructors
+
+        public CharacterRepresentation(char code, string escape, string name)
+        {
+            Code = code;
+            EscapeString = escape;
+            Name = name;
+        }
+
+        #endregion Constructors
+    }
+
+    public class LogTextWriter : TextWriter
+    {
+        #region Fields
+
+        // .NET filestreams cannot really be shared by processes for logging, because
+        // each process has its own idea of the end of the file when appending. So they
+        // overwrite each others data.
+        // This function opens/writes/closes the file for each writelog call.
+        // It relies on a IOException in the case of file sharing problems.
+        string Name;
+
+        #endregion Fields
+
+        #region Constructors
+
+        public LogTextWriter(string name)
+        {
+            Name = name;
+        }
+
+        #endregion Constructors
+
+        #region Properties
+
+        public override System.Text.Encoding Encoding
+        {
+            get
+            {
+                throw new NotImplementedException();
+            }
+        }
+
+        #endregion Properties
+
+        #region Methods
+
+        public override void Write(string value)
+        {
+            using (var stream = Open())
+            {
+                stream.Write(value);
+            }
+        }
+
+        public override void WriteLine(string value)
+        {
+            using (var stream = Open())
+            {
+                stream.WriteLine(value);
+            }
+        }
+
+        TextWriter Open()
+        {
+            if (!String.IsNullOrWhiteSpace(Name))
+            {
+                for (int i = 0; i < 100; ++i)
+                {
+                    DateTime date = DateTime.Now.Date;
+                    string file = Name + date.ToString("-yyyy-MM-dd") + ".log";
+                    string dir = Path.GetDirectoryName(file);
+                    Directory.CreateDirectory(dir);
+
+                    try
+                    {
+                        var fs = new FileStream(file, FileMode.Append, FileAccess.Write, FileShare.Read);
+                        try
+                        {
+                            var stream = new StreamWriter(fs);
+                            return stream;
+                        }
+                        catch
+                        {
+                            fs.Close();
+                            throw;
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        if (ex.Message.IndexOf("used by another") == -1)
+                        {
+                            throw;
+                        }
+
+                        // Give other process a chance to finish writing
+                        System.Threading.Thread.Sleep(10);
+                    }
+                }
+            }
+
+            return TextWriter.Null;
+        }
+
+        #endregion Methods
+    }
+
     public partial class Runtime
     {
-        public static ConditionalWeakTable<TextReader,LispReader> ReaderCache = new ConditionalWeakTable<TextReader, LispReader>();
-
-        public static LispReader AcquireReader(TextReader stream)
-        {
-            // Allow single-threaded but nested use of textreader caused by custom reader macro handlers.
-            var stream2 = stream != null ? stream : (TextReader)GetDynamic(Symbols.StdIn);
-            var reader = ReaderCache.GetOrCreateValue(stream2);
-            reader.Stream = stream2;
-            return reader;
-        }
+        #region Fields
 
         public static CharacterRepresentation[] CharacterTable = new CharacterRepresentation[]
         {
@@ -44,426 +158,19 @@ namespace Kiezel
             new CharacterRepresentation('\"', @"\""", null),
             new CharacterRepresentation('\\', @"\\", "backslash")
         };
+        public static ConditionalWeakTable<TextReader, LispReader> ReaderCache = new ConditionalWeakTable<TextReader, LispReader>();
 
+        #endregion Fields
 
-        [Lisp("system:dispose")]
-        public static void Dispose(object resource)
+        #region Methods
+
+        public static LispReader AcquireReader(TextReader stream)
         {
-            if (resource is IDisposable)
-            {
-                ((IDisposable)resource).Dispose();
-            }
-        }
-
-        [Lisp("find-source-file")]
-        public static string FindSourceFile(object filespec)
-        {
-            string file = NormalizePath(GetDesignatedString(filespec));
-            string[] candidates;
-
-            if (String.IsNullOrWhiteSpace(Path.GetExtension(file)))
-            {
-                var basename = Path.GetFileNameWithoutExtension(file);
-                candidates = new string[]
-                { file + ".k",
-                    file + ".kiezel",
-                    file + "/" + basename + ".k",
-                    file + "/" + basename + ".kiezel",
-                    file + "/main.k",
-                    file + "/main.kiezel"
-                };
-            }
-            else
-            {
-                candidates = new string[] { file };
-            }
-
-            string path = FindOneOfSourceFiles(candidates);
-
-            return path;
-        }
-
-        [Lisp("load")]
-        public static void Load(object filespec, params object[] args)
-        {
-            var file = GetDesignatedString(filespec);
-
-            if (!TryLoad(file, args))
-            {
-                throw new LispException("File not loaded: {0}", file);
-            }
-        }
-
-        static bool EndsWithLf(object item)
-        {
-            return (item is String && ((string)item).EndsWith("\n")) || (item is Char && ((char)item) == '\n');
-        }
-
-        [Lisp("say")]
-        public static void Say(params object[] items)
-        {
-            PrintHelper(true, true, items);
-        }
-
-        [Lisp("print")]
-        public static void Print(params object[] items)
-        {
-            PrintHelper(false, false, items);
-        }
-
-        [Lisp("print-line", "println")]
-        public static void PrintLine(params object[] items)
-        {
-            PrintHelper(true, false, items);
-        }
-
-        public static void PrintHelper(bool crlf, bool insertSpace, object[] items)
-        {
-            var first = 0;
-            object stream = ConvertToTextWriter(MissingValue);
-
-            if (items.Length > 0 && (items[0] is TextWriter || items[0] is IHasTextWriter))
-            {
-                stream = items[0];
-                first = 1;
-            }
-
-            //if (stream is LogTextWriter)
-            {
-                // Need single Write/WriteLine.
-                using (var stream2 = new StringWriter())
-                {
-                    PrintHelper(stream2, false, insertSpace, first, items);
-                    Write(stream2.ToString(), crlf, Symbols.Stream, stream, Symbols.Escape, false);
-                }
-            }
-            //else
-            //{
-            //    PrintHelper(stream, crlf, first, items);
-            //}
-        }
-
-        public static void PrintHelper(object stream, bool crlf, bool insertSpace, int first, object[] items)
-        {            
-            for (var i = first; i < items.Length; ++i)
-            {
-                var item = items[i];
-                Write(item, Symbols.Stream, stream, Symbols.Escape, false);
-                if (insertSpace && !EndsWithLf(item))
-                {
-                    Write(' ', Symbols.Stream, stream, Symbols.Escape, false);
-                }
-            }
-            if (crlf)
-            {
-                Write('\n', Symbols.Stream, stream, Symbols.Escape, false);
-            }
-        }
-
-        [Lisp("read-char")]
-        public static object ReadChar()
-        {
-            return ReadChar(null);
-        }
-
-        [Lisp("read-char")]
-        public static object ReadChar(TextReader stream)
-        {
-            return ReadChar(stream, true);
-        }
-
-        [Lisp("read-char")]
-        public static object ReadChar(TextReader stream, object eofErrorp)
-        {
-            return ReadChar(stream, eofErrorp, null);
-        }
-
-        [Lisp("read-char")]
-        public static object ReadChar(TextReader stream, object eofErrorp, object eofValue)
-        {
-            var parser = AcquireReader(stream);
-            var eofError = ToBool(eofErrorp);
-            var value = parser.ReadChar();
-            if (parser.IsEof)
-            {
-                if (eofError)
-                {
-                    ThrowError("read-char: unexpected EOF");
-                }
-                return eofValue;
-            }
-            else
-            {
-                return value;
-            }
-        }
-
-        [Lisp("unread-char")]
-        public static void UnreadChar()
-        {
-            UnreadChar(null);
-        }
-
-        [Lisp("unread-char")]
-        public static void UnreadChar(TextReader stream)
-        {
-            var parser = AcquireReader(stream);
-            parser.UnreadChar();
-        }
-
-        [Lisp("peek-char")]
-        public static object PeekChar(TextReader stream)
-        {
-            return PeekChar(stream, null);
-        }
-
-        [Lisp("peek-char")]
-        public static object PeekChar(TextReader stream, object peekType)
-        {
-            return PeekChar(stream, peekType, true);
-        }
-
-        [Lisp("peek-char")]
-        public static object PeekChar(TextReader stream, object peekType, object eofErrorp)
-        {
-            return PeekChar(stream, peekType, eofErrorp, null);
-        }
-
-        [Lisp("peek-char")]
-        public static object PeekChar(TextReader stream, object peekType, object eofErrorp, object eofValue)
-        {
-            var parser = AcquireReader(stream);
-            var eofError = ToBool(eofErrorp);
-            var value = parser.PeekChar(peekType);
-            if (parser.IsEof)
-            {
-                if (eofError)
-                {
-                    ThrowError("peek-char: unexpected EOF");
-                }
-                return eofValue;
-            }
-            else
-            {
-                return value;
-            }
-        }
-
-        [Lisp("read")]
-        public static object Read()
-        {
-            return Read(null);
-        }
-
-        [Lisp("read")]
-        public static object Read(TextReader stream)
-        {
-            return Read(stream, true);
-        }
-
-        [Lisp("read")]
-        public static object Read(TextReader stream, object eofErrorp)
-        {
-            return Read(stream, eofErrorp, null);
-        }
-
-        [Lisp("read")]
-        public static object Read(TextReader stream, object eofErrorp, object eofValue)
-        {
-            var parser = AcquireReader(stream);
-            var eofError = ToBool(eofErrorp);
-            var value = parser.Read(EOF.Value);
-            if (value == EOF.Value)
-            {
-                if (eofError)
-                {
-                    ThrowError("read: unexpected EOF");
-                }
-                return eofValue;
-            }
-            else
-            {
-                return value;
-            }
-        }
-
-        [Lisp("read-line", "readln")]
-        public static object ReadLine(TextReader stream)
-        {
-            return ReadLine(stream, true);
-        }
-
-        [Lisp("read-line", "readln")]
-        public static object ReadLine(TextReader stream, object eofErrorp)
-        {
-            return ReadLine(stream, eofErrorp, null);
-        }
-
-        [Lisp("read-line", "readln")]
-        public static object ReadLine(TextReader stream, object eofErrorp, object eofValue)
-        {
-            var parser = AcquireReader(stream);
-            var eofError = ToBool(eofErrorp);
-            var value = parser.ReadLine();
-            if (value == null)
-            {
-                if (eofError)
-                {
-                    ThrowError("read: unexpected EOF");
-                }
-                return eofValue;
-            }
-            else
-            {
-                return value;
-            }
-        }
-
-        [Lisp("read-all")]
-        public static object ReadAll()
-        {
-            return ReadAll(null);
-        }
-
-        [Lisp("read-all")]
-        public static Cons ReadAll(TextReader stream)
-        {
-            var parser = AcquireReader(stream);
-            return parser.ReadAll();
-        }
-
-        [Lisp("read-all-from-string")]
-        public static Cons ReadAllFromString(string text)
-        {
-            using (var stream = new StringReader(text))
-            {
-                return ReadAll(stream);
-            }
-        }
-
-        [Lisp("read-delimited-list")]
-        public static object ReadDelimitedList(string terminator)
-        {
-            return ReadDelimitedList(terminator, null);
-        }
-
-        [Lisp("read-delimited-list")]
-        public static object ReadDelimitedList(string terminator, TextReader stream)
-        {
-            var parser = AcquireReader(stream);
-            var value = parser.ReadDelimitedList(terminator);
-            return value;
-        }
-
-        [Lisp("read-from-string")]
-        public static object ReadFromString(string text)
-        {
-            return ReadFromString(text, true);
-        }
-
-        [Lisp("read-from-string")]
-        public static object ReadFromString(string text, object eofErrorp)
-        {
-            return ReadFromString(text, eofErrorp, null);
-        }
-
-        [Lisp("read-from-string")]
-        public static object ReadFromString(string text, object eofErrorp, object eofValue)
-        {
-            using (var stream = new StringReader(text))
-            {
-                var eofError = ToBool(eofErrorp);
-                var value = Read(stream, false, EOF.Value);
-                if (value == EOF.Value)
-                {
-                    if (eofError)
-                    {
-                        ThrowError("read-from-string: unexpected EOF");
-                    }
-                    return eofValue;
-                }
-                else
-                {
-                    return value;
-                }
-            }
-        }
-
-        [Lisp("require")]
-        public static void Require(object filespec, params object[] args)
-        {
-            var file = GetDesignatedString(filespec);
-            //if ( GetDynamic( Symbols.ScriptName ) == null )
-            //{
-            //    throw new LispException( "Require can only be called from another load/require." );
-            //}
-            var modules = (Cons)Symbols.Modules.Value;
-            var found = Find(file, modules);
-            if (found == null)
-            {
-                Symbols.Modules.Value = MakeCons(file, modules);
-                if (!TryLoad(file, args))
-                {
-                    Symbols.Modules.Value = Cdr(modules);
-                    throw new LispException("File not loaded: {0}", file);
-                }
-            }
-        }
-
-        [Lisp("system:return-from-load")]
-        public static void ReturnFromLoad()
-        {
-            throw new ReturnFromLoadException();
-        }
-
-        [Lisp("run")]
-        public static void Run(object filespec, params object[] args)
-        {
-            Load(filespec, args);
-            var main = Symbols.Main.Value as IApply;
-            if (main != null)
-            {
-                Funcall(main);
-            }
-        }
-
-        [Lisp("set-load-path")]
-        public static Cons SetLoadPath(params string[] folders)
-        {
-            var paths = AsList(folders.Select(x => PathExtensions.GetFullPath(x)));
-            Symbols.LoadPath.Value = paths;
-            return paths;
-        }
-
-        [Lisp("write")]
-        public static void Write(object item, params object[] kwargs)
-        {
-            Write(item, false, kwargs);
-        }
-
-        [Lisp("write-line", "writeln")]
-        public static void WriteLine(object item, params object[] kwargs)
-        {
-            Write(item, true, kwargs);
-        }
-
-        [Lisp("write-to-string")]
-        public static string WriteToString(object item, params object[] kwargs)
-        {
-            using (var stream = new StringWriter())
-            {
-                var kwargs2 = new Vector(kwargs);
-                kwargs2.Add(Symbols.Stream);
-                kwargs2.Add(stream);
-                Write(item, kwargs2.ToArray());
-                return stream.ToString();
-            }
-        }
-
-        [Lisp("open-log")]
-        public static TextWriter OpenLog(string path)
-        {
-            return new LogTextWriter(path);
+            // Allow single-threaded but nested use of textreader caused by custom reader macro handlers.
+            var stream2 = stream != null ? stream : (TextReader)GetDynamic(Symbols.StdIn);
+            var reader = ReaderCache.GetOrCreateValue(stream2);
+            reader.Stream = stream2;
+            return reader;
         }
 
         public static object AssertStream(object stream)
@@ -525,6 +232,15 @@ namespace Kiezel
                 }
 
                 throw new LispException("Invalid character name: {0}", token);
+            }
+        }
+
+        [Lisp("system:dispose")]
+        public static void Dispose(object resource)
+        {
+            if (resource is IDisposable)
+            {
+                ((IDisposable)resource).Dispose();
             }
         }
 
@@ -608,9 +324,114 @@ namespace Kiezel
             return null;
         }
 
+        [Lisp("find-source-file")]
+        public static string FindSourceFile(object filespec)
+        {
+            string file = NormalizePath(GetDesignatedString(filespec));
+            string[] candidates;
+
+            if (String.IsNullOrWhiteSpace(Path.GetExtension(file)))
+            {
+                var basename = Path.GetFileNameWithoutExtension(file);
+                candidates = new string[]
+                { file + ".k",
+                    file + ".kiezel",
+                    file + "/" + basename + ".k",
+                    file + "/" + basename + ".kiezel",
+                    file + "/main.k",
+                    file + "/main.kiezel"
+                };
+            }
+            else
+            {
+                candidates = new string[] { file };
+            }
+
+            string path = FindOneOfSourceFiles(candidates);
+
+            return path;
+        }
+
+        [LispAttribute("get-clipboard")]
+        public static string GetClipboardData()
+        {
+            string str = System.Windows.Forms.Clipboard.GetText();
+            return str;
+        }
+
+        [Lisp("load")]
+        public static void Load(object filespec, params object[] args)
+        {
+            var file = GetDesignatedString(filespec);
+
+            if (!TryLoad(file, args))
+            {
+                throw new LispException("File not loaded: {0}", file);
+            }
+        }
+
+        [LispAttribute("load-clipboard")]
+        public static void LoadClipboardData()
+        {
+            var code = GetClipboardData();
+            using (var stream = new StringReader(code))
+            {
+                Runtime.TryLoadText(stream, null, null, false, false);
+            }
+        }
+
         public static string NormalizePath(string path)
         {
             return path == null ? "" : path.Replace("\\", "/");
+        }
+
+        [Lisp("open-log")]
+        public static TextWriter OpenLog(string path)
+        {
+            return new LogTextWriter(path);
+        }
+
+        [Lisp("peek-char")]
+        public static object PeekChar(TextReader stream)
+        {
+            return PeekChar(stream, null);
+        }
+
+        [Lisp("peek-char")]
+        public static object PeekChar(TextReader stream, object peekType)
+        {
+            return PeekChar(stream, peekType, true);
+        }
+
+        [Lisp("peek-char")]
+        public static object PeekChar(TextReader stream, object peekType, object eofErrorp)
+        {
+            return PeekChar(stream, peekType, eofErrorp, null);
+        }
+
+        [Lisp("peek-char")]
+        public static object PeekChar(TextReader stream, object peekType, object eofErrorp, object eofValue)
+        {
+            var parser = AcquireReader(stream);
+            var eofError = ToBool(eofErrorp);
+            var value = parser.PeekChar(peekType);
+            if (parser.IsEof)
+            {
+                if (eofError)
+                {
+                    ThrowError("peek-char: unexpected EOF");
+                }
+                return eofValue;
+            }
+            else
+            {
+                return value;
+            }
+        }
+
+        public static void PrettyPrint(object stream, object left, object right, object obj)
+        {
+            Write(obj, Symbols.Stream, stream, Symbols.Left, left, Symbols.Right, right, Symbols.Escape, true, Symbols.Pretty, true, Symbols.kwForce, false);
         }
 
         public static void PrettyPrintLine(object stream, object left, object right, object obj)
@@ -618,9 +439,317 @@ namespace Kiezel
             WriteLine(obj, Symbols.Stream, stream, Symbols.Left, left, Symbols.Right, right, Symbols.Escape, true, Symbols.Pretty, true, Symbols.kwForce, false);
         }
 
-        public static void PrettyPrint(object stream, object left, object right, object obj)
+        [Lisp("print")]
+        public static void Print(params object[] items)
         {
-            Write(obj, Symbols.Stream, stream, Symbols.Left, left, Symbols.Right, right, Symbols.Escape, true, Symbols.Pretty, true, Symbols.kwForce, false);
+            PrintHelper(false, false, items);
+        }
+
+        public static void PrintHelper(bool crlf, bool insertSpace, object[] items)
+        {
+            var first = 0;
+            object stream = ConvertToTextWriter(MissingValue);
+
+            if (items.Length > 0 && (items[0] is TextWriter || items[0] is IHasTextWriter))
+            {
+                stream = items[0];
+                first = 1;
+            }
+
+            //if (stream is LogTextWriter)
+            {
+                // Need single Write/WriteLine.
+                using (var stream2 = new StringWriter())
+                {
+                    PrintHelper(stream2, false, insertSpace, first, items);
+                    Write(stream2.ToString(), crlf, Symbols.Stream, stream, Symbols.Escape, false);
+                }
+            }
+            //else
+            //{
+            //    PrintHelper(stream, crlf, first, items);
+            //}
+        }
+
+        public static void PrintHelper(object stream, bool crlf, bool insertSpace, int first, object[] items)
+        {
+            for (var i = first; i < items.Length; ++i)
+            {
+                var item = items[i];
+                Write(item, Symbols.Stream, stream, Symbols.Escape, false);
+                if (insertSpace && !EndsWithLf(item))
+                {
+                    Write(' ', Symbols.Stream, stream, Symbols.Escape, false);
+                }
+            }
+            if (crlf)
+            {
+                Write('\n', Symbols.Stream, stream, Symbols.Escape, false);
+            }
+        }
+
+        [Lisp("print-line", "println")]
+        public static void PrintLine(params object[] items)
+        {
+            PrintHelper(true, false, items);
+        }
+
+        [Lisp("read")]
+        public static object Read()
+        {
+            return Read(null);
+        }
+
+        [Lisp("read")]
+        public static object Read(TextReader stream)
+        {
+            return Read(stream, true);
+        }
+
+        [Lisp("read")]
+        public static object Read(TextReader stream, object eofErrorp)
+        {
+            return Read(stream, eofErrorp, null);
+        }
+
+        [Lisp("read")]
+        public static object Read(TextReader stream, object eofErrorp, object eofValue)
+        {
+            var parser = AcquireReader(stream);
+            var eofError = ToBool(eofErrorp);
+            var value = parser.Read(EOF.Value);
+            if (value == EOF.Value)
+            {
+                if (eofError)
+                {
+                    ThrowError("read: unexpected EOF");
+                }
+                return eofValue;
+            }
+            else
+            {
+                return value;
+            }
+        }
+
+        [Lisp("read-all")]
+        public static object ReadAll()
+        {
+            return ReadAll(null);
+        }
+
+        [Lisp("read-all")]
+        public static Cons ReadAll(TextReader stream)
+        {
+            var parser = AcquireReader(stream);
+            return parser.ReadAll();
+        }
+
+        [Lisp("read-all-from-string")]
+        public static Cons ReadAllFromString(string text)
+        {
+            using (var stream = new StringReader(text))
+            {
+                return ReadAll(stream);
+            }
+        }
+
+        [Lisp("read-char")]
+        public static object ReadChar()
+        {
+            return ReadChar(null);
+        }
+
+        [Lisp("read-char")]
+        public static object ReadChar(TextReader stream)
+        {
+            return ReadChar(stream, true);
+        }
+
+        [Lisp("read-char")]
+        public static object ReadChar(TextReader stream, object eofErrorp)
+        {
+            return ReadChar(stream, eofErrorp, null);
+        }
+
+        [Lisp("read-char")]
+        public static object ReadChar(TextReader stream, object eofErrorp, object eofValue)
+        {
+            var parser = AcquireReader(stream);
+            var eofError = ToBool(eofErrorp);
+            var value = parser.ReadChar();
+            if (parser.IsEof)
+            {
+                if (eofError)
+                {
+                    ThrowError("read-char: unexpected EOF");
+                }
+                return eofValue;
+            }
+            else
+            {
+                return value;
+            }
+        }
+
+        [Lisp("read-delimited-list")]
+        public static object ReadDelimitedList(string terminator)
+        {
+            return ReadDelimitedList(terminator, null);
+        }
+
+        [Lisp("read-delimited-list")]
+        public static object ReadDelimitedList(string terminator, TextReader stream)
+        {
+            var parser = AcquireReader(stream);
+            var value = parser.ReadDelimitedList(terminator);
+            return value;
+        }
+
+        [Lisp("read-from-string")]
+        public static object ReadFromString(string text)
+        {
+            return ReadFromString(text, true);
+        }
+
+        [Lisp("read-from-string")]
+        public static object ReadFromString(string text, object eofErrorp)
+        {
+            return ReadFromString(text, eofErrorp, null);
+        }
+
+        [Lisp("read-from-string")]
+        public static object ReadFromString(string text, object eofErrorp, object eofValue)
+        {
+            using (var stream = new StringReader(text))
+            {
+                var eofError = ToBool(eofErrorp);
+                var value = Read(stream, false, EOF.Value);
+                if (value == EOF.Value)
+                {
+                    if (eofError)
+                    {
+                        ThrowError("read-from-string: unexpected EOF");
+                    }
+                    return eofValue;
+                }
+                else
+                {
+                    return value;
+                }
+            }
+        }
+
+        [Lisp("read-line", "readln")]
+        public static object ReadLine(TextReader stream)
+        {
+            return ReadLine(stream, true);
+        }
+
+        [Lisp("read-line", "readln")]
+        public static object ReadLine(TextReader stream, object eofErrorp)
+        {
+            return ReadLine(stream, eofErrorp, null);
+        }
+
+        [Lisp("read-line", "readln")]
+        public static object ReadLine(TextReader stream, object eofErrorp, object eofValue)
+        {
+            var parser = AcquireReader(stream);
+            var eofError = ToBool(eofErrorp);
+            var value = parser.ReadLine();
+            if (value == null)
+            {
+                if (eofError)
+                {
+                    ThrowError("read: unexpected EOF");
+                }
+                return eofValue;
+            }
+            else
+            {
+                return value;
+            }
+        }
+
+        [Lisp("require")]
+        public static void Require(object filespec, params object[] args)
+        {
+            var file = GetDesignatedString(filespec);
+            //if ( GetDynamic( Symbols.ScriptName ) == null )
+            //{
+            //    throw new LispException( "Require can only be called from another load/require." );
+            //}
+            var modules = (Cons)Symbols.Modules.Value;
+            var found = Find(file, modules);
+            if (found == null)
+            {
+                Symbols.Modules.Value = MakeCons(file, modules);
+                if (!TryLoad(file, args))
+                {
+                    Symbols.Modules.Value = Cdr(modules);
+                    throw new LispException("File not loaded: {0}", file);
+                }
+            }
+        }
+
+        [Lisp("system:return-from-load")]
+        public static void ReturnFromLoad()
+        {
+            throw new ReturnFromLoadException();
+        }
+
+        [Lisp("run")]
+        public static void Run(object filespec, params object[] args)
+        {
+            Load(filespec, args);
+            var main = Symbols.Main.Value as IApply;
+            if (main != null)
+            {
+                Funcall(main);
+            }
+        }
+
+        [LispAttribute("run-clipboard")]
+        public static void RunClipboardData()
+        {
+            var code = GetClipboardData();
+            using (var stream = new StringReader(code))
+            {
+                Runtime.TryLoadText(stream, null, null, false, false);
+                var main = Symbols.Main.Value as IApply;
+                if (main != null)
+                {
+                    Runtime.Funcall(main);
+                }
+            }
+        }
+
+        [Lisp("say")]
+        public static void Say(params object[] items)
+        {
+            PrintHelper(true, true, items);
+        }
+
+        [LispAttribute("set-clipboard")]
+        public static void SetClipboardData(string str)
+        {
+            if (String.IsNullOrEmpty(str))
+            {
+                System.Windows.Forms.Clipboard.Clear();
+            }
+            else
+            {
+                System.Windows.Forms.Clipboard.SetText(str);
+            }
+        }
+
+        [Lisp("set-load-path")]
+        public static Cons SetLoadPath(params string[] folders)
+        {
+            var paths = AsList(folders.Select(x => PathExtensions.GetFullPath(x)));
+            Symbols.LoadPath.Value = paths;
+            return paths;
         }
 
         public static string ToPrintString(object obj, bool escape = true, int radix = -1)
@@ -669,7 +798,7 @@ namespace Kiezel
                 if (escape)
                 {
                     var str = rx.ToString().Replace("/", "//");
-                    
+
                     return "#/" + str + "/"
                     + ((rx.Options & RegexOptions.IgnoreCase) != 0 ? "i" : "")
                     + ((rx.Options & RegexOptions.Multiline) != 0 ? "m" : "")
@@ -858,27 +987,6 @@ namespace Kiezel
             return true;
         }
 
-
-        static IEnumerable RewriteCompileTimeBranch(IEnumerable forms)
-        {
-            // Flatten top level compile branches created by #if #elif #else #endif.
-            // Branches inside functions or macros are treated as merging-do forms.
-            foreach (var expr in forms)
-            {
-                if (expr is Cons && First(expr) == Symbols.CompileTimeBranch)
-                {
-                    foreach (var form in RewriteCompileTimeBranch(ToIter(Cdr((Cons)expr))))
-                    {
-                        yield return form;
-                    }
-                }
-                else
-                {
-                    yield return expr;
-                }
-            }
-        }
-
         public static void TryLoadText(TextReader stream, string newDir, string scriptName, bool loadVerbose, bool loadPrint)
         {
             var saved = SaveStackAndFrame();
@@ -943,6 +1051,25 @@ namespace Kiezel
             }
 
             return ch;
+        }
+
+        [Lisp("unread-char")]
+        public static void UnreadChar()
+        {
+            UnreadChar(null);
+        }
+
+        [Lisp("unread-char")]
+        public static void UnreadChar(TextReader stream)
+        {
+            var parser = AcquireReader(stream);
+            parser.UnreadChar();
+        }
+
+        [Lisp("write")]
+        public static void Write(object item, params object[] kwargs)
+        {
+            Write(item, false, kwargs);
         }
 
         public static void Write(object item, bool crlf, params object[] kwargs)
@@ -1040,8 +1167,8 @@ namespace Kiezel
         }
 
         public static void WriteImp(object item, TextWriter stream, bool escape = true, int width = 0,
-                                    string padding = " ", int radix = -1, bool crlf = false,
-                                    string format = null)
+            string padding = " ", int radix = -1, bool crlf = false,
+            string format = null)
         {
             string s;
 
@@ -1082,148 +1209,50 @@ namespace Kiezel
             }
         }
 
-        [LispAttribute("set-clipboard")]
-        public static void SetClipboardData(string str)
+        [Lisp("write-line", "writeln")]
+        public static void WriteLine(object item, params object[] kwargs)
         {
-            if (String.IsNullOrEmpty(str))
-            {
-                System.Windows.Forms.Clipboard.Clear();
-            }
-            else
-            {
-                System.Windows.Forms.Clipboard.SetText(str);
-            }
+            Write(item, true, kwargs);
         }
 
-        [LispAttribute("get-clipboard")]
-        public static string GetClipboardData()
+        [Lisp("write-to-string")]
+        public static string WriteToString(object item, params object[] kwargs)
         {
-            string str = System.Windows.Forms.Clipboard.GetText();
-            return str;
-        }
-
-        [LispAttribute("load-clipboard")]
-        public static void LoadClipboardData()
-        {
-            var code = GetClipboardData();
-            using (var stream = new StringReader(code))
+            using (var stream = new StringWriter())
             {
-                Runtime.TryLoadText(stream, null, null, false, false);
+                var kwargs2 = new Vector(kwargs);
+                kwargs2.Add(Symbols.Stream);
+                kwargs2.Add(stream);
+                Write(item, kwargs2.ToArray());
+                return stream.ToString();
             }
         }
 
-        [LispAttribute("run-clipboard")]
-        public static void RunClipboardData()
+        static bool EndsWithLf(object item)
         {
-            var code = GetClipboardData();
-            using (var stream = new StringReader(code))
+            return (item is String && ((string)item).EndsWith("\n")) || (item is Char && ((char)item) == '\n');
+        }
+
+        static IEnumerable RewriteCompileTimeBranch(IEnumerable forms)
+        {
+            // Flatten top level compile branches created by #if #elif #else #endif.
+            // Branches inside functions or macros are treated as merging-do forms.
+            foreach (var expr in forms)
             {
-                Runtime.TryLoadText(stream, null, null, false, false);
-                var main = Symbols.Main.Value as IApply;
-                if (main != null)
+                if (expr is Cons && First(expr) == Symbols.CompileTimeBranch)
                 {
-                    Runtime.Funcall(main);
+                    foreach (var form in RewriteCompileTimeBranch(ToIter(Cdr((Cons)expr))))
+                    {
+                        yield return form;
+                    }
+                }
+                else
+                {
+                    yield return expr;
                 }
             }
         }
 
+        #endregion Methods
     }
-
-    public class CharacterRepresentation
-    {
-        public char Code;
-        public string EscapeString;
-        public string Name;
-
-        public CharacterRepresentation(char code, string escape, string name)
-        {
-            Code = code;
-            EscapeString = escape;
-            Name = name;
-        }
-    };
-
-    public class LogTextWriter: TextWriter
-    {
-        // .NET filestreams cannot really be shared by processes for logging, because
-        // each process has its own idea of the end of the file when appending. So they
-        // overwrite each others data.
-        // This function opens/writes/closes the file for each writelog call.
-        // It relies on a IOException in the case of file sharing problems.
-
-        string Name;
-
-        public LogTextWriter(string name)
-        {
-            Name = name;
-        }
-
-        public override void Write(string value)
-        {
-            using (var stream = Open())
-            {
-                stream.Write(value);
-            }
-        }
-
-        public override void WriteLine(string value)
-        {
-            using (var stream = Open())
-            {
-                stream.WriteLine(value);
-            }
-        }
-
-        TextWriter Open()
-        {
-            if (!String.IsNullOrWhiteSpace(Name))
-            {
-                for (int i = 0; i < 100; ++i)
-                {
-                    DateTime date = DateTime.Now.Date;
-                    string file = Name + date.ToString("-yyyy-MM-dd") + ".log";
-                    string dir = Path.GetDirectoryName(file);
-                    Directory.CreateDirectory(dir);
-
-                    try
-                    {
-                        var fs = new FileStream(file, FileMode.Append, FileAccess.Write, FileShare.Read);
-                        try
-                        {
-                            var stream = new StreamWriter(fs);
-                            return stream;
-                        }
-                        catch
-                        {
-                            fs.Close();
-                            throw;
-                        }
-                    }
-                    catch (Exception ex)
-                    {
-                        if (ex.Message.IndexOf("used by another") == -1)
-                        {
-                            throw;
-                        }
-
-                        // Give other process a chance to finish writing
-                        System.Threading.Thread.Sleep(10);
-                    }
-                }
-            }
-
-            return TextWriter.Null;
-        }
-
-        public override System.Text.Encoding Encoding
-        {
-            get
-            {
-                throw new NotImplementedException();
-            }
-        }
-
-    }
-
-
 }

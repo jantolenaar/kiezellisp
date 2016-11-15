@@ -1,11 +1,17 @@
+﻿#region Header
+
 // Copyright (C) Jan Tolenaar. See the file LICENSE for details.
 
-using System;
-using System.Collections;
-using System.Text;
+#endregion Header
 
 namespace Kiezel
 {
+    using System;
+    using System.Collections;
+    using System.Text;
+
+    #region Enumerations
+
     public enum SymbolUsage
     {
         None,
@@ -19,24 +25,11 @@ namespace Kiezel
         CompilerMacro
     }
 
+    #endregion Enumerations
+
     public partial class Runtime
     {
-        [Lisp("get-designated-string")]
-        public static string GetDesignatedString(object target)
-        {
-            if (target == null)
-            {
-                return "";
-            }
-            else if (target is string)
-            {
-                return (string)target;
-            }
-            else
-            {
-                return SymbolName(target);
-            }
-        }
+        #region Methods
 
         public static Symbol CheckReadVariable(object target)
         {
@@ -76,12 +69,86 @@ namespace Kiezel
             return sym;
         }
 
-        [Lisp("undef")]
-        public static void Undef(object target)
+        public static object DefineCompilerMacro(Symbol sym, LambdaClosure value, string doc)
         {
-            var sym = CheckSymbol(target);
+            if (!Functionp(sym.Value))
+            {
+                ThrowError("Cannot define compiler macro for non-function {0}", sym);
+            }
+            sym.CompilerMacroValue = value;
+            sym.CompilerDocumentation = doc;
+            return sym;
+        }
+
+        public static object DefineConstant(Symbol sym, object value, string doc)
+        {
             EraseCompilerValue(sym);
+            sym.ConstantValue = value;
+            sym.Documentation = doc;
+            return sym;
+        }
+
+        public static object DefineFunction(Symbol sym, object value, string doc)
+        {
+            EraseCompilerValue(sym);
+            sym.FunctionValue = value;
+            sym.Documentation = doc;
+            return sym;
+        }
+
+        public static object DefineMacro(Symbol sym, LambdaClosure value, string doc)
+        {
             EraseVariable(sym);
+            sym.MacroValue = value;
+            sym.CompilerDocumentation = doc;
+            return sym;
+        }
+
+        public static object DefineSymbolMacro(Symbol sym, SymbolMacro value, string doc)
+        {
+            EraseVariable(sym);
+            sym.SymbolMacroValue = value;
+            sym.CompilerDocumentation = doc;
+            return sym;
+        }
+
+        public static object DefineVariable(Symbol sym, object value, string doc)
+        {
+            EraseCompilerValue(sym);
+            sym.VariableValue = value;
+            sym.Documentation = doc;
+            return sym;
+        }
+
+        public static void EraseCompilerValue(Symbol sym)
+        {
+            sym.CompilerMacroValue = null;
+            sym.CompilerDocumentation = null;
+            sym.CompilerUsage = SymbolUsage.None;
+        }
+
+        public static void EraseVariable(Symbol sym)
+        {
+            sym.Value = null;
+            sym.Documentation = null;
+            sym.Usage = SymbolUsage.None;
+        }
+
+        [Lisp("get-designated-string")]
+        public static string GetDesignatedString(object target)
+        {
+            if (target == null)
+            {
+                return "";
+            }
+            else if (target is string)
+            {
+                return (string)target;
+            }
+            else
+            {
+                return SymbolName(target);
+            }
         }
 
         [Lisp("set")]
@@ -130,69 +197,12 @@ namespace Kiezel
             return sym.CheckedValue;
         }
 
-        public static object DefineConstant(Symbol sym, object value, string doc)
+        [Lisp("undef")]
+        public static void Undef(object target)
         {
+            var sym = CheckSymbol(target);
             EraseCompilerValue(sym);
-            sym.ConstantValue = value;
-            sym.Documentation = doc;
-            return sym;
-        }
-
-        public static void EraseCompilerValue(Symbol sym)
-        {
-            sym.CompilerMacroValue = null;
-            sym.CompilerDocumentation = null;
-            sym.CompilerUsage = SymbolUsage.None;
-        }
-
-        public static void EraseVariable(Symbol sym)
-        {
-            sym.Value = null;
-            sym.Documentation = null;
-            sym.Usage = SymbolUsage.None;
-        }
-
-        public static object DefineFunction(Symbol sym, object value, string doc)
-        {
-            EraseCompilerValue(sym);
-            sym.FunctionValue = value;
-            sym.Documentation = doc;
-            return sym;
-        }
-
-        public static object DefineCompilerMacro(Symbol sym, LambdaClosure value, string doc)
-        {
-            if (!Functionp(sym.Value))
-            {
-                ThrowError("Cannot define compiler macro for non-function {0}", sym);
-            }
-            sym.CompilerMacroValue = value;
-            sym.CompilerDocumentation = doc;
-            return sym;
-        }
-
-        public static object DefineSymbolMacro(Symbol sym, SymbolMacro value, string doc)
-        {
             EraseVariable(sym);
-            sym.SymbolMacroValue = value;
-            sym.CompilerDocumentation = doc;
-            return sym;
-        }
-
-        public static object DefineMacro(Symbol sym, LambdaClosure value, string doc)
-        {
-            EraseVariable(sym);
-            sym.MacroValue = value;
-            sym.CompilerDocumentation = doc;
-            return sym;
-        }
-
-        public static object DefineVariable(Symbol sym, object value, string doc)
-        {
-            EraseCompilerValue(sym);
-            sym.VariableValue = value;
-            sym.Documentation = doc;
-            return sym;
         }
 
         public static void WarnWhenShadowing(Symbol sym)
@@ -203,20 +213,27 @@ namespace Kiezel
                 PrintWarning("defining symbol ", sym.Name, " shadows ", sym.LongName);
             }
         }
+
+        #endregion Methods
     }
 
     public class Symbol : IPrintsValue, IApply
     {
-        public object _value;
+        #region Fields
+
+        public string CompilerDocumentation;
+        public SymbolUsage CompilerUsage;
         public string Documentation;
         public string Name;
         public Package Package;
         public Cons PropList;
         public SymbolUsage Usage;
-
         public object _compilerValue;
-        public string CompilerDocumentation;
-        public SymbolUsage CompilerUsage;
+        public object _value;
+
+        #endregion Fields
+
+        #region Constructors
 
         public Symbol(string name, Package package = null)
         {
@@ -246,6 +263,43 @@ namespace Kiezel
             {
                 _value = null;
                 Usage = SymbolUsage.None;
+            }
+        }
+
+        #endregion Constructors
+
+        #region Properties
+
+        public object CheckedValue
+        {
+            get
+            {
+                Runtime.CheckReadVariable(this);
+                return _value;
+            }
+
+            set
+            {
+                Runtime.CheckWriteVariable(this);
+                _value = value;
+            }
+        }
+
+        public LambdaClosure CompilerMacroValue
+        {
+            set
+            {
+                _compilerValue = value;
+                CompilerUsage = SymbolUsage.CompilerMacro;
+            }
+        }
+
+        public object ConstantValue
+        {
+            set
+            {
+                _value = value;
+                Usage = SymbolUsage.Constant;
             }
         }
 
@@ -280,30 +334,6 @@ namespace Kiezel
             }
         }
 
-        public object CheckedValue
-        {
-            get
-            {
-                Runtime.CheckReadVariable(this);
-                return _value;
-            }
-
-            set
-            {
-                Runtime.CheckWriteVariable(this);
-                _value = value;
-            }
-        }
-
-        public object ConstantValue
-        {
-            set
-            {
-                _value = value;
-                Usage = SymbolUsage.Constant;
-            }
-        }
-
         public string DiagnosticsName
         {
             get
@@ -321,17 +351,6 @@ namespace Kiezel
             }
         }
 
-        public bool SuppressWarnings
-        {
-            get
-            {
-                return this.Package == Runtime.TempPackage
-                || Name.StartsWith("_")
-                || Name.StartsWith("~")
-                || Name.StartsWith("%");
-            }
-        }
-
         public bool IsConstant
         {
             get
@@ -340,11 +359,7 @@ namespace Kiezel
             }
         }
 
-        public bool IsDynamic
-        {
-            get;
-            internal set;
-        }
+        public bool IsDynamic { get; internal set; }
 
         public bool IsFunction
         {
@@ -416,6 +431,20 @@ namespace Kiezel
             }
         }
 
+        public LambdaClosure MacroValue
+        {
+            get
+            {
+                return _compilerValue as LambdaClosure;
+            }
+
+            set
+            {
+                _compilerValue = value;
+                CompilerUsage = SymbolUsage.Macro;
+            }
+        }
+
         public object ReadonlyValue
         {
             set
@@ -439,31 +468,14 @@ namespace Kiezel
             }
         }
 
-        public LambdaClosure CompilerMacroValue
-        {
-            set
-            {
-                _compilerValue = value;
-                CompilerUsage = SymbolUsage.CompilerMacro;
-            }
-        }
-
-        internal object CompilerValue
-        {
-            get{ return _compilerValue; }
-        }
-
-        public LambdaClosure MacroValue
+        public bool SuppressWarnings
         {
             get
             {
-                return _compilerValue as LambdaClosure;
-            }
-
-            set
-            {
-                _compilerValue = value;
-                CompilerUsage = SymbolUsage.Macro;
+                return this.Package == Runtime.TempPackage
+                || Name.StartsWith("_")
+                || Name.StartsWith("~")
+                || Name.StartsWith("%");
             }
         }
 
@@ -508,6 +520,25 @@ namespace Kiezel
             }
         }
 
+        internal object CompilerValue
+        {
+            get{ return _compilerValue; }
+        }
+
+        #endregion Properties
+
+        #region Methods
+
+        object IApply.Apply(object[] args)
+        {
+            var value = CheckedValue as IApply;
+            if (value == null)
+            {
+                throw new LispException("The value of the global variable {0} is not a function.", ContextualName);
+            }
+            return Runtime.Apply(value, args);
+        }
+
         public string ToString(bool escape)
         {
             var s = ContextualName;
@@ -532,415 +563,215 @@ namespace Kiezel
             return ContextualName;
         }
 
-
-        object IApply.Apply(object[] args)
-        {
-            var value = CheckedValue as IApply;
-            if (value == null)
-            {
-                throw new LispException("The value of the global variable {0} is not a function.", ContextualName);
-            }
-            return Runtime.Apply(value, args);
-        }
+        #endregion Methods
     }
 
     public partial class Symbols
     {
+        #region Fields
+
         public static Symbol And;
-
         public static Symbol Append;
-
         public static Symbol Apply;
-
         public static Symbol Args;
-
         public static Symbol Array;
-
         public static Symbol AsVector;
-
         public static Symbol Base;
-
         public static Symbol BitAnd;
-
         public static Symbol BitNot;
-
         public static Symbol BitOr;
-
         public static Symbol BitShiftLeft;
-
         public static Symbol BitShiftRight;
-
         public static Symbol BitXor;
-
         public static Symbol Body;
-
         public static Symbol Bool;
-
         public static Symbol bqAppend;
-
         public static Symbol bqForce;
-
         public static Symbol bqList;
-
         public static Symbol bqQuote;
-        
         public static Symbol BuiltinConstructor;
-
         public static Symbol BuiltinFunction;
-
         public static Symbol Case;
-
         public static Symbol Catch;
-
         public static Symbol CommandLineArguments;
-
         public static Symbol CommandLineScriptName;
-
         public static Symbol CompilerMacro;
-        
         public static Symbol CompileTimeBranch;
-
         public static Symbol Compiling;
-
         public static Symbol Constant;
-
-        public static Symbol CreateTask;
-
         public static Symbol CreateDelayedExpression;
-
+        public static Symbol CreateTask;
         public static Symbol DebugMode;
-
         public static Symbol Declare;
-
         public static Symbol Def;
-
         public static Symbol DefConstant;
-
         public static Symbol DefineCompilerMacro;
-
         public static Symbol DefineSymbolMacro;
-
         public static Symbol DefMacro;
-
         public static Symbol DefMethod;
-
         public static Symbol DefMulti;
-
         public static Symbol Defun;
-        
         public static Symbol Do;
-
         public static Symbol Documentation;
-
         public static Symbol Dot;
-
         public static Symbol Dynamic;
-
         public static Symbol[] DynamicVariables;
-
         public static Symbol E;
-
         public static Symbol EnableExternalDocumentation;
-
         public static Symbol EnableWarnings;
-
         public static Symbol Environment;
-
         public static Symbol Equality;
-
         public static Symbol Escape;
-
         public static Symbol Eval;
-
         public static Symbol Exception;
-
         public static Symbol False;
-
         public static Symbol Features;
-
         public static Symbol Finally;
-
         public static Symbol Force;
-
         public static Symbol Funcall;
-        
         public static Symbol Function;
-
         public static Symbol FunctionExitLabel;
-
         public static Symbol FunctionKeyword;
-
         public static Symbol FutureVar;
-
         public static Symbol GenericFunction;
-
         public static Symbol GetArgumentOrDefault;
-
         public static Symbol GetAttr;
-
         public static Symbol GetElt;
-
         public static Symbol Goto;
-
         public static Symbol HashElif;
-
         public static Symbol HashElse;
-
         public static Symbol HashEndif;
-
         public static Symbol HelpHook;
-
         public static Symbol HiddenVar;
-
         public static Symbol I;
-
         public static Symbol If;
-
         public static Symbol IfLet;
-
         public static Symbol Ignore;
-
         public static Symbol ImportedConstructor;
-
         public static Symbol ImportedFunction;
-
         public static Symbol InfoColor;
-
         public static Symbol InitialValue;
-
         public static Symbol InteractiveMode;
-
         public static Symbol It;
-
         public static Symbol Key;
-
         public static Symbol kwForce;
-
         public static Symbol Label;
-
         public static Symbol Lambda;
-        
         public static Symbol LambdaList;
-
         public static Symbol LazyImport;
-
         public static Symbol LazyVar;
-
         public static Symbol Left;
-
         public static Symbol Let;
-
         public static Symbol LetFun;
-
         public static Symbol LetMacro;
-
         public static Symbol LetSymbolMacro;
-
         public static Symbol List;
-
         public static Symbol ListStar;
-
         public static Symbol LoadPath;
-
         public static Symbol LoadPrint;
-
         public static Symbol LoadPrintKeyword;
-
         public static Symbol LoadVerbose;
-
         public static Symbol LoadVerboseKeyword;
-
         public static Symbol Macro;
-
-        public static Symbol MacroexpandHook;
-
         public static Symbol Macroexpand1;
-
+        public static Symbol MacroexpandHook;
         public static Symbol MacroKeyword;
-
         public static Symbol Main;
-
         public static Symbol Math;
-
         public static Symbol MaxElements;
-
         public static Symbol MergingDo;
-
         public static Symbol Method;
-
         public static Symbol MethodKeyword;
-
         public static Symbol MissingValue;
-
         public static Symbol Modules;
-
         public static Symbol New;
-
         public static Symbol Not;
-
         public static Symbol Nth;
-
         public static Symbol Null;
-
         public static Symbol NullableDot;
-
         public static Symbol[] NumberedVariables;
-
         public static Symbol Optional;
-
         public static Symbol OptionalKeyword;
-
         public static Symbol Or;
-
         public static Symbol Package;
-
         public static Symbol PackageNamePrefix;
-
         public static Symbol Padding;
-
         public static Symbol Params;
-
         public static Symbol PI;
-
         public static Symbol PlaybackDelay;
-
         public static Symbol PlaybackDelimiter;
-
         public static Symbol Pow;
-
         public static Symbol Pretty;
-
         public static Symbol PrettyPrintHook;
-
         public static Symbol PrintBase;
-
         public static Symbol PrintCompact;
-
         public static Symbol PrintEscape;
-
         public static Symbol PrintForce;
-
         public static Symbol PrintPrototypeWithBraces;
-        
         public static Symbol PrintShortSymbolNames;
-
         public static Symbol PrintVectorWithBrackets;
-
         public static Symbol Prog;
-
         public static Symbol QuasiQuote;
-
         public static Symbol Quote;
-
         public static Symbol RawParams;
-
         public static Symbol ReadEval;
-
         public static Symbol ReadonlyVariable;
-
         public static Symbol Readtable;
-
         public static Symbol Recur;
-
         public static Symbol RecursionLabel;
-
         public static Symbol ReplForceIt;
-
         public static Symbol ReplListenerPort;
-
         public static Symbol[] ReservedVariables;
-
         public static Symbol Rest;
-
         public static Symbol Return;
-
         public static Symbol ReturnFrom;
-
         public static Symbol ReturnFromLoad;
-
         public static Symbol Returns;
-
         public static Symbol Right;
-
         public static Symbol ScriptDirectory;
-
         public static Symbol ScriptName;
-
         public static Symbol Self;
-
         public static Symbol Set;
-
         public static Symbol SetAttr;
-
         public static Symbol SetElt;
-
         public static Symbol Setf;
-
         public static Symbol Setq;
-
         public static Symbol[] ShortLambdaVariables;
-
         public static Symbol SpecialConstant;
-
         public static Symbol SpecialForm;
-
         public static Symbol SpecialReadonlyVariable;
-
         public static Symbol SpecialVariable;
-
         public static Symbol StdErr;
-
         public static Symbol StdIn;
-
         public static Symbol StdLog;
-
         public static Symbol StdOut;
-
         public static Symbol StdScr;
-
         public static Symbol Str;
-
         public static Symbol Stream;
-
         public static Symbol StructurallyEqual;
-
         public static Symbol SymbolMacro;
-
         public static Symbol Target;
-
         public static Symbol Temp;
-
         public static Symbol Throw;
-
         public static Symbol Tilde;
-
         public static Symbol Tracing;
-
         public static Symbol True;
-
         public static Symbol Try;
-
         public static Symbol Undefined;
-
         public static Symbol Underscore;
-
         public static Symbol Unquote;
-
         public static Symbol UnquoteSplicing;
-
         public static Symbol Values;
-
         public static Symbol Var;
-
         public static Symbol Variable;
-
         public static Symbol Vector;
-
         public static Symbol Verbose;
-
         public static Symbol Whole;
-
         public static Symbol Width;
+
+        #endregion Fields
+
+        #region Methods
 
         public static void Create()
         {
@@ -1202,5 +1033,6 @@ namespace Kiezel
             return Runtime.MakeSymbol(name);
         }
 
+        #endregion Methods
     }
 }

@@ -1,12 +1,18 @@
+﻿#region Header
+
 // Copyright (C) Jan Tolenaar. See the file LICENSE for details.
 
-using System;
-using System.Collections.Generic;
-using System.Dynamic;
-using System.Linq.Expressions;
+#endregion Header
 
 namespace Kiezel
 {
+    using System;
+    using System.Collections.Generic;
+    using System.Dynamic;
+    using System.Linq.Expressions;
+
+    #region Enumerations
+
     public enum Modifier
     {
         None = 0,
@@ -14,8 +20,12 @@ namespace Kiezel
         TypeSpecializer = 2
     }
 
+    #endregion Enumerations
+
     public class LambdaSignature
     {
+        #region Fields
+
         public Symbol ArgModifier;
         public Symbol EnvArg = null;
         public List<ParameterDef> flattenedParameters = null;
@@ -25,10 +35,18 @@ namespace Kiezel
         public int RequiredArgsCount = 0;
         public Symbol WholeArg = null;
 
+        #endregion Fields
+
+        #region Constructors
+
         public LambdaSignature(LambdaKind kind)
         {
             Kind = kind;
         }
+
+        #endregion Constructors
+
+        #region Properties
 
         public List<ParameterDef> FlattenedParameters
         {
@@ -43,6 +61,10 @@ namespace Kiezel
                 return flattenedParameters;
             }
         }
+
+        #endregion Properties
+
+        #region Methods
 
         public void FlattenParameters(ref List<ParameterDef> output)
         {
@@ -126,10 +148,14 @@ namespace Kiezel
 
             return true;
         }
+
+        #endregion Methods
     }
 
     public class ParameterDef
     {
+        #region Fields
+
         public bool Hidden;
         public Expression InitForm;
         public Func<object> InitFormProc;
@@ -137,11 +163,15 @@ namespace Kiezel
         public object Specializer;
         public Symbol Sym;
 
+        #endregion Fields
+
+        #region Constructors
+
         public ParameterDef(Symbol sym, object specializer = null,
-                            Expression initForm = null,
-                            Func<object> initFormProc = null,
-                            LambdaSignature nestedParameters = null,
-                            bool hidden = false)
+            Expression initForm = null,
+            Func<object> initFormProc = null,
+            LambdaSignature nestedParameters = null,
+            bool hidden = false)
         {
             Sym = sym;
             Specializer = specializer;
@@ -155,6 +185,10 @@ namespace Kiezel
                 InitFormProc = Runtime.CompileToFunction(initForm);
             }
         }
+
+        #endregion Constructors
+
+        #region Properties
 
         public object EqlSpecializer
         {
@@ -202,9 +236,15 @@ namespace Kiezel
             }
         }
 
+        #endregion Properties
+
+        #region Methods
+
         public override string ToString()
         {
             return System.String.Format("{0}", Sym);
         }
+
+        #endregion Methods
     }
 }

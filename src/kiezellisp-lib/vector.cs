@@ -1,13 +1,19 @@
+﻿#region Header
+
 // Copyright (C) Jan Tolenaar. See the file LICENSE for details.
 
-using System.Collections;
-using System.Collections.Generic;
-using System.Text;
+#endregion Header
 
 namespace Kiezel
 {
+    using System.Collections;
+    using System.Collections.Generic;
+    using System.Text;
+
     public partial class Runtime
     {
+        #region Methods
+
         [Lisp("vector")]
         public static Vector MakeVector(params object[] items)
         {
@@ -30,10 +36,14 @@ namespace Kiezel
             v.AddRange((IEnumerable)items[n - 1]);
             return v;
         }
+
+        #endregion Methods
     }
 
     public class Vector : List<object>
     {
+        #region Constructors
+
         public Vector()
             : base(20)
         {
@@ -56,6 +66,10 @@ namespace Kiezel
             }
         }
 
+        #endregion Constructors
+
+        #region Methods
+
         public void AddRange(IEnumerable items)
         {
             if (items != null)
@@ -76,5 +90,7 @@ namespace Kiezel
             }
             return z;
         }
+
+        #endregion Methods
     }
 }

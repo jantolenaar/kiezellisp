@@ -1,15 +1,21 @@
+﻿#region Header
+
 // Copyright (C) Jan Tolenaar. See the file LICENSE for details.
 
-using System;
-using System.Collections;
-using System.Collections.Generic;
-using System.Linq;
-using System.Linq.Expressions;
+#endregion Header
 
 namespace Kiezel
 {
+    using System;
+    using System.Collections;
+    using System.Collections.Generic;
+    using System.Linq;
+    using System.Linq.Expressions;
+
     public partial class Runtime
     {
+        #region Methods
+
         [Lisp("elt")]
         public static object Elt(object target, params object[] indexes)
         {
@@ -84,5 +90,7 @@ namespace Kiezel
                 return result;
             }
         }
+
+        #endregion Methods
     }
 }

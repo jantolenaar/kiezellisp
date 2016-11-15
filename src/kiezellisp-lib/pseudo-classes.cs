@@ -1,3 +1,9 @@
+#region Header
+
+// Copyright (C) Jan Tolenaar. See the file LICENSE for details.
+
+#endregion Header
+
 namespace Kiezel
 {
     public abstract class Atom

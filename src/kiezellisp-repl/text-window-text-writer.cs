@@ -4,11 +4,11 @@
 
 #endregion Header
 
-using System;
-using System.IO;
-
 namespace Kiezel
 {
+    using System;
+    using System.IO;
+
     public class TextWindowTextWriter : TextWriter, ILogWriter
     {
         #region Fields
@@ -27,7 +27,7 @@ namespace Kiezel
 
         #endregion Constructors
 
-        #region Public Properties
+        #region Properties
 
         public override System.Text.Encoding Encoding
         {
@@ -37,26 +37,14 @@ namespace Kiezel
             }
         }
 
-        #endregion Public Properties
+        #endregion Properties
 
-        #region Private Methods
+        #region Methods
 
         void ILogWriter.WriteLog(string style, string msg)
         {
             ((ILogWriter)window).WriteLog(style, msg);
         }
-
-        void WriteString(string value)
-        {
-            foreach (var ch in value)
-            {
-                Write(ch);
-            }
-        }
-
-        #endregion Private Methods
-
-        #region Public Methods
 
         public override void Write(string value)
         {
@@ -234,6 +222,14 @@ namespace Kiezel
             Write('\n');
         }
 
-        #endregion Public Methods
+        void WriteString(string value)
+        {
+            foreach (var ch in value)
+            {
+                Write(ch);
+            }
+        }
+
+        #endregion Methods
     }
 }
