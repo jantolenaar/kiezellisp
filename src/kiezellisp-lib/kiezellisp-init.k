@@ -5,6 +5,20 @@
 ;;; kiezellisp-init.k
 ;;;
 
+#if unix
+#if flatpak
+(set-assembly-path "/home/jan/bin"
+                   "/app/lib/mono/4.5")
+#else
+(set-assembly-path "/home/jan/bin"
+                   "/usr/lib/mono/4.5")
+#endif
+#endif
+
+#if windows
+(set-assembly-path "c:/windows/microsoft.net/framework64/v4.0.30319")
+#endif
+
 #if (and unix (not repl))
 (setq $stderr (open-log "/home/jan/temp/stdlog"))
 (setq $stdlog (open-log "/home/jan/temp/stdlog"))

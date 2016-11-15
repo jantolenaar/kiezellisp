@@ -2,6 +2,12 @@
 
 ## 2016/11/15
 
+*   Added `flatpak` feature.
+*   Added `set-assembly-path` function.
+*   Fixed code gen issues appearing in mono 4.6 and monodevelop 6.
+
+## 2016/11/15
+
 *   Reformatting by NArrange.
 
 ## 2016/11/14

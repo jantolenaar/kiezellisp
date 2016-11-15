@@ -46,12 +46,16 @@ namespace Kiezel
         #endregion Fields
 
         #if DEBUG
-
+        
         public static bool AdaptiveCompilation = false;
         public static int CompilationThreshold = 50;
 
-        #else
+        
 
+
+
+        #else
+        
         public static bool AdaptiveCompilation = true;
         public static int CompilationThreshold = 50;
 
@@ -136,6 +140,14 @@ namespace Kiezel
             return String.Format("{0} {1}.{2} (Release Build {3} - {4:yyyy-MM-dd})", fileVersion.ProductName, fileVersion.FileMajorPart, fileVersion.FileMinorPart, fileVersion.FileBuildPart, date);
             #endif
         }
+
+        [Lisp("get-mscorlib-version")]
+        public static object GetMsCorLibVersion()
+        {
+            var v = FileVersionInfo.GetVersionInfo(typeof(int).Assembly.Location);
+            return v;
+        }
+
 
         public static bool HasFeature(string feature)
         {
@@ -299,6 +311,7 @@ namespace Kiezel
                 AddFeature("winforms");
             }
 
+
             if (Environment.OSVersion.Platform == PlatformID.Win32NT)
             {
                 if (!String.IsNullOrEmpty(Environment.GetEnvironmentVariable("WINDOWID")))
@@ -310,7 +323,10 @@ namespace Kiezel
             }
             else if (Environment.OSVersion.Platform == PlatformID.Unix)
             {
-                // osx too?
+                if (Directory.Exists("/app"))
+                {
+                    AddFeature("flatpak");
+                }
                 AddFeature("unix");
             }
             else if (Environment.OSVersion.Platform == PlatformID.MacOSX)
@@ -328,13 +344,6 @@ namespace Kiezel
                 AddFeature("x86");
             }
 
-            #if CLR40
-            AddFeature( "clr40" );
-            #endif
-
-            #if CLR45
-            AddFeature("clr45");
-            #endif
             AddFeature(ProgramFeature);
 
             AddFeature("kiezellisp");
@@ -367,6 +376,7 @@ namespace Kiezel
             Symbols.Create();
 
             // standard set of variables
+            Symbols.AssemblyPath.ReadonlyValue = null;
             Symbols.CommandLineArguments.ReadonlyValue = UserArguments;
             Symbols.CommandLineScriptName.ReadonlyValue = ScriptName;
             Symbols.DebugMode.ConstantValue = DebugMode;

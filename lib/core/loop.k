@@ -115,7 +115,7 @@
         (var arg3)
         (var arg4)
         (declare (ignore arg1 arg2  arg3 arg4))
-        (letfun match (x) 
+        (letfun match (x)
             (let seq (pattern-match x form))
             (when (list? seq)
                 (multiple-setf (arg1 arg2 arg3 arg4) seq)
@@ -126,7 +126,7 @@
         ,@$initial-steps
         (label test-label)
         ,@$tests
-        (do?
+        (do
             ,@$body)
         ,@(if $continue-label-used '((label continue-label)))
         ,@$next-steps
@@ -157,7 +157,7 @@
               (= (symbol-name (first form))
                  (symbol-name (first pattern))))
             (self (rest pattern) (rest form)))
-        (true 
+        (true
             false)))
 
 
@@ -290,7 +290,7 @@
             (let range-var (prefix-symbol "%range" sym))
             (setf $finish-label-used true)
             `(do
-                (if (not (ienumerator:move-next ,range-var)) 
+                (if (not (ienumerator:move-next ,range-var))
                     (goto finish-label))
                 (setf ,arg1 (ienumerator:current ,range-var))
                 ,arg1))
@@ -372,7 +372,7 @@
     (cond
         ((match '(count ?))
             (pushnew '%accumulator $summing-vars)
-            `(if ,arg1 
+            `(if ,arg1
                 (incf %accumulator)))
         (true
             (throw-error "Invalid <count> clause in loop"))))
@@ -500,7 +500,7 @@
     `(do
         (var ,temp-var ,value)
         (if (or (null? ,variable)
-                (and (not (null? ,temp-var)) 
+                (and (not (null? ,temp-var))
                      (< ,temp-var ,variable)))
             (setf ,variable ,temp-var))))
 
@@ -511,13 +511,13 @@
     `(do
         (var ,temp-var ,value)
         (if (or (null? ,variable)
-                (and (not (null? ,temp-var)) 
+                (and (not (null? ,temp-var))
                      (> ,temp-var ,variable)))
             (setf ,variable ,temp-var))))
 
 ;;;
 ;;; initial and final code generators
-;;; 
+;;;
 
 (defun add-accumulator-steps ()
     (add-initial-collect-steps)
@@ -557,5 +557,3 @@
 
 (defun initial-minimaximizing-step (sym)
     (.add $initial-steps `(var ,sym null)))
-
-

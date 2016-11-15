@@ -731,7 +731,16 @@ namespace Kiezel
             PrintHelper(true, true, items);
         }
 
-        [LispAttribute("set-clipboard")]
+		[Lisp("set-assembly-path")]
+		public static Cons SetAssemblyPath(params string[] folders)
+		{
+			var paths = AsList(folders.Select(x => PathExtensions.GetFullPath(x)));
+			Symbols.AssemblyPath.ReadonlyValue = paths;
+			return paths;
+		}
+
+
+		[LispAttribute("set-clipboard")]
         public static void SetClipboardData(string str)
         {
             if (String.IsNullOrEmpty(str))
@@ -748,7 +757,7 @@ namespace Kiezel
         public static Cons SetLoadPath(params string[] folders)
         {
             var paths = AsList(folders.Select(x => PathExtensions.GetFullPath(x)));
-            Symbols.LoadPath.Value = paths;
+            Symbols.LoadPath.ReadonlyValue = paths;
             return paths;
         }
 

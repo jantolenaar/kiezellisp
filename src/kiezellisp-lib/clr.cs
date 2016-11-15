@@ -64,14 +64,8 @@ namespace Kiezel
 
         public static string FindFileInPath(string fileName)
         {
-            var pathVar = System.Environment.GetEnvironmentVariable("PATH");
-            if (String.IsNullOrWhiteSpace(pathVar))
-            {
-                return fileName;
-            }
-            var separators = HasFeature("unix") ? new char[] { ':' } : new char[] { ';' };
-            var folders = pathVar.Split(separators, StringSplitOptions.RemoveEmptyEntries);
-            foreach (var s in folders)
+			var folders = (Cons)GetDynamic(Symbols.AssemblyPath);
+			foreach (string s in ToIter(folders))
             {
                 var p = PathExtensions.Combine(s, fileName);
                 if (File.Exists(p))

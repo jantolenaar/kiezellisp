@@ -48,8 +48,6 @@ namespace Kiezel
         public ParameterExpression Tilde;
         public bool UsesDynamicVariables = false;
         public bool UsesFramedVariables = false;
-        public bool UsesTilde = false;
-        public bool UsesTildeHere = false;
         public List<ScopeEntry> Variables = new List<ScopeEntry>();
 
         #endregion Fields
@@ -203,12 +201,6 @@ namespace Kiezel
                     {
                         entry = item;
                         item.Flags |= reason;
-
-                        if (LexicalSymEqual(sym, Symbols.Tilde))
-                        {
-                            UsesTilde = true;
-                            UsesTildeHere = true;
-                        }
 
                         if (item.Index != -1 || item.MacroValue != null || item.SymbolMacroValue != null)
                         {

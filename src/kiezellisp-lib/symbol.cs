@@ -575,6 +575,7 @@ namespace Kiezel
         public static Symbol Apply;
         public static Symbol Args;
         public static Symbol Array;
+		public static Symbol AssemblyPath;
         public static Symbol AsVector;
         public static Symbol Base;
         public static Symbol BitAnd;
@@ -780,6 +781,7 @@ namespace Kiezel
             Apply = MakeSymbol("apply");
             Args = MakeSymbol("__args__");
             Array = MakeSymbol("array");
+			AssemblyPath = MakeSymbol("$assembly-path");
             AsVector = MakeSymbol("as-vector");
             Base = MakeSymbol(":base");
             BitAnd = MakeSymbol("bit-and");
