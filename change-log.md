@@ -1,5 +1,9 @@
 # Change Log
 
+## 2016/11/16
+
+*   Fixed CRLF vs LF bug on windows.
+
 ## 2016/11/15
 
 *   Added `flatpak` feature.
