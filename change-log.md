@@ -1,5 +1,9 @@
 # Change Log
 
+## 2016/11/17
+
+*   Refactored readline editing code.
+
 ## 2016/11/16
 
 *   Fixed CRLF vs LF bug on windows.

@@ -22,7 +22,7 @@ namespace Kiezel
 
     public delegate void EditHandler();
 
-    public delegate bool MouseHandler(int x,int y,int w);
+    public delegate bool MouseHandler(int x, int y, int w);
 
     public delegate bool ScrollHandler();
 
@@ -32,23 +32,10 @@ namespace Kiezel
     {
         #region Fields
 
-        //
-        // Line editor and cursor management
-        //
         internal TextBufferItem CaretItem;
         internal int CaretPos;
         internal bool CaretVisible;
         internal bool Dirty;
-        internal bool Done;
-        internal Dictionary<Keys, object> EditHandlers = new Dictionary<Keys, object>();
-        internal int EndPos;
-        internal int HomePos;
-
-        ///
-        /// GetLine stuff
-        ///
-        internal int MaxChars;
-        internal int SavedPos;
         internal Dictionary<Keys, object> ScrollHandlers = new Dictionary<Keys, object>();
         internal string Text;
         internal TextWriter TextWriter;
@@ -58,8 +45,6 @@ namespace Kiezel
         internal Color _ForeColor;
         internal Color _HighlightBackColor;
         internal Color _HighlightForeColor;
-
-        // window state
         internal bool _outputSuspended;
         internal Color _ShadowBackColor;
 
@@ -116,8 +101,7 @@ namespace Kiezel
                 {
                     Style |= TextStyle.Bold;
                 }
-                else
-                {
+                else {
                     Style &= ~TextStyle.Bold;
                 }
             }
@@ -243,8 +227,7 @@ namespace Kiezel
                     Highlight = Shadow = Reverse = false;
                     Style |= TextStyle.Highlight;
                 }
-                else
-                {
+                else {
                     Style &= ~TextStyle.Highlight;
                 }
             }
@@ -290,8 +273,7 @@ namespace Kiezel
                 {
                     Style |= TextStyle.Italic;
                 }
-                else
-                {
+                else {
                     Style &= ~TextStyle.Italic;
                 }
             }
@@ -344,8 +326,7 @@ namespace Kiezel
                     Highlight = Shadow = Reverse = false;
                     Style |= TextStyle.Reverse;
                 }
-                else
-                {
+                else {
                     Style &= ~TextStyle.Reverse;
                 }
             }
@@ -379,8 +360,7 @@ namespace Kiezel
                     Highlight = Shadow = Reverse = false;
                     Style |= TextStyle.Shadow;
                 }
-                else
-                {
+                else {
                     Style &= ~TextStyle.Shadow;
                 }
             }
@@ -410,8 +390,7 @@ namespace Kiezel
                 {
                     Style |= TextStyle.Strikeout;
                 }
-                else
-                {
+                else {
                     Style &= ~TextStyle.Strikeout;
                 }
             }
@@ -431,8 +410,7 @@ namespace Kiezel
                 {
                     Style |= TextStyle.Underline;
                 }
-                else
-                {
+                else {
                     Style &= ~TextStyle.Underline;
                 }
             }
@@ -450,12 +428,12 @@ namespace Kiezel
                 if (this != RuntimeRepl.StdScr)
                 {
                     RuntimeRepl.GuiInvoke(new Action(() =>
-                    {
-                        if (ParentForm.Visible != value)
-                        {
-                            ParentForm.Visible = value;
-                        }
-                    }));
+                  {
+                      if (ParentForm.Visible != value)
+                      {
+                          ParentForm.Visible = value;
+                      }
+                  }));
                 }
             }
         }
@@ -520,13 +498,7 @@ namespace Kiezel
 
         public void ClearToBot()
         {
-            Dirty = true;
-            LastPos = CursorPos;
-            for (var pos = CursorPos; pos < BufferSize; ++pos)
-            {
-                // maybe support reverse?
-                Set(pos, ' ', _ForeColor, _BackColor, 0);
-            }
+            ClearToPos(LastPos);
         }
 
         public void ClearToEol()
@@ -537,6 +509,17 @@ namespace Kiezel
                 // maybe support reverse?
                 Set(col, CursorTop, ' ', _ForeColor, _BackColor, 0);
             }
+        }
+
+        public void ClearToPos(int end)
+        {
+            Dirty = true;
+            for (var pos = CursorPos; pos < end; ++pos)
+            {
+                // maybe support reverse?
+                Set(pos, ' ', _ForeColor, _BackColor, 0);
+            }
+            LastPos = CursorPos;
         }
 
         public void Close()
@@ -560,8 +543,7 @@ namespace Kiezel
             {
                 return msg;
             }
-            else
-            {
+            else {
                 return Runtime.MakeString(HtmlPrefix, style, HtmlSuffix, msg, HtmlPrefix, "/", style, HtmlSuffix);
             }
         }
@@ -571,7 +553,7 @@ namespace Kiezel
             return Buffer.GetString(beg, end, false);
         }
 
-        public string GetWordFromBuffer(int beg, int pos, int end, Func<char,bool> wordCharTest)
+        public string GetWordFromBuffer(int beg, int pos, int end, Func<char, bool> wordCharTest)
         {
             var text = GetStringFromBuffer(beg, end);
             return Runtime.GetWordFromString(text, pos - beg, wordCharTest);
@@ -639,101 +621,6 @@ namespace Kiezel
             Refresh();
         }
 
-        public string Read(params object[] args)
-        {
-            object[] kwargs = Runtime.ParseKwargs(args, new string[] { "initial-value", "max-chars", "code-completion" }, "", -1, Runtime.MissingValue);
-            var initialText = (string)kwargs[0];
-            var maxChars = (int)kwargs[1];
-            var codeCompletion = kwargs[2];
-            var saved = CodeCompletion;
-            var result = "";
-            if (codeCompletion != Runtime.MissingValue)
-            {
-                CodeCompletion = Runtime.ToBool(codeCompletion);
-            }
-            result = GetStringInput(initialText, maxChars);
-            CodeCompletion = saved;
-            return result;
-        }
-
-        public char ReadChar()
-        {
-            ShowCursor();
-
-            while (true)
-            {
-                var key = ReadKey(true);
-                if (key.KeyChar != 0)
-                {
-                    HideCursor();
-                    return key.KeyChar;
-                }
-            }
-        }
-
-        public KeyInfo ReadKey()
-        {
-            return ReadKey(false);
-        }
-
-        public KeyInfo ReadKey(bool echo)
-        {
-            if (Dirty)
-            {
-                Refresh();
-            }
-
-            ScrollIntoView(false);
-
-            while (true)
-            {
-                var info = ParentControl.ReadKey();
-                if (info == null)
-                {
-                    continue;
-                }
-
-                object handler;
-                if (ScrollHandlers.TryGetValue(info.KeyData, out handler))
-                {
-                    if (handler is ScrollHandler)
-                    {
-                        var handled = ((ScrollHandler)handler)();
-                        if (handled)
-                        {
-                            continue;
-                        }
-                    }
-                    else if (handler is MouseHandler)
-                    {
-                        var handled = ((MouseHandler)handler)(info.MouseCol, info.MouseRow, info.MouseWheel);
-                        if (handled)
-                        {
-                            continue;
-                        }
-                    }
-                }
-
-                if (echo && info.KeyChar != 0)
-                {
-                    Write(info.KeyChar);
-                    return info;
-                }
-                else
-                {
-                    return info;
-                }
-            }
-        }
-
-        public string ReadLine(params object[] args)
-        {
-            var s = Read(args);
-            WriteLine();
-            ShowCursor();
-            return s;
-        }
-
         public void Refresh()
         {
             if (!OutputSuspended)
@@ -781,7 +668,6 @@ namespace Kiezel
                 buf.CopyRect(0, 0, Buffer, x, y, w, h);
                 CursorPos = Rebase(x, y, width, height, CursorPos);
                 HomePos = Rebase(x, y, width, height, HomePos);
-                EndPos = Rebase(x, y, width, height, EndPos);
                 CaretPos = Rebase(x, y, width, height, CaretPos);
                 SavedPos = Rebase(x, y, width, height, SavedPos);
                 LastPos = Rebase(x, y, width, height, LastPos);
@@ -814,7 +700,6 @@ namespace Kiezel
             var n = lines * BufferWidth;
             CursorPos -= n;
             HomePos -= n;
-            EndPos -= n;
             CaretPos -= n;
             SavedPos -= n;
             LastPos -= n;
@@ -864,8 +749,7 @@ namespace Kiezel
             {
                 Set(pos, ch, _ForeColor, _ShadowBackColor, FontIndex);
             }
-            else
-            {
+            else {
                 Set(pos, ch, _ForeColor, _BackColor, FontIndex);
             }
         }
@@ -977,21 +861,6 @@ namespace Kiezel
             ScrollHandlers[key] = (object)handler;
         }
 
-        internal void CmdAbortEdit()
-        {
-            CmdEscape();
-            //Done = true;
-        }
-
-        internal void CmdBackspace()
-        {
-            if (HomePos < CursorPos)
-            {
-                --CursorPos;
-                CmdDeleteChar();
-            }
-        }
-
         internal bool CmdBufferEnd()
         {
             WindowTop = Math.Min(Math.Max(0, LastRow - WindowHeight / 2), WindowTopMax);
@@ -1004,175 +873,6 @@ namespace Kiezel
             WindowTop = 0;
             Refresh();
             return true;
-        }
-
-        internal void CmdCodeCompletion()
-        {
-            if (!CodeCompletion)
-            {
-                return;
-            }
-            CmdMoveBackOverSpaces();
-            var searchTerm = this.GetWordFromBuffer(HomePos, CursorPos, CursorPos, Runtime.IsLispWordChar);
-            var completions = RuntimeConsoleBase.GetCompletions(searchTerm);
-            var index = 0;
-            var done = false;
-
-            SavedPos = CursorPos;
-
-            while (!done)
-            {
-                CursorPos = EndPos;
-                WriteLine();
-                for (int i = 0; i < completions.Count; ++i)
-                {
-                    if (i == index)
-                    {
-                        Highlight = true;
-                    }
-                    Write(completions[i]);
-                    if (i == index)
-                    {
-                        Highlight = false;
-                    }
-                    Write(' ');
-                }
-                ClearToBot();
-                var info2 = ReadKey(false);
-                var key2 = info2.KeyData;
-                if (key2 == Keys.Enter || (key2 == Keys.Tab && completions.Count == 1))
-                {
-                    CursorPos = EndPos;
-                    ClearToBot();
-                    CursorPos = SavedPos;
-                    var newPos = CursorPos - searchTerm.Length;
-                    while (CursorPos != newPos)
-                    {
-                        CmdBackspace();
-                    }
-                    InsertString(completions[index] + " ");
-                    done = true;
-                }
-                else if (key2 == Keys.Tab)
-                {
-                    index = (index + 1) % completions.Count;
-                }
-                else if (key2 == Keys.Escape || key2 == RuntimeRepl.PseudoKeyForResizeEvent)
-                {
-                    CursorPos = EndPos;
-                    ClearToBot();
-                    CursorPos = SavedPos;
-                    done = true;
-                }
-            }
-        }
-
-        internal void CmdCopy()
-        {
-            var text = (Buffer.Mark == -1) ? GetStringFromBuffer(HomePos, EndPos) : Buffer.GetSelection(false);
-            Runtime.SetClipboardData(text.ToString());
-        }
-
-        internal void CmdDataChar(char ch)
-        {
-            switch (ch)
-            {
-                case '\n':
-                {
-                    while (CursorLeft != 0 && MaxChars == -1)
-                    {
-                        CmdSimpleDataChar(' ');
-                    }
-                    break;
-                }
-                case '\t':
-                {
-                    CmdSimpleDataChar(' ');
-                    break;
-                }
-                default:
-                {
-                    CmdSimpleDataChar(ch);
-                    break;
-                }
-            }
-        }
-
-        internal void CmdDeleteChar()
-        {
-            if (CursorPos < EndPos)
-            {
-                // decrements EndPos
-                RemoveChar();
-                RefreshPositions(CursorPos, EndPos + 1);
-            }
-        }
-
-        internal void CmdEnd()
-        {
-            CursorPos = EndPos;
-        }
-
-        internal void CmdEnter()
-        {
-            CmdEnd();
-            Text = GetStringFromBuffer(HomePos, EndPos);
-            Done = true;
-        }
-
-        internal void CmdEscape()
-        {
-            while (HomePos != EndPos)
-            {
-                CursorPos = EndPos;
-                CmdBackspace();
-            }
-            Text = null;
-            Done = true;
-        }
-
-        internal void CmdHome()
-        {
-            CursorPos = HomePos;
-        }
-
-        internal void CmdLeft()
-        {
-            if (HomePos < CursorPos)
-            {
-                --CursorPos;
-            }
-        }
-
-        internal void CmdMarkEnd()
-        {
-            Mark(CmdEnd);
-        }
-
-        internal void CmdMarkHome()
-        {
-            Mark(CmdHome);
-        }
-
-        internal void CmdMarkLeft()
-        {
-            Mark(CmdLeft);
-        }
-
-        internal void CmdMarkRight()
-        {
-            Mark(CmdRight);
-        }
-
-        internal void CmdMoveBackOverSpaces()
-        {
-            if (Get(CursorPos).Code == ' ')
-            {
-                while (HomePos < CursorPos && Get(CursorPos - 1).Code == ' ')
-                {
-                    --CursorPos;
-                }
-            }
         }
 
         internal bool CmdPageDown()
@@ -1191,20 +891,6 @@ namespace Kiezel
                 Refresh();
             }
             return true;
-        }
-
-        internal void CmdPaste()
-        {
-            string str = Runtime.GetClipboardData();
-            InsertString(str);
-        }
-
-        internal void CmdRight()
-        {
-            if (CursorPos < EndPos)
-            {
-                ++CursorPos;
-            }
         }
 
         internal bool CmdScrollDown()
@@ -1243,25 +929,6 @@ namespace Kiezel
             return true;
         }
 
-        internal void CmdSimpleDataChar(char ch)
-        {
-            // Inserts a character at Pos and increments EndPos.
-            if (MaxChars != -1 && EndPos - HomePos >= MaxChars)
-            {
-                return;
-            }
-
-            if (EndPos == BufferSize)
-            {
-                ScrollBuffer();
-            }
-
-            // Increments EndPos
-            InsertChar(ch);
-            RefreshPositions(CursorPos, EndPos);
-            Next();
-        }
-
         internal bool CmdWheelScroll(int x, int y, int w)
         {
             if (w < 0)
@@ -1291,75 +958,6 @@ namespace Kiezel
             return Buffer[col, line];
         }
 
-        internal string GetStringInput(string initialText, int maxChars)
-        {
-            MaxChars = maxChars;
-            HomePos = EndPos = CursorPos;
-            Done = false;
-
-            InsertString(initialText);
-            //Refresh();
-
-            while (!Done)
-            {
-                ShowCursor();
-                var info = ReadKey(false);
-                HideCursor();
-
-                Runtime.InitRandom();
-
-                bool handled = false;
-
-                if (info.KeyData != 0)
-                {
-                    if (info.KeyData != (Keys.C | Keys.Control) && (info.KeyData & Keys.Shift) == 0)
-                    {
-                        if (Buffer.Mark != -1)
-                        {
-                            Buffer.SetMark(-1);
-                            Dirty = true;
-                        }
-                    }
-
-                    object handler;
-                    if (EditHandlers.TryGetValue(info.KeyData, out handler))
-                    {
-                        ScrollIntoView();
-
-                        if (handler is EditHandler)
-                        {
-                            ((EditHandler)handler)();
-                            handled = true;
-                        }
-                        if (handler is ScrollHandler)
-                        {
-                            ((ScrollHandler)handler)();
-                            handled = true;
-                        }
-                        else if (handler is MouseHandler)
-                        {
-                            handled = true;
-                            ((MouseHandler)handler)(info.MouseCol, info.MouseRow, info.MouseWheel);
-                        }
-                    }
-                }
-
-                if (!handled && info.KeyChar >= ' ')
-                {
-                    if (Buffer.Mark != -1)
-                    {
-                        Buffer.SetMark(-1);
-                        Dirty = true;
-                    }
-                    CmdDataChar(info.KeyChar);
-                }
-            }
-
-            CursorPos = EndPos;
-
-            return Text;
-        }
-
         internal void HideCursor()
         {
             if (CaretVisible)
@@ -1378,30 +976,9 @@ namespace Kiezel
                 WindowLeft = c;
                 return true;
             }
-            else
-            {
+            else {
                 return false;
             }
-        }
-
-        internal void InitEditHandlers()
-        {
-            AddEditHandler(Keys.Home, CmdHome);
-            AddEditHandler(Keys.End, CmdEnd);
-            AddEditHandler(Keys.Left, CmdLeft);
-            AddEditHandler(Keys.Right, CmdRight);
-            AddEditHandler(Keys.Enter, CmdEnter);
-            AddEditHandler(Keys.Escape, CmdEscape);
-            AddEditHandler(Keys.Back, CmdBackspace);
-            AddEditHandler(Keys.Delete, CmdDeleteChar);
-            AddEditHandler(Keys.Tab, CmdCodeCompletion);
-            AddEditHandler(Keys.C | Keys.Control, CmdCopy);
-            AddEditHandler(Keys.V | Keys.Control, CmdPaste);
-            AddEditHandler(Keys.Left | Keys.Shift, CmdMarkLeft);
-            AddEditHandler(Keys.Right | Keys.Shift, CmdMarkRight);
-            AddEditHandler(Keys.Home | Keys.Shift, CmdMarkHome);
-            AddEditHandler(Keys.End | Keys.Shift, CmdMarkEnd);
-            AddEditHandler(RuntimeRepl.PseudoKeyForResizeEvent, CmdAbortEdit);
         }
 
         internal void InitScrollHandlers()
@@ -1417,42 +994,12 @@ namespace Kiezel
             AddScrollHandler(Keys.End | Keys.Control, CmdBufferEnd);
         }
 
-        internal void InsertChar(char newch)
-        {
-            for (var p = EndPos; p > CursorPos; --p)
-            {
-                var item = Get(p - 1);
-                Set(p, item);
-            }
-            ++EndPos;
-            Set(CursorPos, newch);
-        }
-
-        internal void InsertString(string str)
-        {
-            if (str != null)
-            {
-                foreach (var ch in str)
-                {
-                    CmdDataChar(ch);
-                }
-            }
-        }
-
         internal void Invalidate(int x, int y, int w, int h)
         {
             if (!OutputSuspended)
             {
                 ParentControl.GuiInvalidate(x - WindowLeft, y - WindowTop, w, h);
             }
-        }
-
-        internal void Mark(Action movement)
-        {
-            Buffer.SetMark(CursorPos);
-            movement();
-            Buffer.SetMark(CursorPos);
-            Dirty = true;
         }
 
         internal void Next()
@@ -1482,17 +1029,6 @@ namespace Kiezel
             var y1 = Math.Min(pos / BufferWidth, h - 1);
             var newpos = (x1 - x) + (y1 - y) * w;
             return newpos;
-        }
-
-        internal void RemoveChar()
-        {
-            --EndPos;
-            for (var p = CursorPos; p < EndPos; ++p)
-            {
-                var item = Get(p + 1);
-                Set(p, item);
-            }
-            Set(EndPos, ' ');
         }
 
         internal void ScrollIntoView(bool updateH = false)
@@ -1624,8 +1160,7 @@ namespace Kiezel
                 WindowTop = t;
                 return true;
             }
-            else
-            {
+            else {
                 return false;
             }
         }

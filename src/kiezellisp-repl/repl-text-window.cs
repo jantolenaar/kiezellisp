@@ -32,7 +32,7 @@ namespace Kiezel
         void CmdEnterDataOrCommand()
         {
             CmdEnd();
-            Text = GetStringFromBuffer(HomePos, EndPos);
+            Text = LineBuffer.ToString();
             if (RuntimeRepl.IsCompleteSourceCode(Text))
             {
                 Done = true;
@@ -46,7 +46,7 @@ namespace Kiezel
         void CmdHelp()
         {
             CmdMoveBackOverSpaces();
-            var topic = GetWordFromBuffer(HomePos, CursorPos, EndPos, Runtime.IsLispWordChar);
+            var topic = Runtime.GetWordFromString(LineBuffer.ToString(), LineIndex, Runtime.IsLispWordChar);
             var helper = Symbols.HelpHook.Value as IApply;
             if (helper != null)
             {
@@ -59,11 +59,8 @@ namespace Kiezel
         {
             if (RuntimeRepl.History != null)
             {
-                CursorPos = HomePos;
-                while (HomePos < EndPos)
-                {
-                    CmdDeleteChar();
-                }
+                LineBuffer.Clear();
+                LineIndex = 0;
                 InsertString(RuntimeRepl.History.Next());
             }
         }
@@ -72,11 +69,8 @@ namespace Kiezel
         {
             if (RuntimeRepl.History != null)
             {
-                CursorPos = HomePos;
-                while (HomePos < EndPos)
-                {
-                    CmdDeleteChar();
-                }
+                LineBuffer.Clear();
+                LineIndex = 0;
                 InsertString(RuntimeRepl.History.Previous());
             }
         }

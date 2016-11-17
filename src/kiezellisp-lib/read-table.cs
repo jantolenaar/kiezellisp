@@ -26,9 +26,9 @@ namespace Kiezel
 
     #region Delegates
 
-    public delegate object ReadtableHandler(LispReader stream,char ch);
+    public delegate object ReadtableHandler(LispReader stream, char ch);
 
-    public delegate object ReadtableHandler2(LispReader stream,string ch,int arg);
+    public delegate object ReadtableHandler2(LispReader stream, string ch, int arg);
 
     #endregion Delegates
 
@@ -59,7 +59,7 @@ namespace Kiezel
 
         public Readtable()
         {
-            Items = new ReadtableEntry[ 127 ];
+            Items = new ReadtableEntry[127];
             for (var i = 0; i < Items.Length; ++i)
             {
                 Items[i] = new ReadtableEntry();
@@ -213,7 +213,7 @@ namespace Kiezel
             dest.Handler2 = Handler2;
             if (DispatchReadtable != null)
             {
-                dest.DispatchReadtable = new SortedList<string,ReadtableHandler2>();
+                dest.DispatchReadtable = new SortedList<string, ReadtableHandler2>();
                 foreach (var pair in DispatchReadtable)
                 {
                     dest.DispatchReadtable.Add(pair.Key, pair.Value);
@@ -279,7 +279,7 @@ namespace Kiezel
             return table;
         }
 
-        public static string GetWordFromString(string text, int index, Func<char,bool> wordCharTest)
+        public static string GetWordFromString(string text, int index, Func<char, bool> wordCharTest)
         {
             var i = index;
 
