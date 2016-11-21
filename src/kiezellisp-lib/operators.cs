@@ -1,4 +1,4 @@
-﻿#region Header
+#region Header
 
 // Copyright (C) Jan Tolenaar. See the file LICENSE for details.
 
@@ -17,7 +17,7 @@ namespace Kiezel
 
     public partial class Runtime
     {
-        #region Methods
+        #region Public Methods
 
         [Pure,
         Lisp("+")]
@@ -31,10 +31,9 @@ namespace Kiezel
             {
                 return Add2(args[0], 0);
             }
-            else
-            {
-                object result = args[0];
-                for (int i = 1; i < args.Length; ++i)
+            else {
+                var result = args[0];
+                for (var i = 1; i < args.Length; ++i)
                 {
                     result = Add2(result, args[i]);
                 }
@@ -45,10 +44,10 @@ namespace Kiezel
         public static object Add2(object a1, object a2)
         {
             // commonest case first
-            if (a1 is Int32 && a2 is Int32)
+            if (a1 is int && a2 is int)
             {
-                int i1 = (int)a1;
-                int i2 = (int)a2;
+                var i1 = (int)a1;
+                var i2 = (int)a2;
 
                 try
                 {
@@ -59,18 +58,18 @@ namespace Kiezel
                 }
                 catch
                 {
-                    return (Int64)i1 + (Int64)i2;
+                    return (long)i1 + (long)i2;
                 }
             }
             else if (a1 is Complex || a2 is Complex)
             {
                 return AsComplex(a1) + AsComplex(a2);
             }
-            else if (a1 is Double || a2 is Double)
+            else if (a1 is double || a2 is double)
             {
                 return AsDouble(a1) + AsDouble(a2);
             }
-            else if (a1 is Decimal || a2 is Decimal)
+            else if (a1 is decimal || a2 is decimal)
             {
                 decimal d1 = AsDecimal(a1);
                 decimal d2 = AsDecimal(a2);
@@ -87,7 +86,7 @@ namespace Kiezel
                     return (double)d1 + (double)d2;
                 }
             }
-            else if (a1 is Single || a2 is Single)
+            else if (a1 is float || a2 is float)
             {
                 return AsSingle(a1) + AsSingle(a2);
             }
@@ -99,10 +98,10 @@ namespace Kiezel
             {
                 return Number.Shrink(AsBigInteger(a1) + AsBigInteger(a2));
             }
-            else if (a1 is Int64 || a2 is Int64)
+            else if (a1 is long || a2 is long)
             {
-                Int64 i1 = Convert.ToInt64(a1);
-                Int64 i2 = Convert.ToInt64(a2);
+                long i1 = Convert.ToInt64(a1);
+                long i2 = Convert.ToInt64(a2);
 
                 try
                 {
@@ -134,8 +133,7 @@ namespace Kiezel
                 var b = (int)a2;
                 return a + new TimeSpan(b, 0, 0, 0);
             }
-            else
-            {
+            else {
                 return Add2(Convert.ToInt32(a1), Convert.ToInt32(a2));
             }
         }
@@ -144,9 +142,9 @@ namespace Kiezel
         Lisp("bit-and")]
         public static object BitAnd(params object[] args)
         {
-            object result = args[0];
+            var result = args[0];
 
-            for (int i = 1; i < args.Length; ++i)
+            for (var i = 1; i < args.Length; ++i)
             {
                 result = BitAnd(result, args[i]);
             }
@@ -162,20 +160,19 @@ namespace Kiezel
                 var d2 = AsBigInteger(a2);
                 return Number.Shrink(d1 & d2);
             }
-            else if (a1 is Int64 || a2 is Int64)
+            else if (a1 is long || a2 is long)
             {
                 var d1 = Convert.ToInt64(a1);
                 var d2 = Convert.ToInt64(a2);
                 return Number.Shrink(d1 & d2);
             }
-            else if (a1 is Int32 || a2 is Int32)
+            else if (a1 is int || a2 is int)
             {
                 var d1 = Convert.ToInt32(a1);
                 var d2 = Convert.ToInt32(a2);
                 return d1 & d2;
             }
-            else
-            {
+            else {
                 //return CallOperatorMethod( "op_BitwiseAnd", a1, a2 );
                 throw new LispException("BitAnd - not implemented");
             }
@@ -190,18 +187,17 @@ namespace Kiezel
                 var d1 = AsBigInteger(a1);
                 return Number.Shrink(~d1);
             }
-            else if (a1 is Int64)
+            else if (a1 is long)
             {
                 var d1 = Convert.ToInt64(a1);
                 return Number.Shrink(~d1);
             }
-            else if (a1 is Int32)
+            else if (a1 is int)
             {
                 var d1 = Convert.ToInt32(a1);
                 return ~d1;
             }
-            else
-            {
+            else {
                 //return CallOperatorMethod( "op_OnesComplement", a1 );
                 throw new LispException("BitNot - not implemented");
             }
@@ -211,9 +207,9 @@ namespace Kiezel
         Lisp("bit-or")]
         public static object BitOr(params object[] args)
         {
-            object result = args[0];
+            var result = args[0];
 
-            for (int i = 1; i < args.Length; ++i)
+            for (var i = 1; i < args.Length; ++i)
             {
                 result = BitOr(result, args[i]);
             }
@@ -229,20 +225,19 @@ namespace Kiezel
                 var d2 = AsBigInteger(a2);
                 return Number.Shrink(d1 | d2);
             }
-            else if (a1 is Int64 || a2 is Int64)
+            else if (a1 is long || a2 is long)
             {
                 var d1 = Convert.ToInt64(a1);
                 var d2 = Convert.ToInt64(a2);
                 return Number.Shrink(d1 | d2);
             }
-            else if (a1 is Int32 || a2 is Int32)
+            else if (a1 is int || a2 is int)
             {
                 var d1 = Convert.ToInt32(a1);
                 var d2 = Convert.ToInt32(a2);
                 return d1 | d2;
             }
-            else
-            {
+            else {
                 //return CallOperatorMethod( "op_BitwiseOr", a1, a2 );
                 throw new LispException("BitOr - not implemented");
             }
@@ -254,12 +249,11 @@ namespace Kiezel
         {
             if (a1 is int && a2 is int)
             {
-                int i1 = ToInt(a1);
-                int i2 = ToInt(a2);
+                var i1 = ToInt(a1);
+                var i2 = ToInt(a2);
                 return i1 << i2;
             }
-            else
-            {
+            else {
                 //return CallOperatorMethod( "op_LeftShift", a1, a2 );
                 throw new LispException("BitLeftShift - not implemented");
             }
@@ -271,12 +265,11 @@ namespace Kiezel
         {
             if (a1 is int && a2 is int)
             {
-                int i1 = ToInt(a1);
-                int i2 = ToInt(a2);
+                var i1 = ToInt(a1);
+                var i2 = ToInt(a2);
                 return i1 >> i2;
             }
-            else
-            {
+            else {
                 //return CallOperatorMethod( "op_RightShift", a1, a2 );
                 throw new LispException("BitRightShift - not implemented");
             }
@@ -286,9 +279,9 @@ namespace Kiezel
         Lisp("bit-xor")]
         public static object BitXor(params object[] args)
         {
-            object result = args[0];
+            var result = args[0];
 
-            for (int i = 1; i < args.Length; ++i)
+            for (var i = 1; i < args.Length; ++i)
             {
                 result = BitXor(result, args[i]);
             }
@@ -304,20 +297,19 @@ namespace Kiezel
                 var d2 = AsBigInteger(a2);
                 return Number.Shrink(d1 ^ d2);
             }
-            else if (a1 is Int64 || a2 is Int64)
+            else if (a1 is long || a2 is long)
             {
                 var d1 = Convert.ToInt64(a1);
                 var d2 = Convert.ToInt64(a2);
                 return Number.Shrink(d1 ^ d2);
             }
-            else if (a1 is Int32 || a2 is Int32)
+            else if (a1 is int || a2 is int)
             {
                 var d1 = Convert.ToInt32(a1);
                 var d2 = Convert.ToInt32(a2);
                 return d1 ^ d2;
             }
-            else
-            {
+            else {
                 //return CallOperatorMethod( "op_ExclusiveOr", a1, a2 );
                 throw new LispException("BitXor - not implemented");
             }
@@ -339,7 +331,7 @@ namespace Kiezel
             else if (a1 is string && a2 is string)
             {
                 // otherwise 'A' in 'a'..'z' will be true
-                return System.String.CompareOrdinal((string)a1, (string)a2);
+                return string.CompareOrdinal((string)a1, (string)a2);
             }
             else if (Numberp(a1) && Numberp(a2))
             {
@@ -355,7 +347,7 @@ namespace Kiezel
                     var d2 = AsDecimal(a2);
                     return d1.CompareTo(d2);
                 }
-                if (a1 is Single || a2 is Single)
+                if (a1 is float || a2 is float)
                 {
                     var d1 = AsSingle(a1);
                     var d2 = AsSingle(a2);
@@ -373,7 +365,7 @@ namespace Kiezel
                     var d2 = AsBigInteger(a2);
                     return d1.CompareTo(d2);
                 }
-                else if (a1 is Int64 || a2 is Int64)
+                else if (a1 is long || a2 is long)
                 {
                     var d1 = Convert.ToInt64(a1);
                     var d2 = Convert.ToInt64(a2);
@@ -394,7 +386,7 @@ namespace Kiezel
             }
             else if (a1 is Symbol && a2 is Symbol)
             {
-                return System.String.CompareOrdinal(((Symbol)a1).ContextualName, ((Symbol)a2).ContextualName);
+                return string.CompareOrdinal(((Symbol)a1).ContextualName, ((Symbol)a2).ContextualName);
             }
 
             throw new LispException("Cannot compare {0} and {1}", ToPrintString(a1), ToPrintString(a2));
@@ -406,14 +398,13 @@ namespace Kiezel
         {
             if (a is string && b is string)
             {
-                return String.Compare((string)a, (string)b, true);
+                return string.Compare((string)a, (string)b, true);
             }
             else if (a is char && b is char)
             {
-                return Char.ToLower((char)a).CompareTo(Char.ToLower((char)b));
+                return char.ToLower((char)a).CompareTo(char.ToLower((char)b));
             }
-            else
-            {
+            else {
                 return Compare(a, b);
             }
         }
@@ -422,9 +413,9 @@ namespace Kiezel
         Lisp("dec")]
         public static object Dec(object a1)
         {
-            if (a1 is Int32)
+            if (a1 is int)
             {
-                int i1 = (int)a1;
+                var i1 = (int)a1;
 
                 try
                 {
@@ -435,11 +426,10 @@ namespace Kiezel
                 }
                 catch
                 {
-                    return (Int64)i1 - (Int64)1;
+                    return (long)i1 - (long)1;
                 }
             }
-            else
-            {
+            else {
                 return Sub(a1, 1);
             }
         }
@@ -454,8 +444,7 @@ namespace Kiezel
                     ch = 'z';
                     return true;
                 }
-                else
-                {
+                else {
                     carry = false;
                     --ch;
                     return true;
@@ -469,8 +458,7 @@ namespace Kiezel
                     ch = 'Z';
                     return true;
                 }
-                else
-                {
+                else {
                     carry = false;
                     --ch;
                     return true;
@@ -484,15 +472,13 @@ namespace Kiezel
                     ch = '9';
                     return true;
                 }
-                else
-                {
+                else {
                     carry = false;
                     --ch;
                     return true;
                 }
             }
-            else
-            {
+            else {
                 carry = true;
                 return false;
             }
@@ -507,9 +493,9 @@ namespace Kiezel
                 return s;
             }
 
-            char[] a = s.ToCharArray();
+            var a = s.ToCharArray();
             bool carry;
-            for (int i = a.Length - 1; i >= 0; --i)
+            for (var i = a.Length - 1; i >= 0; --i)
             {
                 DecrementChar(ref a[i], out carry);
                 if (!carry)
@@ -534,8 +520,8 @@ namespace Kiezel
                 return Div(1, args[0]);
             }
 
-            object result = args[0];
-            for (int i = 1; i < args.Length; ++i)
+            var result = args[0];
+            for (var i = 1; i < args.Length; ++i)
             {
                 result = Div(result, args[i]);
             }
@@ -548,14 +534,14 @@ namespace Kiezel
             {
                 return AsComplex(a1) / AsComplex(a2);
             }
-            else if (a1 is Double || a2 is Double)
+            else if (a1 is double || a2 is double)
             {
                 return AsDouble(a1) / AsDouble(a2);
             }
-            else if (a1 is Decimal || a2 is Decimal)
+            else if (a1 is decimal || a2 is decimal)
             {
-                decimal d1 = AsDecimal(a1);
-                decimal d2 = AsDecimal(a2);
+                var d1 = AsDecimal(a1);
+                var d2 = AsDecimal(a2);
 
                 try
                 {
@@ -569,7 +555,7 @@ namespace Kiezel
                     return (double)d1 / (double)d2;
                 }
             }
-            else if (a1 is Single || a2 is Single)
+            else if (a1 is float || a2 is float)
             {
                 return AsSingle(a1) / AsSingle(a2);
             }
@@ -591,7 +577,7 @@ namespace Kiezel
         public static Cons Divrem(object a1, object a2)
         {
             // commonest case first
-            if (a1 is Int32 && a2 is Int32)
+            if (a1 is int && a2 is int)
             {
                 var d1 = (int)a1;
                 var d2 = (int)a2;
@@ -599,7 +585,7 @@ namespace Kiezel
                 var quo = (d1 - rem) / d2;
                 return MakeList(quo, rem);
             }
-            else if (a1 is Double || a2 is Double)
+            else if (a1 is double || a2 is double)
             {
                 var d1 = AsDouble(a1);
                 var d2 = AsDouble(a2);
@@ -607,7 +593,7 @@ namespace Kiezel
                 var quo = (d1 - rem) / d2;
                 return MakeList(quo, rem);
             }
-            else if (a1 is Decimal || a2 is Decimal)
+            else if (a1 is decimal || a2 is decimal)
             {
                 var d1 = AsDecimal(a1);
                 var d2 = AsDecimal(a2);
@@ -623,7 +609,7 @@ namespace Kiezel
                 var quo = (d1 - rem) / d2;
                 return MakeList(Number.Shrink(quo), Number.Shrink(rem));
             }
-            else if (a1 is Single || a2 is Single)
+            else if (a1 is float || a2 is float)
             {
                 var d1 = AsSingle(a1);
                 var d2 = AsSingle(a2);
@@ -639,16 +625,15 @@ namespace Kiezel
                 var quo = (d1 - rem) / d2;
                 return MakeList(Number.Shrink(quo), Number.Shrink(rem));
             }
-            else if (a1 is Int64 || a2 is Int64)
+            else if (a1 is long || a2 is long)
             {
-                Int64 d1 = Convert.ToInt64(a1);
-                Int64 d2 = Convert.ToInt64(a2);
+                long d1 = Convert.ToInt64(a1);
+                long d2 = Convert.ToInt64(a2);
                 var rem = d1 % d2;
                 var quo = (d1 - rem) / d2;
                 return MakeList(Number.Shrink(quo), Number.Shrink(rem));
             }
-            else
-            {
+            else {
                 return Divrem(Convert.ToInt32(a1), Convert.ToInt32(a2));
             }
         }
@@ -701,8 +686,7 @@ namespace Kiezel
                 {
                     return ((Complex)a).Equals(AsComplex(b));
                 }
-                else
-                {
+                else {
                     return false;
                 }
             }
@@ -713,8 +697,7 @@ namespace Kiezel
                 {
                     return ((Complex)b).Equals(AsComplex(a));
                 }
-                else
-                {
+                else {
                     return false;
                 }
             }
@@ -753,8 +736,7 @@ namespace Kiezel
             {
                 return Char.ToLower((char)a) == Char.ToLower((char)b);
             }
-            else
-            {
+            else {
                 return Equal(a, b);
             }
         }
@@ -765,8 +747,7 @@ namespace Kiezel
             {
                 return CultureInfo.InvariantCulture;
             }
-            else
-            {
+            else {
                 return ident as CultureInfo ?? CultureInfo.GetCultureInfo(GetDesignatedString(ident));
             }
         }
@@ -789,9 +770,9 @@ namespace Kiezel
         Lisp("inc")]
         public static object Inc(object a1)
         {
-            if (a1 is Int32)
+            if (a1 is int)
             {
-                int i1 = (int)a1;
+                var i1 = (int)a1;
 
                 try
                 {
@@ -802,11 +783,10 @@ namespace Kiezel
                 }
                 catch
                 {
-                    return (Int64)i1 + (Int64)1;
+                    return (long)i1 + (long)1;
                 }
             }
-            else
-            {
+            else {
                 return Add2(a1, 1);
             }
         }
@@ -821,8 +801,7 @@ namespace Kiezel
                     ch = 'a';
                     return true;
                 }
-                else
-                {
+                else {
                     carry = false;
                     ++ch;
                     return true;
@@ -836,8 +815,7 @@ namespace Kiezel
                     ch = 'A';
                     return true;
                 }
-                else
-                {
+                else {
                     carry = false;
                     ++ch;
                     return true;
@@ -851,15 +829,13 @@ namespace Kiezel
                     ch = '0';
                     return true;
                 }
-                else
-                {
+                else {
                     carry = false;
                     ++ch;
                     return true;
                 }
             }
-            else
-            {
+            else {
                 carry = true;
                 return false;
             }
@@ -872,9 +848,9 @@ namespace Kiezel
                 return s;
             }
 
-            char[] a = s.ToCharArray();
-            bool carry = false;
-            for (int i = a.Length - 1; i >= 0; --i)
+            var a = s.ToCharArray();
+            var carry = false;
+            for (var i = a.Length - 1; i >= 0; --i)
             {
                 if (IncrementChar(ref a[i], out carry))
                 {
@@ -895,7 +871,7 @@ namespace Kiezel
                 //throw new LispException("Too few arguments");
                 return true;
             }
-            for (int i = 0; i + 1 < args.Length; ++i)
+            for (var i = 0; i + 1 < args.Length; ++i)
             {
                 if (!test(args[i], args[i + 1]))
                 {
@@ -927,8 +903,7 @@ namespace Kiezel
             {
                 return a2;
             }
-            else
-            {
+            else {
                 return a1;
             }
         }
@@ -964,8 +939,7 @@ namespace Kiezel
             {
                 return a2;
             }
-            else
-            {
+            else {
                 return a3;
             }
         }
@@ -978,8 +952,7 @@ namespace Kiezel
             {
                 return a1;
             }
-            else
-            {
+            else {
                 return a2;
             }
         }
@@ -1024,7 +997,7 @@ namespace Kiezel
             }
 
             object result = args[0];
-            for (int i = 1; i < args.Length; ++i)
+            for (var i = 1; i < args.Length; ++i)
             {
                 result = Mul(result, args[i]);
             }
@@ -1034,10 +1007,10 @@ namespace Kiezel
         public static object Mul(object a1, object a2)
         {
             // commonest case first
-            if (a1 is Int32 && a2 is Int32)
+            if (a1 is int && a2 is int)
             {
-                int i1 = (int)a1;
-                int i2 = (int)a2;
+                var i1 = (int)a1;
+                var i2 = (int)a2;
 
                 try
                 {
@@ -1048,21 +1021,21 @@ namespace Kiezel
                 }
                 catch
                 {
-                    return (Int64)i1 * (Int64)i2;
+                    return (long)i1 * (long)i2;
                 }
             }
             else if (a1 is Complex || a2 is Complex)
             {
                 return AsComplex(a1) * AsComplex(a2);
             }
-            else if (a1 is Double || a2 is Double)
+            else if (a1 is double || a2 is double)
             {
                 return AsDouble(a1) * AsDouble(a2);
             }
-            else if (a1 is Decimal || a2 is Decimal)
+            else if (a1 is decimal || a2 is decimal)
             {
-                decimal d1 = AsDecimal(a1);
-                decimal d2 = AsDecimal(a2);
+                var d1 = AsDecimal(a1);
+                var d2 = AsDecimal(a2);
 
                 try
                 {
@@ -1076,7 +1049,7 @@ namespace Kiezel
                     return (double)d1 * (double)d2;
                 }
             }
-            else if (a1 is Single || a2 is Single)
+            else if (a1 is float || a2 is float)
             {
                 return AsSingle(a1) * AsSingle(a2);
             }
@@ -1088,10 +1061,10 @@ namespace Kiezel
             {
                 return Number.Shrink(AsBigInteger(a1) * AsBigInteger(a2));
             }
-            else if (a1 is Int64 || a2 is Int64)
+            else if (a1 is long || a2 is long)
             {
-                Int64 i1 = Convert.ToInt64(a1);
-                Int64 i2 = Convert.ToInt64(a2);
+                var i1 = Convert.ToInt64(a1);
+                var i2 = Convert.ToInt64(a2);
 
                 try
                 {
@@ -1105,8 +1078,7 @@ namespace Kiezel
                     return Number.Shrink(new BigInteger(i1) * new BigInteger(i2));
                 }
             }
-            else
-            {
+            else {
                 return Mul(Convert.ToInt32(a1), Convert.ToInt32(a2));
             }
         }
@@ -1176,10 +1148,10 @@ namespace Kiezel
                 if (Char.IsDigit(c1) && Char.IsDigit(c2))
                 {
                     // digit <-> digit
-                    int v1 = 0;
-                    int v2 = 0;
-                    int l1 = 0;
-                    int l2 = 0;
+                    var v1 = 0;
+                    var v2 = 0;
+                    var l1 = 0;
+                    var l2 = 0;
 
                     while (i1 < n1 && Char.IsDigit(s1[i1]))
                     {
@@ -1204,8 +1176,7 @@ namespace Kiezel
                         return ascending * Math.Sign(l2 - l1);
                     }
                 }
-                else
-                {
+                else {
                     var d = String.Compare(new string(c1, 1), new string(c2, 1), true, culture);
                     if (d != 0)
                     {
@@ -1224,8 +1195,7 @@ namespace Kiezel
             {
                 return ascending * -1;
             }
-            else
-            {
+            else {
                 return ascending * 1;
             }
         }
@@ -1233,7 +1203,7 @@ namespace Kiezel
         [Lisp("neg")]
         public static object Neg(object a1)
         {
-            if (a1 is Int32)
+            if (a1 is int)
             {
                 var d1 = (int)a1;
                 try
@@ -1245,22 +1215,22 @@ namespace Kiezel
                 }
                 catch
                 {
-                    return -(Int64)d1;
+                    return -(long)d1;
                 }
             }
             else if (a1 is Complex)
             {
                 return -AsComplex(a1);
             }
-            else if (a1 is Double)
+            else if (a1 is double)
             {
                 return -AsDouble(a1);
             }
-            else if (a1 is Single)
+            else if (a1 is float)
             {
                 return -AsSingle(a1);
             }
-            else if (a1 is Decimal)
+            else if (a1 is decimal)
             {
                 return -AsDecimal(a1);
             }
@@ -1272,9 +1242,9 @@ namespace Kiezel
             {
                 return -AsBigInteger(a1);
             }
-            else if (a1 is Int64)
+            else if (a1 is long)
             {
-                Int64 i1 = Convert.ToInt64(a1);
+                long i1 = Convert.ToInt64(a1);
 
                 try
                 {
@@ -1288,8 +1258,7 @@ namespace Kiezel
                     return Number.Shrink(-1 * (new BigInteger(i1)));
                 }
             }
-            else
-            {
+            else {
                 return Neg(Convert.ToInt32(a1));
             }
         }
@@ -1316,9 +1285,9 @@ namespace Kiezel
             {
                 throw new LispException("Too few arguments.");
             }
-            for (int i = 0; i < args.Length - 1; ++i)
+            for (var i = 0; i < args.Length - 1; ++i)
             {
-                for (int j = i + 1; j < args.Length; ++j)
+                for (var j = i + 1; j < args.Length; ++j)
                 {
                     if (Equal(args[i], args[j]))
                     {
@@ -1392,7 +1361,7 @@ namespace Kiezel
                 {
                     return false;
                 }
-                for (int i = 0; i < aa.Count; ++i)
+                for (var i = 0; i < aa.Count; ++i)
                 {
                     if (!StructurallyEqual(aa[i], bb[i]))
                     {
@@ -1419,8 +1388,8 @@ namespace Kiezel
                 return Neg(args[0]);
             }
 
-            object result = args[0];
-            for (int i = 1; i < args.Length; ++i)
+            var result = args[0];
+            for (var i = 1; i < args.Length; ++i)
             {
                 result = Sub(result, args[i]);
             }
@@ -1430,10 +1399,10 @@ namespace Kiezel
         public static object Sub(object a1, object a2)
         {
             // commonest case first
-            if (a1 is Int32 && a2 is Int32)
+            if (a1 is int && a2 is int)
             {
-                int i1 = (int)a1;
-                int i2 = (int)a2;
+                var i1 = (int)a1;
+                var i2 = (int)a2;
 
                 try
                 {
@@ -1444,21 +1413,21 @@ namespace Kiezel
                 }
                 catch
                 {
-                    return (Int64)i1 - (Int64)i2;
+                    return (long)i1 - (long)i2;
                 }
             }
             else if (a1 is Complex || a2 is Complex)
             {
                 return AsComplex(a1) - AsComplex(a2);
             }
-            else if (a1 is Double || a2 is Double)
+            else if (a1 is double || a2 is double)
             {
                 return AsDouble(a1) - AsDouble(a2);
             }
-            else if (a1 is Decimal || a2 is Decimal)
+            else if (a1 is decimal || a2 is decimal)
             {
-                decimal d1 = AsDecimal(a1);
-                decimal d2 = AsDecimal(a2);
+                var d1 = AsDecimal(a1);
+                var d2 = AsDecimal(a2);
 
                 try
                 {
@@ -1472,7 +1441,7 @@ namespace Kiezel
                     return (double)d1 - (double)d2;
                 }
             }
-            else if (a1 is Single || a2 is Single)
+            else if (a1 is float || a2 is float)
             {
                 return AsSingle(a1) - AsSingle(a2);
             }
@@ -1480,10 +1449,10 @@ namespace Kiezel
             {
                 return Number.Shrink(AsBigInteger(a1) - AsBigInteger(a2));
             }
-            else if (a1 is Int64 || a2 is Int64)
+            else if (a1 is long || a2 is long)
             {
-                Int64 i1 = Convert.ToInt64(a1);
-                Int64 i2 = Convert.ToInt64(a2);
+                var i1 = Convert.ToInt64(a1);
+                var i2 = Convert.ToInt64(a2);
 
                 try
                 {
@@ -1521,8 +1490,7 @@ namespace Kiezel
                 var b = (int)a2;
                 return a - new TimeSpan(b, 0, 0, 0);
             }
-            else
-            {
+            else {
                 return Sub(Convert.ToInt32(a1), Convert.ToInt32(a2));
             }
         }
@@ -1539,8 +1507,7 @@ namespace Kiezel
             {
                 return a;
             }
-            else
-            {
+            else {
                 return a.GetType();
             }
         }
@@ -1554,8 +1521,8 @@ namespace Kiezel
                 return null;
             }
 
-            object result = args[0];
-            for (int i = 1; i < args.Length; ++i)
+            var result = args[0];
+            for (var i = 1; i < args.Length; ++i)
             {
                 result = Xor(result, args[i]);
             }
@@ -1564,8 +1531,8 @@ namespace Kiezel
 
         public static object Xor(object a1, object a2)
         {
-            bool b1 = ToBool(a1);
-            bool b2 = ToBool(a2);
+            var b1 = ToBool(a1);
+            var b2 = ToBool(a2);
 
             if (b1 && !b2)
             {
@@ -1575,12 +1542,11 @@ namespace Kiezel
             {
                 return a2;
             }
-            else
-            {
+            else {
                 return null;
             }
         }
 
-        #endregion Methods
+        #endregion Public Methods
     }
 }

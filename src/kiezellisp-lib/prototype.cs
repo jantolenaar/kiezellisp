@@ -23,7 +23,7 @@ namespace Kiezel
 
         #endregion Fields
 
-        #region Methods
+        #region Private Methods
 
         bool IEqualityComparer<object>.Equals(object x, object y)
         {
@@ -42,7 +42,7 @@ namespace Kiezel
             }
         }
 
-        #endregion Methods
+        #endregion Private Methods
     }
 
     [RestrictedImport]
@@ -65,7 +65,7 @@ namespace Kiezel
 
         #endregion Constructors
 
-        #region Properties
+        #region Public Properties
 
         public Symbol ClassName { get; set; }
 
@@ -77,10 +77,6 @@ namespace Kiezel
                 return Runtime.AsList(AsDictionary().Keys);
             }
         }
-
-        #endregion Properties
-
-        #region Indexers
 
         public object this[object index]
         {
@@ -94,20 +90,31 @@ namespace Kiezel
             }
         }
 
-        #endregion Indexers
+        #endregion Public Properties
 
-        #region Methods
+        #region Private Methods
 
-        [Lisp]
-        public static Prototype FromDictionary(PrototypeDictionary dict)
+        object IApply.Apply(object[] args)
         {
-            var proto = new Prototype();
-            if (dict != null)
+            var arg = args[0];
+            if (arg is LambdaClosure)
             {
-                proto.Dict = dict;
+                return Runtime.Funcall((IApply)arg, this);
             }
-            return proto;
+            else
+            {
+                return GetValue(arg);
+            }
         }
+
+        DynamicMetaObject IDynamicMetaObjectProvider.GetMetaObject(Expression parameter)
+        {
+            return new PrototypeMetaObject(parameter, this);
+        }
+
+        #endregion Private Methods
+
+        #region Public Methods
 
         public void AddParent(Prototype parent)
         {
@@ -143,7 +150,7 @@ namespace Kiezel
 
                 if (Runtime.Listp(a))
                 {
-                    foreach (var b in Runtime.ToIter( a ))
+                    foreach (var b in Runtime.ToIter(a))
                     {
                         ProcessTypeArg(b);
                     }
@@ -163,6 +170,17 @@ namespace Kiezel
                     Dict[key] = value;
                 }
             }
+        }
+
+        [Lisp]
+        public static Prototype FromDictionary(PrototypeDictionary dict)
+        {
+            var proto = new Prototype();
+            if (dict != null)
+            {
+                proto.Dict = dict;
+            }
+            return proto;
         }
 
         public IEnumerator GetEnumerator()
@@ -232,17 +250,17 @@ namespace Kiezel
             switch (result.Count)
             {
                 case 0:
-                {
-                    return null;
-                }
+                    {
+                        return null;
+                    }
                 case 1:
-                {
-                    return result[0];
-                }
+                    {
+                        return result[0];
+                    }
                 default:
-                {
-                    return Runtime.AsList(result);
-                }
+                    {
+                        return Runtime.AsList(result);
+                    }
             }
         }
 
@@ -307,24 +325,6 @@ namespace Kiezel
             }
         }
 
-        object IApply.Apply(object[] args)
-        {
-            var arg = args[0];
-            if (arg is LambdaClosure)
-            {
-                return Runtime.Funcall((IApply)arg, this);
-            }
-            else
-            {
-                return GetValue(arg);
-            }
-        }
-
-        DynamicMetaObject IDynamicMetaObjectProvider.GetMetaObject(Expression parameter)
-        {
-            return new PrototypeMetaObject(parameter, this);
-        }
-
         public bool IsSubTypeOf(Prototype proto)
         {
             if (proto == this)
@@ -384,7 +384,7 @@ namespace Kiezel
         public void SetParents(IEnumerable parents)
         {
             var newlist = new List<Prototype>();
-            foreach (Prototype p in Runtime.ToIter( parents ))
+            foreach (Prototype p in Runtime.ToIter(parents))
             {
                 if (p != null)
                 {
@@ -400,7 +400,7 @@ namespace Kiezel
             return value;
         }
 
-        #endregion Methods
+        #endregion Public Methods
     }
 
     public class PrototypeDictionary : Dictionary<object, object>
@@ -437,7 +437,7 @@ namespace Kiezel
 
         #endregion Constructors
 
-        #region Methods
+        #region Public Methods
 
         public override DynamicMetaObject BindGetMember(GetMemberBinder binder)
         {
@@ -468,6 +468,6 @@ namespace Kiezel
             return new DynamicMetaObject(Runtime.EnsureObjectResult(expr), restrictions);
         }
 
-        #endregion Methods
+        #endregion Public Methods
     }
 }

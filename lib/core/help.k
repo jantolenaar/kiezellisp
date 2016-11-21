@@ -175,6 +175,7 @@
                       topic
                     (make-symbol topic)))
     (let text (or (get-documentation-from-file target)
+                  (string topic " not found")
                   #;(get-runtime-documentation target)))
     text)
 

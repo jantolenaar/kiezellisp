@@ -1,4 +1,4 @@
-﻿#region Header
+#region Header
 
 // Copyright (C) Jan Tolenaar. See the file LICENSE for details.
 
@@ -27,7 +27,7 @@ namespace Kiezel
 
         #endregion Constructors
 
-        #region Properties
+        #region Public Properties
 
         public object Current
         {
@@ -37,9 +37,9 @@ namespace Kiezel
             }
         }
 
-        #endregion Properties
+        #endregion Public Properties
 
-        #region Methods
+        #region Public Methods
 
         public bool MoveNext()
         {
@@ -51,7 +51,7 @@ namespace Kiezel
             Iter.Reset();
         }
 
-        #endregion Methods
+        #endregion Public Methods
     }
 
     public class UnisonEnumerator : IEnumerable<Vector>
@@ -66,12 +66,12 @@ namespace Kiezel
 
         public UnisonEnumerator(IEnumerable[] sequences)
         {
-            this.sequences = sequences ?? new IEnumerable[ 0 ];
+            this.sequences = sequences ?? new IEnumerable[0];
         }
 
         #endregion Constructors
 
-        #region Methods
+        #region Private Methods
 
         IEnumerator IEnumerable.GetEnumerator()
         {
@@ -80,7 +80,7 @@ namespace Kiezel
 
         IEnumerator<Vector> IEnumerable<Vector>.GetEnumerator()
         {
-            List<IEnumerator> iterators = new List<IEnumerator>();
+            var iterators = new List<IEnumerator>();
 
             foreach (object seq in sequences)
             {
@@ -88,8 +88,7 @@ namespace Kiezel
                 {
                     iterators.Add(((IEnumerable)seq).GetEnumerator());
                 }
-                else
-                {
+                else {
                     iterators.Add(null);
                 }
             }
@@ -97,9 +96,9 @@ namespace Kiezel
             while (true)
             {
                 var data = new Vector();
-                int count = 0;
+                var count = 0;
 
-                for (int i = 0; i < iterators.Count; ++i)
+                for (var i = 0; i < iterators.Count; ++i)
                 {
                     if (iterators[i] == null)
                     {
@@ -110,8 +109,7 @@ namespace Kiezel
                         ++count;
                         data.Add(iterators[i].Current);
                     }
-                    else
-                    {
+                    else {
                         break;
                     }
                 }
@@ -121,13 +119,12 @@ namespace Kiezel
                     // full set
                     yield return data;
                 }
-                else
-                {
+                else {
                     break;
                 }
             }
         }
 
-        #endregion Methods
+        #endregion Private Methods
     }
 }

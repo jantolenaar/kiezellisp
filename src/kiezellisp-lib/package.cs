@@ -27,7 +27,7 @@ namespace Kiezel
 
         #endregion Constructors
 
-        #region Properties
+        #region Public Properties
 
         public Dictionary<string, Package> Aliases { get; set; }
 
@@ -73,9 +73,9 @@ namespace Kiezel
             }
         }
 
-        #endregion Properties
+        #endregion Public Properties
 
-        #region Methods
+        #region Public Methods
 
         public void AddUsePackage(Package package)
         {
@@ -209,23 +209,52 @@ namespace Kiezel
 
         public override string ToString()
         {
-            return String.Format("<Package Name=\"{0}\">", Name);
+            return string.Format("<Package Name=\"{0}\">", Name);
         }
 
-        #endregion Methods
+        #endregion Public Methods
     }
 
     public partial class Runtime
     {
-        #region Fields
+        #region Static Fields
 
         public static Dictionary<string, Package> Packages;
         public static Dictionary<Type, Package> PackagesByType;
         public static char PackageSymbolSeparator = ':';
 
-        #endregion Fields
+        #endregion Static Fields
 
-        #region Methods
+        #region Private Methods
+
+        static Package MakePackage3(object name, bool reserved = false, bool useLisp = false)
+        {
+            var n = GetDesignatedString(name);
+            if (n.IndexOf(PackageSymbolSeparator) != -1)
+            {
+                throw new LispException("Invalid package name: {0}", n);
+            }
+
+            var package = FindPackage(name);
+
+            if (package == null)
+            {
+                Packages[n] = package = new Package(n);
+            }
+
+            package.Reserved = reserved;
+
+            if (useLisp)
+            {
+                package.AddUsePackage(LispPackage);
+            }
+
+            return package;
+        }
+
+        #endregion Private Methods
+
+        #region Public Methods
 
         public static void AddPackageByType(Type type, Package package)
         {
@@ -245,8 +274,7 @@ namespace Kiezel
                 // This happens during Symbols.Create()
                 return LispPackage;
             }
-            else
-            {
+            else {
                 return (Package)GetDynamic(Symbols.Package);
             }
         }
@@ -356,8 +384,7 @@ namespace Kiezel
             {
                 sym = descr.Package.FindExported(descr.SymbolName);
             }
-            else
-            {
+            else {
                 sym = descr.Package.Find(descr.SymbolName);
             }
             if (sym == null)
@@ -400,7 +427,7 @@ namespace Kiezel
         [Lisp("make-package")]
         public static Package MakePackage(object name)
         {
-            return MakePackage(name, reserved: false, useLisp: false);
+            return MakePackage3(name, reserved: false, useLisp: false);
         }
 
         [Lisp("make-symbol")]
@@ -437,8 +464,7 @@ namespace Kiezel
                     descr.PackageName = "lisp";
                     descr.Exported = true;
                 }
-                else
-                {
+                else {
                     descr.Package = CurrentPackage();
                     descr.PackageName = "";
                     descr.Exported = false;
@@ -459,8 +485,7 @@ namespace Kiezel
                 descr.PackageName = name.Substring(0, index - 1);
                 descr.SymbolName = name.Substring(index + 1);
             }
-            else
-            {
+            else {
                 // one colon
                 descr.Exported = true;
                 descr.PackageName = name.Substring(0, index);
@@ -507,34 +532,9 @@ namespace Kiezel
             return n;
         }
 
-        static Package MakePackage(object name, bool reserved = false, bool useLisp = false)
-        {
-            var n = GetDesignatedString(name);
-            if (n.IndexOf(PackageSymbolSeparator) != -1)
-            {
-                throw new LispException("Invalid package name: {0}", n);
-            }
+        #endregion Public Methods
 
-            var package = FindPackage(name);
-
-            if (package == null)
-            {
-                Packages[n] = package = new Package(n);
-            }
-
-            package.Reserved = reserved;
-
-            if (useLisp)
-            {
-                package.AddUsePackage(LispPackage);
-            }
-
-            return package;
-        }
-
-        #endregion Methods
-
-        #region Nested Types
+        #region Other
 
         /*public*/
         public class SymbolDescriptor
@@ -549,6 +549,6 @@ namespace Kiezel
             #endregion Fields
         }
 
-        #endregion Nested Types
+        #endregion Other
     }
 }

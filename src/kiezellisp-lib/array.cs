@@ -14,7 +14,7 @@ namespace Kiezel
 
     public partial class Runtime
     {
-        #region Methods
+        #region Public Methods
 
         [Lisp("elt")]
         public static object Elt(object target, params object[] indexes)
@@ -54,13 +54,13 @@ namespace Kiezel
 
             if (s1 == -1)
             {
-                return new object[ 0 ];
+                return new object[0];
             }
 
             var tail = AsArray((IEnumerable)items[s1]);
             var s2 = tail.Length;
 
-            var result = new object[ s1 + s2 ];
+            var result = new object[s1 + s2];
 
             Array.Copy(items, result, s1);
             Array.Copy(tail, 0, result, s1, s2);
@@ -91,6 +91,6 @@ namespace Kiezel
             }
         }
 
-        #endregion Methods
+        #endregion Public Methods
     }
 }

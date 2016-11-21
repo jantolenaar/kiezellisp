@@ -10,7 +10,7 @@ namespace Kiezel
 
     public partial class Runtime
     {
-        #region Methods
+        #region Public Methods
 
         [Lisp("attr")]
         public static object Attr(object target, object attr)
@@ -63,6 +63,6 @@ namespace Kiezel
             }
         }
 
-        #endregion Methods
+        #endregion Public Methods
     }
 }

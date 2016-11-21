@@ -6,8 +6,6 @@
 
 namespace Kiezel
 {
-    using System;
-
     public class DelayedExpression
     {
         #region Fields
@@ -27,7 +25,7 @@ namespace Kiezel
 
         #endregion Constructors
 
-        #region Methods
+        #region Public Methods
 
         public object GetValue()
         {
@@ -41,15 +39,15 @@ namespace Kiezel
 
         public override string ToString()
         {
-            return System.String.Format("DelayedExpr Result={0}", Runtime.ToPrintString(Result));
+            return string.Format("DelayedExpr Result={0}", Runtime.ToPrintString(Result));
         }
 
-        #endregion Methods
+        #endregion Public Methods
     }
 
     public partial class Runtime
     {
-        #region Methods
+        #region Public Methods
 
         [Lisp("system:create-delayed-expression")]
         public static DelayedExpression CreateDelayedExpression(IApply func)
@@ -66,14 +64,13 @@ namespace Kiezel
             }
             else if (expr is Cons)
             {
-                foreach (var obj in ( Cons ) expr)
+                foreach (var obj in (Cons)expr)
                 {
                     Force(obj);
                 }
                 return expr;
             }
-            else
-            {
+            else {
                 return expr;
             }
         }
@@ -89,8 +86,7 @@ namespace Kiezel
             {
                 return ((Cons)expr).Forced;
             }
-            else
-            {
+            else {
                 return true;
             }
         }
@@ -101,6 +97,6 @@ namespace Kiezel
             return expr.GetValue();
         }
 
-        #endregion Methods
+        #endregion Public Methods
     }
 }

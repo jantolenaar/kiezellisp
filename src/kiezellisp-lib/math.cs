@@ -13,13 +13,13 @@ namespace Kiezel
 
     public partial class Runtime
     {
-        #region Fields
+        #region Static Fields
 
         public static Random RandomNumbers = new Random();
 
-        #endregion Fields
+        #endregion Static Fields
 
-        #region Methods
+        #region Public Methods
 
         [Pure,
         Lisp("math:abs")]
@@ -469,6 +469,6 @@ namespace Kiezel
             }
         }
 
-        #endregion Methods
+        #endregion Public Methods
     }
 }

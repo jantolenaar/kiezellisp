@@ -1,4 +1,4 @@
-﻿#region Header
+#region Header
 
 // Copyright (C) Jan Tolenaar. See the file LICENSE for details.
 
@@ -9,46 +9,31 @@ namespace Kiezel
     using System;
     using System.Collections.Generic;
     using System.Diagnostics;
-    using System.Globalization;
-    using System.IO;
     using System.Linq;
-    using System.Reflection;
-    using System.Text;
-    using System.Threading;
 
     [RestrictedImport]
-    public partial class RuntimeConsoleBase
+    public class RuntimeConsoleBase
     {
-        #region Fields
+        #region Static Fields
 
         public static ReplHistory History = new ReplHistory();
-        public static Exception LastException = null;
-        public static ReadLineFunction ReadFunctionImp = null;
-        public static string[] ReplCommands = new string[]
+        public static Exception LastException;
+        public static ReadLineFunction ReadFunctionImp;
+        public static string[] ReplCommands =
         {
             ":clear", ":continue", ":globals", ":quit",
             ":abort", ":backtrace", ":variables", ":$variables",
             ":top", ":exception", ":Exception", ":force",
             ":describe", ":reset", ":time"
         };
-        public static ResetDisplayFunction ResetDisplayFunctionImp = null;
-        public static ResetRuntimeFunction ResetRuntimeFunctionImp = null;
+        public static ResetDisplayFunction ResetDisplayFunctionImp;
+        public static ResetRuntimeFunction ResetRuntimeFunctionImp;
         public static Stack<ThreadContextState> state;
         public static Stopwatch timer = Stopwatch.StartNew();
 
-        #endregion Fields
+        #endregion Static Fields
 
-        #region Delegates
-
-        public delegate string ReadLineFunction();
-
-        public delegate void ResetDisplayFunction();
-
-        public delegate void ResetRuntimeFunction(int level);
-
-        #endregion Delegates
-
-        #region Methods
+        #region Public Methods
 
         [Lisp("breakpoint")]
         public static void Breakpoint()
@@ -93,8 +78,8 @@ namespace Kiezel
             {
                 var dotCommand = Runtime.First(code).ToString();
                 var command = "";
-                var commandsPrefix = ReplCommands.Where(x => ((String)x).StartsWith(dotCommand)).ToList();
-                var commandsExact = ReplCommands.Where(x => ((String)x) == dotCommand).ToList();
+                var commandsPrefix = ReplCommands.Where(x => x.StartsWith(dotCommand)).ToList();
+                var commandsExact = ReplCommands.Where(x => x == dotCommand).ToList();
 
                 if (commandsPrefix.Count == 0)
                 {
@@ -109,12 +94,11 @@ namespace Kiezel
                 {
                     command = commandsPrefix[0];
                 }
-                else
-                {
+                else {
                     Runtime.PrintLine(output, "Ambiguous command. Did you mean:");
-                    for (int i = 0; i < commandsPrefix.Count; ++i)
+                    for (var i = 0; i < commandsPrefix.Count; ++i)
                     {
-                        var str = String.Format("{0} {1}", (i == 0 ? "" : i + 1 == commandsPrefix.Count ? " or" : ","), commandsPrefix[i]);
+                        var str = string.Format("{0} {1}", (i == 0 ? "" : i + 1 == commandsPrefix.Count ? " or" : ","), commandsPrefix[i]);
                         Runtime.PrintLine(output, str);
                     }
                     Runtime.PrintLine(output, "?");
@@ -124,132 +108,131 @@ namespace Kiezel
                 switch (command)
                 {
                     case ":continue":
-                    {
-                        if (debugging)
                         {
-                            throw new ContinueFromBreakpointException();
+                            if (debugging)
+                            {
+                                throw new ContinueFromBreakpointException();
+                            }
+                            break;
                         }
-                        break;
-                    }
                     case ":clear":
-                    {
-                        History.Clear();
-                        ResetDisplayFunctionImp();
-                        state = new Stack<ThreadContextState>();
-                        state.Push(Runtime.SaveStackAndFrame());
-                        break;
-                    }
+                        {
+                            History.Clear();
+                            ResetDisplayFunctionImp();
+                            state = new Stack<ThreadContextState>();
+                            state.Push(Runtime.SaveStackAndFrame());
+                            break;
+                        }
                     case ":abort":
-                    {
-                        if (state.Count > 1)
                         {
-                            state.Pop();
+                            if (state.Count > 1)
+                            {
+                                state.Pop();
+                            }
+                            else if (debugging)
+                            {
+                                throw new AbortingDebuggerException();
+                            }
+                            break;
                         }
-                        else if (debugging)
-                        {
-                            throw new AbortingDebuggerException();
-                        }
-                        break;
-                    }
 
                     case ":top":
-                    {
-                        while (state.Count > 1)
                         {
-                            state.Pop();
+                            while (state.Count > 1)
+                            {
+                                state.Pop();
+                            }
+                            break;
                         }
-                        break;
-                    }
 
                     case ":quit":
-                    {
-                        Quit();
-                        break;
-                    }
+                        {
+                            Quit();
+                            break;
+                        }
 
                     case ":globals":
-                    {
-                        var pattern = (string)Runtime.Second(code);
-                        Runtime.DumpDictionary(output, Runtime.GetGlobalVariablesDictionary(pattern));
-                        break;
-                    }
+                        {
+                            var pattern = (string)Runtime.Second(code);
+                            Runtime.DumpDictionary(output, Runtime.GetGlobalVariablesDictionary(pattern));
+                            break;
+                        }
 
                     case ":variables":
-                    {
-                        var pos = Runtime.Integerp(Runtime.Second(code)) ? (int)Runtime.Second(code) : 0;
-                        Runtime.DumpDictionary(output, Runtime.GetLexicalVariablesDictionary(pos));
-                        break;
-                    }
+                        {
+                            var pos = Runtime.Integerp(Runtime.Second(code)) ? (int)Runtime.Second(code) : 0;
+                            Runtime.DumpDictionary(output, Runtime.GetLexicalVariablesDictionary(pos));
+                            break;
+                        }
 
                     case ":$variables":
-                    {
-                        var pos = Runtime.Integerp(Runtime.Second(code)) ? (int)Runtime.Second(code) : 0;
-                        Runtime.DumpDictionary(output, Runtime.GetDynamicVariablesDictionary(pos));
-                        break;
-                    }
+                        {
+                            var pos = Runtime.Integerp(Runtime.Second(code)) ? (int)Runtime.Second(code) : 0;
+                            Runtime.DumpDictionary(output, Runtime.GetDynamicVariablesDictionary(pos));
+                            break;
+                        }
 
                     case ":backtrace":
-                    {
-                        Runtime.PrintLine(output, Runtime.GetEvaluationStack());
-                        break;
-                    }
+                        {
+                            Runtime.PrintLine(output, Runtime.GetEvaluationStack());
+                            break;
+                        }
 
                     case ":Exception":
-                    {
-                        Runtime.PrintLine(output, LastException.ToString());
-                        break;
-                    }
+                        {
+                            Runtime.PrintLine(output, LastException.ToString());
+                            break;
+                        }
 
                     case ":exception":
-                    {
-                        Runtime.PrintLine(output, RemoveDlrReferencesFromException(LastException));
-                        break;
-                    }
+                        {
+                            Runtime.PrintLine(output, RemoveDlrReferencesFromException(LastException));
+                            break;
+                        }
 
                     case ":force":
-                    {
-                        var expr = (object)Runtime.Second(code) ?? Symbols.It;
-                        RunCommand(null, Runtime.MakeList(Runtime.MakeList(Symbols.Force, expr)));
-                        break;
-                    }
+                        {
+                            var expr = Runtime.Second(code) ?? Symbols.It;
+                            RunCommand(null, Runtime.MakeList(Runtime.MakeList(Symbols.Force, expr)));
+                            break;
+                        }
 
                     case ":time":
-                    {
-                        var expr = (object)Runtime.Second(code) ?? Symbols.It;
-                        RunCommand(null, Runtime.MakeList(expr), showTime: true);
-                        break;
-                    }
+                        {
+                            var expr = Runtime.Second(code) ?? Symbols.It;
+                            RunCommand(null, Runtime.MakeList(expr), showTime: true);
+                            break;
+                        }
 
                     case ":describe":
-                    {
-                        RunCommand(x =>
                         {
-                            Runtime.SetSymbolValue(Symbols.It, x);
-                            Runtime.Describe(x);
-                        }, Runtime.Cdr(code));
-                        break;
-                    }
+                            RunCommand(x =>
+                            {
+                                Runtime.SetSymbolValue(Symbols.It, x);
+                                Runtime.Describe(x);
+                            }, Runtime.Cdr(code));
+                            break;
+                        }
 
                     case ":reset":
-                    {
-                        var level = Runtime.Integerp(Runtime.Second(code)) ? (int)Runtime.Second(code) : 0;
-                        while (state.Count > 1)
                         {
-                            state.Pop();
+                            var level = Runtime.Integerp(Runtime.Second(code)) ? (int)Runtime.Second(code) : 0;
+                            while (state.Count > 1)
+                            {
+                                state.Pop();
+                            }
+                            timer.Reset();
+                            timer.Start();
+                            ResetRuntimeFunctionImp(level);
+                            timer.Stop();
+                            var time = timer.ElapsedMilliseconds;
+                            Runtime.PrintTrace("Startup time: ", time, "ms");
+                            break;
                         }
-                        timer.Reset();
-                        timer.Start();
-                        ResetRuntimeFunctionImp(level);
-                        timer.Stop();
-                        var time = timer.ElapsedMilliseconds;
-                        Runtime.PrintTrace("Startup time: ", time, "ms");
-                        break;
-                    }
 
                 }
             }
-            else
-            {
+            else {
                 RunCommand(null, code, smartParens: !leadingSpace);
             }
         }
@@ -301,7 +284,7 @@ namespace Kiezel
         public static int[] GetIntegerArgs(string lispCode)
         {
             var results = new List<int>();
-            foreach (var expr in Runtime.ReadAllFromString( lispCode ))
+            foreach (var expr in Runtime.ReadAllFromString(lispCode))
             {
                 results.Add(Convert.ToInt32(Runtime.Eval(expr)));
             }
@@ -353,7 +336,7 @@ namespace Kiezel
             var output = GetConsoleOut();
             var data = "";
 
-            while (String.IsNullOrWhiteSpace(data))
+            while (string.IsNullOrWhiteSpace(data))
             {
                 int counter = History.Count + 1;
                 string prompt;
@@ -362,12 +345,11 @@ namespace Kiezel
                 if (state.Count == 1)
                 {
                     Runtime.PrintLine(output);
-                    prompt = System.String.Format("{0} {1} {2}> ", package.Name, counter, debugText);
+                    prompt = string.Format("{0} {1} {2}> ", package.Name, counter, debugText);
                 }
-                else
-                {
+                else {
                     Runtime.PrintLine(output);
-                    prompt = System.String.Format("{0} {1} {2}: {3} > ", package.Name, counter, debugText, state.Count - 1);
+                    prompt = string.Format("{0} {1} {2}: {3} > ", package.Name, counter, debugText, state.Count - 1);
                 }
 
                 Runtime.Print(output, prompt);
@@ -378,7 +360,7 @@ namespace Kiezel
 
                 Runtime.PrintLine(output);
 
-                if (String.IsNullOrWhiteSpace(data))
+                if (string.IsNullOrWhiteSpace(data))
                 {
                     // Show prompt again
                     continue;
@@ -408,13 +390,12 @@ namespace Kiezel
                         ResetRuntimeFunctionImp(0);
                     }
 
-                    if (String.IsNullOrWhiteSpace(commandOptionArgument))
+                    if (string.IsNullOrWhiteSpace(commandOptionArgument))
                     {
                         var command = ReadCommand(debugging);
                         EvalPrintCommand(command, debugging);
                     }
-                    else
-                    {
+                    else {
                         var scriptFile = commandOptionArgument;
                         commandOptionArgument = "";
                         Runtime.Run(scriptFile, Symbols.LoadPrintKeyword, false, Symbols.LoadVerboseKeyword, false);
@@ -459,7 +440,7 @@ namespace Kiezel
 
         public static string RemoveDlrReferencesFromException(Exception ex)
         {
-            return String.Join("\n", ex.ToString().Split('\n').Where(IsNotDlrCode));
+            return string.Join("\n", ex.ToString().Split('\n').Where(IsNotDlrCode));
         }
 
         public static void RunCommand(Action<object> func, Cons lispCode, bool showTime = false, bool smartParens = false)
@@ -500,8 +481,7 @@ namespace Kiezel
                             Runtime.PrettyPrintLine(output, 4, null, val);
                         }
                     }
-                    else
-                    {
+                    else {
                         func(val);
                     }
                 }
@@ -512,12 +492,21 @@ namespace Kiezel
                     Runtime.PrintStream(GetConsoleLog(), "info", Runtime.MakeString("Elapsed time: ", time, " ms\n"));
                 }
             }
-            else
-            {
+            else {
                 func(Runtime.SymbolValue(Symbols.It));
             }
         }
 
-        #endregion Methods
+        #endregion Public Methods
+
+        #region Other
+
+        public delegate string ReadLineFunction();
+
+        public delegate void ResetDisplayFunction();
+
+        public delegate void ResetRuntimeFunction(int level);
+
+        #endregion Other
     }
 }

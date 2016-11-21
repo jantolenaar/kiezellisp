@@ -12,14 +12,14 @@ namespace Kiezel
 
     public partial class Runtime
     {
-        #region Fields
+        #region Static Fields
 
         public static List<ProfilingEntry> ProfilingEntries = null;
         public static Stopwatch ProfilingTimer = Stopwatch.StartNew();
 
-        #endregion Fields
+        #endregion Static Fields
 
-        #region Methods
+        #region Public Methods
 
         [Lisp("profiler.close-session")]
         public static void CloseProfilingSession()
@@ -86,7 +86,7 @@ namespace Kiezel
             {
                 stream.WriteLine("nr,start,end,time,code");
 
-                foreach (ProfilingEntry item in ToIter( ProfilingEntries ))
+                foreach (ProfilingEntry item in ToIter(ProfilingEntries))
                 {
                     if (item.End != -1)
                     {
@@ -117,9 +117,9 @@ namespace Kiezel
             ProfilingTimer.Stop();
         }
 
-        #endregion Methods
+        #endregion Public Methods
 
-        #region Nested Types
+        #region Other
 
         public class ProfilingEntry
         {
@@ -145,6 +145,6 @@ namespace Kiezel
             #endregion Constructors
         }
 
-        #endregion Nested Types
+        #endregion Other
     }
 }

@@ -1,4 +1,4 @@
-﻿#region Header
+#region Header
 
 // Copyright (C) Jan Tolenaar. See the file LICENSE for details.
 
@@ -35,7 +35,7 @@ namespace Kiezel
 
         #endregion Constructors
 
-        #region Properties
+        #region Public Properties
 
         public object Car
         {
@@ -49,8 +49,7 @@ namespace Kiezel
                 {
                     throw new LispException("Cannot set car of empty list");
                 }
-                else
-                {
+                else {
                     car = value;
                 }
             }
@@ -82,8 +81,7 @@ namespace Kiezel
                 {
                     throw new LispException("Cannot set cdr of empty list");
                 }
-                else
-                {
+                else {
                     cdr = value;
                 }
             }
@@ -112,10 +110,6 @@ namespace Kiezel
             }
         }
 
-        #endregion Properties
-
-        #region Indexers
-
         public object this[int index]
         {
             get
@@ -142,8 +136,7 @@ namespace Kiezel
                 {
                     return null;
                 }
-                else
-                {
+                else {
                     return list.Car;
                 }
             }
@@ -172,16 +165,24 @@ namespace Kiezel
                 {
                     throw new IndexOutOfRangeException();
                 }
-                else
-                {
+                else {
                     list.Car = value;
                 }
             }
         }
 
-        #endregion Indexers
+        #endregion Public Properties
 
-        #region Methods
+        #region Private Methods
+
+        IEnumerator IEnumerable.GetEnumerator()
+        {
+            return new ListEnumerator(this);
+        }
+
+        #endregion Private Methods
+
+        #region Public Methods
 
         public bool Contains(object value)
         {
@@ -193,11 +194,6 @@ namespace Kiezel
                 }
             }
             return false;
-        }
-
-        IEnumerator IEnumerable.GetEnumerator()
-        {
-            return new ListEnumerator(this);
         }
 
         public override string ToString()
@@ -220,15 +216,15 @@ namespace Kiezel
 
                     if (first == Symbols.Dot && second is string && third == null)
                     {
-                        return System.String.Format(".{0}", second);
+                        return string.Format(".{0}", second);
                     }
                     else if (first == Symbols.NullableDot && second is string && third == null)
                     {
-                        return System.String.Format("?{0}", second);
+                        return string.Format("?{0}", second);
                     }
                     else if (first == Symbols.Quote && third == null)
                     {
-                        return System.String.Format("'{0}", second);
+                        return string.Format("'{0}", second);
                     }
                 }
             }
@@ -274,16 +270,16 @@ namespace Kiezel
             return buf.ToString();
         }
 
-        #endregion Methods
+        #endregion Public Methods
 
-        #region Nested Types
+        #region Other
 
         private class ListEnumerator : IEnumerator
         {
             #region Fields
 
             // This enumerator does NOT keep a reference to the start of the list.
-            public bool initialized = false;
+            public bool initialized;
             public Cons list;
 
             #endregion Fields
@@ -297,7 +293,7 @@ namespace Kiezel
 
             #endregion Constructors
 
-            #region Properties
+            #region Public Properties
 
             public object Current
             {
@@ -307,9 +303,9 @@ namespace Kiezel
                 }
             }
 
-            #endregion Properties
+            #endregion Public Properties
 
-            #region Methods
+            #region Public Methods
 
             public bool MoveNext()
             {
@@ -319,14 +315,12 @@ namespace Kiezel
                     {
                         return false;
                     }
-                    else
-                    {
+                    else {
                         list = list.Cdr;
                         return list != null;
                     }
                 }
-                else
-                {
+                else {
                     initialized = true;
                     return list != null;
                 }
@@ -337,15 +331,15 @@ namespace Kiezel
                 throw new NotImplementedException();
             }
 
-            #endregion Methods
+            #endregion Public Methods
         }
 
-        #endregion Nested Types
+        #endregion Other
     }
 
     public partial class Runtime
     {
-        #region Methods
+        #region Public Methods
 
         [Lisp("copy-tree")]
         public static object CopyTree(object a)
@@ -353,10 +347,9 @@ namespace Kiezel
             if (Consp(a))
             {
                 var tree = (Cons)a;
-                return Runtime.MakeCons(CopyTree(tree.Car), (Cons)CopyTree(tree.Cdr));
+                return MakeCons(CopyTree(tree.Car), (Cons)CopyTree(tree.Cdr));
             }
-            else
-            {
+            else {
                 return a;
             }
         }
@@ -384,8 +377,7 @@ namespace Kiezel
             {
                 return new Cons(seq.Current, seq);
             }
-            else
-            {
+            else {
                 return null;
             }
         }
@@ -406,7 +398,7 @@ namespace Kiezel
 
             var list = AsLazyList((IEnumerable)items[items.Length - 1]);
 
-            for (int i = items.Length - 2; i >= 0; --i)
+            for (var i = items.Length - 2; i >= 0; --i)
             {
                 list = new Cons(items[i], list);
             }
@@ -414,6 +406,6 @@ namespace Kiezel
             return list;
         }
 
-        #endregion Methods
+        #endregion Public Methods
     }
 }

@@ -11,13 +11,13 @@ namespace Kiezel
 
     public partial class Runtime
     {
-        #region Fields
+        #region Static Fields
 
         public static Dictionary<Symbol, object> Types;
 
-        #endregion Fields
+        #endregion Static Fields
 
-        #region Methods
+        #region Public Methods
 
         [Lisp("find-type")]
         public static object FindType(Symbol name)
@@ -66,6 +66,6 @@ namespace Kiezel
             return type;
         }
 
-        #endregion Methods
+        #endregion Public Methods
     }
 }

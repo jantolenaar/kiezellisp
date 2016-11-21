@@ -16,17 +16,17 @@ namespace Kiezel
 
     public partial class Runtime
     {
-        #region Fields
+        #region Static Fields
 
         public static BindingFlags ImportBindingFlags = BindingFlags.IgnoreCase | BindingFlags.Static | BindingFlags.Instance | BindingFlags.Public | BindingFlags.FlattenHierarchy;
-        public static Assembly LastUsedAssembly = null;
+        public static Assembly LastUsedAssembly;
 
-        #endregion Fields
+        #endregion Static Fields
 
-        #region Methods
+        #region Public Methods
 
         [Lisp("add-event-handler")]
-        public static void AddEventHandler(System.Reflection.EventInfo eventinfo, object target, IApply func)
+        public static void AddEventHandler(EventInfo eventinfo, object target, IApply func)
         {
             var type = eventinfo.EventHandlerType;
             var dlg = ConvertToDelegate(type, func);
@@ -64,8 +64,8 @@ namespace Kiezel
 
         public static string FindFileInPath(string fileName)
         {
-			var folders = (Cons)GetDynamic(Symbols.AssemblyPath);
-			foreach (string s in ToIter(folders))
+            var folders = (Cons)GetDynamic(Symbols.AssemblyPath);
+            foreach (string s in ToIter(folders))
             {
                 var p = PathExtensions.Combine(s, fileName);
                 if (File.Exists(p))
@@ -86,8 +86,7 @@ namespace Kiezel
                 {
                     name = CreateDocSymbol(((LispAttribute)attrs[0]).Names[0]);
                 }
-                else
-                {
+                else {
                     name = CreateDocSymbol(method.Name.LispName());
                 }
             }
@@ -130,8 +129,7 @@ namespace Kiezel
             {
                 return member.GetValue(null);
             }
-            else
-            {
+            else {
                 return null;
             }
         }
@@ -140,7 +138,7 @@ namespace Kiezel
         {
             if (typeParameters != null && typeParameters.Length != 0)
             {
-                typeName += "`" + typeParameters.Length.ToString();
+                typeName += "`" + typeParameters.Length;
             }
 
             Type type = null;
@@ -189,14 +187,13 @@ namespace Kiezel
 
         public static Package Import(Type type, string packageName, string extendsPackageName)
         {
-            if (!String.IsNullOrEmpty(extendsPackageName))
+            if (!string.IsNullOrEmpty(extendsPackageName))
             {
                 var package = GetPackage(extendsPackageName);
                 ImportExtensionMethodsIntoPackage(package, type);
                 return package;
             }
-            else
-            {
+            else {
                 var package = FindPackage(packageName);
 
                 if (package != null)
@@ -211,15 +208,13 @@ namespace Kiezel
                     {
                         // silently do nothing
                     }
-                    else
-                    {
+                    else {
                         Packages.Remove(packageName);
                         package = MakePackage(packageName);
                         ImportIntoPackage(package, type);
                     }
                 }
-                else
-                {
+                else {
                     package = MakePackage(packageName);
                     ImportIntoPackage(package, type);
                 }
@@ -253,7 +248,7 @@ namespace Kiezel
                     continue;
                 }
 
-                var importable = restrictedImport ? methods[0].GetCustomAttributes(typeof(LispAttribute), true).Length != 0 : true;
+                var importable = !restrictedImport || methods[0].GetCustomAttributes(typeof(LispAttribute), true).Length != 0;
 
                 if (!importable)
                 {
@@ -274,8 +269,7 @@ namespace Kiezel
                     methods.AddRange(builtin.BuiltinExtensionMembers);
                     builtin.BuiltinExtensionMembers = methods.Distinct().ToArray();
                 }
-                else
-                {
+                else {
                     // todo: change order
                     // Goes after other methods as in c#.
                     methods.AddRange(builtin.ExternalExtensionMembers);
@@ -295,7 +289,7 @@ namespace Kiezel
             package.RestrictedImport = restrictedImport;
             var sym = package.FindOrCreate("T", excludeUseList: true, export: true);
             sym.ConstantValue = type;
-            sym.Documentation = String.Format("The .NET type <{0}> imported in this package.", type);
+            sym.Documentation = string.Format("The .NET type <{0}> imported in this package.", type);
 
             if (!ToBool(Symbols.LazyImport.Value))
             {
@@ -312,7 +306,7 @@ namespace Kiezel
                 name = ".ctor";
             }
 
-            if (ImportMissingSymbol(key, name, package))
+            if (ImportMissingSymbol2(name, package))
             {
                 return;
             }
@@ -321,7 +315,7 @@ namespace Kiezel
             {
                 // choice between setter and ordinary method
                 var name2 = "set_" + name.Substring(3);
-                if (ImportMissingSymbol(key, name2, package))
+                if (ImportMissingSymbol2(name2, package))
                 {
                     return;
                 }
@@ -329,10 +323,10 @@ namespace Kiezel
 
             var name3 = key.Replace("-", "_");
 
-            ImportMissingSymbol(key, name3, package);
+            ImportMissingSymbol2(name3, package);
         }
 
-        public static bool ImportMissingSymbol(string key, string name, Package package)
+        public static bool ImportMissingSymbol2(string name, Package package)
         {
             var members = package.ImportedType.GetMember(name, ImportBindingFlags).Select(x => ResolveGenericMethod(x)).ToArray();
 
@@ -341,7 +335,7 @@ namespace Kiezel
                 return false;
             }
 
-            var importable = package.RestrictedImport ? members[0].GetCustomAttributes(typeof(LispAttribute), true).Length != 0 : true;
+            var importable = !package.RestrictedImport || members[0].GetCustomAttributes(typeof(LispAttribute), true).Length != 0;
 
             if (!importable)
             {
@@ -501,7 +495,7 @@ namespace Kiezel
                 if (method.ContainsGenericParameters)
                 {
                     var parameters = method.GetGenericArguments();
-                    var types = new Type[ parameters.Length ];
+                    var types = new Type[parameters.Length];
                     for (var i = 0; i < types.Length; ++i)
                     {
                         types[i] = typeof(object);
@@ -526,8 +520,7 @@ namespace Kiezel
             {
                 return "";
             }
-            else
-            {
+            else {
                 return name.Substring(0, index) + "+" + name.Substring(index + 1);
             }
         }
@@ -545,6 +538,6 @@ namespace Kiezel
             }
         }
 
-        #endregion Methods
+        #endregion Public Methods
     }
 }

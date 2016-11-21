@@ -1,4 +1,4 @@
-﻿#region Header
+#region Header
 
 // Copyright (C) Jan Tolenaar. See the file LICENSE for details.
 
@@ -42,12 +42,12 @@ namespace Kiezel
         public bool IsLambda;
         public List<LabelTarget> Labels = new List<LabelTarget>();
         public string Name;
-        public List<Symbol> Names = null;
+        public List<Symbol> Names;
         public AnalysisScope Parent;
         public ParameterExpression TagBodySaved;
         public ParameterExpression Tilde;
-        public bool UsesDynamicVariables = false;
-        public bool UsesFramedVariables = false;
+        public bool UsesDynamicVariables;
+        public bool UsesFramedVariables;
         public List<ScopeEntry> Variables = new List<ScopeEntry>();
 
         #endregion Fields
@@ -67,7 +67,7 @@ namespace Kiezel
 
         #endregion Constructors
 
-        #region Properties
+        #region Public Properties
 
         public List<ParameterExpression> Parameters
         {
@@ -85,9 +85,22 @@ namespace Kiezel
             }
         }
 
-        #endregion Properties
+        #endregion Public Properties
 
-        #region Methods
+        #region Private Methods
+
+        bool LexicalSymEqual(Symbol sym1, Symbol sym2)
+        {
+            if (sym1 == sym2)
+            {
+                return true;
+            }
+            return false;
+        }
+
+        #endregion Private Methods
+
+        #region Public Methods
 
         public void ChangeNativeToFrameLocal(ScopeEntry entry)
         {
@@ -192,7 +205,7 @@ namespace Kiezel
                     }
                 }
 
-                for (int i = sc.Variables.Count - 1; i >= 0; --i)
+                for (var i = sc.Variables.Count - 1; i >= 0; --i)
                 {
                     item = sc.Variables[i];
 
@@ -253,8 +266,7 @@ namespace Kiezel
             {
                 return entry;
             }
-            else
-            {
+            else {
                 return null;
             }
         }
@@ -265,22 +277,12 @@ namespace Kiezel
             {
                 Runtime.PrintWarning(error, " ", sym.Name);
             }
-            else
-            {
+            else {
                 Runtime.PrintWarning(error, " ", sym.Name, " in ", context);
             }
         }
 
-        bool LexicalSymEqual(Symbol sym1, Symbol sym2)
-        {
-            if (sym1 == sym2)
-            {
-                return true;
-            }
-            return false;
-        }
-
-        #endregion Methods
+        #endregion Public Methods
     }
 
     public class ScopeEntry
@@ -306,7 +308,7 @@ namespace Kiezel
 
         #endregion Constructors
 
-        #region Properties
+        #region Public Properties
 
         public bool Assigned
         {
@@ -336,7 +338,7 @@ namespace Kiezel
         {
             get
             {
-                return (Value is Int32) ? (Int32)Value : -1;
+                return (Value is int) ? (int)Value : -1;
             }
         }
 
@@ -380,6 +382,6 @@ namespace Kiezel
             }
         }
 
-        #endregion Properties
+        #endregion Public Properties
     }
 }

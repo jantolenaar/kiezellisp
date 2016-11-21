@@ -11,7 +11,7 @@ namespace Kiezel
 
     public partial class Runtime
     {
-        #region Fields
+        #region Static Fields
 
         public static string[] StringPatterns = new string[]
         {
@@ -21,20 +21,9 @@ namespace Kiezel
         };
         public static Regex InterpolationStringPatterns = new Regex("|".Join(StringPatterns), RegexOptions.Singleline);
 
-        #endregion Fields
+        #endregion Static Fields
 
-        #region Enumerations
-
-        public enum BranchMode
-        {
-            False = 0,
-            True = 1,
-            Eval = 2
-        }
-
-        #endregion Enumerations
-
-        #region Methods
+        #region Public Methods
 
         public static bool EvalFeatureExpr(object expr)
         {
@@ -188,21 +177,21 @@ namespace Kiezel
                 switch (mode)
                 {
                     case BranchMode.False:
-                    {
-                        haveFeatures = false;
-                        break;
-                    }
+                        {
+                            haveFeatures = false;
+                            break;
+                        }
                     case BranchMode.True:
-                    {
-                        haveFeatures = true;
-                        break;
-                    }
+                        {
+                            haveFeatures = true;
+                            break;
+                        }
                     case BranchMode.Eval:
                     default:
-                    {
-                        haveFeatures = EvalFeatureExpr(test);
-                        break;
-                    }
+                        {
+                            haveFeatures = EvalFeatureExpr(test);
+                            break;
+                        }
                 }
             }
             else
@@ -379,26 +368,26 @@ namespace Kiezel
             switch (ch)
             {
                 case "r":
-                {
-                    return Number.ParseNumberBase(token, arg);
-                }
+                    {
+                        return Number.ParseNumberBase(token, arg);
+                    }
                 case "o":
-                {
-                    return Number.ParseNumberBase(token, 8);
-                }
+                    {
+                        return Number.ParseNumberBase(token, 8);
+                    }
                 case "b":
-                {
-                    return Number.ParseNumberBase(token, 2);
-                }
+                    {
+                        return Number.ParseNumberBase(token, 2);
+                    }
                 case "x":
-                {
-                    return Number.ParseNumberBase(token, 16);
-                }
+                    {
+                        return Number.ParseNumberBase(token, 16);
+                    }
                 default:
-                {
-                    // not reached
-                    return null;
-                }
+                    {
+                        // not reached
+                        return null;
+                    }
             }
         }
 
@@ -524,6 +513,17 @@ namespace Kiezel
             return obj;
         }
 
-        #endregion Methods
+        #endregion Public Methods
+
+        #region Other
+
+        public enum BranchMode
+        {
+            False = 0,
+            True = 1,
+            Eval = 2
+        }
+
+        #endregion Other
     }
 }

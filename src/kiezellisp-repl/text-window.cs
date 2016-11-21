@@ -7,15 +7,9 @@
 namespace Kiezel
 {
     using System;
-    using System.Collections;
     using System.Collections.Generic;
-    using System.Diagnostics;
     using System.Drawing;
-    using System.Globalization;
     using System.IO;
-    using System.Linq;
-    using System.Reflection;
-    using System.Threading;
     using System.Windows.Forms;
 
     #region Delegates
@@ -32,21 +26,17 @@ namespace Kiezel
     {
         #region Fields
 
-        internal TextBufferItem CaretItem;
-        internal int CaretPos;
-        internal bool CaretVisible;
-        internal bool Dirty;
-        internal Dictionary<Keys, object> ScrollHandlers = new Dictionary<Keys, object>();
-        internal string Text;
+        internal Color backColor;
+        internal int cursorLeft;
+        internal int cursorTop;
+        internal bool dirty;
+        internal Color foreColor;
+        internal Color highlightBackColor;
+        internal Color highlightForeColor;
+        internal bool outputSuspended;
+        internal Dictionary<Keys, object> scrollHandlers = new Dictionary<Keys, object>();
+        internal Color shadowBackColor;
         internal TextWriter TextWriter;
-        internal Color _BackColor;
-        internal int _cursorLeft;
-        internal int _cursorTop;
-        internal Color _ForeColor;
-        internal Color _HighlightBackColor;
-        internal Color _HighlightForeColor;
-        internal bool _outputSuspended;
-        internal Color _ShadowBackColor;
 
         #endregion Fields
 
@@ -60,32 +50,62 @@ namespace Kiezel
             HighlightForeColor = RuntimeRepl.DefaultHighlightForeColor;
             HighlightBackColor = RuntimeRepl.DefaultHighlightBackColor;
             ShadowBackColor = RuntimeRepl.DefaultShadowBackColor;
-            Buffer = new TextBuffer(args.BufferWidth, args.BufferHeight, _ForeColor, _BackColor);
+            Buffer = new TextBuffer(args.BufferWidth, args.BufferHeight, foreColor, backColor);
             CodeCompletion = args.CodeCompletion;
             HtmlPrefix = args.HtmlPrefix;
             HtmlSuffix = RuntimeRepl.GetSuffixFromPrefix(HtmlPrefix);
-            TextWriter = System.IO.TextWriter.Synchronized(new TextWindowTextWriter(this));
+            TextWriter = TextWriter.Synchronized(new TextWindowTextWriter(this));
             InitEditHandlers();
             InitScrollHandlers();
-            Dirty = true;
+            dirty = true;
             Style = 0;
-            CaretVisible = false;
+            BufferMark = BufferBound = -1;
         }
 
         #endregion Constructors
 
-        #region Properties
+        #region Internal Properties
+
+        internal int BufferBound { get; set; }
+
+        internal int BufferMark { get; set; }
+
+        internal int FontIndex
+        {
+            get { return Style & TextStyle.FontMask; }
+        }
+
+        internal int LastPos { get; set; }
+
+        internal int LastRow
+        {
+            get { return LastPos / BufferWidth; }
+        }
+
+        internal int WindowLeftMax
+        {
+            get { return BufferWidth - WindowWidth; }
+        }
+
+        internal int WindowTopMax
+        {
+            get { return BufferHeight - WindowHeight; }
+        }
+
+        #endregion Internal Properties
+
+        #region Public Properties
 
         public object BackColor
         {
             get
             {
-                return _BackColor;
+                return backColor;
             }
             set
             {
-                _BackColor = RuntimeRepl.MakeColor(value);
-                ParentControl.BackColor = _BackColor;
+                backColor = RuntimeRepl.MakeColor(value);
+                ParentControl.BackColor = backColor;
             }
         }
 
@@ -155,17 +175,36 @@ namespace Kiezel
             }
         }
 
+        public int CaretLeft { get; set; }
+
+        public int CaretPos
+        {
+            get
+            {
+                return CaretLeft + CaretTop * BufferWidth;
+            }
+            set
+            {
+                CaretLeft = value % BufferWidth;
+                CaretTop = value / BufferWidth;
+            }
+        }
+
+        public int CaretTop { get; set; }
+
+        public bool CaretVisible { get; set; }
+
         public bool CodeCompletion { get; set; }
 
         public int CursorLeft
         {
             get
             {
-                return _cursorLeft;
+                return cursorLeft;
             }
             set
             {
-                _cursorLeft = Math.Max(0, Math.Min(value, BufferWidth - 1));
+                cursorLeft = Math.Max(0, Math.Min(value, BufferWidth - 1));
                 if (CursorPos > LastPos)
                 {
                     LastPos = CursorPos;
@@ -190,11 +229,11 @@ namespace Kiezel
         {
             get
             {
-                return _cursorTop;
+                return cursorTop;
             }
             set
             {
-                _cursorTop = Math.Max(0, Math.Min(value, BufferHeight - 1));
+                cursorTop = Math.Max(0, Math.Min(value, BufferHeight - 1));
                 if (CursorPos > LastPos)
                 {
                     LastPos = CursorPos;
@@ -206,11 +245,11 @@ namespace Kiezel
         {
             get
             {
-                return _ForeColor;
+                return foreColor;
             }
             set
             {
-                _ForeColor = RuntimeRepl.MakeColor(value);
+                foreColor = RuntimeRepl.MakeColor(value);
             }
         }
 
@@ -237,11 +276,11 @@ namespace Kiezel
         {
             get
             {
-                return _HighlightBackColor;
+                return highlightBackColor;
             }
             set
             {
-                _HighlightBackColor = RuntimeRepl.MakeColor(value);
+                highlightBackColor = RuntimeRepl.MakeColor(value);
             }
         }
 
@@ -249,11 +288,11 @@ namespace Kiezel
         {
             get
             {
-                return _HighlightForeColor;
+                return highlightForeColor;
             }
             set
             {
-                _HighlightForeColor = RuntimeRepl.MakeColor(value);
+                highlightForeColor = RuntimeRepl.MakeColor(value);
             }
         }
 
@@ -287,19 +326,22 @@ namespace Kiezel
             }
             set
             {
-                Style = 0;
+                if (value)
+                {
+                    Style = 0;
+                }
             }
         }
 
         public bool OutputSuspended
         {
-            get { return _outputSuspended; }
+            get { return outputSuspended; }
 
             set
             {
-                var old = _outputSuspended;
-                _outputSuspended = value;
-                if (old && !_outputSuspended)
+                var old = outputSuspended;
+                outputSuspended = value;
+                if (old && !outputSuspended)
                 {
                     Refresh();
                 }
@@ -370,11 +412,11 @@ namespace Kiezel
         {
             get
             {
-                return _ShadowBackColor;
+                return shadowBackColor;
             }
             set
             {
-                _ShadowBackColor = RuntimeRepl.MakeColor(value);
+                shadowBackColor = RuntimeRepl.MakeColor(value);
             }
         }
 
@@ -428,12 +470,9 @@ namespace Kiezel
                 if (this != RuntimeRepl.StdScr)
                 {
                     RuntimeRepl.GuiInvoke(new Action(() =>
-                  {
-                      if (ParentForm.Visible != value)
-                      {
-                          ParentForm.Visible = value;
-                      }
-                  }));
+                    {
+                        ParentForm.Visible = value;
+                    }));
                 }
             }
         }
@@ -452,112 +491,9 @@ namespace Kiezel
             get { return ParentControl.Cols; }
         }
 
-        internal int FontIndex
-        {
-            get { return Style & TextStyle.FontMask; }
-        }
+        #endregion Public Properties
 
-        internal int LastPos { get; set; }
-
-        internal int LastRow
-        {
-            get { return LastPos / BufferWidth; }
-        }
-
-        internal int WindowLeftMax
-        {
-            get { return BufferWidth - WindowWidth; }
-        }
-
-        internal int WindowTopMax
-        {
-            get { return BufferHeight - WindowHeight; }
-        }
-
-        #endregion Properties
-
-        #region Methods
-
-        public static TextWindow Open(params object[] args)
-        {
-            var createArgs = new TextWindowCreateArgs(args);
-            return RuntimeRepl.OpenWindow(createArgs);
-        }
-
-        public void BringToFront()
-        {
-            ParentControl.GuiBringToFront();
-        }
-
-        public void Clear()
-        {
-            Dirty = true;
-            CursorPos = 0;
-            ClearToBot();
-        }
-
-        public void ClearToBot()
-        {
-            ClearToPos(LastPos);
-        }
-
-        public void ClearToEol()
-        {
-            Dirty = true;
-            for (var col = CursorLeft; col < BufferWidth; ++col)
-            {
-                // maybe support reverse?
-                Set(col, CursorTop, ' ', _ForeColor, _BackColor, 0);
-            }
-        }
-
-        public void ClearToPos(int end)
-        {
-            Dirty = true;
-            for (var pos = CursorPos; pos < end; ++pos)
-            {
-                // maybe support reverse?
-                Set(pos, ' ', _ForeColor, _BackColor, 0);
-            }
-            LastPos = CursorPos;
-        }
-
-        public void Close()
-        {
-            RuntimeRepl.CloseWindow(this);
-        }
-
-        public TextBuffer CopyBuffer()
-        {
-            return CopyBuffer(0, 0, BufferWidth, BufferHeight);
-        }
-
-        public TextBuffer CopyBuffer(int x, int y, int w, int h)
-        {
-            return Buffer.Copy(x, y, w, h);
-        }
-
-        public string FormatHtml(string style, string msg)
-        {
-            if (string.IsNullOrEmpty(HtmlPrefix) || string.IsNullOrEmpty(style))
-            {
-                return msg;
-            }
-            else {
-                return Runtime.MakeString(HtmlPrefix, style, HtmlSuffix, msg, HtmlPrefix, "/", style, HtmlSuffix);
-            }
-        }
-
-        public string GetStringFromBuffer(int beg, int end)
-        {
-            return Buffer.GetString(beg, end, false);
-        }
-
-        public string GetWordFromBuffer(int beg, int pos, int end, Func<char, bool> wordCharTest)
-        {
-            var text = GetStringFromBuffer(beg, end);
-            return Runtime.GetWordFromString(text, pos - beg, wordCharTest);
-        }
+        #region Private Methods
 
         void IDisposable.Dispose()
         {
@@ -583,25 +519,25 @@ namespace Kiezel
                 switch (style)
                 {
                     case "info":
-                    {
-                        ForeColor = RuntimeRepl.DefaultInfoColor;
-                        break;
-                    }
+                        {
+                            ForeColor = RuntimeRepl.DefaultInfoColor;
+                            break;
+                        }
                     case "warning":
-                    {
-                        ForeColor = RuntimeRepl.DefaultWarningColor;
-                        break;
-                    }
+                        {
+                            ForeColor = RuntimeRepl.DefaultWarningColor;
+                            break;
+                        }
                     case "error":
-                    {
-                        ForeColor = RuntimeRepl.DefaultErrorColor;
-                        break;
-                    }
+                        {
+                            ForeColor = RuntimeRepl.DefaultErrorColor;
+                            break;
+                        }
                     default:
-                    {
-                        ForeColor = RuntimeRepl.DefaultForeColor;
-                        break;
-                    }
+                        {
+                            ForeColor = RuntimeRepl.DefaultForeColor;
+                            break;
+                        }
                 }
                 Reverse = false;
                 Highlight = false;
@@ -615,250 +551,33 @@ namespace Kiezel
             }
         }
 
-        public void Paste(int x, int y, TextBuffer buffer)
-        {
-            Buffer.Paste(x, y, buffer);
-            Refresh();
-        }
+        #endregion Private Methods
 
-        public void Refresh()
-        {
-            if (!OutputSuspended)
-            {
-                ParentControl.GuiInvalidate();
-                ParentControl.GuiUpdateVertScrollBarPos();
-                ParentControl.GuiUpdateHoriScrollBarPos();
-                Dirty = false;
-            }
-        }
-
-        public void RefreshLine(int y)
-        {
-            // paints one line
-            Invalidate(0, y, BufferWidth, 1);
-        }
-
-        public void RefreshPosition(int pos)
-        {
-            // paints one character
-            var x = pos % BufferWidth;
-            var y = pos / BufferWidth;
-            Invalidate(x, y, 1, 1);
-        }
-
-        public void RefreshPositions(int beg, int end)
-        {
-            // paints lines between two offsets
-            var y1 = beg / BufferWidth;
-            var y2 = (end - 1) / BufferWidth;
-            Invalidate(0, y1, BufferWidth, y2 - y1 + 1);
-        }
-
-        public void ResizeBuffer(int width, int height)
-        {
-            width = Math.Max(width, WindowWidth);
-            height = Math.Max(height, WindowHeight);
-            if (width != BufferWidth || height != BufferHeight)
-            {
-                var x = 0;
-                var w = Math.Min(width, BufferWidth - x);
-                var y = Math.Max(0, LastRow - height - 1);
-                var h = Math.Min(height, BufferHeight - y);
-                var buf = new TextBuffer(width, height, Buffer.ForeColor, Buffer.BackColor);
-                buf.CopyRect(0, 0, Buffer, x, y, w, h);
-                CursorPos = Rebase(x, y, width, height, CursorPos);
-                HomePos = Rebase(x, y, width, height, HomePos);
-                CaretPos = Rebase(x, y, width, height, CaretPos);
-                SavedPos = Rebase(x, y, width, height, SavedPos);
-                LastPos = Rebase(x, y, width, height, LastPos);
-                Buffer = buf;
-                Refresh();
-            }
-        }
-
-        public string ScrapeLispWordAt(int x, int y)
-        {
-            var beg = y * BufferWidth;
-            var end = beg + BufferWidth;
-            var pos = beg + x;
-            var text = GetWordFromBuffer(beg, pos, end, Runtime.IsLispWordChar);
-            return text;
-        }
-
-        public string ScrapeWordAt(int x, int y)
-        {
-            var beg = y * BufferWidth;
-            var end = beg + BufferWidth;
-            var pos = beg + x;
-            var text = GetWordFromBuffer(beg, pos, end, Runtime.IsWordChar);
-            return text;
-        }
-
-        public void ScrollBuffer()
-        {
-            var lines = Buffer.Scroll(1);
-            var n = lines * BufferWidth;
-            CursorPos -= n;
-            HomePos -= n;
-            CaretPos -= n;
-            SavedPos -= n;
-            LastPos -= n;
-        }
-
-        public int SelectKey(params Keys[] keys)
-        {
-            while (true)
-            {
-                var info = ReadKey(false);
-                for (int i = 0; i < keys.Length; ++i)
-                {
-                    if (keys[i] == info.KeyData)
-                    {
-                        return i;
-                    }
-                }
-            }
-        }
-
-        public void SendInterruptKey()
-        {
-            ParentControl.SendInterruptKey();
-        }
-
-        public void SendKey(char key)
-        {
-            SendKey(new KeyInfo(key));
-        }
-
-        public void SendKey(Keys key)
-        {
-            SendKey(new KeyInfo(key));
-        }
-
-        public void Set(int pos, char ch)
-        {
-            if (Reverse)
-            {
-                Set(pos, ch, _BackColor, _ForeColor, FontIndex);
-            }
-            else if (Highlight)
-            {
-                Set(pos, ch, _HighlightForeColor, _HighlightBackColor, FontIndex);
-            }
-            else if (Shadow)
-            {
-                Set(pos, ch, _ForeColor, _ShadowBackColor, FontIndex);
-            }
-            else {
-                Set(pos, ch, _ForeColor, _BackColor, FontIndex);
-            }
-        }
-
-        public void SetWindowPos(int left, int top)
-        {
-            WindowTop = Math.Max(0, Math.Min(top, WindowTopMax));
-            WindowLeft = Math.Max(0, Math.Min(left, WindowLeftMax));
-            Refresh();
-        }
-
-        public void Write(char ch)
-        {
-            HideCursor();
-
-            if (CursorPos < 0 || CursorPos >= BufferSize)
-            {
-                return;
-            }
-
-            switch (ch)
-            {
-                case '\t':
-                {
-                    do
-                    {
-                        Write(' ');
-                    } while ((CursorLeft % 8) != 0);
-                    break;
-                }
-
-                case '\n':
-                {
-                    do
-                    {
-                        Write(' ');
-                    }
-                    while (CursorLeft != 0);
-                    RefreshLine(CursorTop - 1);
-                    break;
-                }
-
-                case '\r':
-                {
-                    CursorLeft = 0;
-                    break;
-                }
-
-                default:
-                {
-                    Set(CursorPos, ch);
-                    Dirty = true;
-                    Next();
-                    break;
-                }
-            }
-        }
-
-        public void Write(string str)
-        {
-            if (str != null)
-            {
-                foreach (var ch in str)
-                {
-                    Write(ch);
-                }
-            }
-        }
-
-        public void WriteLine(char ch)
-        {
-            Write(ch);
-            WriteLine();
-        }
-
-        public void WriteLine(string str)
-        {
-            Write(str);
-            WriteLine();
-        }
-
-        public void WriteLine()
-        {
-            Write('\n');
-        }
+        #region Internal Methods
 
         internal void AddEditHandler(Keys key, IApply handler)
         {
-            EditHandlers[key] = (object)handler;
+            editHandlers[key] = handler;
         }
 
         internal void AddEditHandler(Keys key, EditHandler handler)
         {
-            EditHandlers[key] = (object)handler;
+            editHandlers[key] = handler;
         }
 
         internal void AddEditHandler(Keys key, MouseHandler handler)
         {
-            EditHandlers[key] = (object)handler;
+            editHandlers[key] = handler;
         }
 
         internal void AddScrollHandler(Keys key, ScrollHandler handler)
         {
-            ScrollHandlers[key] = (object)handler;
+            scrollHandlers[key] = handler;
         }
 
         internal void AddScrollHandler(Keys key, MouseHandler handler)
         {
-            ScrollHandlers[key] = (object)handler;
+            scrollHandlers[key] = handler;
         }
 
         internal bool CmdBufferEnd()
@@ -958,12 +677,45 @@ namespace Kiezel
             return Buffer[col, line];
         }
 
+        internal string GetSelection(bool insertlf)
+        {
+            return Buffer.GetString(BufferMark, BufferBound, insertlf);
+        }
+
+        internal TextBufferItem GetDisplayAttributes(int col, int row)
+        {
+            var item = Buffer[col, row];
+            var hasCaret = (CaretVisible && col == CaretLeft && row == CaretTop);
+            var isSelected = Selected(col, row);
+
+            if (isSelected)
+            {
+                if (hasCaret)
+                {
+                    item.Fg = RuntimeRepl.DefaultHighlightForeColor;
+                    item.Bg = RuntimeRepl.DefaultHighlightBackColor;
+                }
+                else
+                {
+                    item.Fg = RuntimeRepl.DefaultHighlightForeColor;
+                    item.Bg = Color.FromArgb(100, RuntimeRepl.DefaultHighlightBackColor);
+                }
+            }
+            else if (hasCaret)
+            {
+                var temp = item.Fg;
+                item.Fg = item.Bg;
+                item.Bg = temp;
+            }
+
+            return item;
+        }
+
         internal void HideCursor()
         {
             if (CaretVisible)
             {
                 CaretVisible = false;
-                Set(CaretPos, CaretItem);
                 RefreshPosition(CaretPos);
             }
         }
@@ -1070,50 +822,67 @@ namespace Kiezel
         {
             return text;
             /*
-            var prefix = text;
-            var completions = RuntimeConsoleBase.GetCompletions(prefix);
-            var x = Col;
-            var y = Row;
-            var w = 40;
-            var h = 7;
-            if (x + w > RuntimeRepl.Width)
-            {
-                x = RuntimeRepl.Width - w;
-            }
-            if (y + h > RuntimeRepl.Height)
-            {
-                y = RuntimeRepl.Height - h;
-            }
-            using (var win = Window.CreateFrameWindow(x, y, w, h, -1, null, null))
-            {
-                Func<KeyInfo,IEnumerable> keyHandler = (k) =>
-                {
-                    if (k.KeyData == Keys.Back)
-                    {
-                        if (prefix != "")
-                        {
-                            prefix = prefix.Substring(0, prefix.Length - 1);
-                            completions = RuntimeGfx.GetCompletions(prefix);
-                            return completions;
-                        }
-                    }
-                    else if (' ' <= k.KeyChar)
-                    {
-                        prefix = prefix + k.KeyChar.ToString();
-                        completions = RuntimeGfx.GetCompletions(prefix);
-                        return completions;
-                    }
-                    return null;
-                };
-                var choice = win.RunMenu(completions, null, keyHandler);
-                if (choice != -1)
-                {
-                    return completions[choice];
-                }
-            }
+			var prefix = text;
+			var completions = RuntimeConsoleBase.GetCompletions(prefix);
+			var x = Col;
+			var y = Row;
+			var w = 40;
+			var h = 7;
+			if (x + w > RuntimeRepl.Width)
+			{
+				x = RuntimeRepl.Width - w;
+			}
+			if (y + h > RuntimeRepl.Height)
+			{
+				y = RuntimeRepl.Height - h;
+			}
+			using (var win = Window.CreateFrameWindow(x, y, w, h, -1, null, null))
+			{
+				Func<KeyInfo,IEnumerable> keyHandler = (k) =>
+				{
+					if (k.KeyData == Keys.Back)
+					{
+						if (prefix != "")
+						{
+							prefix = prefix.Substring(0, prefix.Length - 1);
+							completions = RuntimeGfx.GetCompletions(prefix);
+							return completions;
+						}
+					}
+					else if (' ' <= k.KeyChar)
+					{
+						prefix = prefix + k.KeyChar.ToString();
+						completions = RuntimeGfx.GetCompletions(prefix);
+						return completions;
+					}
+					return null;
+				};
+				var choice = win.RunMenu(completions, null, keyHandler);
+				if (choice != -1)
+				{
+					return completions[choice];
+				}
+			}
 
-            return null;
-            */
+			return null;
+			*/
+        }
+
+        internal bool Selected(int col, int row)
+        {
+            if (BufferMark < BufferBound)
+            {
+                var p = col + BufferWidth * row;
+                return (BufferMark <= p && p < BufferBound);
+            }
+            else if (BufferMark > BufferBound)
+            {
+                var p = col + BufferWidth * row;
+                return (BufferBound <= p && p < BufferMark);
+            }
+            else {
+                return false;
+            }
         }
 
         internal void SendKey(KeyInfo key)
@@ -1124,7 +893,7 @@ namespace Kiezel
         internal void Set(int x, int y, char ch)
         {
             // Only used for graphics! Use normal font.
-            Set(x, y, ch, _ForeColor, _BackColor, 0);
+            Set(x, y, ch, foreColor, backColor, 0);
         }
 
         internal void Set(int col, int line, char ch, Color fg, Color bg, int fontIndex)
@@ -1147,8 +916,6 @@ namespace Kiezel
             HideCursor();
             CaretVisible = true;
             CaretPos = CursorPos;
-            CaretItem = Get(CaretPos);
-            Set(CaretPos, CaretItem.Code, CaretItem.Bg, CaretItem.Fg, CaretItem.FontIndex);
             RefreshPosition(CaretPos);
         }
 
@@ -1165,6 +932,328 @@ namespace Kiezel
             }
         }
 
-        #endregion Methods
+        #endregion Internal Methods
+
+        #region Public Methods
+
+        public void BringToFront()
+        {
+            ParentControl.GuiBringToFront();
+        }
+
+        public void Clear()
+        {
+            dirty = true;
+            CursorPos = 0;
+            ClearToBot();
+        }
+
+        public void ClearToBot()
+        {
+            ClearToPos(LastPos);
+        }
+
+        public void ClearToEol()
+        {
+            dirty = true;
+            for (var col = CursorLeft; col < BufferWidth; ++col)
+            {
+                // maybe support reverse?
+                Set(col, CursorTop, ' ', foreColor, backColor, 0);
+            }
+        }
+
+        public void ClearToPos(int end)
+        {
+            dirty = true;
+            for (var pos = CursorPos; pos < end; ++pos)
+            {
+                // maybe support reverse?
+                Set(pos, ' ', foreColor, backColor, 0);
+            }
+            LastPos = CursorPos;
+        }
+
+        public void Close()
+        {
+            RuntimeRepl.CloseWindow(this);
+        }
+
+        public TextBuffer CopyBuffer()
+        {
+            return CopyBuffer(0, 0, BufferWidth, BufferHeight);
+        }
+
+        public TextBuffer CopyBuffer(int x, int y, int w, int h)
+        {
+            return Buffer.Copy(x, y, w, h);
+        }
+
+        public string FormatHtml(string style, string msg)
+        {
+            if (string.IsNullOrEmpty(HtmlPrefix) || string.IsNullOrEmpty(style))
+            {
+                return msg;
+            }
+            else {
+                return Runtime.MakeString(HtmlPrefix, style, HtmlSuffix, msg, HtmlPrefix, "/", style, HtmlSuffix);
+            }
+        }
+
+        public string GetStringFromBuffer(int beg, int end)
+        {
+            return Buffer.GetString(beg, end, false);
+        }
+
+        public string GetWordFromBuffer(int beg, int pos, int end, Func<char, bool> wordCharTest)
+        {
+            var text = GetStringFromBuffer(beg, end);
+            return Runtime.GetWordFromString(text, pos - beg, wordCharTest);
+        }
+
+        public static TextWindow Open(params object[] args)
+        {
+            var createArgs = new TextWindowCreateArgs(args);
+            return RuntimeRepl.OpenWindow(createArgs);
+        }
+
+        public void Paste(int x, int y, TextBuffer buffer)
+        {
+            Buffer.Paste(x, y, buffer);
+            Refresh();
+        }
+
+        public void Refresh()
+        {
+            if (!OutputSuspended)
+            {
+                ParentControl.GuiInvalidate();
+                ParentControl.GuiUpdateVertScrollBarPos();
+                ParentControl.GuiUpdateHoriScrollBarPos();
+                dirty = false;
+            }
+        }
+
+        public void RefreshLine(int y)
+        {
+            // paints one line
+            Invalidate(0, y, BufferWidth, 1);
+        }
+
+        public void RefreshPosition(int pos)
+        {
+            // paints one character
+            var x = pos % BufferWidth;
+            var y = pos / BufferWidth;
+            Invalidate(x, y, 1, 1);
+        }
+
+        public void RefreshPositions(int beg, int end)
+        {
+            // paints lines between two offsets
+            var y1 = beg / BufferWidth;
+            var y2 = (end - 1) / BufferWidth;
+            Invalidate(0, y1, BufferWidth, y2 - y1 + 1);
+        }
+
+        public void ResizeBuffer(int width, int height)
+        {
+            width = Math.Max(width, WindowWidth);
+            height = Math.Max(height, WindowHeight);
+            if (width != BufferWidth || height != BufferHeight)
+            {
+                var x = 0;
+                var w = Math.Min(width, BufferWidth - x);
+                var y = Math.Max(0, LastRow - height - 1);
+                var h = Math.Min(height, BufferHeight - y);
+                var buf = new TextBuffer(width, height, Buffer.ForeColor, Buffer.BackColor);
+                buf.CopyRect(0, 0, Buffer, x, y, w, h);
+                CursorPos = Rebase(x, y, width, height, CursorPos);
+                homePos = Rebase(x, y, width, height, homePos);
+                //caretPos = Rebase(x, y, width, height, caretPos);
+                savedPos = Rebase(x, y, width, height, savedPos);
+                LastPos = Rebase(x, y, width, height, LastPos);
+                if (BufferMark != -1)
+                {
+                    BufferMark = Rebase(x, y, width, height, BufferMark);
+                }
+                if (BufferBound != -1)
+                {
+                    BufferBound = Rebase(x, y, width, height, BufferBound);
+                }
+                Buffer = buf;
+                Refresh();
+            }
+        }
+
+        public string ScrapeLispWordAt(int x, int y)
+        {
+            var beg = y * BufferWidth;
+            var end = beg + BufferWidth;
+            var pos = beg + x;
+            var text = GetWordFromBuffer(beg, pos, end, Runtime.IsLispWordChar);
+            return text;
+        }
+
+        public string ScrapeWordAt(int x, int y)
+        {
+            var beg = y * BufferWidth;
+            var end = beg + BufferWidth;
+            var pos = beg + x;
+            var text = GetWordFromBuffer(beg, pos, end, Runtime.IsWordChar);
+            return text;
+        }
+
+        public void ScrollBuffer()
+        {
+            var lines = Buffer.Scroll(1);
+            var n = lines * BufferWidth;
+            CursorPos -= n;
+            homePos -= n;
+            //caretPos -= n;
+            savedPos -= n;
+            LastPos -= n;
+            if (BufferMark != -1)
+            {
+                BufferMark = Math.Max(0, BufferMark - n);
+            }
+            if (BufferBound != -1)
+            {
+                BufferBound = Math.Max(0, BufferBound - n);
+            }
+        }
+
+        public int SelectKey(params Keys[] keys)
+        {
+            while (true)
+            {
+                var info = ReadKey(false);
+                for (var i = 0; i < keys.Length; ++i)
+                {
+                    if (keys[i] == info.KeyData)
+                    {
+                        return i;
+                    }
+                }
+            }
+        }
+
+        public void SendInterruptKey()
+        {
+            ParentControl.SendInterruptKey();
+        }
+
+        public void SendKey(char key)
+        {
+            SendKey(new KeyInfo(key));
+        }
+
+        public void SendKey(Keys key)
+        {
+            SendKey(new KeyInfo(key));
+        }
+
+        public void Set(int pos, char ch)
+        {
+            if (Reverse)
+            {
+                Set(pos, ch, backColor, foreColor, FontIndex);
+            }
+            else if (Highlight)
+            {
+                Set(pos, ch, highlightForeColor, highlightBackColor, FontIndex);
+            }
+            else if (Shadow)
+            {
+                Set(pos, ch, foreColor, shadowBackColor, FontIndex);
+            }
+            else {
+                Set(pos, ch, foreColor, backColor, FontIndex);
+            }
+        }
+
+        public void SetWindowPos(int left, int top)
+        {
+            WindowTop = Math.Max(0, Math.Min(top, WindowTopMax));
+            WindowLeft = Math.Max(0, Math.Min(left, WindowLeftMax));
+            Refresh();
+        }
+
+        public void Write(char ch)
+        {
+            HideCursor();
+
+            if (CursorPos < 0 || CursorPos >= BufferSize)
+            {
+                return;
+            }
+
+            switch (ch)
+            {
+                case '\t':
+                    {
+                        do
+                        {
+                            Write(' ');
+                        } while ((CursorLeft % 8) != 0);
+                        break;
+                    }
+
+                case '\n':
+                    {
+                        do
+                        {
+                            Write(' ');
+                        }
+                        while (CursorLeft != 0);
+                        RefreshLine(CursorTop - 1);
+                        break;
+                    }
+
+                case '\r':
+                    {
+                        CursorLeft = 0;
+                        break;
+                    }
+
+                default:
+                    {
+                        Set(CursorPos, ch);
+                        dirty = true;
+                        Next();
+                        break;
+                    }
+            }
+        }
+
+        public void Write(string str)
+        {
+            if (str != null)
+            {
+                foreach (var ch in str)
+                {
+                    Write(ch);
+                }
+            }
+        }
+
+        public void WriteLine(char ch)
+        {
+            Write(ch);
+            WriteLine();
+        }
+
+        public void WriteLine(string str)
+        {
+            Write(str);
+            WriteLine();
+        }
+
+        public void WriteLine()
+        {
+            Write('\n');
+        }
+
+        #endregion Public Methods
     }
 }

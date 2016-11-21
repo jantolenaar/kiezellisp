@@ -34,21 +34,25 @@ namespace Kiezel
 
     public class EOF
     {
-        #region Fields
+        #region Static Fields
 
         public static EOF Value = new EOF();
 
-        #endregion Fields
+        #endregion Static Fields
     }
 
     public class Readtable
     {
-        #region Fields
+        #region Static Fields
 
         public static ReadtableEntry DefaultItem = new ReadtableEntry
         {
             Type = CharacterType.Constituent
         };
+
+        #endregion Static Fields
+
+        #region Fields
 
         public ReadtableEntry[] Items;
         public Dictionary<char, ReadtableEntry> OtherItems;
@@ -69,7 +73,7 @@ namespace Kiezel
 
         #endregion Constructors
 
-        #region Methods
+        #region Public Methods
 
         public void DefineMacro(string ch, CharacterType type = CharacterType.TerminatingMacro)
         {
@@ -118,7 +122,7 @@ namespace Kiezel
             {
                 var ch = (char)i;
                 Items[i].Character = ch;
-                Items[i].Type = Char.IsWhiteSpace(ch) || Char.IsControl(ch) ? CharacterType.Whitespace : CharacterType.Constituent;
+                Items[i].Type = char.IsWhiteSpace(ch) || char.IsControl(ch) ? CharacterType.Whitespace : CharacterType.Constituent;
                 Items[i].Handler = null;
                 Items[i].DispatchReadtable = null;
             }
@@ -187,7 +191,7 @@ namespace Kiezel
             item.Type = type;
         }
 
-        #endregion Methods
+        #endregion Public Methods
     }
 
     public class ReadtableEntry
@@ -202,7 +206,7 @@ namespace Kiezel
 
         #endregion Fields
 
-        #region Methods
+        #region Public Methods
 
         public ReadtableEntry Clone()
         {
@@ -222,24 +226,24 @@ namespace Kiezel
             return dest;
         }
 
-        #endregion Methods
+        #endregion Public Methods
     }
 
     public class ReverseOrder : IComparer<string>
     {
-        #region Methods
+        #region Public Methods
 
         public int Compare(string x, string y)
         {
             return string.Compare(y, x);
         }
 
-        #endregion Methods
+        #endregion Public Methods
     }
 
     public partial class Runtime
     {
-        #region Methods
+        #region Public Methods
 
         [Lisp("copy-readtable")]
         public static Readtable CopyReadtable(params object[] kwargs)
@@ -368,15 +372,15 @@ namespace Kiezel
             return VOID.Value;
         }
 
-        #endregion Methods
+        #endregion Public Methods
     }
 
     public class VOID
     {
-        #region Fields
+        #region Static Fields
 
         public static VOID Value = new VOID();
 
-        #endregion Fields
+        #endregion Static Fields
     }
 }

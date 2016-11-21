@@ -17,18 +17,6 @@ namespace Kiezel
 
     using ThreadFunc = System.Func<object>;
 
-    public struct ThreadContextState
-    {
-        #region Fields
-
-        public Cons EvaluationStack;
-        public Frame Frame;
-        public int NestingDepth;
-        public SpecialVariables SpecialStack;
-
-        #endregion Fields
-    }
-
     public class GeneratorThreadContext : ThreadContext, IEnumerable
     {
         #region Fields
@@ -47,12 +35,16 @@ namespace Kiezel
 
         #endregion Constructors
 
-        #region Methods
+        #region Private Methods
 
         IEnumerator IEnumerable.GetEnumerator()
         {
             return list.GetConsumingEnumerable().GetEnumerator();
         }
+
+        #endregion Private Methods
+
+        #region Public Methods
 
         public object Resume()
         {
@@ -71,18 +63,35 @@ namespace Kiezel
             list.CompleteAdding();
         }
 
-        #endregion Methods
+        #endregion Public Methods
     }
 
     public partial class Runtime
     {
-        #region Fields
+        #region Static Fields
 
-        public static TcpListener CommandListenerSocket = null;
+        public static TcpListener CommandListenerSocket;
 
-        #endregion Fields
+        #endregion Static Fields
 
-        #region Methods
+        #region Private Methods
+
+        private static void AbortCommandListener()
+        {
+            if (CommandListenerSocket != null)
+            {
+                CommandListenerSocket.Stop();
+                CommandListenerSocket = null;
+            }
+        }
+
+        static void InsertExternalCommand(string str)
+        {
+        }
+
+        #endregion Private Methods
+
+        #region Public Methods
 
         public static GeneratorThreadContext CheckGeneratorThreadContext(ThreadContext ctx)
         {
@@ -93,7 +102,7 @@ namespace Kiezel
                 throw new LispException("Thread is not a generator thread");
             }
 
-            return (GeneratorThreadContext)context;
+            return context;
         }
 
         [Lisp("start-listener")]
@@ -155,7 +164,7 @@ namespace Kiezel
                 catch (Exception ex)
                 {
                     var ex2 = UnwindExceptionIntoNewException(ex);
-                    Runtime.PrintError(ex.ToString());
+                    PrintError(ex.ToString());
                     throw ex2;
                 }
                 finally
@@ -203,7 +212,7 @@ namespace Kiezel
                 catch (Exception ex)
                 {
                     var ex2 = UnwindExceptionIntoNewException(ex);
-                    Runtime.PrintError(ex.ToString());
+                    PrintError(ex.ToString());
                     throw ex2;
                 }
                 finally
@@ -231,8 +240,7 @@ namespace Kiezel
                 Process.GetCurrentProcess().PriorityClass = ProcessPriorityClass.High;
                 Thread.CurrentThread.Priority = ThreadPriority.Highest;
             }
-            else
-            {
+            else {
                 Process.GetCurrentProcess().ProcessorAffinity = new IntPtr(0);
                 Process.GetCurrentProcess().PriorityClass = ProcessPriorityClass.Normal;
                 Thread.CurrentThread.Priority = ThreadPriority.Normal;
@@ -253,7 +261,7 @@ namespace Kiezel
 
         public static void Listener(object state)
         {
-            var data = new byte[ 60000 ];
+            var data = new byte[60000];
 
             while (true)
             {
@@ -317,7 +325,7 @@ namespace Kiezel
         [Lisp("sleep")]
         public static void Sleep(int msec)
         {
-            System.Threading.Thread.Sleep(msec);
+            Thread.Sleep(msec);
         }
 
         [Lisp("yield")]
@@ -327,20 +335,7 @@ namespace Kiezel
             context.Yield(item);
         }
 
-        private static void AbortCommandListener()
-        {
-            if (CommandListenerSocket != null)
-            {
-                CommandListenerSocket.Stop();
-                CommandListenerSocket = null;
-            }
-        }
-
-        static void InsertExternalCommand(string str)
-        {
-        }
-
-        #endregion Methods
+        #endregion Public Methods
     }
 
     public class SpecialVariables
@@ -366,7 +361,7 @@ namespace Kiezel
 
         #endregion Constructors
 
-        #region Properties
+        #region Public Properties
 
         public object CheckedValue
         {
@@ -393,9 +388,9 @@ namespace Kiezel
             }
         }
 
-        #endregion Properties
+        #endregion Public Properties
 
-        #region Methods
+        #region Public Methods
 
         public static SpecialVariables Clone(SpecialVariables var)
         {
@@ -403,26 +398,25 @@ namespace Kiezel
             {
                 return null;
             }
-            else
-            {
+            else {
                 return new SpecialVariables(var.Sym, var.Constant, var.Value, Clone(var.Link));
             }
         }
 
-        #endregion Methods
+        #endregion Public Methods
     }
 
     public class ThreadContext
     {
         #region Fields
 
-        public Cons EvaluationStack = null;
-        public int NestingDepth = 0;
-        public SpecialVariables SpecialStack = null;
+        public Cons EvaluationStack;
+        public int NestingDepth;
+        public SpecialVariables SpecialStack;
         public Task<object> Task;
         public Thread Thread;
         public object ThreadResult;
-        public Frame _Frame = null;
+        public Frame _Frame;
 
         #endregion Fields
 
@@ -430,12 +424,12 @@ namespace Kiezel
 
         public ThreadContext(SpecialVariables specialStack)
         {
-            this.SpecialStack = SpecialVariables.Clone(specialStack);
+            SpecialStack = SpecialVariables.Clone(specialStack);
         }
 
         #endregion Constructors
 
-        #region Properties
+        #region Public Properties
 
         public Frame Frame
         {
@@ -462,16 +456,15 @@ namespace Kiezel
                 {
                     return Task.IsCompleted;
                 }
-                else
-                {
+                else {
                     return Thread.ThreadState == System.Threading.ThreadState.Stopped;
                 }
             }
         }
 
-        #endregion Properties
+        #endregion Public Properties
 
-        #region Methods
+        #region Public Methods
 
         public object GetResult()
         {
@@ -480,8 +473,7 @@ namespace Kiezel
             {
                 return Task.Result;
             }
-            else
-            {
+            else {
                 Thread.Join();
                 return ThreadResult;
             }
@@ -513,7 +505,7 @@ namespace Kiezel
 
             if (NestingDepth == 10000)
             {
-                System.Diagnostics.Debugger.Break();
+                Debugger.Break();
             }
 
             if (frame != null)
@@ -545,8 +537,7 @@ namespace Kiezel
                     }
                 }
             }
-            else
-            {
+            else {
                 if (Thread.ThreadState == System.Threading.ThreadState.Unstarted)
                 {
                     try
@@ -560,6 +551,18 @@ namespace Kiezel
             }
         }
 
-        #endregion Methods
+        #endregion Public Methods
+    }
+
+    public struct ThreadContextState
+    {
+        #region Fields
+
+        public Cons EvaluationStack;
+        public Frame Frame;
+        public int NestingDepth;
+        public SpecialVariables SpecialStack;
+
+        #endregion Fields
     }
 }

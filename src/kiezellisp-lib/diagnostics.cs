@@ -1,4 +1,4 @@
-﻿#region Header
+#region Header
 
 // Copyright (C) Jan Tolenaar. See the file LICENSE for details.
 
@@ -9,14 +9,13 @@ namespace Kiezel
     using System;
     using System.Collections;
     using System.Collections.Generic;
-    using System.Diagnostics;
     using System.IO;
     using System.Linq;
     using System.Reflection;
 
     public partial class Runtime
     {
-        #region Methods
+        #region Public Methods
 
         [Lisp("as-prototype")]
         public static Prototype AsPrototype(object obj)
@@ -41,8 +40,7 @@ namespace Kiezel
                 var dict = ConvertToDictionary((Type)obj, null, false);
                 return Prototype.FromDictionary(dict);
             }
-            else
-            {
+            else {
                 var dict = ConvertToDictionary(obj.GetType(), obj, false);
                 return Prototype.FromDictionary(dict);
             }
@@ -86,7 +84,7 @@ namespace Kiezel
                         var p = (PropertyInfo)m;
                         if (p.GetGetMethod() != null && p.GetGetMethod().GetParameters().Length == 0)
                         {
-                            value = p.GetValue(obj, new object[ 0 ]);
+                            value = p.GetValue(obj, new object[0]);
                             dict[name.LispName()] = value;
                         }
                     }
@@ -137,10 +135,10 @@ namespace Kiezel
 
             var dict = prototype.Dict;
 
-            foreach (string key in ToIter( SeqBase.Sort( dict.Keys, CompareApply, IdentityApply ) ))
+            foreach (string key in ToIter(SeqBase.Sort(dict.Keys, CompareApply, IdentityApply)))
             {
                 object val = dict[key];
-                string line = String.Format("{0} => ", key);
+                string line = string.Format("{0} => ", key);
                 Write(line, Symbols.Escape, false, Symbols.Stream, stream);
                 PrettyPrintLine(stream, line.Length, null, val);
             }
@@ -165,8 +163,7 @@ namespace Kiezel
             {
                 runtimeValue = obj;
             }
-            else
-            {
+            else {
                 runtimeValue = sym.Value;
 
                 z["symbol"] = sym;
@@ -176,42 +173,42 @@ namespace Kiezel
                 switch (sym.CompilerUsage)
                 {
                     case SymbolUsage.CompilerMacro:
-                    {
-                        z["compiler-usage"] = Symbols.CompilerMacro;
-                        z["compiler-value"] = sym.MacroValue;
-                        var b = ((ISyntax)sym.MacroValue).GetSyntax(sym);
-                        if (b != null)
                         {
-                            z["compiler-syntax"] = b;
+                            z["compiler-usage"] = Symbols.CompilerMacro;
+                            z["compiler-value"] = sym.MacroValue;
+                            var b = ((ISyntax)sym.MacroValue).GetSyntax(sym);
+                            if (b != null)
+                            {
+                                z["compiler-syntax"] = b;
+                            }
+                            break;
                         }
-                        break;
-                    }
                     case SymbolUsage.Macro:
-                    {
-                        z["compiler-usage"] = Symbols.Macro;
-                        z["compiler-value"] = sym.MacroValue;
-                        var b = ((ISyntax)sym.MacroValue).GetSyntax(sym);
-                        if (b != null)
                         {
-                            z["compiler-syntax"] = b;
+                            z["compiler-usage"] = Symbols.Macro;
+                            z["compiler-value"] = sym.MacroValue;
+                            var b = ((ISyntax)sym.MacroValue).GetSyntax(sym);
+                            if (b != null)
+                            {
+                                z["compiler-syntax"] = b;
+                            }
+                            break;
                         }
-                        break;
-                    }
                     case SymbolUsage.SymbolMacro:
-                    {
-                        z["compiler-usage"] = Symbols.SymbolMacro;
-                        z["compiler-value"] = sym.SymbolMacroValue;
-                        break;
-                    }
+                        {
+                            z["compiler-usage"] = Symbols.SymbolMacro;
+                            z["compiler-value"] = sym.SymbolMacroValue;
+                            break;
+                        }
                     case SymbolUsage.SpecialForm:
-                    {
-                        z["compiler-usage"] = Symbols.SpecialForm;
-                        z["compiler-value"] = sym.SpecialFormValue;
-                        break;
-                    }
+                        {
+                            z["compiler-usage"] = Symbols.SpecialForm;
+                            z["compiler-value"] = sym.SpecialFormValue;
+                            break;
+                        }
                 }
 
-                if (!String.IsNullOrWhiteSpace(sym.CompilerDocumentation))
+                if (!string.IsNullOrWhiteSpace(sym.CompilerDocumentation))
                 {
                     z["compiler-documentation"] = sym.CompilerDocumentation;
                 }
@@ -219,60 +216,57 @@ namespace Kiezel
                 switch (sym.Usage)
                 {
                     case SymbolUsage.None:
-                    {
-                        z["usage"] = Symbols.Undefined;
-                        return result;
-                    }
+                        {
+                            z["usage"] = Symbols.Undefined;
+                            return result;
+                        }
                     case SymbolUsage.Constant:
-                    {
-                        if (sym.IsDynamic)
                         {
-                            z["usage"] = Symbols.SpecialConstant;
-                            isVariable = true;
+                            if (sym.IsDynamic)
+                            {
+                                z["usage"] = Symbols.SpecialConstant;
+                                isVariable = true;
+                            }
+                            else {
+                                z["usage"] = Symbols.Constant;
+                                isVariable = true;
+                            }
+                            break;
                         }
-                        else
-                        {
-                            z["usage"] = Symbols.Constant;
-                            isVariable = true;
-                        }
-                        break;
-                    }
                     case SymbolUsage.ReadonlyVariable:
-                    {
-                        if (sym.IsDynamic)
                         {
-                            z["usage"] = Symbols.SpecialReadonlyVariable;
-                            isVariable = true;
+                            if (sym.IsDynamic)
+                            {
+                                z["usage"] = Symbols.SpecialReadonlyVariable;
+                                isVariable = true;
+                            }
+                            else {
+                                z["usage"] = Symbols.ReadonlyVariable;
+                                isVariable = true;
+                            }
+                            break;
                         }
-                        else
-                        {
-                            z["usage"] = Symbols.ReadonlyVariable;
-                            isVariable = true;
-                        }
-                        break;
-                    }
                     case SymbolUsage.Variable:
-                    {
-                        if (sym.IsDynamic)
                         {
-                            z["usage"] = Symbols.SpecialVariable;
-                            isVariable = true;
+                            if (sym.IsDynamic)
+                            {
+                                z["usage"] = Symbols.SpecialVariable;
+                                isVariable = true;
+                            }
+                            else {
+                                z["usage"] = Symbols.Variable;
+                                isVariable = true;
+                            }
+                            break;
                         }
-                        else
-                        {
-                            z["usage"] = Symbols.Variable;
-                            isVariable = true;
-                        }
-                        break;
-                    }
                     case SymbolUsage.Function:
-                    {
-                        z["usage"] = Symbols.Function;
-                        break;
-                    }
+                        {
+                            z["usage"] = Symbols.Function;
+                            break;
+                        }
                 }
 
-                if (!String.IsNullOrWhiteSpace(sym.Documentation))
+                if (!string.IsNullOrWhiteSpace(sym.Documentation))
                 {
                     z["documentation"] = sym.Documentation;
                 }
@@ -329,16 +323,15 @@ namespace Kiezel
                     switch (l.Kind)
                     {
                         case LambdaKind.Method:
-                        {
-                            usage = Symbols.Method;
-                            break;
-                        }
-                        case LambdaKind.Function:
+                            {
+                                usage = Symbols.Method;
+                                break;
+                            }
                         default:
-                        {
-                            usage = Symbols.Function;
-                            break;
-                        }
+                            {
+                                usage = Symbols.Function;
+                                break;
+                            }
                     }
                 }
             }
@@ -353,8 +346,7 @@ namespace Kiezel
                 var p = (Prototype)runtimeValue;
                 z["type-specifier"] = p.GetTypeSpecifier();
             }
-            else
-            {
+            else {
                 var dict = AsPrototype(runtimeValue);
 
                 if (dict.Dict.Count != 0)
@@ -377,12 +369,12 @@ namespace Kiezel
                 buf.WriteLine(new string('=', 80));
                 buf.WriteLine(ex2.Message);
                 buf.WriteLine(new string('=', 80));
-                buf.WriteLine(exception.ToString());
+                buf.WriteLine(exception);
                 buf.WriteLine(new string('=', 80));
             }
             buf.WriteLine("LEXICAL ENVIRONMENT");
             buf.WriteLine(new string('=', 80));
-            for (int i = 0;; ++i)
+            for (var i = 0; ; ++i)
             {
                 var obj = GetLexicalVariablesDictionary(i);
                 if (obj == null)
@@ -429,14 +421,14 @@ namespace Kiezel
             {
                 DefDynamic(Symbols.PrintCompact, true);
 
-                foreach (object item in ToIter( CurrentThreadContext.EvaluationStack ))
+                foreach (object item in ToIter(CurrentThreadContext.EvaluationStack))
                 {
                     // Every function call adds the source code form
                     // Every lambda call adds the outer frame (not null) and specialvariables (maybe null)
                     if (item is Frame)
                     {
                         ++index;
-                        prefix = index.ToString() + ":";
+                        prefix = index + ":";
                     }
                     else if (item is Cons)
                     {
@@ -462,7 +454,7 @@ namespace Kiezel
             }
 
             var index = 0;
-            foreach (object item in ToIter( CurrentThreadContext.EvaluationStack ))
+            foreach (object item in ToIter(CurrentThreadContext.EvaluationStack))
             {
                 if (item is Frame)
                 {
@@ -546,7 +538,7 @@ namespace Kiezel
             {
                 if (frame.Names != null)
                 {
-                    for (int i = 0; i < frame.Names.Count; ++i)
+                    for (var i = 0; i < frame.Names.Count; ++i)
                     {
                         var key = frame.Names[i].DiagnosticsName;
                         object value = null;
@@ -585,7 +577,7 @@ namespace Kiezel
 
             var index = 0;
             var done = false;
-            foreach (object item in ToIter( CurrentThreadContext.EvaluationStack ))
+            foreach (object item in ToIter(CurrentThreadContext.EvaluationStack))
             {
                 if (item is Frame)
                 {
@@ -628,8 +620,7 @@ namespace Kiezel
                 var log = (ILogWriter)stream;
                 log.WriteLog(style, msg);
             }
-            else
-            {
+            else {
                 Write(msg, Symbols.Stream, stream, Symbols.Escape, false);
             }
         }
@@ -661,7 +652,7 @@ namespace Kiezel
 
         public static Exception UnwindException(Exception ex)
         {
-            while (ex.InnerException != null && ex is System.Reflection.TargetInvocationException)
+            while (ex.InnerException != null && ex is TargetInvocationException)
             {
                 ex = ex.InnerException;
             }
@@ -676,6 +667,6 @@ namespace Kiezel
             return ex3;
         }
 
-        #endregion Methods
+        #endregion Public Methods
     }
 }

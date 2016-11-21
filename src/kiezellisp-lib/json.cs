@@ -24,15 +24,7 @@ namespace Kiezel
 
         #endregion Fields
 
-        #region Methods
-
-        public object Decode(string encodedText)
-        {
-            text = encodedText;
-            index = 0;
-
-            return Read();
-        }
+        #region Private Methods
 
         private void GetToken()
         {
@@ -41,7 +33,7 @@ namespace Kiezel
 
             while ((ch = ReadChar()) != eofChar)
             {
-                if (!Char.IsWhiteSpace(ch) && !Char.IsControl(ch))
+                if (!char.IsWhiteSpace(ch) && !char.IsControl(ch))
                 {
                     break;
                 }
@@ -59,7 +51,7 @@ namespace Kiezel
             else if (ch == '"')
             {
                 tokenIsString = true;
-                StringBuilder buf = new StringBuilder();
+                var buf = new StringBuilder();
 
                 while (true)
                 {
@@ -88,30 +80,30 @@ namespace Kiezel
                         switch (ch)
                         {
                             case 'b':
-                            {
-                                ch = '\b';
-                                break;
-                            }
+                                {
+                                    ch = '\b';
+                                    break;
+                                }
                             case 'f':
-                            {
-                                ch = '\f';
-                                break;
-                            }
+                                {
+                                    ch = '\f';
+                                    break;
+                                }
                             case 'n':
-                            {
-                                ch = '\n';
-                                break;
-                            }
+                                {
+                                    ch = '\n';
+                                    break;
+                                }
                             case 't':
-                            {
-                                ch = '\t';
-                                break;
-                            }
+                                {
+                                    ch = '\t';
+                                    break;
+                                }
                             case 'r':
-                            {
-                                ch = '\r';
-                                break;
-                            }
+                                {
+                                    ch = '\r';
+                                    break;
+                                }
                         }
                     }
 
@@ -120,16 +112,15 @@ namespace Kiezel
 
                 token = buf.ToString();
             }
-            else
-            {
+            else {
                 tokenIsNumber = true;
-                StringBuilder buf = new StringBuilder();
+                var buf = new StringBuilder();
 
                 while (true)
                 {
                     buf.Append(ch);
 
-                    if ((ch = PeekChar()) == eofChar || Char.IsWhiteSpace(ch) || Char.IsControl(ch))
+                    if ((ch = PeekChar()) == eofChar || char.IsWhiteSpace(ch) || char.IsControl(ch))
                     {
                         break;
                     }
@@ -156,9 +147,8 @@ namespace Kiezel
             {
                 return null == target;
             }
-            else
-            {
-                return String.Compare(token, target, true) == 0;
+            else {
+                return string.Compare(token, target, true) == 0;
             }
         }
 
@@ -176,8 +166,7 @@ namespace Kiezel
             {
                 return eofChar;
             }
-            else
-            {
+            else {
                 return text[index + offset];
             }
         }
@@ -193,8 +182,7 @@ namespace Kiezel
             {
                 return eofChar;
             }
-            else
-            {
+            else {
                 return text[index++];
             }
         }
@@ -322,24 +310,30 @@ namespace Kiezel
             return vector;
         }
 
-        #endregion Methods
+        #endregion Private Methods
+
+        #region Public Methods
+
+        public object Decode(string encodedText)
+        {
+            text = encodedText;
+            index = 0;
+
+            return Read();
+        }
+
+        #endregion Public Methods
     }
 
     public class JsonEncoder
     {
         #region Fields
 
-        private StringBuilder buf = new StringBuilder();
+        private readonly StringBuilder buf = new StringBuilder();
 
         #endregion Fields
 
-        #region Methods
-
-        public string Encode(object value)
-        {
-            Add(value);
-            return buf.ToString();
-        }
+        #region Private Methods
 
         private void Add(object value)
         {
@@ -359,7 +353,7 @@ namespace Kiezel
             {
                 string comma = " ";
                 buf.Append("{");
-                foreach (DictionaryEntry de in ( ( IDictionary ) value ))
+                foreach (DictionaryEntry de in ((IDictionary)value))
                 {
                     buf.Append(comma);
                     comma = ", ";
@@ -377,7 +371,7 @@ namespace Kiezel
             {
                 string comma = " ";
                 buf.Append("[");
-                foreach (object val in Runtime.ToIter( value ))
+                foreach (object val in Runtime.ToIter(value))
                 {
                     buf.Append(comma);
                     comma = ", ";
@@ -393,8 +387,7 @@ namespace Kiezel
             {
                 buf.Append(value);
             }
-            else
-            {
+            else {
                 throw new LispException("json: value not supported: {0}", value);
             }
         }
@@ -412,6 +405,16 @@ namespace Kiezel
             return str;
         }
 
-        #endregion Methods
+        #endregion Private Methods
+
+        #region Public Methods
+
+        public string Encode(object value)
+        {
+            Add(value);
+            return buf.ToString();
+        }
+
+        #endregion Public Methods
     }
 }

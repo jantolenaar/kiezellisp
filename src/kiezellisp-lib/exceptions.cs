@@ -26,7 +26,7 @@ namespace Kiezel
         }
 
         public AssertFailedException(string fmt, params object[] args)
-            : base(String.Format(fmt, args))
+            : base(string.Format(fmt, args))
         {
         }
 
@@ -60,7 +60,7 @@ namespace Kiezel
         }
 
         public LispException(string fmt, params object[] args)
-            : base(String.Format(fmt, args))
+            : base(string.Format(fmt, args))
         {
         }
 

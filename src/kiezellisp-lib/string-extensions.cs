@@ -1,4 +1,4 @@
-﻿#region Header
+#region Header
 
 // Copyright (C) Jan Tolenaar. See the file LICENSE for details.
 
@@ -46,7 +46,7 @@ namespace Kiezel
 
         #endregion Constructors
 
-        #region Methods
+        #region Private Methods
 
         object IApply.Apply(object[] args)
         {
@@ -55,7 +55,7 @@ namespace Kiezel
                 throw new ArgumentException();
             }
             var str = (string)args[0];
-            return StringExtensions.RegexMatch(str, this);
+            return str.RegexMatch(this);
         }
 
         DynamicMetaObject IDynamicMetaObjectProvider.GetMetaObject(Expression parameter)
@@ -63,12 +63,12 @@ namespace Kiezel
             return new GenericApplyMetaObject<RegexPlus>(parameter, this);
         }
 
-        #endregion Methods
+        #endregion Private Methods
     }
 
     public partial class Runtime
     {
-        #region Methods
+        #region Public Methods
 
         public static object[] RegexBind(Match match)
         {
@@ -83,21 +83,20 @@ namespace Kiezel
 
                 return AsArray(v);
             }
-            else
-            {
-                return new object[ 0 ];
+            else {
+                return new object[0];
             }
         }
 
-        #endregion Methods
+        #endregion Public Methods
 
-        #region Nested Types
+        #region Other
 
         public class FunctionMatcher
         {
             #region Fields
 
-            private IApply transform;
+            private readonly IApply transform;
 
             #endregion Fields
 
@@ -110,22 +109,22 @@ namespace Kiezel
 
             #endregion Constructors
 
-            #region Methods
+            #region Public Methods
 
             public string Evaluate(Match match)
             {
-                string result = Runtime.MakeString(transform.Apply(RegexBind(match)));
+                string result = MakeString(transform.Apply(RegexBind(match)));
                 return result;
             }
 
-            #endregion Methods
+            #endregion Public Methods
         }
 
         public class StringMatcher
         {
             #region Fields
 
-            private string replacement;
+            private readonly string replacement;
 
             #endregion Fields
 
@@ -138,13 +137,13 @@ namespace Kiezel
 
             #endregion Constructors
 
-            #region Methods
+            #region Public Methods
 
             public string Evaluate(Match match)
             {
                 string result = replacement;
 
-                for (int i = 0; i < match.Groups.Count; ++i)
+                for (var i = 0; i < match.Groups.Count; ++i)
                 {
                     string v = match.Groups[i].Value;
                     string t = Symbols.NumberedVariables[i].Name;
@@ -154,45 +153,52 @@ namespace Kiezel
                 return result;
             }
 
-            #endregion Methods
+            #endregion Public Methods
         }
 
-        #endregion Nested Types
+        #endregion Other
     }
 
     public static class StringExtensions
     {
-        #region Methods
+        #region Private Methods
+
+        static bool WordWrapBreak(char ch)
+        {
+            return char.IsWhiteSpace(ch);
+        }
+
+        #endregion Private Methods
+
+        #region Public Methods
 
         public static string Capitalize(this string str)
         {
-            char[] chars = new char[ str.Length ];
-            bool makeUpper = true;
+            var chars = new char[str.Length];
+            var makeUpper = true;
 
-            for (int i = 0; i < str.Length; ++i)
+            for (var i = 0; i < str.Length; ++i)
             {
                 char ch = str[i];
 
-                if (Char.IsLetterOrDigit(ch))
+                if (char.IsLetterOrDigit(ch))
                 {
                     if (makeUpper)
                     {
-                        chars[i] = Char.ToUpper(ch);
+                        chars[i] = char.ToUpper(ch);
                         makeUpper = false;
                     }
-                    else
-                    {
-                        chars[i] = Char.ToLower(ch);
+                    else {
+                        chars[i] = char.ToLower(ch);
                     }
                 }
-                else
-                {
+                else {
                     chars[i] = ch;
                     makeUpper = true;
                 }
             }
 
-            string t = new String(chars);
+            var t = new string(chars);
             return t;
         }
 
@@ -205,13 +211,11 @@ namespace Kiezel
                 {
                     return str2.Replace("\n", Environment.NewLine);
                 }
-                else
-                {
+                else {
                     return str2;
                 }
             }
-            else
-            {
+            else {
                 return str;
             }
         }
@@ -222,8 +226,7 @@ namespace Kiezel
             {
                 return str.Replace("\r\n", "\n");
             }
-            else
-            {
+            else {
                 return str;
             }
         }
@@ -234,8 +237,7 @@ namespace Kiezel
             {
                 return new Regex((string)pattern);
             }
-            else
-            {
+            else {
                 return (Regex)pattern;
             }
         }
@@ -261,10 +263,9 @@ namespace Kiezel
             if (lines.Count != 0)
             {
                 var lines2 = lines.Select(s => prefix + s);
-                return String.Join("\n", lines2) + (emptyLine ? "\n" : "");
+                return string.Join("\n", lines2) + (emptyLine ? "\n" : "");
             }
-            else
-            {
+            else {
                 return prefix;
             }
         }
@@ -279,7 +280,7 @@ namespace Kiezel
             }
             var output = new StringWriter();
 
-            for (int i = 0; i < lines.Count; ++i)
+            for (var i = 0; i < lines.Count; ++i)
             {
                 var s = (lineNumber + i).ToString().PadLeft(width) + separator + lines[i];
                 output.WriteLine(s);
@@ -292,8 +293,8 @@ namespace Kiezel
         public static string Join(this string separator, IEnumerable seq)
         {
             var buf = new StringWriter();
-            bool first = true;
-            foreach (object item in Runtime.ToIter( seq ))
+            var first = true;
+            foreach (object item in Runtime.ToIter(seq))
             {
                 if (!first)
                 {
@@ -327,9 +328,9 @@ namespace Kiezel
 
             if (i != -1)
             {
-                StringBuilder buf = new StringBuilder(i > 0 ? s.Substring(0, i) : "");
+                var buf = new StringBuilder(i > 0 ? s.Substring(0, i) : "");
 
-                for (int j = i; j < s.Length; ++j)
+                for (var j = i; j < s.Length; ++j)
                 {
                     if (SpecialChars.IndexOf(s[j]) != -1)
                     {
@@ -351,18 +352,18 @@ namespace Kiezel
 
         public static string LispName(this string name)
         {
-            StringBuilder buf = new StringBuilder();
-            char prevch = 'A';
+            var buf = new StringBuilder();
+            var prevch = 'A';
 
             foreach (char ch in name)
             {
-                if (Char.IsUpper(ch) && Char.IsLower(prevch))
+                if (char.IsUpper(ch) && char.IsLower(prevch))
                 {
                     if (buf.Length == 0 || buf[buf.Length - 1] != '-')
                     {
                         buf.Append('-');
                     }
-                    buf.Append(Char.ToLower(ch));
+                    buf.Append(char.ToLower(ch));
                     prevch = ch;
                 }
                 else if (ch == '_')
@@ -378,9 +379,8 @@ namespace Kiezel
                     buf.Append('^');
                     prevch = ch;
                 }
-                else
-                {
-                    buf.Append(Char.ToLower(ch));
+                else {
+                    buf.Append(char.ToLower(ch));
                     prevch = ch;
                 }
             }
@@ -390,8 +390,8 @@ namespace Kiezel
 
         public static string LispToCamelCaseName(this string name)
         {
-            StringBuilder buf = new StringBuilder();
-            bool toUpper = false;
+            var buf = new StringBuilder();
+            var toUpper = false;
             foreach (char ch in name)
             {
                 if (ch == '-')
@@ -400,12 +400,11 @@ namespace Kiezel
                 }
                 else if (toUpper)
                 {
-                    buf.Append(Char.ToUpper(ch));
+                    buf.Append(char.ToUpper(ch));
                     toUpper = false;
                 }
-                else
-                {
-                    buf.Append(Char.ToLower(ch));
+                else {
+                    buf.Append(char.ToLower(ch));
                 }
             }
             return buf.ToString();
@@ -418,9 +417,9 @@ namespace Kiezel
             //    return name;
             //}
 
-            StringBuilder buf = new StringBuilder();
-            bool toUpper = true;
-            foreach (char ch in name)
+            var buf = new StringBuilder();
+            var toUpper = true;
+            foreach (var ch in name)
             {
                 if (ch == '-')
                 {
@@ -428,12 +427,11 @@ namespace Kiezel
                 }
                 else if (toUpper)
                 {
-                    buf.Append(Char.ToUpper(ch));
+                    buf.Append(char.ToUpper(ch));
                     toUpper = false;
                 }
-                else
-                {
-                    buf.Append(Char.ToLower(ch));
+                else {
+                    buf.Append(char.ToLower(ch));
                 }
             }
             return buf.ToString();
@@ -444,7 +442,7 @@ namespace Kiezel
             Cons result = null;
             if (match.Success)
             {
-                for (int i = match.Groups.Count - 1; i >= 0; --i)
+                for (var i = match.Groups.Count - 1; i >= 0; --i)
                 {
                     var group = match.Groups[i];
                     result = new Cons(group.Value, result);
@@ -475,7 +473,7 @@ namespace Kiezel
 
         public static string PadLeft(this string str, int width, string chr)
         {
-            if (chr == null || chr.Length == 0)
+            if (string.IsNullOrEmpty(chr))
             {
                 return str.PadLeft(width);
             }
@@ -483,15 +481,14 @@ namespace Kiezel
             {
                 return str.PadLeft(width, chr[0]);
             }
-            else
-            {
+            else {
                 throw new LispException("Too many padding characters");
             }
         }
 
         public static string PadRight(this string str, int width, string chr)
         {
-            if (chr == null || chr.Length == 0)
+            if (string.IsNullOrEmpty(chr))
             {
                 return str.PadRight(width);
             }
@@ -499,8 +496,7 @@ namespace Kiezel
             {
                 return str.PadRight(width, chr[0]);
             }
-            else
-            {
+            else {
                 throw new LispException("Too many padding characters");
             }
         }
@@ -551,14 +547,14 @@ namespace Kiezel
 
         public static string RegexReplace(this string str, object pattern, string replacement)
         {
-            MatchEvaluator evaluator = new MatchEvaluator(new Runtime.StringMatcher(replacement).Evaluate);
+            var evaluator = new MatchEvaluator(new Runtime.StringMatcher(replacement).Evaluate);
             string val = GetRegex(pattern).Replace(str, evaluator);
             return val;
         }
 
         public static string RegexReplace(this string str, object pattern, IApply transform)
         {
-            MatchEvaluator evaluator = new MatchEvaluator(new Runtime.FunctionMatcher(transform).Evaluate);
+            var evaluator = new MatchEvaluator(new Runtime.FunctionMatcher(transform).Evaluate);
             string val = GetRegex(pattern).Replace(str, evaluator);
             return val;
         }
@@ -570,8 +566,8 @@ namespace Kiezel
 
         public static string Repeat(this string str, int count)
         {
-            StringBuilder buf = new StringBuilder();
-            for (int i = 0; i < count; ++i)
+            var buf = new StringBuilder();
+            for (var i = 0; i < count; ++i)
             {
                 buf.Append(str);
             }
@@ -590,15 +586,14 @@ namespace Kiezel
             {
                 return str.Substring(0, maxLength - extra) + insert;
             }
-            else
-            {
+            else {
                 return str;
             }
         }
 
         public static string[] Split(this string str)
         {
-            return str.Split(new char[ 0 ], StringSplitOptions.RemoveEmptyEntries);
+            return str.Split(new char[0], StringSplitOptions.RemoveEmptyEntries);
         }
 
         public static string[] Split(this string str, string separators)
@@ -618,7 +613,7 @@ namespace Kiezel
 
         public static string[] Split(this string str, int count)
         {
-            return str.Split(new char[ 0 ], count, StringSplitOptions.RemoveEmptyEntries);
+            return str.Split(new char[0], count, StringSplitOptions.RemoveEmptyEntries);
         }
 
         public static string[] Split(this string str, string separators, int count)
@@ -663,19 +658,16 @@ namespace Kiezel
                 {
                     return date;
                 }
-                else
-                {
+                else {
                     return null;
                 }
             }
-            else
-            {
+            else {
                 if (DateTime.TryParseExact(str, format, culture, 0, out date))
                 {
                     return date;
                 }
-                else
-                {
+                else {
                     return null;
                 }
             }
@@ -697,8 +689,7 @@ namespace Kiezel
             {
                 return ts;
             }
-            else
-            {
+            else {
                 return null;
             }
         }
@@ -752,11 +743,6 @@ namespace Kiezel
             return buf.ToString();
         }
 
-        static bool WordWrapBreak(char ch)
-        {
-            return char.IsWhiteSpace(ch);
-        }
-
-        #endregion Methods
+        #endregion Public Methods
     }
 }

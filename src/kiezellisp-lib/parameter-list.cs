@@ -27,13 +27,13 @@ namespace Kiezel
         #region Fields
 
         public Symbol ArgModifier;
-        public Symbol EnvArg = null;
-        public List<ParameterDef> flattenedParameters = null;
+        public Symbol EnvArg;
+        public List<ParameterDef> flattenedParameters;
         public LambdaKind Kind;
         public List<Symbol> Names = new List<Symbol>();
         public List<ParameterDef> Parameters = new List<ParameterDef>();
-        public int RequiredArgsCount = 0;
-        public Symbol WholeArg = null;
+        public int RequiredArgsCount;
+        public Symbol WholeArg;
 
         #endregion Fields
 
@@ -46,7 +46,7 @@ namespace Kiezel
 
         #endregion Constructors
 
-        #region Properties
+        #region Public Properties
 
         public List<ParameterDef> FlattenedParameters
         {
@@ -62,9 +62,9 @@ namespace Kiezel
             }
         }
 
-        #endregion Properties
+        #endregion Public Properties
 
-        #region Methods
+        #region Public Methods
 
         public void FlattenParameters(ref List<ParameterDef> output)
         {
@@ -74,8 +74,7 @@ namespace Kiezel
                 {
                     output.Add(parameter);
                 }
-                else
-                {
+                else {
                     parameter.NestedParameters.FlattenParameters(ref output);
                 }
             }
@@ -149,7 +148,7 @@ namespace Kiezel
             return true;
         }
 
-        #endregion Methods
+        #endregion Public Methods
     }
 
     public class ParameterDef
@@ -188,7 +187,7 @@ namespace Kiezel
 
         #endregion Constructors
 
-        #region Properties
+        #region Public Properties
 
         public object EqlSpecializer
         {
@@ -198,8 +197,7 @@ namespace Kiezel
                 {
                     return ((EqlSpecializer)Specializer).Value;
                 }
-                else
-                {
+                else {
                     return null;
                 }
             }
@@ -229,22 +227,21 @@ namespace Kiezel
                 {
                     return Specializer;
                 }
-                else
-                {
+                else {
                     return null;
                 }
             }
         }
 
-        #endregion Properties
+        #endregion Public Properties
 
-        #region Methods
+        #region Public Methods
 
         public override string ToString()
         {
-            return System.String.Format("{0}", Sym);
+            return string.Format("{0}", Sym);
         }
 
-        #endregion Methods
+        #endregion Public Methods
     }
 }

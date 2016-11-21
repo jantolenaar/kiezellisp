@@ -1,4 +1,4 @@
-﻿#region Header
+#region Header
 
 // Copyright (C) Jan Tolenaar. See the file LICENSE for details.
 
@@ -31,7 +31,7 @@ namespace Kiezel
 
         #endregion Fields
 
-        #region Properties
+        #region Public Properties
 
         public bool IsEof
         {
@@ -41,9 +41,87 @@ namespace Kiezel
             }
         }
 
-        #endregion Properties
+        #endregion Public Properties
 
-        #region Methods
+        #region Private Methods
+
+        bool EndsWith(List<char> chars, string str)
+        {
+            var m = chars.Count;
+            var n = str.Length;
+            if (m >= n)
+            {
+                for (int i = m - n, j = 0; j < n; ++i, ++j)
+                {
+                    if (chars[i] != str[j])
+                    {
+                        return false;
+                    }
+                }
+                return true;
+            }
+            else
+            {
+                return false;
+            }
+        }
+
+        private ReadtableEntry GetEntry(char ch)
+        {
+            var readTable = (Readtable)Runtime.GetDynamic(Symbols.Readtable);
+            return readTable.GetEntry(ch);
+        }
+
+        void IDisposable.Dispose()
+        {
+            if (Stream != null)
+            {
+                Stream.Close();
+                Stream = null;
+            }
+        }
+
+        private int ReadDecimalArg()
+        {
+            int arg = -1;
+            while (true)
+            {
+                var ch = ReadChar();
+                if (IsEof)
+                {
+                    break;
+                }
+                if (!char.IsDigit(ch))
+                {
+                    UnreadChar();
+                    break;
+                }
+                if (arg == -1)
+                {
+                    arg = 0;
+                }
+                arg = 10 * arg + (ch - '0');
+            }
+            return arg;
+        }
+
+        string StringWithoutTerminator(List<char> chars, string terminator)
+        {
+            var m = chars.Count;
+            var n = terminator.Length;
+            if (m >= n)
+            {
+                return new string(chars.GetRange(0, m - n).ToArray());
+            }
+            else
+            {
+                return "";
+            }
+        }
+
+        #endregion Private Methods
+
+        #region Public Methods
 
         public int GrepShortLambdaParameters(Cons form)
         {
@@ -83,15 +161,6 @@ namespace Kiezel
             }
 
             return last;
-        }
-
-        void IDisposable.Dispose()
-        {
-            if (Stream != null)
-            {
-                Stream.Close();
-                Stream = null;
-            }
         }
 
         public LispException MakeScannerException(string message)
@@ -346,29 +415,29 @@ namespace Kiezel
                 switch (ch)
                 {
                     case 'i':
-                    {
-                        options |= RegexOptions.IgnoreCase;
-                        break;
-                    }
+                        {
+                            options |= RegexOptions.IgnoreCase;
+                            break;
+                        }
                     case 's':
-                    {
-                        options |= RegexOptions.Singleline;
-                        break;
-                    }
+                        {
+                            options |= RegexOptions.Singleline;
+                            break;
+                        }
                     case 'm':
-                    {
-                        options |= RegexOptions.Multiline;
-                        break;
-                    }
+                        {
+                            options |= RegexOptions.Multiline;
+                            break;
+                        }
                     case 'w':
-                    {
-                        wildcard = true;
-                        break;
-                    }
+                        {
+                            wildcard = true;
+                            break;
+                        }
                     default:
-                    {
-                        throw MakeScannerException("invalid regular expresssion option");
-                    }
+                        {
+                            throw MakeScannerException("invalid regular expresssion option");
+                        }
                 }
             }
             var pattern = buf.ToString();
@@ -434,40 +503,40 @@ namespace Kiezel
                     switch (ch)
                     {
                         case 'x':
-                        {
-                            var ch1 = ReadChar();
-                            var ch2 = ReadChar();
-                            if (IsEof)
                             {
-                                throw MakeScannerException("Unterminated string");
+                                var ch1 = ReadChar();
+                                var ch2 = ReadChar();
+                                if (IsEof)
+                                {
+                                    throw MakeScannerException("Unterminated string");
+                                }
+                                var n = (int)Number.ParseNumberBase(new string(new char[] { ch1, ch2 }), 16);
+                                buf.Append(Convert.ToChar(n));
+                                break;
                             }
-                            var n = (int)Number.ParseNumberBase(new string(new char[] { ch1, ch2 }), 16);
-                            buf.Append(Convert.ToChar(n));
-                            break;
-                        }
                         case 'u':
-                        {
-                            var ch1 = ReadChar();
-                            var ch2 = ReadChar();
-                            var ch3 = ReadChar();
-                            var ch4 = ReadChar();
-                            if (IsEof)
                             {
-                                throw MakeScannerException("Unterminated string");
+                                var ch1 = ReadChar();
+                                var ch2 = ReadChar();
+                                var ch3 = ReadChar();
+                                var ch4 = ReadChar();
+                                if (IsEof)
+                                {
+                                    throw MakeScannerException("Unterminated string");
+                                }
+                                var n = (int)Number.ParseNumberBase(new string(new char[] { ch1, ch2, ch3, ch4 }), 16);
+                                buf.Append(Convert.ToChar(n));
+                                break;
                             }
-                            var n = (int)Number.ParseNumberBase(new string(new char[] { ch1, ch2, ch3, ch4 }), 16);
-                            buf.Append(Convert.ToChar(n));
-                            break;
-                        }
                         default:
-                        {
-                            if (IsEof)
                             {
-                                throw MakeScannerException("Unterminated string");
+                                if (IsEof)
+                                {
+                                    throw MakeScannerException("Unterminated string");
+                                }
+                                buf.Append(Runtime.UnescapeCharacter(ch));
+                                break;
                             }
-                            buf.Append(Runtime.UnescapeCharacter(ch));
-                            break;
-                        }
                     }
                 }
                 else
@@ -487,40 +556,40 @@ namespace Kiezel
             switch (begin)
             {
                 case '(':
-                {
-                    terminator = ")";
-                    break;
-                }
+                    {
+                        terminator = ")";
+                        break;
+                    }
                 case '{':
-                {
-                    terminator = "}";
-                    break;
-                }
+                    {
+                        terminator = "}";
+                        break;
+                    }
                 case '[':
-                {
-                    terminator = "]";
-                    break;
-                }
+                    {
+                        terminator = "]";
+                        break;
+                    }
                 case '<':
-                {
-                    terminator = ">";
-                    break;
-                }
+                    {
+                        terminator = ">";
+                        break;
+                    }
                 default:
-                {
-                    UnreadChar();
-                    var line = ReadLine();
-                    if (line == null)
                     {
-                        MakeScannerException("No terminator after #q expression");
+                        UnreadChar();
+                        var line = ReadLine();
+                        if (line == null)
+                        {
+                            MakeScannerException("No terminator after #q expression");
+                        }
+                        terminator = line.Trim();
+                        if (terminator == "")
+                        {
+                            MakeScannerException("No terminator after #q expression");
+                        }
+                        break;
                     }
-                    terminator = line.Trim();
-                    if (terminator == "")
-                    {
-                        MakeScannerException("No terminator after #q expression");
-                    }
-                    break;
-                }
             }
 
             return ParseDocString(terminator);
@@ -906,71 +975,6 @@ namespace Kiezel
             }
         }
 
-        bool EndsWith(List<char> chars, string str)
-        {
-            var m = chars.Count;
-            var n = str.Length;
-            if (m >= n)
-            {
-                for (int i = m - n, j = 0; j < n; ++i, ++j)
-                {
-                    if (chars[i] != str[j])
-                    {
-                        return false;
-                    }
-                }
-                return true;
-            }
-            else
-            {
-                return false;
-            }
-        }
-
-        private ReadtableEntry GetEntry(char ch)
-        {
-            var readTable = (Readtable)Runtime.GetDynamic(Symbols.Readtable);
-            return readTable.GetEntry(ch);
-        }
-
-        private int ReadDecimalArg()
-        {
-            int arg = -1;
-            while (true)
-            {
-                var ch = ReadChar();
-                if (IsEof)
-                {
-                    break;
-                }
-                if (!char.IsDigit(ch))
-                {
-                    UnreadChar();
-                    break;
-                }
-                if (arg == -1)
-                {
-                    arg = 0;
-                }
-                arg = 10 * arg + (ch - '0');
-            }
-            return arg;
-        }
-
-        string StringWithoutTerminator(List<char> chars, string terminator)
-        {
-            var m = chars.Count;
-            var n = terminator.Length;
-            if (m >= n)
-            {
-                return new string(chars.GetRange(0, m - n).ToArray());
-            }
-            else
-            {
-                return "";
-            }
-        }
-
-        #endregion Methods
+        #endregion Public Methods
     }
 }

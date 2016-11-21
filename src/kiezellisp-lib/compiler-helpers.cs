@@ -1,4 +1,4 @@
-﻿#region Header
+#region Header
 
 // Copyright (C) Jan Tolenaar. See the file LICENSE for details.
 
@@ -38,9 +38,9 @@ namespace Kiezel
 
     public static partial class Runtime
     {
-        #region Fields
+        #region Static Fields
 
-        public static TypeCode[] TypeCodes = 
+        public static TypeCode[] TypeCodes =
             {
                 TypeCode.Int16, TypeCode.UInt32,
                 TypeCode.Int16, TypeCode.Int32,
@@ -80,12 +80,12 @@ namespace Kiezel
                 TypeCode.UInt64, TypeCode.Int64,
                 TypeCode.UInt64, TypeCode.Single,
                 TypeCode.UInt64, TypeCode.Double,
-                TypeCode.UInt64, TypeCode.Decimal,
+                TypeCode.UInt64, TypeCode.Decimal
             };
 
-        #endregion Fields
+        #endregion Static Fields
 
-        #region Methods
+        #region Public Methods
 
         public static object ArgumentValue(object arg)
         {
@@ -104,7 +104,7 @@ namespace Kiezel
                     return true;
                 }
 
-                for (int i = 0; i < TypeCodes.Length; i += 2)
+                for (var i = 0; i < TypeCodes.Length; i += 2)
                 {
                     if (typeCode1 == TypeCodes[i] && typeCode2 == TypeCodes[i + 1])
                     {
@@ -130,10 +130,10 @@ namespace Kiezel
 
         public static DynamicMetaObject[] CheckDeferArgs(DynamicMetaObject target, DynamicMetaObject[] args)
         {
-            if (!target.HasValue || args.Any(( a) => !a.HasValue))
+            if (!target.HasValue || args.Any((a) => !a.HasValue))
             {
-                var deferArgs = new DynamicMetaObject[ args.Length + 1 ];
-                for (int i = 0; i < args.Length; i++)
+                var deferArgs = new DynamicMetaObject[args.Length + 1];
+                for (var i = 0; i < args.Length; i++)
                 {
                     deferArgs[i + 1] = args[i];
                 }
@@ -141,8 +141,7 @@ namespace Kiezel
 
                 return deferArgs;
             }
-            else
-            {
+            else {
                 return null;
             }
         }
@@ -213,8 +212,7 @@ namespace Kiezel
                     // prefer param2
                     cmp = 1;
                 }
-                else
-                {
+                else {
                     //throw new LispException( "Cannot resolve parameter type comparison" );
                     cmp = type1.GetHashCode().CompareTo(type2.GetHashCode());
                 }
@@ -232,8 +230,7 @@ namespace Kiezel
             {
                 return -1;
             }
-            else
-            {
+            else {
                 return 1;
             }
         }
@@ -269,13 +266,11 @@ namespace Kiezel
                     argExpr = Expression.Call(ChangeTypeMethod, argExpr, Expression.Constant(parameterType));
                     argExpr = Expression.Convert(argExpr, parameterType);
                 }
-                else
-                {
+                else {
                     argExpr = Expression.Convert(argExpr, parameterType);
                 }
             }
-            else
-            {
+            else {
                 type = arg == null ? typeof(object) : arg.GetType();
                 if (typeof(IApply).IsAssignableFrom(type) && IsSpecificDelegate(parameterType))
                 {
@@ -297,8 +292,7 @@ namespace Kiezel
                     argExpr = Expression.Call(ChangeTypeMethod, argExpr, Expression.Constant(parameterType));
                     argExpr = Expression.Convert(argExpr, parameterType);
                 }
-                else
-                {
+                else {
                     argExpr = Expression.Convert(Expression.Constant(arg, type), parameterType);
                 }
             }
@@ -310,7 +304,7 @@ namespace Kiezel
         {
             // Arguments are already checked!!
             var len = parameters.Length;
-            var callArgs = new Expression[ len ];
+            var callArgs = new Expression[len];
 
             if (len == 0)
             {
@@ -320,7 +314,7 @@ namespace Kiezel
             bool hasParamArray = len >= 1 && parameters[len - 1].IsDefined(typeof(ParamArrayAttribute), false);
             var last = len - (hasParamArray ? 1 : 0);
 
-            for (int i = 0; i < last; i++)
+            for (var i = 0; i < last; i++)
             {
                 callArgs[i] = ConvertArgument(args[i], parameters[i].ParameterType);
             }
@@ -344,7 +338,7 @@ namespace Kiezel
             {
                 elementType = typeof(object);
             }
-            for (int i = last; i < args.Length; ++i)
+            for (var i = last; i < args.Length; ++i)
             {
                 tail.Add(ConvertArgument(args[i], elementType));
             }
@@ -375,8 +369,8 @@ namespace Kiezel
             if (exceptionArgs != null)
             {
                 i = exceptionArgs.Length;
-                argExprs = new Expression[ i ];
-                argTypes = new Type[ i ];
+                argExprs = new Expression[i];
+                argTypes = new Type[i];
                 i = 0;
                 foreach (object o in exceptionArgs)
                 {
@@ -413,15 +407,14 @@ namespace Kiezel
             {
                 return Expression.Block(expr, Expression.Constant(null, typeof(object)));
             }
-            else
-            {
+            else {
                 return Expression.Convert(expr, typeof(object));
             }
         }
 
         public static DynamicMetaObject[] GetCombinedTargetArgs(DynamicMetaObject target, DynamicMetaObject[] args)
         {
-            var newargs = new DynamicMetaObject[ args.Length + 1 ];
+            var newargs = new DynamicMetaObject[args.Length + 1];
             newargs[0] = target;
             Array.Copy(args, 0, newargs, 1, args.Length);
             return newargs;
@@ -441,8 +434,7 @@ namespace Kiezel
             {
                 returnVal = Expression.Convert(lambdaCall, typeof(object));
             }
-            else
-            {
+            else {
                 returnVal = Expression.Convert(lambdaCall, method.ReturnType);
             }
             var expression = Expression.Lambda(delegateType, returnVal, parameters2);
@@ -475,8 +467,7 @@ namespace Kiezel
                 var indexExpressions = indexes.Select(i => Expression.Convert(i.Expression, typeof(int)));
                 return Expression.ArrayAccess(Expression.Convert(target.Expression, target.LimitType), indexExpressions);
             }
-            else
-            {
+            else {
                 var props = target.LimitType.GetProperties();
                 var allIndexers = props.Where(idx => idx.GetIndexParameters().Length == indexes.Length).ToArray();
                 var indexers = new List<CandidateProperty>();
@@ -532,15 +523,14 @@ namespace Kiezel
                         target.Value
                     ));
             }
-            else
-            {
+            else {
                 restrictions = restrictions.Merge(
                     BindingRestrictions.GetTypeRestriction(
                         target.Expression,
                         target.LimitType
                     ));
             }
-            for (int i = 0; i < args.Length; i++)
+            for (var i = 0; i < args.Length; i++)
             {
                 BindingRestrictions r;
                 if (args[i].HasValue && args[i].Value == null)
@@ -548,8 +538,7 @@ namespace Kiezel
                     r = BindingRestrictions.GetInstanceRestriction(
                         args[i].Expression, null);
                 }
-                else
-                {
+                else {
                     r = BindingRestrictions.GetTypeRestriction(
                         args[i].Expression, args[i].LimitType);
                 }
@@ -603,8 +592,7 @@ namespace Kiezel
             {
                 return typeof(Delegate) != type;
             }
-            else
-            {
+            else {
                 return false;
             }
         }
@@ -618,7 +606,7 @@ namespace Kiezel
                 elementType = typeof(object);
             }
 
-            for (int i = offset; i < offset + count; i++)
+            for (var i = offset; i < offset + count; i++)
             {
                 if (!ParameterMatchArgument(elementType, args[i]))
                 {
@@ -651,8 +639,7 @@ namespace Kiezel
             {
                 value = ((DynamicMetaObject)arg).Value;
             }
-            else
-            {
+            else {
                 value = arg;
             }
 
@@ -660,8 +647,7 @@ namespace Kiezel
             {
                 return false;
             }
-            else
-            {
+            else {
                 return parameterType == value.GetType();
             }
         }
@@ -692,7 +678,7 @@ namespace Kiezel
                     return false;
                 }
 
-                for (int i = 0; i < len; i++)
+                for (var i = 0; i < len; i++)
                 {
                     if (!ParameterMatchArgument(parameters[i].ParameterType, args[i]))
                     {
@@ -702,8 +688,7 @@ namespace Kiezel
 
                 return true;
             }
-            else
-            {
+            else {
                 int last = len - 1;
 
                 if (args.Length < last)
@@ -711,7 +696,7 @@ namespace Kiezel
                     return false;
                 }
 
-                for (int i = 0; i < last; i++)
+                for (var i = 0; i < last; i++)
                 {
                     if (!ParameterMatchArgument(parameters[i].ParameterType, args[i]))
                     {
@@ -752,18 +737,17 @@ namespace Kiezel
                 argsRest = null;
                 return false;
             }
-            else
-            {
-                argsRest = new DynamicMetaObject[ args.Length - 1 ];
+            else {
+                argsRest = new DynamicMetaObject[args.Length - 1];
                 argsFirst = args[0];
                 Array.Copy(args, 1, argsRest, 0, args.Length - 1);
                 return true;
             }
         }
 
-        #endregion Methods
+        #endregion Public Methods
 
-        #region Nested Types
+        #region Other
 
         public struct CandidateProperty
         {
@@ -785,6 +769,6 @@ namespace Kiezel
             #endregion Constructors
         }
 
-        #endregion Nested Types
+        #endregion Other
     }
 }

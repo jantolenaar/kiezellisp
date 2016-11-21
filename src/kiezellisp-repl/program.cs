@@ -11,30 +11,10 @@ namespace Kiezel
     using System.Threading;
     using System.Windows.Forms;
 
-    using ThreadFunc = System.Func<object>;
-
     [RestrictedImport]
     public partial class RuntimeRepl : RuntimeConsoleBase
     {
-        #region Methods
-
-        public static void Reset(int level)
-        {
-            Runtime.Reset();
-            Runtime.RestartBuiltins(typeof(RuntimeRepl));
-            Symbols.StdScr.VariableValue = StdScr;
-            Symbols.StdOut.VariableValue = StdScr;
-            Symbols.StdLog.VariableValue = StdScr;
-            Symbols.StdErr.VariableValue = StdScr;
-            Symbols.StdIn.VariableValue = StdScr;
-            Runtime.RestartLoadFiles(level);
-        }
-
-        [Lisp("terminal-stream?")]
-        public static bool TerminalStreamp(object stream)
-        {
-            return stream is TextWindow || stream is TextWindowTextWriter;
-        }
+        #region Private Methods
 
         [STAThread]
         static void Main(string[] args)
@@ -56,6 +36,28 @@ namespace Kiezel
             }
         }
 
-        #endregion Methods
+        #endregion Private Methods
+
+        #region Public Methods
+
+        public static void Reset(int level)
+        {
+            Runtime.Reset();
+            Runtime.RestartBuiltins(typeof(RuntimeRepl));
+            Symbols.StdScr.VariableValue = StdScr;
+            Symbols.StdOut.VariableValue = StdScr;
+            Symbols.StdLog.VariableValue = StdScr;
+            Symbols.StdErr.VariableValue = StdScr;
+            Symbols.StdIn.VariableValue = StdScr;
+            Runtime.RestartLoadFiles(level);
+        }
+
+        [Lisp("terminal-stream?")]
+        public static bool TerminalStreamp(object stream)
+        {
+            return stream is TextWindow || stream is TextWindowTextWriter;
+        }
+
+        #endregion Public Methods
     }
 }

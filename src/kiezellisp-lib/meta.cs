@@ -11,7 +11,7 @@ namespace Kiezel
 
     public partial class Runtime
     {
-        #region Methods
+        #region Public Methods
 
         [Lisp("add-macro-to-environment")]
         public static void AddMacroToEnvironment(Symbol localName, Symbol globalName, AnalysisScope env)
@@ -22,7 +22,7 @@ namespace Kiezel
         [Lisp("code-walk")]
         public static object CodeWalk(object form, Func<object, object> transform)
         {
-            Func<object, AnalysisScope, object> wrapper = ( x, y) => transform(x);
+            Func<object, AnalysisScope, object> wrapper = (x, y) => transform(x);
             return CodeWalk(form, wrapper, null);
         }
 
@@ -52,9 +52,9 @@ namespace Kiezel
                     case "declare":
                     case "goto":
                     case "quote":
-                    {
-                        break;
-                    }
+                        {
+                            break;
+                        }
                     case "def":
                     case "var":
                     case "hidden-var":
@@ -63,67 +63,65 @@ namespace Kiezel
                     case "lazy":
                     case "future":
                     case "setq":
-                    {
-                        forms = CodeWalkListAt(2, forms, transform, env);
-                        var variables = Second(forms);
-                        if (variables is Cons)
                         {
-                            foreach (var sym in ToIter( variables ))
+                            forms = CodeWalkListAt(2, forms, transform, env);
+                            var variables = Second(forms);
+                            if (variables is Cons)
                             {
-                                env.DefineFrameLocal((Symbol)sym, ScopeFlags.All);
+                                foreach (var sym in ToIter(variables))
+                                {
+                                    env.DefineFrameLocal((Symbol)sym, ScopeFlags.All);
+                                }
                             }
+                            else {
+                                env.DefineFrameLocal((Symbol)variables, ScopeFlags.All);
+                            }
+                            break;
                         }
-                        else
-                        {
-                            env.DefineFrameLocal((Symbol)variables, ScopeFlags.All);
-                        }
-                        break;
-                    }
                     case "lambda":
                     case "lambda*":
-                    {
-                        return form;
-                        //throw new LispException( "lambda not supported by code walker" );
-                    }
+                        {
+                            return form;
+                            //throw new LispException( "lambda not supported by code walker" );
+                        }
                     case "letmacro":
                     case "let-symbol-macro":
-                    {
-                        return form;
-                    }
+                        {
+                            return form;
+                        }
                     case "letfun":
-                    {
-                        return form;
-                        //throw new LispException( "letfun not supported by code walker" );
-                    }
+                        {
+                            return form;
+                            //throw new LispException( "letfun not supported by code walker" );
+                        }
                     case "try":
-                    {
-                        forms = MakeCons(Symbols.Try, CodeWalkListTry(Cdr(forms), transform, env));
-                        break;
-                    }
+                        {
+                            forms = MakeCons(Symbols.Try, CodeWalkListTry(Cdr(forms), transform, env));
+                            break;
+                        }
                     case "defmacro":
                     case "defun":
                     case "defun*":
                     case "defmulti":
                     case "defmethod":
-                    {
-                        return form;
-                        //throw new LispException( "defun, defmacro, defmulti and defmethod not supported by code walker" );
-                    }
+                        {
+                            return form;
+                            //throw new LispException( "defun, defmacro, defmulti and defmethod not supported by code walker" );
+                        }
                     case "do":
-                    {
-                        var env2 = new AnalysisScope(env, "do");
-                        forms = CodeWalkListAt(1, forms, transform, env2);
-                        break;
-                    }
+                        {
+                            var env2 = new AnalysisScope(env, "do");
+                            forms = CodeWalkListAt(1, forms, transform, env2);
+                            break;
+                        }
                     default:
-                    {
-                        forms = CodeWalkListAt(1, forms, transform, env);
-                        break;
-                    }
+                        {
+                            forms = CodeWalkListAt(1, forms, transform, env);
+                            break;
+                        }
                 }
             }
-            else
-            {
+            else {
                 forms = CodeWalkListAt(0, forms, transform, env);
             }
 
@@ -133,7 +131,7 @@ namespace Kiezel
         [Lisp("code-walk-list")]
         public static Cons CodeWalkList(Cons forms, Func<object, object> transform)
         {
-            Func<object, AnalysisScope, object> wrapper = ( x, y) => transform(x);
+            Func<object, AnalysisScope, object> wrapper = (x, y) => transform(x);
             return CodeWalkListAt(0, forms, wrapper, null);
         }
 
@@ -158,8 +156,7 @@ namespace Kiezel
             {
                 return MakeCons(forms.Car, CodeWalkListAt(pos - 1, forms.Cdr, transform, env));
             }
-            else
-            {
+            else {
                 return MakeCons(CodeWalk(forms.Car, transform, env), CodeWalkListAt(0, forms.Cdr, transform, env));
             }
         }
@@ -170,8 +167,7 @@ namespace Kiezel
             {
                 return null;
             }
-            else
-            {
+            else {
                 object result;
                 if (forms.Car is Cons)
                 {
@@ -187,13 +183,11 @@ namespace Kiezel
                         // finally expr...
                         result = CodeWalkListAt(1, list, transform, env);
                     }
-                    else
-                    {
+                    else {
                         result = CodeWalk(list, transform, env);
                     }
                 }
-                else
-                {
+                else {
                     result = CodeWalk(forms.Car, transform, env);
                 }
 
@@ -244,7 +238,7 @@ namespace Kiezel
         public static Symbol GenTemp(object prefix)
         {
             var count = Interlocked.Increment(ref GentempCounter);
-            var name = String.Format("temp:{0}-{1}", GetDesignatedString(prefix), count);
+            var name = string.Format("temp:{0}-{1}", GetDesignatedString(prefix), count);
             var sym = FindSymbol(name);
             return sym;
         }
@@ -312,8 +306,7 @@ namespace Kiezel
                 {
                     return macro.Form;
                 }
-                else
-                {
+                else {
                     return expr;
                 }
             }
@@ -336,8 +329,7 @@ namespace Kiezel
                     var hook = (IApply)GetDynamic(Symbols.MacroexpandHook);
                     return Funcall(hook, macro, form, new AnalysisScope(env, "try-macroexpand"));
                 }
-                else
-                {
+                else {
                     return expr;
                 }
             }
@@ -369,6 +361,6 @@ namespace Kiezel
             return result != expr;
         }
 
-        #endregion Methods
+        #endregion Public Methods
     }
 }

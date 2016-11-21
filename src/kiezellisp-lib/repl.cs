@@ -6,14 +6,11 @@
 
 namespace Kiezel
 {
-    using System;
     using System.Collections.Generic;
-    using System.Linq;
-    using System.Linq.Expressions;
 
     public partial class Runtime
     {
-        #region Methods
+        #region Public Methods
 
         public static void FindCompletions(string prefix, HashSet<string> nameset)
         {
@@ -22,7 +19,6 @@ namespace Kiezel
                 foreach (var item in CharacterTable)
                 {
                     var s = item.Name;
-
                     if (s != null && s.StartsWith(prefix.Substring(2)))
                     {
                         nameset.Add("#\\" + s);
@@ -130,9 +126,9 @@ namespace Kiezel
 
         public static bool LooksLikeFunction(Symbol head)
         {
-            return (Runtime.Functionp(head.Value) || head.SpecialFormValue != null || head.MacroValue != null) && !Runtime.Prototypep(head.Value);
+            return (Functionp(head.Value) || head.SpecialFormValue != null || head.MacroValue != null) && !Prototypep(head.Value);
         }
 
-        #endregion Methods
+        #endregion Public Methods
     }
 }

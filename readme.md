@@ -5,7 +5,7 @@ Dynamic Language Runtime (DLR).
 
 ## Some features in alphabetic order:
 
-+   Amazing startup time of 170 ms on a Intel i7-4790 
++   Amazing startup time of 170 ms on a Intel i7-4790
 +   Big numbers
 +   Futures
 +   Generic functions
@@ -21,8 +21,3 @@ Dynamic Language Runtime (DLR).
 ## Website
 
 [www.kiezellisp.nl](http://www.kiezellisp.nl)
-
-
-
-
-

@@ -11,7 +11,7 @@ namespace Kiezel
 
     public static class FileExtensions
     {
-        #region Methods
+        #region Public Methods
 
         [Extends(typeof(File))]
         public static string ReadAllText(string path)
@@ -61,6 +61,6 @@ namespace Kiezel
             File.WriteAllText(path, contents, encoding);
         }
 
-        #endregion Methods
+        #endregion Public Methods
     }
 }

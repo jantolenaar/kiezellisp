@@ -6,15 +6,11 @@
 
 namespace Kiezel
 {
-    using System;
     using System.Collections;
-    using System.Collections.Generic;
-    using System.Linq;
-    using System.Text;
 
     public partial class Runtime
     {
-        #region Methods
+        #region Public Methods
 
         [Lisp("caar")]
         public static object Caar(Cons list)
@@ -113,8 +109,7 @@ namespace Kiezel
                 {
                     return s[pos];
                 }
-                else
-                {
+                else {
                     return null;
                 }
             }
@@ -125,14 +120,13 @@ namespace Kiezel
                 {
                     return ((IList)seq)[pos];
                 }
-                else
-                {
+                else {
                     return null;
                 }
             }
             else if (seq is IEnumerable)
             {
-                foreach (object item in ( IEnumerable ) seq)
+                foreach (object item in (IEnumerable)seq)
                 {
                     if (--pos < 0)
                     {
@@ -142,8 +136,7 @@ namespace Kiezel
 
                 return null;
             }
-            else
-            {
+            else {
                 throw new LispException("Cannot cast as IEnumerable: {0}", ToPrintString(seq));
             }
         }
@@ -240,6 +233,6 @@ namespace Kiezel
             return Nth(2, seq);
         }
 
-        #endregion Methods
+        #endregion Public Methods
     }
 }

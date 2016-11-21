@@ -68,7 +68,7 @@ namespace Kiezel
 
         #endregion Constructors
 
-        #region Methods
+        #region Private Methods
 
         T Init<T>(string key, T defaultValue)
         {
@@ -76,18 +76,17 @@ namespace Kiezel
             {
                 return (T)Defaults.GetValue(key);
             }
-            else
-            {
+            else {
                 return defaultValue;
             }
         }
 
-        #endregion Methods
+        #endregion Private Methods
     }
 
     public partial class RuntimeRepl
     {
-        #region Methods
+        #region Public Methods
 
         public static string GetReplConfigurationFile()
         {
@@ -237,6 +236,6 @@ namespace Kiezel
             return dict;
         }
 
-        #endregion Methods
+        #endregion Public Methods
     }
 }

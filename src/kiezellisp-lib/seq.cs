@@ -8,23 +8,15 @@ namespace Kiezel
 {
     using System;
     using System.Collections;
-    using System.Collections.Generic;
-    using System.Linq;
     using System.Threading.Tasks;
 
     using ActionFunc = System.Action<object>;
 
-    using CompareFunc = System.Func<object, object, int>;
-
     using KeyFunc = System.Func<object, object>;
-
-    using PredicateFunc = System.Func<object, bool>;
-
-    using TestFunc = System.Func<object, object, bool>;
 
     public partial class Runtime
     {
-        #region Methods
+        #region Public Methods
 
         [Lisp("adjoin")]
         public static Cons Adjoin(object item, IEnumerable seq)
@@ -34,8 +26,7 @@ namespace Kiezel
             {
                 return MakeCons(item, seq2);
             }
-            else
-            {
+            else {
                 return seq2;
             }
         }
@@ -82,8 +73,7 @@ namespace Kiezel
                 }
                 return seq;
             }
-            else
-            {
+            else {
                 throw new NotImplementedException();
             }
         }
@@ -111,7 +101,7 @@ namespace Kiezel
 
             var count = 0;
 
-            foreach (object x in ToIter( seq ))
+            foreach (object x in ToIter(seq))
             {
                 if (FuncallBool(predicate, Funcall(key, x)))
                 {
@@ -156,7 +146,7 @@ namespace Kiezel
         [Lisp("each")]
         public static void Each(IApply action, IEnumerable seq)
         {
-            foreach (object arg in ToIter( seq ))
+            foreach (object arg in ToIter(seq))
             {
                 Funcall(action, arg);
             }
@@ -230,7 +220,7 @@ namespace Kiezel
         [Lisp("flatten")]
         public static Cons Flatten(IEnumerable seq)
         {
-            return AsLazyList(SeqBase.Flatten(seq, Int32.MaxValue));
+            return AsLazyList(SeqBase.Flatten(seq, int.MaxValue));
         }
 
         [Lisp("flatten")]
@@ -322,14 +312,13 @@ namespace Kiezel
             else if (seq is IEnumerable)
             {
                 int len = 0;
-                foreach (object item in ( IEnumerable ) seq)
+                foreach (object item in seq)
                 {
                     ++len;
                 }
                 return len;
             }
-            else
-            {
+            else {
                 throw new NotImplementedException();
             }
         }
@@ -350,7 +339,7 @@ namespace Kiezel
         {
             var kwargs = ParseKwargs(args, new string[] { "key" });
             var key = GetClosure(kwargs[0]);
-            Func<object, object, object> reducer = ( x, y) => NotLess(x, y) ? x : y;
+            Func<object, object, object> reducer = (x, y) => NotLess(x, y) ? x : y;
             return ReduceSeq(reducer, seq, MissingValue, key);
         }
 
@@ -368,7 +357,7 @@ namespace Kiezel
         {
             var kwargs = ParseKwargs(args, new string[] { "key" });
             var key = GetClosure(kwargs[0]);
-            Func<object, object, object> reducer = ( x, y) => NotGreater(x, y) ? x : y;
+            Func<object, object, object> reducer = (x, y) => NotGreater(x, y) ? x : y;
             return ReduceSeq(reducer, seq, MissingValue, key);
         }
 
@@ -386,7 +375,7 @@ namespace Kiezel
         {
             var kwargs = ParseKwargs(args, new string[] { "key" });
             var key = GetClosure(kwargs[0]);
-            foreach (var v in ToIter( seq ))
+            foreach (var v in ToIter(seq))
             {
                 if (FuncallBool(predicate, Funcall(key, v)))
                 {
@@ -401,7 +390,7 @@ namespace Kiezel
         {
             var kwargs = ParseKwargs(args, new string[] { "key" });
             var key = GetClosure(kwargs[0]);
-            foreach (var v in ToIter( seq ))
+            foreach (var v in ToIter(seq))
             {
                 if (!FuncallBool(predicate, Funcall(key, v)))
                 {
@@ -423,7 +412,7 @@ namespace Kiezel
                 CurrentThreadContext = new ThreadContext(specials);
                 Funcall(action, a);
             };
-            Parallel.ForEach<object>(seq2, wrapper);
+            Parallel.ForEach(seq2, wrapper);
         }
 
         [Lisp("parallel-map")]
@@ -508,7 +497,7 @@ namespace Kiezel
         [Lisp("range")]
         public static Cons Range()
         {
-            return Range(0, Int32.MaxValue, 1);
+            return Range(0, int.MaxValue, 1);
         }
 
         [Lisp("reduce")]
@@ -523,14 +512,13 @@ namespace Kiezel
         public static object ReduceSeq(Func<object, object, object> reducer, IEnumerable seq, object seed, IApply key)
         {
             var result = seed;
-            foreach (object x in ToIter( seq ))
+            foreach (object x in ToIter(seq))
             {
                 if (result == MissingValue)
                 {
                     result = Funcall(key, x);
                 }
-                else
-                {
+                else {
                     result = reducer(result, Funcall(key, x));
                 }
             }
@@ -605,7 +593,7 @@ namespace Kiezel
         [Lisp("series")]
         public static Cons Series()
         {
-            return Range(1, Int32.MaxValue, 1);
+            return Range(1, int.MaxValue, 1);
         }
 
         [Lisp("shuffle")]
@@ -688,14 +676,13 @@ namespace Kiezel
             int index = 0;
             var v1 = new Vector();
             var v2 = new Vector();
-            foreach (object item in ToIter( seq ))
+            foreach (object item in ToIter(seq))
             {
                 if (index == 0)
                 {
                     v1.Add(item);
                 }
-                else
-                {
+                else {
                     v2.Add(item);
                 }
 
@@ -711,6 +698,6 @@ namespace Kiezel
             return AsLazyList(SeqBase.Zip(seqs));
         }
 
-        #endregion Methods
+        #endregion Public Methods
     }
 }

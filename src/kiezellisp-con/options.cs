@@ -6,8 +6,6 @@
 
 namespace Kiezel
 {
-    using System;
-
     public class CommandLineOptions
     {
         #region Fields
@@ -34,7 +32,7 @@ namespace Kiezel
 
     public partial class RuntimeConsole
     {
-        #region Methods
+        #region Public Methods
 
         public static CommandLineOptions ParseArgs(string[] args)
         {
@@ -81,6 +79,6 @@ namespace Kiezel
             return options;
         }
 
-        #endregion Methods
+        #endregion Public Methods
     }
 }

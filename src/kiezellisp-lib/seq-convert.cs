@@ -1,4 +1,4 @@
-﻿#region Header
+#region Header
 
 // Copyright (C) Jan Tolenaar. See the file LICENSE for details.
 
@@ -10,11 +10,10 @@ namespace Kiezel
     using System.Collections;
     using System.Collections.Generic;
     using System.Linq;
-    using System.Text;
 
     public partial class Runtime
     {
-        #region Methods
+        #region Public Methods
 
         [Lisp("as-array")]
         public static Array AsArray(IEnumerable seq, Symbol type)
@@ -22,7 +21,7 @@ namespace Kiezel
             var a = AsArray(seq);
             var t = (Type)GetType(type);
             Array b = Array.CreateInstance(t, a.Length);
-            for (int i = 0; i < a.Length; ++i)
+            for (var i = 0; i < a.Length; ++i)
             {
                 b.SetValue(a[i], i);
             }
@@ -34,7 +33,7 @@ namespace Kiezel
         {
             if (seq == null)
             {
-                return new object[ 0 ];
+                return new object[0];
             }
             else if (seq is object[])
             {
@@ -55,8 +54,7 @@ namespace Kiezel
             {
                 return (Cons)seq;
             }
-            else
-            {
+            else {
                 return MakeCons(seq.GetEnumerator());
             }
         }
@@ -85,8 +83,7 @@ namespace Kiezel
                 {
                     tail = head = new Cons(item, null);
                 }
-                else
-                {
+                else {
                     tail = tail.Cdr = new Cons(item, null);
                 }
             }
@@ -100,7 +97,7 @@ namespace Kiezel
             if (seq is DictionaryEntry)
             {
                 size = (size < 0) ? 2 : size;
-                var v = new object[ size ];
+                var v = new object[size];
                 var de = (DictionaryEntry)seq;
                 if (size > 0)
                 {
@@ -115,7 +112,7 @@ namespace Kiezel
             else if (seq is KeyValuePair<object, object>)
             {
                 size = (size < 0) ? 2 : size;
-                var v = new object[ size ];
+                var v = new object[size];
                 var de = (KeyValuePair<object, object>)seq;
                 if (size > 0)
                 {
@@ -127,18 +124,16 @@ namespace Kiezel
                 }
                 return v;
             }
-            else
-            {
+            else {
                 if (size < 0)
                 {
                     var v = AsArray(ToIter(seq));
                     return v;
                 }
-                else
-                {
-                    var v = new object[ size ];
+                else {
+                    var v = new object[size];
                     var i = 0;
-                    foreach (var item in ToIter( seq ))
+                    foreach (var item in ToIter(seq))
                     {
                         if (i == size)
                         {
@@ -161,7 +156,7 @@ namespace Kiezel
         public static Prototype AsPrototype(IEnumerable seq, IApply keyFunc, IApply valueFunc)
         {
             var dict = new Prototype();
-            foreach (var item in ToIter( seq ))
+            foreach (var item in ToIter(seq))
             {
                 var k = Funcall(keyFunc, item);
                 var v = Funcall(valueFunc, item);
@@ -243,8 +238,7 @@ namespace Kiezel
                 return new EnumeratorProxy(e);
                 //return ConvertToVector( (IEnumerable) list ).GetEnumerator();
             }
-            else
-            {
+            else {
                 return e;
             }
         }
@@ -271,6 +265,6 @@ namespace Kiezel
             return SeqBase.Range(start, end + step, step);
         }
 
-        #endregion Methods
+        #endregion Public Methods
     }
 }

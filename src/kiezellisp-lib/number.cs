@@ -6,7 +6,6 @@
 
 namespace Kiezel
 {
-    using System;
     using System.Globalization;
     using System.Numerics;
 
@@ -15,44 +14,42 @@ namespace Kiezel
     [RestrictedImport]
     public abstract class Number
     {
-        #region Fields
+        #region Static Fields
 
-        private static int a = (int)'a';
-        private static int A = (int)'A';
-        private static int nine = (int)'9';
-        private static int z = (int)'z';
-        private static int Z = (int)'Z';
-        private static int zero = (int)'0';
+        private static int a = 'a';
+        private static int A = 'A';
+        private static int nine = '9';
+        private static int z = 'z';
+        private static int Z = 'Z';
+        private static int zero = '0';
 
-        #endregion Fields
+        #endregion Static Fields
 
-        #region Methods
+        #region Public Methods
 
         public static bool CanShrink(BigRational d)
         {
             return (d.Denominator == 1);
         }
 
-        public static bool CanShrink(Int64 d)
+        public static bool CanShrink(long d)
         {
-            if (Int32.MinValue <= d && d <= Int32.MaxValue)
+            if (int.MinValue <= d && d <= int.MaxValue)
             {
                 return true;
             }
-            else
-            {
+            else {
                 return false;
             }
         }
 
         public static bool CanShrink(BigInteger d)
         {
-            if (Int64.MinValue <= d && d <= Int64.MaxValue)
+            if (long.MinValue <= d && d <= long.MaxValue)
             {
                 return true;
             }
-            else
-            {
+            else {
                 return false;
             }
         }
@@ -88,8 +85,7 @@ namespace Kiezel
                 {
                     stk.Add((char)(d + '0'));
                 }
-                else
-                {
+                else {
                     stk.Add((char)(d - 10 + 'a'));
                 }
                 n = n / radix;
@@ -97,29 +93,21 @@ namespace Kiezel
             stk.Reverse();
             if (escape)
             {
-                if (radix == 10)
+                switch (radix)
                 {
-                    return sign + Runtime.MakeString(stk.ToArray());
-                }
-                else if (radix == 16)
-                {
-                    return sign + "0x" + Runtime.MakeString(stk.ToArray());
-                }
-                else if (radix == 8)
-                {
-                    return sign + "0" + Runtime.MakeString(stk.ToArray());
-                }
-                else if (radix == 2)
-                {
-                    return "#b" + sign + Runtime.MakeString(stk.ToArray());
-                }
-                else
-                {
-                    return "#" + radix.ToString() + "r" + sign + Runtime.MakeString(stk.ToArray());
+                    case 10:
+                        return sign + Runtime.MakeString(stk.ToArray());
+                    case 16:
+                        return sign + "0x" + Runtime.MakeString(stk.ToArray());
+                    case 8:
+                        return sign + "0" + Runtime.MakeString(stk.ToArray());
+                    case 2:
+                        return "#b" + sign + Runtime.MakeString(stk.ToArray());
+                    default:
+                        return "#" + radix + "r" + sign + Runtime.MakeString(stk.ToArray());
                 }
             }
-            else
-            {
+            else {
                 return sign + Runtime.MakeString(stk.ToArray());
             }
         }
@@ -140,20 +128,18 @@ namespace Kiezel
             {
                 return Shrink(d.Numerator);
             }
-            else
-            {
+            else {
                 return d;
             }
         }
 
-        public static object Shrink(Int64 d)
+        public static object Shrink(long d)
         {
             if (CanShrink(d))
             {
                 return (int)d;
             }
-            else
-            {
+            else {
                 return d;
             }
         }
@@ -162,10 +148,9 @@ namespace Kiezel
         {
             if (CanShrink(d))
             {
-                return Shrink((Int64)d);
+                return Shrink((long)d);
             }
-            else
-            {
+            else {
                 return d;
             }
         }
@@ -189,8 +174,7 @@ namespace Kiezel
                 {
                     return Shrink(result);
                 }
-                else
-                {
+                else {
                     return null;
                 }
             }
@@ -238,16 +222,14 @@ namespace Kiezel
                         return Shrink(new BigRational(numerator, denominator));
                     }
                 }
-                else
-                {
+                else {
                     if (TryParseNumberBase(s, true, 10, out result))
                     {
                         return Shrink(result);
                     }
                 }
             }
-            else
-            {
+            else {
                 decimal result2;
                 double result3;
 
@@ -257,8 +239,7 @@ namespace Kiezel
                 {
                     s = s.Replace(".", "").Replace(",", ".");
                 }
-                else
-                {
+                else {
                     s = s.Replace(",", "");
                 }
 
@@ -289,8 +270,8 @@ namespace Kiezel
 
         public static bool TryParseNumberBase(string token, bool negAllowed, int numberBase, out BigInteger result)
         {
-            bool negative = false;
-            int digits = 0;
+            var negative = false;
+            var digits = 0;
             result = 0;
 
             foreach (char ch in token)
@@ -300,8 +281,8 @@ namespace Kiezel
                     continue;
                 }
 
-                int digitCode = (int)ch;
-                int digitValue = numberBase;
+                var digitCode = (int)ch;
+                var digitValue = numberBase;
 
                 if (digits == 0 && negAllowed && ch == '-')
                 {
@@ -343,6 +324,6 @@ namespace Kiezel
             return true;
         }
 
-        #endregion Methods
+        #endregion Public Methods
     }
 }

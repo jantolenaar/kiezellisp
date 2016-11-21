@@ -1,5 +1,10 @@
 # Change Log
 
+## 2016/11/20
+
+*   Refactored everything ala StyleCop.
+*   Fixed display of selection in readline editing code.
+
 ## 2016/11/17
 
 *   Refactored readline editing code.

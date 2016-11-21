@@ -6,8 +6,6 @@
 
 namespace Kiezel
 {
-    using System;
-    using System.Collections;
     using System.Text;
 
     #region Enumerations
@@ -29,7 +27,7 @@ namespace Kiezel
 
     public partial class Runtime
     {
-        #region Methods
+        #region Public Methods
 
         public static Symbol CheckReadVariable(object target)
         {
@@ -49,20 +47,20 @@ namespace Kiezel
                 switch (sym.Usage)
                 {
                     case SymbolUsage.Constant:
-                    {
-                        ThrowError("Cannot assign to constant: ", sym.ContextualName);
-                        break;
-                    }
+                        {
+                            ThrowError("Cannot assign to constant: ", sym.ContextualName);
+                            break;
+                        }
                     case SymbolUsage.Function:
-                    {
-                        ThrowError("Cannot assign to function: ", sym.ContextualName);
-                        break;
-                    }
+                        {
+                            ThrowError("Cannot assign to function: ", sym.ContextualName);
+                            break;
+                        }
                     case SymbolUsage.ReadonlyVariable:
-                    {
-                        ThrowError("Cannot assign to readonly variable: ", sym.ContextualName);
-                        break;
-                    }
+                        {
+                            ThrowError("Cannot assign to readonly variable: ", sym.ContextualName);
+                            break;
+                        }
 
                 }
             }
@@ -145,8 +143,7 @@ namespace Kiezel
             {
                 return (string)target;
             }
-            else
-            {
+            else {
                 return SymbolName(target);
             }
         }
@@ -159,8 +156,7 @@ namespace Kiezel
             {
                 SetDynamic(sym, val);
             }
-            else
-            {
+            else {
                 EraseCompilerValue(sym);
                 sym.CheckedValue = val;
             }
@@ -214,7 +210,7 @@ namespace Kiezel
             }
         }
 
-        #endregion Methods
+        #endregion Public Methods
     }
 
     public class Symbol : IPrintsValue, IApply
@@ -246,8 +242,7 @@ namespace Kiezel
             {
                 IsDynamic = true;
             }
-            else
-            {
+            else {
                 IsDynamic = false;
             }
 
@@ -259,8 +254,7 @@ namespace Kiezel
                 _value = this;
                 Usage = SymbolUsage.Constant;
             }
-            else
-            {
+            else {
                 _value = null;
                 Usage = SymbolUsage.None;
             }
@@ -268,7 +262,16 @@ namespace Kiezel
 
         #endregion Constructors
 
-        #region Properties
+        #region Internal Properties
+
+        internal object CompilerValue
+        {
+            get { return _compilerValue; }
+        }
+
+        #endregion Internal Properties
+
+        #region Public Properties
 
         public object CheckedValue
         {
@@ -327,8 +330,7 @@ namespace Kiezel
                 {
                     return Name;
                 }
-                else
-                {
+                else {
                     return LongName;
                 }
             }
@@ -424,8 +426,7 @@ namespace Kiezel
                 {
                     return Package.Name + ":" + Name;
                 }
-                else
-                {
+                else {
                     return Package.Name + "::" + Name;
                 }
             }
@@ -472,7 +473,7 @@ namespace Kiezel
         {
             get
             {
-                return this.Package == Runtime.TempPackage
+                return Package == Runtime.TempPackage
                 || Name.StartsWith("_")
                 || Name.StartsWith("~")
                 || Name.StartsWith("%");
@@ -520,14 +521,9 @@ namespace Kiezel
             }
         }
 
-        internal object CompilerValue
-        {
-            get{ return _compilerValue; }
-        }
+        #endregion Public Properties
 
-        #endregion Properties
-
-        #region Methods
+        #region Private Methods
 
         object IApply.Apply(object[] args)
         {
@@ -538,6 +534,10 @@ namespace Kiezel
             }
             return Runtime.Apply(value, args);
         }
+
+        #endregion Private Methods
+
+        #region Public Methods
 
         public string ToString(bool escape)
         {
@@ -563,19 +563,19 @@ namespace Kiezel
             return ContextualName;
         }
 
-        #endregion Methods
+        #endregion Public Methods
     }
 
-    public partial class Symbols
+    public static class Symbols
     {
-        #region Fields
+        #region Static Fields
 
         public static Symbol And;
         public static Symbol Append;
         public static Symbol Apply;
         public static Symbol Args;
         public static Symbol Array;
-		public static Symbol AssemblyPath;
+        public static Symbol AssemblyPath;
         public static Symbol AsVector;
         public static Symbol Base;
         public static Symbol BitAnd;
@@ -770,9 +770,9 @@ namespace Kiezel
         public static Symbol Whole;
         public static Symbol Width;
 
-        #endregion Fields
+        #endregion Static Fields
 
-        #region Methods
+        #region Public Methods
 
         public static void Create()
         {
@@ -781,7 +781,7 @@ namespace Kiezel
             Apply = MakeSymbol("apply");
             Args = MakeSymbol("__args__");
             Array = MakeSymbol("array");
-			AssemblyPath = MakeSymbol("$assembly-path");
+            AssemblyPath = MakeSymbol("$assembly-path");
             AsVector = MakeSymbol("as-vector");
             Base = MakeSymbol(":base");
             BitAnd = MakeSymbol("bit-and");
@@ -1035,6 +1035,6 @@ namespace Kiezel
             return Runtime.MakeSymbol(name);
         }
 
-        #endregion Methods
+        #endregion Public Methods
     }
 }

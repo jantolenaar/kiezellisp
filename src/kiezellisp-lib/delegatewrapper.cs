@@ -27,7 +27,7 @@ namespace Kiezel
 
         #endregion Constructors
 
-        #region Methods
+        #region Public Methods
 
         public int Compare(object item1, object item2)
         {
@@ -119,6 +119,6 @@ namespace Kiezel
             Runtime.Funcall(function);
         }
 
-        #endregion Methods
+        #endregion Public Methods
     }
 }

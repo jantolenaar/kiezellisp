@@ -7,16 +7,10 @@
 namespace Kiezel
 {
     using System;
-    using System.Collections.Generic;
-    using System.Diagnostics;
-    using System.Globalization;
-    using System.Linq;
-    using System.Reflection;
-    using System.Threading;
 
-    public class EmbeddedMode
+    public static class EmbeddedMode
     {
-        #region Methods
+        #region Public Methods
 
         public static object Funcall(string functionName, params object[] args)
         {
@@ -39,6 +33,6 @@ namespace Kiezel
             Runtime.RestartLoadFiles(0);
         }
 
-        #endregion Methods
+        #endregion Public Methods
     }
 }

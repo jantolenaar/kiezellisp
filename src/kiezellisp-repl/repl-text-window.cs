@@ -6,7 +6,6 @@
 
 namespace Kiezel
 {
-    using System;
     using System.Windows.Forms;
 
     public class ReplTextWindow : TextWindow
@@ -21,7 +20,7 @@ namespace Kiezel
 
         #endregion Constructors
 
-        #region Methods
+        #region Private Methods
 
         void CmdEnterData()
         {
@@ -32,13 +31,11 @@ namespace Kiezel
         void CmdEnterDataOrCommand()
         {
             CmdEnd();
-            Text = LineBuffer.ToString();
-            if (RuntimeRepl.IsCompleteSourceCode(Text))
+            if (RuntimeConsoleBase.IsCompleteSourceCode(lineBuffer.ToString()))
             {
-                Done = true;
+                done = true;
             }
-            else
-            {
+            else {
                 CmdDataChar('\n');
             }
         }
@@ -46,7 +43,7 @@ namespace Kiezel
         void CmdHelp()
         {
             CmdMoveBackOverSpaces();
-            var topic = Runtime.GetWordFromString(LineBuffer.ToString(), LineIndex, Runtime.IsLispWordChar);
+            var topic = Runtime.GetWordFromString(lineBuffer.ToString(), lineIndex, Runtime.IsLispWordChar);
             var helper = Symbols.HelpHook.Value as IApply;
             if (helper != null)
             {
@@ -57,21 +54,21 @@ namespace Kiezel
 
         void CmdHistoryNext()
         {
-            if (RuntimeRepl.History != null)
+            if (RuntimeConsoleBase.History != null)
             {
-                LineBuffer.Clear();
-                LineIndex = 0;
-                InsertString(RuntimeRepl.History.Next());
+                lineBuffer.Clear();
+                lineIndex = 0;
+                InsertString(RuntimeConsoleBase.History.Next());
             }
         }
 
         void CmdHistoryPrev()
         {
-            if (RuntimeRepl.History != null)
+            if (RuntimeConsoleBase.History != null)
             {
-                LineBuffer.Clear();
-                LineIndex = 0;
-                InsertString(RuntimeRepl.History.Previous());
+                lineBuffer.Clear();
+                lineIndex = 0;
+                InsertString(RuntimeConsoleBase.History.Previous());
             }
         }
 
@@ -84,6 +81,6 @@ namespace Kiezel
             AddEditHandler(Keys.F1, CmdHelp);
         }
 
-        #endregion Methods
+        #endregion Private Methods
     }
 }

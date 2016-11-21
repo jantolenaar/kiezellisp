@@ -6,68 +6,64 @@
 
 namespace Kiezel
 {
-    using System;
-    using System.IO;
-    using System.Reflection;
+	public class CommandLineOptions
+	{
+		#region Fields
 
-    public class CommandLineOptions
-    {
-        #region Fields
+		public bool Debug;
+		public string ScriptName;
+		public Cons UserArguments;
 
-        public bool Debug;
-        public string ScriptName;
-        public Cons UserArguments;
+		#endregion Fields
 
-        #endregion Fields
+		#region Constructors
 
-        #region Constructors
+		public CommandLineOptions()
+		{
+			ScriptName = null;
+			Debug = true;
+			UserArguments = null;
+		}
 
-        public CommandLineOptions()
-        {
-            ScriptName = null;
-            Debug = true;
-            UserArguments = null;
-        }
+		#endregion Constructors
+	}
 
-        #endregion Constructors
-    }
+	public partial class RuntimeGui
+	{
+		#region Public Methods
 
-    public partial class RuntimeGui
-    {
-        #region Methods
+		public static CommandLineOptions ParseArgs(string[] args)
+		{
+			var options = new CommandLineOptions();
+			var parser = new CommandLineParser();
 
-        public static CommandLineOptions ParseArgs(string[] args)
-        {
-            var options = new CommandLineOptions();
-            var parser = new CommandLineParser();
+			parser.AddOption("--debug");
+			parser.AddOption("--release");
 
-            parser.AddOption("--debug");
-            parser.AddOption("--release");
+			parser.Parse(args);
 
-            parser.Parse(args);
+			var s = parser.GetArgument(0);
 
-            var s = parser.GetArgument(0);
+			if (s != null)
+			{
+				options.ScriptName = s;
+				options.Debug = false;
+				options.UserArguments = Runtime.AsList(parser.GetArgumentArray(1));
+			}
 
-            if (s != null)
-            {
-                options.ScriptName = s;
-                options.Debug = false;
-                options.UserArguments = Runtime.AsList(parser.GetArgumentArray(1));
-            }
+			if (parser.GetOption("release") != null)
+			{
+				options.Debug = false;
+			}
 
-            if (parser.GetOption("release") != null)
-            {
-                options.Debug = false;
-            }
+			if (parser.GetOption("debug") != null)
+			{
+				options.Debug = true;
+			}
 
-            if (parser.GetOption("debug") != null)
-            {
-                options.Debug = true;
-            }
+			return options;
+		}
 
-            return options;
-        }
-
-        #endregion Methods
-    }
+		#endregion Public Methods
+	}
 }

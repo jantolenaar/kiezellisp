@@ -7,16 +7,12 @@
 namespace kiezellisp_embedded_demo
 {
     using System;
-    using System.Collections.Generic;
-    using System.Linq;
-    using System.Text;
-    using System.Threading.Tasks;
 
     class Program
     {
-        #region Methods
+        #region Private Methods
 
-        static void Main(string[] args)
+        static void Main()
         {
             try
             {
@@ -32,6 +28,6 @@ namespace kiezellisp_embedded_demo
             }
         }
 
-        #endregion Methods
+        #endregion Private Methods
     }
 }

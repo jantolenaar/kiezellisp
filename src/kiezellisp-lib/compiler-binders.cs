@@ -1,4 +1,4 @@
-﻿#region Header
+#region Header
 
 // Copyright (C) Jan Tolenaar. See the file LICENSE for details.
 
@@ -20,8 +20,8 @@ namespace Kiezel
     {
         #region Fields
 
-        private int _count;
-        private string _name;
+        private readonly int _count;
+        private readonly string _name;
 
         #endregion Fields
 
@@ -35,7 +35,7 @@ namespace Kiezel
 
         #endregion Constructors
 
-        #region Properties
+        #region Public Properties
 
         public int Count
         {
@@ -53,13 +53,13 @@ namespace Kiezel
             }
         }
 
-        #endregion Properties
+        #endregion Public Properties
 
-        #region Methods
+        #region Public Methods
 
         public override bool Equals(object obj)
         {
-            InvokeMemberBinderKey key = obj as InvokeMemberBinderKey;
+            var key = obj as InvokeMemberBinderKey;
             return key != null && key._name == _name && key._count == _count;
         }
 
@@ -69,7 +69,7 @@ namespace Kiezel
             return 0x28000000 ^ _name.GetHashCode() ^ _count.GetHashCode();
         }
 
-        #endregion Methods
+        #endregion Public Methods
     }
 
     public class KiezelGetIndexBinder : GetIndexBinder
@@ -83,7 +83,7 @@ namespace Kiezel
 
         #endregion Constructors
 
-        #region Methods
+        #region Public Methods
 
         public override DynamicMetaObject FallbackGetIndex(
             DynamicMetaObject target, DynamicMetaObject[] indexes,
@@ -121,7 +121,7 @@ namespace Kiezel
             return new DynamicMetaObject(Runtime.EnsureObjectResult(indexingExpr), restrictions);
         }
 
-        #endregion Methods
+        #endregion Public Methods
     }
 
     public class KiezelGetMemberBinder : GetMemberBinder
@@ -135,7 +135,7 @@ namespace Kiezel
 
         #endregion Constructors
 
-        #region Methods
+        #region Public Methods
 
         public override DynamicMetaObject FallbackGetMember(DynamicMetaObject target, DynamicMetaObject errorSuggestion)
         {
@@ -147,7 +147,7 @@ namespace Kiezel
             }
 
             var flags = BindingFlags.IgnoreCase | BindingFlags.Instance | BindingFlags.Public | BindingFlags.FlattenHierarchy;
-            var name = this.Name.LispToPascalCaseName();
+            var name = Name.LispToPascalCaseName();
             var members = target.LimitType.GetMember(name, flags);
 
             if (target.Value == null)
@@ -166,8 +166,7 @@ namespace Kiezel
                     // only used in sites with this binder.Name.
                     BindingRestrictions.GetTypeRestriction(target.Expression, target.LimitType));
             }
-            else
-            {
+            else {
                 return errorSuggestion ??
                 Runtime.CreateThrow(
                     target, null,
@@ -177,7 +176,7 @@ namespace Kiezel
             }
         }
 
-        #endregion Methods
+        #endregion Public Methods
     }
 
     public class KiezelInvokeBinder : InvokeBinder
@@ -191,7 +190,7 @@ namespace Kiezel
 
         #endregion Constructors
 
-        #region Methods
+        #region Public Methods
 
         public override DynamicMetaObject FallbackInvoke(
             DynamicMetaObject target, DynamicMetaObject[] args,
@@ -253,7 +252,7 @@ namespace Kiezel
                 "Not invokable: " + Runtime.CollectParameterInfo(target, args));
         }
 
-        #endregion Methods
+        #endregion Public Methods
     }
 
     public class KiezelInvokeMemberBinder : InvokeMemberBinder
@@ -268,14 +267,14 @@ namespace Kiezel
 
         #endregion Constructors
 
-        #region Methods
+        #region Public Methods
 
         public override DynamicMetaObject FallbackInvoke(
             DynamicMetaObject target, DynamicMetaObject[] args,
             DynamicMetaObject errorSuggestion)
         {
-            var argexprs = new Expression[ args.Length + 1 ];
-            for (int i = 0; i < args.Length; i++)
+            var argexprs = new Expression[args.Length + 1];
+            for (var i = 0; i < args.Length; i++)
             {
                 argexprs[i + 1] = args[i].Expression;
             }
@@ -301,7 +300,7 @@ namespace Kiezel
             }
 
             var limitType = target.LimitType;
-            var name = this.Name.LispToPascalCaseName();
+            var name = Name.LispToPascalCaseName();
 
             if (target.Value == null)
             {
@@ -310,7 +309,7 @@ namespace Kiezel
                     + limitType.FullName + "." + name + Runtime.CollectParameterInfo(target, args));
             }
 
-            var builtin = Runtime.FindImportedFunction(limitType, this.Name);
+            var builtin = Runtime.FindImportedFunction(limitType, Name);
 
             if (builtin != null)
             {
@@ -325,7 +324,7 @@ namespace Kiezel
             var methods = new List<CandidateMethod<MethodInfo>>();
             bool createdParamArray;
 
-            foreach (var m in limitType.GetMember( name, flags ))
+            foreach (var m in limitType.GetMember(name, flags))
             {
                 MethodInfo mi;
 
@@ -333,8 +332,7 @@ namespace Kiezel
                 {
                     mi = ((PropertyInfo)m).GetGetMethod();
                 }
-                else
-                {
+                else {
                     mi = m as MethodInfo;
                 }
 
@@ -344,12 +342,12 @@ namespace Kiezel
                 }
             }
 
-            if (methods.Count == 0 && (this.Name.StartsWith("set-") || this.Name.StartsWith("get-")))
+            if (methods.Count == 0 && (Name.StartsWith("set-") || Name.StartsWith("get-")))
             {
                 // Fallback to special handling to change .set-bla to .set_bla if the former has failed.
-                name = this.Name.Left(3) + "_" + this.Name.Substring(4).LispToPascalCaseName();
+                name = Name.Left(3) + "_" + Name.Substring(4).LispToPascalCaseName();
 
-                foreach (var m in limitType.GetMember( name, flags ))
+                foreach (var m in limitType.GetMember(name, flags))
                 {
                     MethodInfo mi;
 
@@ -357,8 +355,7 @@ namespace Kiezel
                     {
                         mi = ((PropertyInfo)m).GetGetMethod();
                     }
-                    else
-                    {
+                    else {
                         mi = m as MethodInfo;
                     }
 
@@ -376,8 +373,7 @@ namespace Kiezel
                 return errorSuggestion ?? Runtime.CreateThrow(target, args, restrictions, typeof(MissingMemberException),
                     "No (suitable) method found: " + limitType.FullName + "." + name + Runtime.CollectParameterInfo(target, args));
             }
-            else
-            {
+            else {
                 var method = methods[0].Method;
                 var callArgs2 = Runtime.ConvertArguments(args, method.GetParameters());
                 Expression expr;
@@ -389,8 +385,7 @@ namespace Kiezel
                     // extension with target as extra parameter
                     expr = Expression.Call(method, callArgs2);
                 }
-                else
-                {
+                else {
                     expr = Expression.Call(Expression.Convert(target.Expression, limitType), method, callArgs2);
                 }
 
@@ -398,7 +393,7 @@ namespace Kiezel
             }
         }
 
-        #endregion Methods
+        #endregion Public Methods
     }
 
     public class KiezelSetIndexBinder : SetIndexBinder
@@ -412,7 +407,7 @@ namespace Kiezel
 
         #endregion Constructors
 
-        #region Methods
+        #region Public Methods
 
         public override DynamicMetaObject FallbackSetIndex(
             DynamicMetaObject target, DynamicMetaObject[] indexes,
@@ -451,7 +446,7 @@ namespace Kiezel
             return new DynamicMetaObject(Runtime.EnsureObjectResult(setIndexExpr), restrictions);
         }
 
-        #endregion Methods
+        #endregion Public Methods
     }
 
     public class KiezelSetMemberBinder : SetMemberBinder
@@ -465,7 +460,7 @@ namespace Kiezel
 
         #endregion Constructors
 
-        #region Methods
+        #region Public Methods
 
         public override DynamicMetaObject FallbackSetMember(
             DynamicMetaObject target, DynamicMetaObject value,
@@ -478,7 +473,7 @@ namespace Kiezel
                 return Defer(target);
             }
 
-            var name = this.Name.LispToPascalCaseName();
+            var name = Name.LispToPascalCaseName();
 
             if (target.Value == null)
             {
@@ -517,8 +512,7 @@ namespace Kiezel
                 return new DynamicMetaObject(Runtime.EnsureObjectResult(expr),
                     BindingRestrictions.GetTypeRestriction(target.Expression, target.LimitType));
             }
-            else
-            {
+            else {
                 return errorSuggestion ??
                 Runtime.CreateThrow(
                     target, null,
@@ -529,12 +523,12 @@ namespace Kiezel
             }
         }
 
-        #endregion Methods
+        #endregion Public Methods
     }
 
     public partial class Runtime
     {
-        #region Fields
+        #region Static Fields
 
         public static ConcurrentDictionary<int, CallInfo> _getCallInfo;
         public static ConcurrentDictionary<int, CallSiteBinder> _getIndexBinders;
@@ -544,9 +538,9 @@ namespace Kiezel
         public static ConcurrentDictionary<int, CallSiteBinder> _setIndexBinders;
         public static ConcurrentDictionary<string, CallSiteBinder> _setMemberBinders;
 
-        #endregion Fields
+        #endregion Static Fields
 
-        #region Methods
+        #region Public Methods
 
         public static CallInfo GetCallInfo(int count)
         {
@@ -629,6 +623,6 @@ namespace Kiezel
             _invokeMemberBinders = new ConcurrentDictionary<InvokeMemberBinderKey, CallSiteBinder>();
         }
 
-        #endregion Methods
+        #endregion Public Methods
     }
 }

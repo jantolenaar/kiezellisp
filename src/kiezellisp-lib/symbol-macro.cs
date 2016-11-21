@@ -6,8 +6,6 @@
 
 namespace Kiezel
 {
-    using System;
-
     public class SymbolMacro
     {
         #region Fields
@@ -25,13 +23,13 @@ namespace Kiezel
 
         #endregion Constructors
 
-        #region Methods
+        #region Public Methods
 
         public override string ToString()
         {
-            return String.Format("Kiezel.SymbolMacro Form={0}", Runtime.ToPrintString(Form));
+            return string.Format("Kiezel.SymbolMacro Form={0}", Runtime.ToPrintString(Form));
         }
 
-        #endregion Methods
+        #endregion Public Methods
     }
 }

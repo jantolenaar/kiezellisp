@@ -21,26 +21,20 @@ namespace Kiezel
 
         #endregion Fields
 
-        #region Enumerations
+        #region Private Methods
 
-        [Flags]
-        public enum Flags
+        private void AddOption(Option option)
         {
-            None = 0,
-            Required = 1,
-            Joined = 2,
-            Placed = 4,
-            Long = 8,
-            Short = 16,
+            options.Add(option);
         }
 
-        #endregion Enumerations
+        #endregion Private Methods
 
-        #region Methods
+        #region Public Methods
 
         public void AddOption(string spec1, string spec2)
         {
-            Option option = new Option();
+            var option = new Option();
             ParseOption(spec1, ref option);
             ParseOption(spec2, ref option);
             options.Add(option);
@@ -48,7 +42,7 @@ namespace Kiezel
 
         public void AddOption(string spec)
         {
-            Option option = new Option();
+            var option = new Option();
             ParseOption(spec, ref option);
             options.Add(option);
         }
@@ -72,8 +66,7 @@ namespace Kiezel
             {
                 return args[pos + endOfOptions];
             }
-            else
-            {
+            else {
                 return null;
             }
         }
@@ -82,13 +75,12 @@ namespace Kiezel
         {
             if (0 <= pos && pos <= args.Length - endOfOptions)
             {
-                string[] dest = new string[ args.Length - endOfOptions - pos ];
+                string[] dest = new string[args.Length - endOfOptions - pos];
                 Array.Copy(args, pos + endOfOptions, dest, 0, dest.Length);
                 return dest;
             }
-            else
-            {
-                return new string[ 0 ];
+            else {
+                return new string[0];
             }
         }
 
@@ -99,8 +91,7 @@ namespace Kiezel
             {
                 return value;
             }
-            else
-            {
+            else {
                 return null;
             }
         }
@@ -122,7 +113,7 @@ namespace Kiezel
                 bool isLong = arg.StartsWith("--");
                 string spec = isLong ? arg.Substring(2) : arg.Substring(1);
 
-                repeat:
+            repeat:
 
                 string value;
                 Option option = FindOption(isLong, spec, out value);
@@ -186,17 +177,17 @@ namespace Kiezel
         {
             var cases = new[]
             {
-                new { Pattern = @"^--([\w|-]+)[:=]\[\w+\]$",	Long = true,  Flags = Flags.Joined },
-                new { Pattern = @"^--([\w|-]+)[:=]\w+\$",		Long = true,  Flags = Flags.Joined | Flags.Required },
-                new { Pattern = @"^--([\w|-]+)\s+\[\w+\]$",		Long = true,  Flags = Flags.Placed },
-                new { Pattern = @"^--([\w|-]+)\s+\w+$",			Long = true,  Flags = Flags.Placed | Flags.Required },
-                new { Pattern = @"^--([\w|-]+)\s*$",			Long = true,  Flags = Flags.None },
-                new { Pattern = @"^-(\w)[:=]?\[\w+\]$",		Long = false, Flags = Flags.Joined },
-                new { Pattern = @"^-(\w)[:=]?\w+\$",		Long = false, Flags = Flags.Joined | Flags.Required },
-                new { Pattern = @"^-(\w)\s+\[\w+\]$",		Long = false, Flags = Flags.Placed },
-                new { Pattern = @"^-(\w)\s+\w+$",			Long = false, Flags = Flags.Placed | Flags.Required },
-                new { Pattern = @"^-(\w)\s*$",				Long = false, Flags = Flags.None },
-                new { Pattern = @"^-()\s*$",				Long = false, Flags = Flags.None }
+                new { Pattern = @"^--([\w|-]+)[:=]\[\w+\]$",    Long = true,  Flags = Flags.Joined },
+                new { Pattern = @"^--([\w|-]+)[:=]\w+\$",       Long = true,  Flags = Flags.Joined | Flags.Required },
+                new { Pattern = @"^--([\w|-]+)\s+\[\w+\]$",     Long = true,  Flags = Flags.Placed },
+                new { Pattern = @"^--([\w|-]+)\s+\w+$",         Long = true,  Flags = Flags.Placed | Flags.Required },
+                new { Pattern = @"^--([\w|-]+)\s*$",            Long = true,  Flags = Flags.None },
+                new { Pattern = @"^-(\w)[:=]?\[\w+\]$",     Long = false, Flags = Flags.Joined },
+                new { Pattern = @"^-(\w)[:=]?\w+\$",        Long = false, Flags = Flags.Joined | Flags.Required },
+                new { Pattern = @"^-(\w)\s+\[\w+\]$",       Long = false, Flags = Flags.Placed },
+                new { Pattern = @"^-(\w)\s+\w+$",           Long = false, Flags = Flags.Placed | Flags.Required },
+                new { Pattern = @"^-(\w)\s*$",              Long = false, Flags = Flags.None },
+                new { Pattern = @"^-()\s*$",                Long = false, Flags = Flags.None }
             };
 
             foreach (var item in cases)
@@ -208,8 +199,7 @@ namespace Kiezel
                     {
                         option.LongName = match.Groups[1].Value;
                     }
-                    else
-                    {
+                    else {
                         option.ShortName = match.Groups[1].Value;
                     }
 
@@ -229,14 +219,20 @@ namespace Kiezel
             throw new LispException("Invalid command line option specification: \"{0}\"", spec);
         }
 
-        private void AddOption(Option option)
+        #endregion Public Methods
+
+        #region Other
+
+        [Flags]
+        public enum Flags
         {
-            options.Add(option);
+            None = 0,
+            Required = 1,
+            Joined = 2,
+            Placed = 4,
+            Long = 8,
+            Short = 16,
         }
-
-        #endregion Methods
-
-        #region Nested Types
 
         public class Option
         {
@@ -246,17 +242,9 @@ namespace Kiezel
             public string LongName;
             public string ShortName;
 
-            #endregion Fields
-
-            #region Constructors
-
-            public Option()
-            {
-            }
-
             #endregion Constructors
 
-            #region Methods
+            #region Public Methods
 
             public bool Match(bool longName, string str, out string value)
             {
@@ -272,8 +260,7 @@ namespace Kiezel
                         value = str.Substring(LongName.Length + 1);
                         return true;
                     }
-                    else
-                    {
+                    else {
                         return false;
                     }
                 }
@@ -293,20 +280,18 @@ namespace Kiezel
                         value = str.Substring(ShortName.Length);
                         return true;
                     }
-                    else
-                    {
+                    else {
                         return false;
                     }
                 }
-                else
-                {
+                else {
                     return false;
                 }
             }
 
-            #endregion Methods
+            #endregion Public Methods
         }
 
-        #endregion Nested Types
+        #endregion Other
     }
 }

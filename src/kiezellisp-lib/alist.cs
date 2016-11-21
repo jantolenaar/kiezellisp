@@ -6,12 +6,11 @@
 
 namespace Kiezel
 {
-    using System;
     using System.Collections;
 
     public partial class Runtime
     {
-        #region Methods
+        #region Public Methods
 
         [Lisp("acons")]
         public static Cons Acons(object key, object value, Cons alist)
@@ -54,6 +53,6 @@ namespace Kiezel
             return alist;
         }
 
-        #endregion Methods
+        #endregion Public Methods
     }
 }

@@ -17,13 +17,13 @@ namespace Kiezel
 
     public partial class Runtime
     {
-        #region Fields
+        #region Static Fields
 
         public static Dictionary<Type, List<Type>> AbstractTypes;
         public static bool DebugMode;
         public static Readtable DefaultReadtable;
         public static Dictionary<object, string> Documentation;
-        public static long GentempCounter = 0;
+        public static long GentempCounter;
         public static string HomeDirectory = Directory.GetCurrentDirectory();
         public static Package KeywordPackage;
         public static Package LispDocPackage;
@@ -41,47 +41,43 @@ namespace Kiezel
         public static Cons UserArguments;
         public static Package UserPackage;
         [ThreadStatic]
-        public static ThreadContext _Context = null;
+        static ThreadContext _context;
 
-        #endregion Fields
+        #endregion Static Fields
 
-        #if DEBUG
-        
-        public static bool AdaptiveCompilation = false;
-        public static int CompilationThreshold = 50;
+#if DEBUG
 
-        
+		public static bool AdaptiveCompilation = false;
+		public static int CompilationThreshold = 50;
 
+#else
 
-
-        #else
-        
         public static bool AdaptiveCompilation = true;
         public static int CompilationThreshold = 50;
 
-        #endif
+#endif
 
-        #region Properties
+        #region Public Properties
 
         public static ThreadContext CurrentThreadContext
         {
             get
             {
-                if (_Context == null)
+                if (_context == null)
                 {
-                    _Context = new ThreadContext(null);
+                    _context = new ThreadContext(null);
                 }
-                return _Context;
+                return _context;
             }
             set
             {
-                _Context = value;
+                _context = value;
             }
         }
 
-        #endregion Properties
+        #endregion Public Properties
 
-        #region Methods
+        #region Public Methods
 
         public static void AddFeature(string name)
         {
@@ -119,6 +115,13 @@ namespace Kiezel
             return fileName;
         }
 
+        [Lisp("get-mscorlib-version")]
+        public static object GetMsCorLibVersion()
+        {
+            var v = FileVersionInfo.GetVersionInfo(typeof(int).Assembly.Location);
+            return v;
+        }
+
         [Lisp("get-program")]
         public static string GetProgramName()
         {
@@ -134,20 +137,12 @@ namespace Kiezel
             var assembly = Assembly.GetEntryAssembly();
             var fileVersion = FileVersionInfo.GetVersionInfo(assembly.Location);
             var date = new DateTime(2000, 1, 1).AddDays(fileVersion.FileBuildPart);
-            #if DEBUG
-            return String.Format("{0} {1}.{2} (Debug Build {3} - {4:yyyy-MM-dd})", fileVersion.ProductName, fileVersion.FileMajorPart, fileVersion.FileMinorPart, fileVersion.FileBuildPart, date);
-            #else
-            return String.Format("{0} {1}.{2} (Release Build {3} - {4:yyyy-MM-dd})", fileVersion.ProductName, fileVersion.FileMajorPart, fileVersion.FileMinorPart, fileVersion.FileBuildPart, date);
-            #endif
+#if DEBUG
+			return String.Format("{0} {1}.{2} (Debug Build {3} - {4:yyyy-MM-dd})", fileVersion.ProductName, fileVersion.FileMajorPart, fileVersion.FileMinorPart, fileVersion.FileBuildPart, date);
+#else
+            return string.Format("{0} {1}.{2} (Release Build {3} - {4:yyyy-MM-dd})", fileVersion.ProductName, fileVersion.FileMajorPart, fileVersion.FileMinorPart, fileVersion.FileBuildPart, date);
+#endif
         }
-
-        [Lisp("get-mscorlib-version")]
-        public static object GetMsCorLibVersion()
-        {
-            var v = FileVersionInfo.GetVersionInfo(typeof(int).Assembly.Location);
-            return v;
-        }
-
 
         public static bool HasFeature(string feature)
         {
@@ -190,8 +185,7 @@ namespace Kiezel
                     AbstractTypes[key] = subtypes;
                     key = null;
                 }
-                else
-                {
+                else {
                     subtypes.Add(t);
                 }
             }
@@ -219,7 +213,7 @@ namespace Kiezel
 
             foreach (var name in names)
             {
-                var members = type.GetMember(name, flags).Select(x => x as MethodInfo).Where(x => x != null && x.GetCustomAttributes(typeof(LispAttribute), false).Length != 0).ToArray();
+                var members = type.GetMember(name, flags).OfType<MethodInfo>().Where(x => x.GetCustomAttributes(typeof(LispAttribute), false).Length != 0).ToArray();
 
                 if (members.Length != 0)
                 {
@@ -227,7 +221,7 @@ namespace Kiezel
                     var lisp = members[0].GetCustomAttributes(typeof(LispAttribute), false);
                     var builtin = new ImportedFunction(name, type, members, pure);
 
-                    foreach (string symbolName in ( ( LispAttribute ) lisp[ 0 ] ).Names)
+                    foreach (string symbolName in ((LispAttribute)lisp[0]).Names)
                     {
                         var sym = FindSymbol(symbolName);
                         if (!sym.IsUndefined)
@@ -269,20 +263,20 @@ namespace Kiezel
                 switch (level)
                 {
                     case 0:
-                    {
-                        TryLoad(path, false, false);
-                        break;
-                    }
+                        {
+                            TryLoad(path, false, false);
+                            break;
+                        }
                     case 1:
-                    {
-                        TryLoad(path, true, false);
-                        break;
-                    }
+                        {
+                            TryLoad(path, true, false);
+                            break;
+                        }
                     case 2:
-                    {
-                        TryLoad(path, true, true);
-                        break;
-                    }
+                        {
+                            TryLoad(path, true, true);
+                            break;
+                        }
 
                 }
             }
@@ -300,8 +294,7 @@ namespace Kiezel
                 Mono = true;
                 AddFeature("mono");
             }
-            else
-            {
+            else {
                 Mono = false;
                 AddFeature("microsoft");
             }
@@ -311,35 +304,33 @@ namespace Kiezel
                 AddFeature("winforms");
             }
 
+            switch (Environment.OSVersion.Platform)
+            {
+                case PlatformID.Win32NT:
+                    if (!string.IsNullOrEmpty(Environment.GetEnvironmentVariable("WINDOWID")))
+                    {
+                        AddFeature("wine");
+                    }
 
-            if (Environment.OSVersion.Platform == PlatformID.Win32NT)
-            {
-                if (!String.IsNullOrEmpty(Environment.GetEnvironmentVariable("WINDOWID")))
-                {
-                    AddFeature("wine");
-                }
-
-                AddFeature("windows");
-            }
-            else if (Environment.OSVersion.Platform == PlatformID.Unix)
-            {
-                if (Directory.Exists("/app"))
-                {
-                    AddFeature("flatpak");
-                }
-                AddFeature("unix");
-            }
-            else if (Environment.OSVersion.Platform == PlatformID.MacOSX)
-            {
-                AddFeature("macosx");
+                    AddFeature("windows");
+                    break;
+                case PlatformID.Unix:
+                    if (Directory.Exists("/app"))
+                    {
+                        AddFeature("flatpak");
+                    }
+                    AddFeature("unix");
+                    break;
+                case PlatformID.MacOSX:
+                    AddFeature("macosx");
+                    break;
             }
 
             if (Environment.Is64BitProcess)
             {
                 AddFeature("x64");
             }
-            else
-            {
+            else {
                 AddFeature("x32");
                 AddFeature("x86");
             }
@@ -364,14 +355,14 @@ namespace Kiezel
         public static void RestartSymbols()
         {
             // these packages do not use lisp package
-            KeywordPackage = MakePackage("keyword", reserved: true);
-            TempPackage = MakePackage("temp", reserved: true);
-            LispPackage = MakePackage("lisp", reserved: true);
-            LispDocPackage = MakePackage("example", reserved: true);
+            KeywordPackage = MakePackage3("keyword", reserved: true);
+            TempPackage = MakePackage3("temp", reserved: true);
+            LispPackage = MakePackage3("lisp", reserved: true);
+            LispDocPackage = MakePackage3("example", reserved: true);
 
             // these packages do use lisp package
-            MakePackage("terminal", useLisp: true);
-            UserPackage = MakePackage("user", useLisp: true);
+            MakePackage3("terminal", useLisp: true);
+            UserPackage = MakePackage3("user", useLisp: true);
 
             Symbols.Create();
 
@@ -445,6 +436,6 @@ namespace Kiezel
             ReadDecimalNumbers = flag;
         }
 
-        #endregion Methods
+        #endregion Public Methods
     }
 }

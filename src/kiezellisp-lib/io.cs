@@ -1,4 +1,4 @@
-﻿#region Header
+#region Header
 
 // Copyright (C) Jan Tolenaar. See the file LICENSE for details.
 
@@ -14,7 +14,6 @@ namespace Kiezel
     using System.Numerics;
     using System.Runtime.CompilerServices;
     using System.Text.RegularExpressions;
-    using System.Windows;
 
     public class CharacterRepresentation
     {
@@ -60,7 +59,7 @@ namespace Kiezel
 
         #endregion Constructors
 
-        #region Properties
+        #region Public Properties
 
         public override System.Text.Encoding Encoding
         {
@@ -70,31 +69,15 @@ namespace Kiezel
             }
         }
 
-        #endregion Properties
+        #endregion Public Properties
 
-        #region Methods
-
-        public override void Write(string value)
-        {
-            using (var stream = Open())
-            {
-                stream.Write(value);
-            }
-        }
-
-        public override void WriteLine(string value)
-        {
-            using (var stream = Open())
-            {
-                stream.WriteLine(value);
-            }
-        }
+        #region Private Methods
 
         TextWriter Open()
         {
-            if (!String.IsNullOrWhiteSpace(Name))
+            if (!string.IsNullOrWhiteSpace(Name))
             {
-                for (int i = 0; i < 100; ++i)
+                for (var i = 0; i < 100; ++i)
                 {
                     DateTime date = DateTime.Now.Date;
                     string file = Name + date.ToString("-yyyy-MM-dd") + ".log";
@@ -128,17 +111,37 @@ namespace Kiezel
                 }
             }
 
-            return TextWriter.Null;
+            return Null;
         }
 
-        #endregion Methods
+        #endregion Private Methods
+
+        #region Public Methods
+
+        public override void Write(string value)
+        {
+            using (var stream = Open())
+            {
+                stream.Write(value);
+            }
+        }
+
+        public override void WriteLine(string value)
+        {
+            using (var stream = Open())
+            {
+                stream.WriteLine(value);
+            }
+        }
+
+        #endregion Public Methods
     }
 
     public partial class Runtime
     {
-        #region Fields
+        #region Static Fields
 
-        public static CharacterRepresentation[] CharacterTable = new CharacterRepresentation[]
+        public static CharacterRepresentation[] CharacterTable =
         {
             new CharacterRepresentation('\0', @"\0", "null"),
             new CharacterRepresentation('\a', @"\a", "alert"),
@@ -160,14 +163,42 @@ namespace Kiezel
         };
         public static ConditionalWeakTable<TextReader, LispReader> ReaderCache = new ConditionalWeakTable<TextReader, LispReader>();
 
-        #endregion Fields
+        #endregion Static Fields
 
-        #region Methods
+        #region Private Methods
+
+        static bool EndsWithLf(object item)
+        {
+            return (item is string && ((string)item).EndsWith("\n")) || (item is char && ((char)item) == '\n');
+        }
+
+        static IEnumerable RewriteCompileTimeBranch(IEnumerable forms)
+        {
+            // Flatten top level compile branches created by #if #elif #else #endif.
+            // Branches inside functions or macros are treated as merging-do forms.
+            foreach (var expr in forms)
+            {
+                if (expr is Cons && First(expr) == Symbols.CompileTimeBranch)
+                {
+                    foreach (var form in RewriteCompileTimeBranch(ToIter(Cdr((Cons)expr))))
+                    {
+                        yield return form;
+                    }
+                }
+                else {
+                    yield return expr;
+                }
+            }
+        }
+
+        #endregion Private Methods
+
+        #region Public Methods
 
         public static LispReader AcquireReader(TextReader stream)
         {
             // Allow single-threaded but nested use of textreader caused by custom reader macro handlers.
-            var stream2 = stream != null ? stream : (TextReader)GetDynamic(Symbols.StdIn);
+            var stream2 = stream ?? ((TextReader)GetDynamic(Symbols.StdIn));
             var reader = ReaderCache.GetOrCreateValue(stream2);
             reader.Stream = stream2;
             return reader;
@@ -184,8 +215,7 @@ namespace Kiezel
             {
                 return TextWriter.Null;
             }
-            else
-            {
+            else {
                 return stream;
             }
         }
@@ -205,8 +235,7 @@ namespace Kiezel
             {
                 return ((IHasTextWriter)stream).GetTextWriter();
             }
-            else
-            {
+            else {
                 return (TextWriter)stream;
             }
         }
@@ -221,8 +250,7 @@ namespace Kiezel
             {
                 return token[0];
             }
-            else
-            {
+            else {
                 foreach (var rep in CharacterTable)
                 {
                     if (rep.Name == token)
@@ -287,8 +315,7 @@ namespace Kiezel
                         return NormalizePath(file);
                     }
                 }
-                else
-                {
+                else {
                     names2.Add(file);
                 }
             }
@@ -296,7 +323,7 @@ namespace Kiezel
             if (true)
             {
                 var dir = Environment.CurrentDirectory;
-                if (!String.IsNullOrEmpty(dir))
+                if (!string.IsNullOrEmpty(dir))
                 {
                     foreach (string file in ToIter(names2))
                     {
@@ -309,7 +336,7 @@ namespace Kiezel
                 }
             }
 
-            foreach (string dir in ToIter( folders ))
+            foreach (string dir in ToIter(folders))
             {
                 foreach (string file in ToIter(names2))
                 {
@@ -330,7 +357,7 @@ namespace Kiezel
             string file = NormalizePath(GetDesignatedString(filespec));
             string[] candidates;
 
-            if (String.IsNullOrWhiteSpace(Path.GetExtension(file)))
+            if (string.IsNullOrWhiteSpace(Path.GetExtension(file)))
             {
                 var basename = Path.GetFileNameWithoutExtension(file);
                 candidates = new string[]
@@ -342,8 +369,7 @@ namespace Kiezel
                     file + "/main.kiezel"
                 };
             }
-            else
-            {
+            else {
                 candidates = new string[] { file };
             }
 
@@ -352,7 +378,7 @@ namespace Kiezel
             return path;
         }
 
-        [LispAttribute("get-clipboard")]
+        [Lisp("get-clipboard")]
         public static string GetClipboardData()
         {
             string str = System.Windows.Forms.Clipboard.GetText();
@@ -370,13 +396,13 @@ namespace Kiezel
             }
         }
 
-        [LispAttribute("load-clipboard")]
+        [Lisp("load-clipboard")]
         public static void LoadClipboardData()
         {
             var code = GetClipboardData();
             using (var stream = new StringReader(code))
             {
-                Runtime.TryLoadText(stream, null, null, false, false);
+                TryLoadText(stream, null, null, false, false);
             }
         }
 
@@ -423,8 +449,7 @@ namespace Kiezel
                 }
                 return eofValue;
             }
-            else
-            {
+            else {
                 return value;
             }
         }
@@ -526,8 +551,7 @@ namespace Kiezel
                 }
                 return eofValue;
             }
-            else
-            {
+            else {
                 return value;
             }
         }
@@ -586,8 +610,7 @@ namespace Kiezel
                 }
                 return eofValue;
             }
-            else
-            {
+            else {
                 return value;
             }
         }
@@ -633,8 +656,7 @@ namespace Kiezel
                     }
                     return eofValue;
                 }
-                else
-                {
+                else {
                     return value;
                 }
             }
@@ -666,8 +688,7 @@ namespace Kiezel
                 }
                 return eofValue;
             }
-            else
-            {
+            else {
                 return value;
             }
         }
@@ -710,17 +731,17 @@ namespace Kiezel
             }
         }
 
-        [LispAttribute("run-clipboard")]
+        [Lisp("run-clipboard")]
         public static void RunClipboardData()
         {
             var code = GetClipboardData();
             using (var stream = new StringReader(code))
             {
-                Runtime.TryLoadText(stream, null, null, false, false);
+                TryLoadText(stream, null, null, false, false);
                 var main = Symbols.Main.Value as IApply;
                 if (main != null)
                 {
-                    Runtime.Funcall(main);
+                    Funcall(main);
                 }
             }
         }
@@ -731,24 +752,22 @@ namespace Kiezel
             PrintHelper(true, true, items);
         }
 
-		[Lisp("set-assembly-path")]
-		public static Cons SetAssemblyPath(params string[] folders)
-		{
-			var paths = AsList(folders.Select(x => PathExtensions.GetFullPath(x)));
-			Symbols.AssemblyPath.ReadonlyValue = paths;
-			return paths;
-		}
+        [Lisp("set-assembly-path")]
+        public static Cons SetAssemblyPath(params string[] folders)
+        {
+            var paths = AsList(folders.Select(x => PathExtensions.GetFullPath(x)));
+            Symbols.AssemblyPath.ReadonlyValue = paths;
+            return paths;
+        }
 
-
-		[LispAttribute("set-clipboard")]
+        [Lisp("set-clipboard")]
         public static void SetClipboardData(string str)
         {
-            if (String.IsNullOrEmpty(str))
+            if (string.IsNullOrEmpty(str))
             {
                 System.Windows.Forms.Clipboard.Clear();
             }
-            else
-            {
+            else {
                 System.Windows.Forms.Clipboard.SetText(str);
             }
         }
@@ -769,8 +788,7 @@ namespace Kiezel
                 {
                     return "";
                 }
-                else
-                {
+                else {
                     return "null";
                 }
             }
@@ -780,8 +798,7 @@ namespace Kiezel
                 {
                     return @"#\" + EncodeCharacterName((char)obj);
                 }
-                else
-                {
+                else {
                     return obj.ToString();
                 }
             }
@@ -795,8 +812,7 @@ namespace Kiezel
                 {
                     return "\"" + EscapeCharacterString(obj.ToString()) + "\"";
                 }
-                else
-                {
+                else {
                     return obj.ToString();
                 }
             }
@@ -813,8 +829,7 @@ namespace Kiezel
                     + ((rx.Options & RegexOptions.Multiline) != 0 ? "m" : "")
                     + ((rx.Options & RegexOptions.Singleline) != 0 ? "s" : "");
                 }
-                else
-                {
+                else {
                     return rx.ToString();
                 }
             }
@@ -826,8 +841,7 @@ namespace Kiezel
                 {
                     s = dt.ToString("yyyy-dd-MM");
                 }
-                else
-                {
+                else {
                     s = dt.ToString("yyyy-MM-dd HH:mm:ss");
                 }
 
@@ -835,8 +849,7 @@ namespace Kiezel
                 {
                     return "\"" + s + "\"";
                 }
-                else
-                {
+                else {
                     return s;
                 }
             }
@@ -847,12 +860,12 @@ namespace Kiezel
             else if (obj is Exception)
             {
                 var ex = (Exception)obj;
-                return System.String.Format("#<{0} Message=\"{1}\">", ex.GetType().Name, ex.Message);
+                return string.Format("#<{0} Message=\"{1}\">", ex.GetType().Name, ex.Message);
             }
             else if (obj is Complex)
             {
                 var c = (Complex)obj;
-                return System.String.Format("#c({0} {1})", c.Real, c.Imaginary);
+                return string.Format("#c({0} {1})", c.Real, c.Imaginary);
             }
             else if (obj is Cons)
             {
@@ -893,7 +906,7 @@ namespace Kiezel
                     buf.Write(brackets ? "[" : "#v(");
                 }
                 var space = "";
-                foreach (object item in ( IList ) obj)
+                foreach (object item in (IList)obj)
                 {
                     buf.Write(space);
                     buf.Write(ToPrintString(item, escape, radix));
@@ -913,7 +926,7 @@ namespace Kiezel
                     buf.Write("[");
                 }
                 var space = "";
-                foreach (object item in ( IList ) obj)
+                foreach (object item in (IList)obj)
                 {
                     buf.Write(space);
                     buf.Write(ToPrintString(item, escape, radix));
@@ -938,7 +951,7 @@ namespace Kiezel
                     buf.Write(ToPrintString(supers));
                     space = " ";
                 }
-                foreach (string key in ToIter( Sort(proto.Keys) ))
+                foreach (string key in ToIter(Sort(proto.Keys)))
                 {
                     buf.Write(space);
                     if (!key.StartsWith("["))
@@ -953,13 +966,12 @@ namespace Kiezel
                 buf.Write(braces ? " }" : ")");
                 return buf.ToString();
             }
-            else if (obj is System.Type)
+            else if (obj is Type)
             {
-                return "#<type " + obj.ToString() + ">";
+                return "#<type " + obj + ">";
             }
-            else
-            {
-                return "#<" + obj.ToString() + ">";
+            else {
+                return "#<" + obj + ">";
             }
         }
 
@@ -1028,8 +1040,7 @@ namespace Kiezel
                     {
                         // compile-time expression, e.g. (module xyz)
                     }
-                    else
-                    {
+                    else {
                         var result = Execute(code);
                         if (loadPrint)
                         {
@@ -1139,8 +1150,7 @@ namespace Kiezel
 
                     RestoreStackAndFrame(saved);
                 }
-                else
-                {
+                else {
                     WriteImp(item, stream, escape, width, padding, radix, crlf, format);
                 }
             }
@@ -1169,8 +1179,7 @@ namespace Kiezel
             {
                 stream.Write(@"\x{0:x2}", (int)ch);
             }
-            else
-            {
+            else {
                 stream.Write(ch);
             }
         }
@@ -1185,9 +1194,8 @@ namespace Kiezel
             {
                 s = ToPrintString(item, escape: escape, radix: radix);
             }
-            else
-            {
-                s = String.Format("{0:" + format + "}", item);
+            else {
+                s = string.Format("{0:" + format + "}", item);
             }
 
             if (width != 0)
@@ -1200,11 +1208,10 @@ namespace Kiezel
                 }
                 else if (width < 0 || Numberp(item))
                 {
-                    s = s.PadLeft(w, String.IsNullOrEmpty(padding) ? ' ' : padding[0]);
+                    s = s.PadLeft(w, string.IsNullOrEmpty(padding) ? ' ' : padding[0]);
                 }
-                else
-                {
-                    s = s.PadRight(w, String.IsNullOrEmpty(padding) ? ' ' : padding[0]);
+                else {
+                    s = s.PadRight(w, string.IsNullOrEmpty(padding) ? ' ' : padding[0]);
                 }
             }
 
@@ -1212,8 +1219,7 @@ namespace Kiezel
             {
                 stream.WriteLine(s.ConvertToExternalLineEndings());
             }
-            else
-            {
+            else {
                 stream.Write(s.ConvertToExternalLineEndings());
             }
         }
@@ -1237,31 +1243,6 @@ namespace Kiezel
             }
         }
 
-        static bool EndsWithLf(object item)
-        {
-            return (item is String && ((string)item).EndsWith("\n")) || (item is Char && ((char)item) == '\n');
-        }
-
-        static IEnumerable RewriteCompileTimeBranch(IEnumerable forms)
-        {
-            // Flatten top level compile branches created by #if #elif #else #endif.
-            // Branches inside functions or macros are treated as merging-do forms.
-            foreach (var expr in forms)
-            {
-                if (expr is Cons && First(expr) == Symbols.CompileTimeBranch)
-                {
-                    foreach (var form in RewriteCompileTimeBranch(ToIter(Cdr((Cons)expr))))
-                    {
-                        yield return form;
-                    }
-                }
-                else
-                {
-                    yield return expr;
-                }
-            }
-        }
-
-        #endregion Methods
+        #endregion Public Methods
     }
 }

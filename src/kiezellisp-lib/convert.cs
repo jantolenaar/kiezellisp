@@ -16,23 +16,9 @@ namespace Kiezel
 
     using Numerics;
 
-    using ActionFunc = System.Action<object>;
-
-    using CompareFunc = System.Func<object, object, int>;
-
-    using JustFunc = System.Func<object>;
-
-    using KeyFunc = System.Func<object, object>;
-
-    using PredicateFunc = System.Func<object, bool>;
-
-    using TestFunc = System.Func<object, object, bool>;
-
-    using ThreadFunc = System.Func<object>;
-
     public partial class Runtime
     {
-        #region Methods
+        #region Public Methods
 
         [Lisp("as-big-integer")]
         public static BigInteger AsBigInteger(object a)
@@ -62,8 +48,7 @@ namespace Kiezel
             {
                 return new BigInteger((decimal)a);
             }
-            else
-            {
+            else {
                 return (BigInteger)a;
             }
         }
@@ -75,8 +60,7 @@ namespace Kiezel
             {
                 return (BigRational)a;
             }
-            else
-            {
+            else {
                 return new BigRational(AsBigInteger(a));
             }
         }
@@ -88,8 +72,7 @@ namespace Kiezel
             {
                 return (Complex)a;
             }
-            else
-            {
+            else {
                 return new Complex(AsDouble(a), 0);
             }
         }
@@ -111,8 +94,7 @@ namespace Kiezel
                 var n = (BigRational)a;
                 return (decimal)n;
             }
-            else
-            {
+            else {
                 return Convert.ToDecimal(a);
             }
         }
@@ -134,8 +116,7 @@ namespace Kiezel
                 var n = (BigRational)a;
                 return (double)n;
             }
-            else
-            {
+            else {
                 return Convert.ToDouble(a);
             }
         }
@@ -161,8 +142,7 @@ namespace Kiezel
                 var n = (BigRational)a;
                 return (int)n;
             }
-            else
-            {
+            else {
                 return Convert.ToInt32(a);
             }
         }
@@ -184,8 +164,7 @@ namespace Kiezel
                 var n = (BigRational)a;
                 return (long)n;
             }
-            else
-            {
+            else {
                 return Convert.ToInt64(a);
             }
         }
@@ -207,8 +186,7 @@ namespace Kiezel
                 var n = (BigRational)a;
                 return (float)n;
             }
-            else
-            {
+            else {
                 return Convert.ToSingle(a);
             }
         }
@@ -225,9 +203,9 @@ namespace Kiezel
 
             if (value is Vector && targetType.IsArray)
             {
-                Type t = targetType.GetElementType();
-                Vector v = (Vector)value;
-                foreach (object item in ( Vector ) value)
+                var t = targetType.GetElementType();
+                var v = (Vector)value;
+                foreach (object item in (Vector)value)
                 {
                     if (item != null && t != item.GetType())
                     {
@@ -235,47 +213,46 @@ namespace Kiezel
                     }
                 }
                 // all items are of the correct type
-                Array a = System.Array.CreateInstance(t, v.Count);
+                var a = Array.CreateInstance(t, v.Count);
                 v.CopyTo((object[])a, 0);
                 return a;
             }
 
             if (value is string && targetType == typeof(char))
             {
-                string s = (string)value;
+                var s = (string)value;
                 if (s.Length == 1)
                 {
                     return s[0];
                 }
-                else
-                {
+                else {
                     return null;
                 }
             }
 
             if (targetType == typeof(BigInteger))
             {
-                if (value is Int32)
+                if (value is int)
                 {
-                    return (BigInteger)(Int32)value;
+                    return (BigInteger)(int)value;
                 }
 
-                if (value is Int64)
+                if (value is long)
                 {
-                    return (BigInteger)(Int64)value;
+                    return (BigInteger)(long)value;
                 }
             }
 
             if (targetType == typeof(BigRational))
             {
-                if (value is Int32)
+                if (value is int)
                 {
-                    return (BigRational)(Int32)value;
+                    return (BigRational)(int)value;
                 }
 
-                if (value is Int64)
+                if (value is long)
                 {
-                    return (BigRational)(Int64)value;
+                    return (BigRational)(long)value;
                 }
 
                 if (value is BigInteger)
@@ -286,7 +263,7 @@ namespace Kiezel
 
             if (value is string && targetType.IsArray && targetType.GetElementType() == typeof(char))
             {
-                string s = (String)value;
+                var s = (string)value;
                 return s.ToCharArray();
             }
 
@@ -444,8 +421,7 @@ namespace Kiezel
                 {
                     return dt.ToString("yyyy-MM-dd");
                 }
-                else
-                {
+                else {
                     return dt.ToString("yyyy-MM-dd HH:mm:ss");
                 }
             }
@@ -470,7 +446,7 @@ namespace Kiezel
             {
                 var buf = new StringWriter();
                 var space = "";
-                foreach (object item in ( ( IEnumerable ) obj ))
+                foreach (object item in ((IEnumerable)obj))
                 {
                     buf.Write(space);
                     space = insertSpaces ? " " : "";
@@ -479,15 +455,13 @@ namespace Kiezel
                     {
                         buf.Write(MakeStringFromObj(false, ((DictionaryEntry)item).Value));
                     }
-                    else
-                    {
+                    else {
                         buf.Write(MakeStringFromObj(false, item));
                     }
                 }
                 return buf.ToString();
             }
-            else
-            {
+            else {
                 return obj.ToString();
             }
         }
@@ -508,8 +482,7 @@ namespace Kiezel
             {
                 return (double)val;
             }
-            else
-            {
+            else {
                 return Convert.ToDouble(val);
             }
         }
@@ -519,14 +492,13 @@ namespace Kiezel
             if (obj == null)
             {
                 // avoids crash
-                return new object[ 0 ];
+                return new object[0];
             }
             else if (obj is ICollection)
             {
                 return (ICollection)obj;
             }
-            else
-            {
+            else {
                 throw new LispException("Cannot cast to ICollection: {0}", ToPrintString(obj));
             }
         }
@@ -536,33 +508,31 @@ namespace Kiezel
             if (obj == null)
             {
                 // avoids crash
-                return new object[ 0 ];
+                return new object[0];
             }
             else if (obj is IList)
             {
                 return (IList)obj;
             }
-            else
-            {
+            else {
                 throw new LispException("Cannot cast to IList: {0}", ToPrintString(obj));
             }
         }
 
         public static int ToInt(object val)
         {
-            if (val is int || val is SeqBase)
+            if (val is int)
             {
                 return (int)val;
             }
-            else
-            {
+            else {
                 return Convert.ToInt32(val);
             }
         }
 
         public static int ToInt(object val, int defaultValue)
         {
-            if (val is int || val is SeqBase)
+            if (val is int)
             {
                 return (int)val;
             }
@@ -570,8 +540,7 @@ namespace Kiezel
             {
                 return defaultValue;
             }
-            else
-            {
+            else {
                 return Convert.ToInt32(val);
             }
         }
@@ -581,14 +550,13 @@ namespace Kiezel
             if (obj == null)
             {
                 // avoids crash
-                return new object[ 0 ];
+                return new object[0];
             }
             else if (obj is IEnumerable)
             {
                 return (IEnumerable)obj;
             }
-            else
-            {
+            else {
                 throw new LispException("Cannot cast to IEnumerable: {0}", ToPrintString(obj));
             }
         }
@@ -607,12 +575,11 @@ namespace Kiezel
             {
                 return obj.ToString();
             }
-            else
-            {
+            else {
                 throw new LispException("Cannot cast to String: {0}", ToPrintString(obj));
             }
         }
 
-        #endregion Methods
+        #endregion Public Methods
     }
 }

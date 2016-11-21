@@ -10,9 +10,30 @@ namespace Kiezel
     using System.Globalization;
     using System.Threading;
 
+    class Program
+    {
+        #region Private Methods
+
+        [STAThread]
+        static void Main(string[] args)
+        {
+            RuntimeConsoleBase.ResetRuntimeFunctionImp = RuntimeConsole.Reset;
+            RuntimeConsoleBase.ResetDisplayFunctionImp = RuntimeConsole.ReplResetDisplay;
+            RuntimeConsoleBase.ReadFunctionImp = RuntimeConsole.ReplRead;
+
+            Thread.CurrentThread.CurrentCulture = CultureInfo.InvariantCulture;
+
+            var options = RuntimeConsole.ParseArgs(args);
+
+            RuntimeConsole.RunConsoleMode(options);
+        }
+
+        #endregion Private Methods
+    }
+
     public partial class RuntimeConsole
     {
-        #region Methods
+        #region Public Methods
 
         public static void Reset(int level)
         {
@@ -26,27 +47,6 @@ namespace Kiezel
             Runtime.RestartLoadFiles(level);
         }
 
-        #endregion Methods
-    }
-
-    class Program
-    {
-        #region Methods
-
-        [STAThread]
-        static void Main(string[] args)
-        {
-            RuntimeConsole.ResetRuntimeFunctionImp = RuntimeConsole.Reset;
-            RuntimeConsole.ResetDisplayFunctionImp = RuntimeConsole.ReplResetDisplay;
-            RuntimeConsole.ReadFunctionImp = RuntimeConsole.ReplRead;
-
-            Thread.CurrentThread.CurrentCulture = CultureInfo.InvariantCulture;
-
-            var options = RuntimeConsole.ParseArgs(args);
-
-            RuntimeConsole.RunConsoleMode(options);
-        }
-
-        #endregion Methods
+        #endregion Public Methods
     }
 }

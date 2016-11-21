@@ -1,4 +1,4 @@
-﻿#region Header
+#region Header
 
 // Copyright (C) Jan Tolenaar. See the file LICENSE for details.
 
@@ -41,11 +41,11 @@ namespace Kiezel
 
         #endregion Constructors
 
-        #region Methods
+        #region Public Methods
 
         public IEnumerator GetEnumerator()
         {
-            for (int i = 0; i < Names.Count; ++i)
+            for (var i = 0; i < Names.Count; ++i)
             {
                 if (Values != null && i < Values.Count)
                 {
@@ -118,7 +118,7 @@ namespace Kiezel
             return null;
         }
 
-        #endregion Methods
+        #endregion Public Methods
     }
 
     public class FrameAndScope

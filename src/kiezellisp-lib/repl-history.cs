@@ -9,7 +9,6 @@ namespace Kiezel
     using System;
     using System.Collections.Generic;
     using System.IO;
-    using System.Text;
 
     public class ReplHistory
     {
@@ -61,7 +60,7 @@ namespace Kiezel
 
         #endregion Constructors
 
-        #region Properties
+        #region Public Properties
 
         public int Count
         {
@@ -71,9 +70,9 @@ namespace Kiezel
             }
         }
 
-        #endregion Properties
+        #endregion Public Properties
 
-        #region Methods
+        #region Public Methods
 
         public void Append(string s)
         {
@@ -85,18 +84,18 @@ namespace Kiezel
                 case ":qu":
                 case ":qui":
                 case ":quit":
-                {
-                    break;
-                }
-                default:
-                {
-                    if (lines.Contains(s))
                     {
-                        lines.Remove(s);
+                        break;
                     }
-                    lines.Add(s);
-                    break;
-                }
+                default:
+                    {
+                        if (lines.Contains(s))
+                        {
+                            lines.Remove(s);
+                        }
+                        lines.Add(s);
+                        break;
+                    }
             }
 
             cursor = Count;
@@ -141,8 +140,7 @@ namespace Kiezel
             {
                 return lines[index];
             }
-            else
-            {
+            else {
                 return "";
             }
         }
@@ -167,6 +165,6 @@ namespace Kiezel
             return Line(cursor);
         }
 
-        #endregion Methods
+        #endregion Public Methods
     }
 }

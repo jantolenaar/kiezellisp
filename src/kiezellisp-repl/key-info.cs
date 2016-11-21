@@ -6,9 +6,6 @@
 
 namespace Kiezel
 {
-    using System;
-    using System.Collections.Generic;
-    using System.Drawing;
     using System.Windows.Forms;
 
     public class KeyInfo
@@ -17,7 +14,7 @@ namespace Kiezel
 
         public KeyInfo(Keys data)
         {
-            KeyData = (Keys)data;
+            KeyData = data;
             KeyChar = (char)0;
         }
 
@@ -43,7 +40,7 @@ namespace Kiezel
 
         #endregion Constructors
 
-        #region Properties
+        #region Public Properties
 
         public char KeyChar { get; set; }
 
@@ -57,6 +54,6 @@ namespace Kiezel
 
         public int MouseWheel { get; set; }
 
-        #endregion Properties
+        #endregion Public Properties
     }
 }

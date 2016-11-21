@@ -15,7 +15,7 @@ namespace Kiezel
 
     public partial class Runtime
     {
-        #region Methods
+        #region Public Methods
 
         [Pure,
         Lisp("atom?")]
@@ -531,6 +531,6 @@ namespace Kiezel
             return Equal(a1, 0);
         }
 
-        #endregion Methods
+        #endregion Public Methods
     }
 }

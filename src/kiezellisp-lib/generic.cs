@@ -1,4 +1,4 @@
-﻿#region Header
+#region Header
 
 // Copyright (C) Jan Tolenaar. See the file LICENSE for details.
 
@@ -45,7 +45,7 @@ namespace Kiezel
 
     public class LambdaSignatureComparer : IComparer<LambdaSignature>
     {
-        #region Methods
+        #region Public Methods
 
         // if x more specific than y then return -1
         public int Compare(LambdaSignature x, LambdaSignature y)
@@ -62,7 +62,7 @@ namespace Kiezel
                 return 1;
             }
 
-            for (int i = 0; i < x.RequiredArgsCount; ++i)
+            for (var i = 0; i < x.RequiredArgsCount; ++i)
             {
                 var type1 = x.Parameters[i].Specializer;
                 var type2 = y.Parameters[i].Specializer;
@@ -72,34 +72,34 @@ namespace Kiezel
                 switch (result)
                 {
                     case CompareClassResult.NotComparable:
-                    {
-                        // implies both are not null
-                        // anything will do but the value must be reproducible.
-                        return Runtime.Compare(type1.GetHashCode(), type2.GetHashCode());
-                    }
+                        {
+                            // implies both are not null
+                            // anything will do but the value must be reproducible.
+                            return Runtime.Compare(type1.GetHashCode(), type2.GetHashCode());
+                        }
                     case CompareClassResult.Less:
-                    {
-                        // more specific must be on top
-                        return -1;
-                    }
+                        {
+                            // more specific must be on top
+                            return -1;
+                        }
                     case CompareClassResult.Greater:
-                    {
-                        // less specific must be on bottom
-                        return 1;
-                    }
-                    case CompareClassResult.Equal:
+                        {
+                            // less specific must be on bottom
+                            return 1;
+                        }
+                    //case CompareClassResult.Equal:
                     default:
-                    {
-                        // next slot
-                        break;
-                    }
+                        {
+                            // next slot
+                            break;
+                        }
                 }
             }
 
             return 0;
         }
 
-        #endregion Methods
+        #endregion Public Methods
     }
 
     public class MultiMethod : IDynamicMetaObjectProvider, IApply, ISyntax
@@ -122,7 +122,33 @@ namespace Kiezel
 
         #endregion Constructors
 
-        #region Methods
+        #region Private Methods
+
+        object IApply.Apply(object[] args)
+        {
+            var methods = Match(args);
+            if (methods == null)
+            {
+                throw new LispException("No matching multi-method found");
+            }
+            var method = (LambdaClosure)methods.Car;
+            var newargs = method.MakeArgumentFrame(args, null, null);
+            return Runtime.CallNextMethod(methods, newargs);
+        }
+
+        DynamicMetaObject IDynamicMetaObjectProvider.GetMetaObject(Expression parameter)
+        {
+            return new MultiMethodApplyMetaObject(parameter, this);
+        }
+
+        Cons ISyntax.GetSyntax(Symbol context)
+        {
+            return Runtime.AsList(Lambdas.Select(Runtime.GetSyntax).Distinct());
+        }
+
+        #endregion Private Methods
+
+        #region Public Methods
 
         public void Add(LambdaClosure method)
         {
@@ -130,7 +156,7 @@ namespace Kiezel
 
             var comparer = new LambdaSignatureComparer();
 
-            for (int i = 0; i < Lambdas.Count; ++i)
+            for (var i = 0; i < Lambdas.Count; ++i)
             {
                 int result = comparer.Compare(method.Definition.Signature, Lambdas[i].Definition.Signature);
 
@@ -169,41 +195,19 @@ namespace Kiezel
             return null;
         }
 
-        object IApply.Apply(object[] args)
-        {
-            var methods = Match(args);
-            if (methods == null)
-            {
-                throw new LispException("No matching multi-method found");
-            }
-            var method = (LambdaClosure)methods.Car;
-            var newargs = method.MakeArgumentFrame(args, null, null);
-            return Runtime.CallNextMethod(methods, newargs);
-        }
-
-        DynamicMetaObject IDynamicMetaObjectProvider.GetMetaObject(Expression parameter)
-        {
-            return new MultiMethodApplyMetaObject(parameter, this);
-        }
-
-        Cons ISyntax.GetSyntax(Symbol context)
-        {
-            return Runtime.AsList(Lambdas.Select(Runtime.GetSyntax).Distinct());
-        }
-
         public Cons Match(object[] args)
         {
             return Runtime.AsList(Lambdas.Where(x => x.Definition.Signature.ParametersMatchArguments(args)));
         }
 
-        #endregion Methods
+        #endregion Public Methods
 
         #region Other
 
         //public override bool TryInvoke( InvokeBinder binder, object[] args, out object result )
         //{
-        //    result = ( ( IApply ) this ).Apply( args );
-        //    return true;
+        //	result = ( ( IApply ) this ).Apply( args );
+        //	return true;
         //}
 
         #endregion Other
@@ -222,12 +226,12 @@ namespace Kiezel
         public MultiMethodApplyMetaObject(Expression objParam, MultiMethod generic)
             : base(objParam, BindingRestrictions.Empty, generic)
         {
-            this.Generic = generic;
+            Generic = generic;
         }
 
         #endregion Constructors
 
-        #region Methods
+        #region Public Methods
 
         public override DynamicMetaObject BindInvoke(InvokeBinder binder, DynamicMetaObject[] args)
         {
@@ -245,7 +249,7 @@ namespace Kiezel
             var callArgs = LambdaHelpers.FillDataFrame(lambda.Definition.Signature, args, ref restrictions);
             MethodInfo method = Runtime.RuntimeMethod("CallNextMethod");
             var expr = Expression.Call(method, Expression.Constant(methods), callArgs);
-            restrictions = BindingRestrictions.GetInstanceRestriction(this.Expression, this.Value).Merge(restrictions);
+            restrictions = BindingRestrictions.GetInstanceRestriction(Expression, Value).Merge(restrictions);
             return new DynamicMetaObject(Runtime.EnsureObjectResult(expr), restrictions);
         }
 
@@ -254,12 +258,12 @@ namespace Kiezel
             return Runtime.AsList(Generic.Lambdas.Where(x => x.Definition.Signature.ParametersMatchArguments(args)));
         }
 
-        #endregion Methods
+        #endregion Public Methods
     }
 
     public partial class Runtime
     {
-        #region Methods
+        #region Public Methods
 
         [Lisp("system:call-next-method")]
         public static object CallNextMethod(Cons nextLambdas, object[] args)
@@ -391,6 +395,6 @@ namespace Kiezel
             return func;
         }
 
-        #endregion Methods
+        #endregion Public Methods
     }
 }

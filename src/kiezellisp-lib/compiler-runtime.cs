@@ -1,4 +1,4 @@
-﻿#region Header
+#region Header
 
 // Copyright (C) Jan Tolenaar. See the file LICENSE for details.
 
@@ -12,7 +12,7 @@ namespace Kiezel
 
     public partial class Runtime
     {
-        #region Methods
+        #region Public Methods
 
         public static object ConvertToEnumType(Type enumType, object value)
         {
@@ -67,13 +67,13 @@ namespace Kiezel
             params object[] defaults)
         {
             int count = names.Length;
-            var kwargs = new object[ count ];
+            var kwargs = new object[count];
             if (defaults != null)
             {
                 Array.Copy(defaults, kwargs, defaults.Length);
             }
 
-            for (int i = 0; i < args.Length; i += 2)
+            for (var i = 0; i < args.Length; i += 2)
             {
                 if (!Keywordp(args[i]))
                 {
@@ -216,25 +216,22 @@ namespace Kiezel
             if (value is Symbol || value is string)
             {
                 var name = GetDesignatedString(value).LispToPascalCaseName();
-                var field = enumType.GetFields().Where(f => String.Compare(f.Name, name, true) == 0).First();
+                var field = enumType.GetFields().First(f => string.Compare(f.Name, name, true) == 0);
                 if (field == null)
                 {
                     return null;
                 }
-                else
-                {
+                else {
                     return field.GetValue(null);
                 }
             }
-            else
-            {
+            else {
                 var i = Convert.ToInt32(value);
                 if (enumType.IsEnumDefined(i))
                 {
                     return i;
                 }
-                else
-                {
+                else {
                     return null;
                 }
             }
@@ -246,6 +243,6 @@ namespace Kiezel
             return CurrentThreadContext.Frame.TryGetValue(sym);
         }
 
-        #endregion Methods
+        #endregion Public Methods
     }
 }

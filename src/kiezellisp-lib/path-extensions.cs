@@ -10,7 +10,7 @@ namespace Kiezel
 
     public static class PathExtensions
     {
-        #region Methods
+        #region Public Methods
 
         [Extends(typeof(Path))]
         public static string Combine(string path1, string path2)
@@ -42,6 +42,6 @@ namespace Kiezel
             return name.Replace("/", "\\");
         }
 
-        #endregion Methods
+        #endregion Public Methods
     }
 }

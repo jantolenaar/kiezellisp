@@ -6,54 +6,54 @@
 
 namespace Kiezel
 {
-    using System.IO;
+	using System.IO;
 
-    public interface IApply
-    {
-        #region Methods
+	public interface IApply
+	{
+		#region Methods
 
-        object Apply(object[] args);
+		object Apply(object[] args);
 
-        #endregion Methods
-    }
+		#endregion Methods
+	}
 
-    public interface IHasTextWriter
-    {
-        #region Methods
+	public interface IHasTextWriter
+	{
+		#region Methods
 
-        TextWriter GetTextWriter();
+		TextWriter GetTextWriter();
 
-        #endregion Methods
-    }
+		#endregion Methods
+	}
 
-    public interface IHtmlWriter
-    {
-        #region Methods
+	public interface IHtmlWriter
+	{
+		#region Methods
 
-        string Format(string style, string msg);
+		string Format(string style, string msg);
 
-        #endregion Methods
-    }
+		#endregion Methods
+	}
 
-    public interface ILogWriter
-    {
-        #region Methods
+	public interface ILogWriter
+	{
+		#region Methods
 
-        void WriteLog(string style, string msg);
+		void WriteLog(string style, string msg);
 
-        #endregion Methods
-    }
+		#endregion Methods
+	}
 
-    public interface IPrintsValue
-    {
-    }
+	public interface IPrintsValue
+	{
+	}
 
-    public interface ISyntax
-    {
-        #region Methods
+	public interface ISyntax
+	{
+		#region Methods
 
-        Cons GetSyntax(Symbol context);
+		Cons GetSyntax(Symbol context);
 
-        #endregion Methods
-    }
+		#endregion Methods
+	}
 }

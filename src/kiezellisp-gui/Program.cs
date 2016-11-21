@@ -6,22 +6,22 @@
 
 namespace Kiezel
 {
-    using System;
-    using System.Globalization;
-    using System.Threading;
+	using System;
+	using System.Globalization;
+	using System.Threading;
 
-    class Program
-    {
-        #region Methods
+	class Program
+	{
+		#region Private Methods
 
-        [STAThread]
-        static void Main(string[] args)
-        {
-            Thread.CurrentThread.CurrentCulture = CultureInfo.InvariantCulture;
-            var options = RuntimeGui.ParseArgs(args);
-            RuntimeGui.RunGuiMode(options);
-        }
+		[STAThread]
+		static void Main(string[] args)
+		{
+			Thread.CurrentThread.CurrentCulture = CultureInfo.InvariantCulture;
+			var options = RuntimeGui.ParseArgs(args);
+			RuntimeGui.RunGuiMode(options);
+		}
 
-        #endregion Methods
-    }
+		#endregion Private Methods
+	}
 }

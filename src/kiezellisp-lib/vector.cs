@@ -8,11 +8,10 @@ namespace Kiezel
 {
     using System.Collections;
     using System.Collections.Generic;
-    using System.Text;
 
     public partial class Runtime
     {
-        #region Methods
+        #region Public Methods
 
         [Lisp("vector")]
         public static Vector MakeVector(params object[] items)
@@ -37,7 +36,7 @@ namespace Kiezel
             return v;
         }
 
-        #endregion Methods
+        #endregion Public Methods
     }
 
     public class Vector : List<object>
@@ -68,7 +67,7 @@ namespace Kiezel
 
         #endregion Constructors
 
-        #region Methods
+        #region Public Methods
 
         public void AddRange(IEnumerable items)
         {
@@ -83,14 +82,14 @@ namespace Kiezel
 
         public new Vector GetRange(int index, int count)
         {
-            Vector z = new Vector();
-            for (int i = 0; i < count; ++i)
+            var z = new Vector();
+            for (var i = 0; i < count; ++i)
             {
                 z.Add(this[i + index]);
             }
             return z;
         }
 
-        #endregion Methods
+        #endregion Public Methods
     }
 }

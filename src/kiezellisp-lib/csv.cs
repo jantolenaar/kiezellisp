@@ -1,4 +1,4 @@
-﻿#region Header
+#region Header
 
 // Copyright (C) Jan Tolenaar. See the file LICENSE for details.
 
@@ -17,7 +17,7 @@ namespace Kiezel
     ////////////////////////////////////////////////////////////////////////////////////////////////////
     public partial class Runtime
     {
-        #region Methods
+        #region Public Methods
 
         [Lisp("csv:read-string-to-grid")]
         public static Vector CsvReadStringToGrid(string str)
@@ -35,12 +35,12 @@ namespace Kiezel
             char fieldChar = fieldSeparator[0];
             char quoteChar = quoteCharacter[0];
 
-            Vector lines = new Vector();
+            var lines = new Vector();
             Vector fields = null;
             StringBuilder field = null;
             bool quoted = false;
 
-            for (int i = 0; i < str.Length; ++i)
+            for (var i = 0; i < str.Length; ++i)
             {
                 if (fields == null)
                 {
@@ -67,13 +67,11 @@ namespace Kiezel
                     {
                         quoted = false;
                     }
-                    else
-                    {
+                    else {
                         field.Append(current);
                     }
                 }
-                else
-                {
+                else {
                     if (current == '\n')
                     {
                         fields.Add(trimSpaces ? field.ToString().Trim() : field.ToString());
@@ -94,8 +92,7 @@ namespace Kiezel
                     {
                         quoted = true;
                     }
-                    else
-                    {
+                    else {
                         field.Append(current);
                     }
                 }
@@ -156,8 +153,7 @@ namespace Kiezel
                             stream.Write(field.Replace(singleQuote, doubleQuote));
                             stream.Write(quoteCharacter);
                         }
-                        else
-                        {
+                        else {
                             stream.Write(field);
                         }
 
@@ -186,19 +182,18 @@ namespace Kiezel
             {
                 culture = culture ?? CultureInfo.InvariantCulture;
                 var fmt = "{0:" + culture.DateTimeFormat.ShortDatePattern + "}";
-                return String.Format(fmt, value);
+                return string.Format(fmt, value);
             }
             else if (Numberp(value))
             {
                 culture = culture ?? CultureInfo.InvariantCulture;
                 return (string)InvokeMember(value, "ToString", culture);
             }
-            else
-            {
+            else {
                 return value.ToString();
             }
         }
 
-        #endregion Methods
+        #endregion Public Methods
     }
 }
