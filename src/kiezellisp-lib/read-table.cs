@@ -285,8 +285,32 @@ namespace Kiezel
 
         public static string GetWordFromString(string text, int index, Func<char, bool> wordCharTest)
         {
-            var i = index;
+            var loc = LocateLeftWord(text, index, wordCharTest);
+            var word = text.Substring(loc.Begin, loc.Span);
+            return word;
+        }
 
+        public static bool IsLispWordChar(char ch)
+        {
+            return ch != '.' && IsWordChar(ch);
+        }
+
+        public static bool IsWordChar(char ch)
+        {
+            var item = DefaultReadtable.GetEntry(ch);
+            return item.Type == CharacterType.Constituent;
+        }
+
+        public static Location LocateLeftWord(string text, int index, Func<char, bool> wordCharTest = null)
+        {
+            wordCharTest = wordCharTest ?? IsLispWordChar;
+
+            while (index > 0 && char.IsWhiteSpace(text, index - 1))
+            {
+                --index;
+            }
+
+            var i = index;
             while (i > 0)
             {
                 var ch = text[i - 1];
@@ -308,19 +332,7 @@ namespace Kiezel
                 ++j;
             }
 
-            var word = text.Substring(i, j - i);
-            return word;
-        }
-
-        public static bool IsLispWordChar(char ch)
-        {
-            return ch != '.' && IsWordChar(ch);
-        }
-
-        public static bool IsWordChar(char ch)
-        {
-            var item = DefaultReadtable.GetEntry(ch);
-            return item.Type == CharacterType.Constituent;
+            return new Location(i, j);
         }
 
         public static bool MustEscapeChar(char ch)

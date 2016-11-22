@@ -70,11 +70,11 @@
     (var index -1)
     (letfun goto-new-topic (topic)
         (when topic
-            (when-let (text (get-documentation topic))
-                (incf index)
-                (.remove-range topics index (- (.count topics) index))
-                (.add topics (list topic text))
-                (fill-documentation-window win text))))
+            (let text (get-documentation topic))
+            (incf index)
+            (.remove-range topics index (- (.count topics) index))
+            (.add topics (list topic text))
+            (fill-documentation-window win text)))
     (letfun command-key? (ch)
         (or (= ch #\slash)
             (= ch #\colon)))
@@ -143,9 +143,8 @@
 #endif
 
 (defun show-man (topic)
-    (if-let (doc (get-documentation topic))
-          (more (transform-page doc))
-        (more "No documentation available."))
+    (let doc (get-documentation topic))
+    (more (transform-page doc))
     (void))
 
 (setf $help-hook show-help)
@@ -175,8 +174,7 @@
                       topic
                     (make-symbol topic)))
     (let text (or (get-documentation-from-file target)
-                  (string topic " not found")
-                  #;(get-runtime-documentation target)))
+                  (get-no-documentation target)))
     text)
 
 (defun get-documentation-from-file (topic)
@@ -188,6 +186,15 @@
 
 (defun margin (&optional (depth 2))
     (string:repeat "    " depth))
+
+(defun get-no-documentation (topic)
+    (with-output-to-string ($stdout)
+        (print-line "# NAME")
+        (print-line (margin) topic)
+        (print-line)
+        (print-line "# DESCRIPTION")
+        (print-line (.indent "There is no information available about this topic." (margin)))
+        (print-line)))
 
 (defun get-runtime-documentation (topic)
     (with-output-to-string ($stdout)

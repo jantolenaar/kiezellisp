@@ -45,14 +45,22 @@ namespace Kiezel
             }
         }
 
+        internal void CmdClearScreen()
+        {
+            // Copy homePos upto lastPos to top of buffer.
+            var count = homePos / BufferWidth;
+            ScrollBuffer(count);
+        }
+
         internal void CmdCodeCompletion()
         {
             if (!CodeCompletion)
             {
                 return;
             }
-            CmdMoveBackOverSpaces();
-            var searchTerm = Runtime.GetWordFromString(lineBuffer.ToString().Substring(0, lineIndex), lineIndex, Runtime.IsLispWordChar);
+            var line = lineBuffer.ToString();
+            var loc = Runtime.LocateLeftWord(line, lineIndex);
+            var searchTerm = line.Substring(loc.Begin, loc.Span);
             var completions = RuntimeConsoleBase.GetCompletions(searchTerm);
             var index = 0;
             savedPos = CursorPos;
@@ -82,12 +90,14 @@ namespace Kiezel
                     CursorPos = savedPos + charsWritten;
                     ClearToBot();
                     CursorPos = savedPos;
-                    var newPos = lineIndex - searchTerm.Length;
-                    while (lineIndex != newPos)
+                    line = line.Remove(loc.Begin, loc.Span).Insert(loc.Begin, completions[index]);
+                    lineIndex = loc.Begin + completions[index].Length;
+                    if (lineIndex == line.Length || !char.IsWhiteSpace(line, lineIndex))
                     {
-                        CmdBackspace();
+                        line = line.Insert(lineIndex, " ");
                     }
-                    InsertString(completions[index] + " ");
+                    ++lineIndex;
+                    lineBuffer = new StringBuilder(line);
                     break;
                 }
                 else if (key2 == Keys.Left || key2 == (Keys.Tab | Keys.Shift))
@@ -137,12 +147,31 @@ namespace Kiezel
             }
         }
 
+        internal void CmdDeleteBeginOfLine()
+        {
+            lineBuffer.Remove(0, lineIndex);
+            lineIndex = 0;
+        }
+
         internal void CmdDeleteChar()
         {
             if (lineIndex < lineBuffer.Length)
             {
                 lineBuffer.Remove(lineIndex, 1);
             }
+        }
+
+        internal void CmdDeleteEndOfLine()
+        {
+            lineBuffer.Remove(lineIndex, lineBuffer.Length - lineIndex);
+        }
+
+        internal void CmdDeleteLeftWord()
+        {
+            var line = lineBuffer.ToString();
+            var loc = Runtime.LocateLeftWord(line, lineIndex);
+            lineBuffer.Remove(loc.Begin, lineIndex - loc.Begin);
+            lineIndex = loc.Begin;
         }
 
         internal void CmdEnd()
@@ -191,17 +220,6 @@ namespace Kiezel
         internal void CmdMarkRight()
         {
             SetMarkAction(CmdRight);
-        }
-
-        internal void CmdMoveBackOverSpaces()
-        {
-            if (lineIndex == lineBuffer.Length || char.IsWhiteSpace(lineBuffer[lineIndex]))
-            {
-                while (lineIndex > 0 && char.IsWhiteSpace(lineBuffer[lineIndex - 1]))
-                {
-                    --lineIndex;
-                }
-            }
         }
 
         internal void CmdPaste()
@@ -301,6 +319,9 @@ namespace Kiezel
             AddEditHandler(Keys.Back, CmdBackspace);
             AddEditHandler(Keys.Delete, CmdDeleteChar);
             AddEditHandler(Keys.Tab, CmdCodeCompletion);
+            AddEditHandler(Keys.U | Keys.Control, CmdDeleteBeginOfLine);
+            AddEditHandler(Keys.K | Keys.Control, CmdDeleteEndOfLine);
+            AddEditHandler(Keys.W | Keys.Control, CmdDeleteLeftWord);
             AddEditHandler(Keys.C | Keys.Control, CmdCopy);
             AddEditHandler(Keys.V | Keys.Control, CmdPaste);
             AddEditHandler(Keys.Left | Keys.Shift, CmdMarkLeft);

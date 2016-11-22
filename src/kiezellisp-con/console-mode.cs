@@ -158,17 +158,6 @@ namespace Kiezel
                 }
             };
 
-            Action MoveBackOverSpaces = () =>
-            {
-                if (0 < pos && (pos == len || buffer[pos] == ' '))
-                {
-                    while (0 < pos && buffer[pos - 1] == ' ')
-                    {
-                        --pos;
-                    }
-                }
-            };
-
             while (true)
             {
                 Paint();
@@ -277,9 +266,9 @@ namespace Kiezel
                         }
                     case ConsoleKey.Tab:
                         {
-                            MoveBackOverSpaces();
-                            var text = buffer.ToString().Substring(0, pos);
-                            var searchTerm = Runtime.GetWordFromString(text, pos, Runtime.IsLispWordChar);
+                            var line = buffer.ToString();
+                            var loc = Runtime.LocateLeftWord(line, pos);
+                            var searchTerm = line.Substring(loc.Begin, loc.Span);
                             var completions = RuntimeConsoleBase.GetCompletions(searchTerm);
                             var posOrig = pos;
                             var index = 0;
@@ -310,12 +299,15 @@ namespace Kiezel
                                 var key2 = keyInfo2.Key;
                                 if (key2 == ConsoleKey.DownArrow || key2 == ConsoleKey.Enter || (key2 == ConsoleKey.Tab && completions.Count == 1))
                                 {
-                                    pos = posOrig - searchTerm.Length;
-                                    buffer.Remove(pos, searchTerm.Length);
-                                    var inserted = completions[index] + " ";
-                                    buffer.Insert(pos, inserted);
+                                    line = line.Remove(loc.Begin, loc.Span).Insert(loc.Begin, completions[index]);
+                                    pos = loc.Begin + completions[index].Length;
+                                    if (pos == line.Length || !char.IsWhiteSpace(line, pos))
+                                    {
+                                        line = line.Insert(pos, " ");
+                                    }
+                                    ++pos;
+                                    buffer = new StringBuilder(line);
                                     len = buffer.Length;
-                                    pos += inserted.Length;
                                     done = true;
                                 }
                                 else if (key2 == ConsoleKey.LeftArrow || (key2 == ConsoleKey.Tab && (keyInfo2.Modifiers & ConsoleModifiers.Shift) != 0))
@@ -335,43 +327,45 @@ namespace Kiezel
                             }
                             break;
                         }
-                    case ConsoleKey.V:
-                        {
-                            if (mod == ConsoleModifiers.Control)
-                            {
-                                var text = Runtime.GetClipboardData();
-                                foreach (var ch2 in text)
-                                {
-                                    var ch3 = (ch2 == '\n' || ch2 >= ' ') ? ch2 : ' ';
-                                    buffer.Insert(pos, ch3);
-                                    ++pos;
-                                    ++len;
-                                }
-                            }
-                            else {
-                                buffer.Insert(pos, ch);
-                                ++pos;
-                                ++len;
-                            }
-                            break;
-                        }
-                    case ConsoleKey.C:
-                        {
-                            if (mod == ConsoleModifiers.Control)
-                            {
-                                var text = buffer.ToString();
-                                Runtime.SetClipboardData(text);
-                            }
-                            else {
-                                buffer.Insert(pos, ch);
-                                ++pos;
-                                ++len;
-                            }
-                            break;
-                        }
                     default:
                         {
-                            if (ch != 0)
+                            if (mod == ConsoleModifiers.Control)
+                            {
+                                switch (key)
+                                {
+                                    case ConsoleKey.V:
+                                        var text = Runtime.GetClipboardData();
+                                        foreach (var ch2 in text)
+                                        {
+                                            var ch3 = (ch2 == '\n' || ch2 >= ' ') ? ch2 : ' ';
+                                            buffer.Insert(pos, ch3);
+                                            ++pos;
+                                            ++len;
+                                        }
+                                        break;
+                                    case ConsoleKey.C:
+                                        var text2 = buffer.ToString();
+                                        Runtime.SetClipboardData(text2);
+                                        break;
+                                    case ConsoleKey.U:
+                                        buffer.Remove(0, pos);
+                                        pos = 0;
+                                        len = buffer.Length;
+                                        break;
+                                    case ConsoleKey.K:
+                                        buffer.Remove(pos, buffer.Length - pos);
+                                        len = buffer.Length;
+                                        break;
+                                    case ConsoleKey.W:
+                                        var line = buffer.ToString();
+                                        var loc = Runtime.LocateLeftWord(line, pos);
+                                        buffer.Remove(loc.Begin, pos - loc.Begin);
+                                        pos = loc.Begin;
+                                        len = buffer.Length;
+                                        break;
+                                }
+                            }
+                            else if (ch >= ' ')
                             {
                                 buffer.Insert(pos, ch);
                                 ++pos;

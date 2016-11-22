@@ -1,5 +1,9 @@
 # Change Log
 
+## 2016/11/22
+
+*   Added CTRL+K, CTRL+U and CTRL+W readline editing key codes.
+
 ## 2016/11/20
 
 *   Refactored everything ala StyleCop.

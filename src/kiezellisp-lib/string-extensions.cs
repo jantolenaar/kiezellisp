@@ -17,6 +17,18 @@ namespace Kiezel
     using System.Text.RegularExpressions;
     using System.Web;
 
+    public struct Location
+    {
+        public Location(int b, int e)
+        {
+            Begin = b;
+            End = e;
+        }
+        public int Begin { get; }
+        public int End { get; }
+        public int Span { get { return End - Begin; } }
+    }
+
     public class Kwarg
     {
         #region Fields

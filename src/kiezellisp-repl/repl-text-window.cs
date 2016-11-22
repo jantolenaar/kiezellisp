@@ -42,8 +42,9 @@ namespace Kiezel
 
         void CmdHelp()
         {
-            CmdMoveBackOverSpaces();
-            var topic = Runtime.GetWordFromString(lineBuffer.ToString(), lineIndex, Runtime.IsLispWordChar);
+            var line = lineBuffer.ToString();
+            var loc = Runtime.LocateLeftWord(line, lineIndex);
+            var topic = line.Substring(loc.Begin, loc.Span);
             var helper = Symbols.HelpHook.Value as IApply;
             if (helper != null)
             {
@@ -74,6 +75,7 @@ namespace Kiezel
 
         void InitReplEditHandlers()
         {
+            AddEditHandler(Keys.L | Keys.Control, CmdClearScreen);
             AddEditHandler(Keys.Enter | Keys.Control, CmdEnterData);
             AddEditHandler(Keys.Enter, CmdEnterDataOrCommand);
             AddEditHandler(Keys.Up, CmdHistoryPrev);
