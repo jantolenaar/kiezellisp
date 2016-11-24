@@ -1,5 +1,9 @@
 # Change Log
 
+## 2016/11/24
+
+*   Fixed bug: not scrolling at end of buffer.
+
 ## 2016/11/22
 
 *   Added CTRL+K, CTRL+U and CTRL+W readline editing key codes.

@@ -50,6 +50,7 @@ namespace Kiezel
             // Copy homePos upto lastPos to top of buffer.
             var count = homePos / BufferWidth;
             ScrollBuffer(count);
+            ScrollIntoView();
         }
 
         internal void CmdCodeCompletion()
