@@ -1,5 +1,9 @@
 # Change Log
 
+## 2016/12/01
+
+*   Changed TextForm construction.
+
 ## 2016/11/24
 
 *   Fixed bug: not scrolling at end of buffer.

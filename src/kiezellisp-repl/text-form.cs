@@ -6,240 +6,244 @@
 
 namespace Kiezel
 {
-	using System;
-	using System.Collections.Concurrent;
-	using System.Drawing;
-	using System.Windows.Forms;
+    using System;
+    using System.Collections.Concurrent;
+    using System.Drawing;
+    using System.Windows.Forms;
 
-	public class ReplTextForm : TextFormBase
-	{
-		#region Constructors
+    public class ReplTextForm : TextFormBase
+    {
+        #region Constructors
 
-		public ReplTextForm(TextWindowCreateArgs args)
-			: base(args)
-		{
-			TermControl.Window = new ReplTextWindow(TermControl, args);
-			TermControl.InitScrollBars();
-		}
+        public ReplTextForm(TextWindowCreateArgs args)
+            : base(args)
+        {
+            Content.Window = new ReplTextWindow(Content, args);
+            Content.InitScrollBars();
+        }
 
-		#endregion Constructors
+        #endregion Constructors
 
-		#region Protected Methods
+        #region Protected Methods
 
-		protected override void OnFormClosed(FormClosedEventArgs e)
-		{
-			base.OnFormClosed(e);
-			RuntimeConsoleBase.Quit();
-		}
+        protected override void OnFormClosed(FormClosedEventArgs e)
+        {
+            base.OnFormClosed(e);
+            RuntimeConsoleBase.Quit();
+        }
 
-		#endregion Protected Methods
-	}
+        #endregion Protected Methods
+    }
 
-	public class TerminalHScrollBar : HScrollBar
-	{
-		#region Constructors
+    public class TerminalHScrollBar : HScrollBar
+    {
+        #region Constructors
 
-		public TerminalHScrollBar(TextFormBase parent)
-		{
-			ParentForm = parent;
-			Dock = DockStyle.Bottom;
-		}
+        public TerminalHScrollBar(TextFormBase parent)
+        {
+            ParentForm = parent;
+            Dock = DockStyle.Bottom;
+        }
 
-		#endregion Constructors
+        #endregion Constructors
 
-		#region Public Properties
+        #region Public Properties
 
-		public TextFormBase ParentForm { get; internal set; }
+        public TextFormBase ParentForm { get; internal set; }
 
-		#endregion Public Properties
+        #endregion Public Properties
 
-		#region Protected Methods
+        #region Protected Methods
 
-		protected override void OnScroll(ScrollEventArgs se)
-		{
-			base.OnScroll(se);
-			var control = ParentForm.TermControl;
-			control.Window.WindowLeft = se.NewValue;
-			control.Invalidate();
-			control.Focus();
-		}
+        protected override void OnScroll(ScrollEventArgs se)
+        {
+            base.OnScroll(se);
+            var control = ParentForm.Content;
+            control.Window.WindowLeft = se.NewValue;
+            control.Invalidate();
+            control.Focus();
+        }
 
-		#endregion Protected Methods
-	}
+        #endregion Protected Methods
+    }
 
-	public class TerminalVScrollBar : VScrollBar
-	{
-		#region Constructors
+    public class TerminalVScrollBar : VScrollBar
+    {
+        #region Constructors
 
-		public TerminalVScrollBar(TextFormBase parent)
-		{
-			ParentForm = parent;
-			Dock = DockStyle.Right;
-		}
+        public TerminalVScrollBar(TextFormBase parent)
+        {
+            ParentForm = parent;
+            Dock = DockStyle.Right;
+        }
 
-		#endregion Constructors
+        #endregion Constructors
 
-		#region Public Properties
+        #region Public Properties
 
-		public TextFormBase ParentForm { get; internal set; }
+        public TextFormBase ParentForm { get; internal set; }
 
-		#endregion Public Properties
+        #endregion Public Properties
 
-		#region Protected Methods
+        #region Protected Methods
 
-		protected override void OnScroll(ScrollEventArgs se)
-		{
-			base.OnScroll(se);
-			var control = ParentForm.TermControl;
-			control.Window.WindowTop = se.NewValue;
-			control.Invalidate();
-			control.Focus();
-		}
+        protected override void OnScroll(ScrollEventArgs se)
+        {
+            base.OnScroll(se);
+            var control = ParentForm.Content;
+            control.Window.WindowTop = se.NewValue;
+            control.Invalidate();
+            control.Focus();
+        }
 
-		#endregion Protected Methods
-	}
+        #endregion Protected Methods
+    }
 
-	public class TextForm : TextFormBase
-	{
-		#region Constructors
+    public class TextForm : TextFormBase
+    {
+        #region Constructors
 
-		public TextForm(TextWindowCreateArgs args)
-			: base(args)
-		{
-			TermControl.Window = new TextWindow(TermControl, args);
-			TermControl.InitScrollBars();
-		}
+        public TextForm(TextWindowCreateArgs args)
+            : base(args)
+        {
+            Content.Window = new TextWindow(Content, args);
+            Content.InitScrollBars();
+        }
 
-		#endregion Constructors
-	}
+        #endregion Constructors
+    }
 
-	public class TextFormBase : Form
-	{
-		#region Constructors
+    public class TextFormBase : Form
+    {
+        #region Constructors
 
-		public TextFormBase(TextWindowCreateArgs args)
-		{
-			Text = args.Caption;
-			Cols = args.Width;
-			Rows = args.Height;
-			BackColor = args.BackColor;
-			OnCloseFunction = args.OnCloseFunction;
+        public TextFormBase(TextWindowCreateArgs args)
+        {
+            Text = args.Caption;
+            Cols = args.Width;
+            Rows = args.Height;
+            BackColor = args.BackColor;
+            OnCloseFunction = args.OnCloseFunction;
 
-			if (args.Left == -1 || args.Top == -1)
-			{
-				StartPosition = FormStartPosition.CenterScreen;
-			}
-			else {
-				SetDesktopLocation(args.Left * CharWidth, args.Top * LineHeight);
-				StartPosition = FormStartPosition.Manual;
-			}
+            if (args.Left == -1 || args.Top == -1)
+            {
+                StartPosition = FormStartPosition.CenterScreen;
+            }
+            else {
+                SetDesktopLocation(args.Left * CharWidth, args.Top * LineHeight);
+                StartPosition = FormStartPosition.Manual;
+            }
 
-			if (args.Scrollable)
-			{
-				VertScrollBar = new TerminalVScrollBar(this);
-				Controls.Add(VertScrollBar);
-				HoriScrollBar = new TerminalHScrollBar(this);
-				Controls.Add(HoriScrollBar);
-			}
-			else {
-				VertScrollBar = null;
-				HoriScrollBar = null;
-			}
+            if (args.Scrollable)
+            {
+                VertScrollBar = new TerminalVScrollBar(this);
+                Controls.Add(VertScrollBar);
+                HoriScrollBar = new TerminalHScrollBar(this);
+                Controls.Add(HoriScrollBar);
+            }
+            else {
+                VertScrollBar = null;
+                HoriScrollBar = null;
+            }
 
-			if (args.Resizable)
-			{
-				FormBorderStyle = FormBorderStyle.Sizable;
-			}
-			else if (args.Border)
-			{
-				FormBorderStyle = FormBorderStyle.FixedSingle;
-			}
-			else {
-				FormBorderStyle = FormBorderStyle.FixedToolWindow;
-				ShowInTaskbar = false;
-			}
-			ClientSize = new Size(CharWidth * Cols + ExtraWidth, LineHeight * Rows + ExtraHeight);
-			TermControl = new TextControl(this);
-			Controls.Add(TermControl);
+            if (args.Resizable)
+            {
+                FormBorderStyle = FormBorderStyle.Sizable;
+            }
+            else if (args.Border)
+            {
+                FormBorderStyle = FormBorderStyle.FixedSingle;
+            }
+            else {
+                FormBorderStyle = FormBorderStyle.FixedToolWindow;
+                ShowInTaskbar = false;
+            }
 
-			Visible = args.Visible;
-		}
+            Content = new TextControl(this);
+            Content.Location = new Point(0, 0);
+            Content.Size = new Size(CharWidth * Cols, LineHeight * Rows);
+            ClientSize = new Size(Content.Width + ExtraWidth, Content.Height + ExtraHeight);
+            Content.Anchor = AnchorStyles.Bottom | AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
+            Controls.Add(Content);
 
-		#endregion Constructors
+            Visible = args.Visible;
+        }
 
-		#region Public Properties
+        #endregion Constructors
 
-		public int CharHeight
-		{
-			get { return RuntimeRepl.CharHeight; }
-		}
+        #region Public Properties
 
-		public int CharWidth
-		{
-			get { return RuntimeRepl.CharWidth; }
-		}
+        public int CharHeight
+        {
+            get { return RuntimeRepl.CharHeight; }
+        }
 
-		public int Cols { get; internal set; }
+        public int CharWidth
+        {
+            get { return RuntimeRepl.CharWidth; }
+        }
 
-		public int ExtraHeight
-		{
-			get { return HoriScrollBar == null ? 0 : HoriScrollBar.Height; }
-		}
+        public int Cols { get; internal set; }
 
-		public int ExtraWidth
-		{
-			get { return VertScrollBar == null ? 0 : VertScrollBar.Width; }
-		}
+        public int ExtraHeight
+        {
+            get { return HoriScrollBar == null ? 0 : HoriScrollBar.Height; }
+        }
 
-		public Font[] Fonts
-		{
-			get { return RuntimeRepl.Fonts; }
-		}
+        public int ExtraWidth
+        {
+            get { return VertScrollBar == null ? 0 : VertScrollBar.Width; }
+        }
 
-		public TerminalHScrollBar HoriScrollBar { get; internal set; }
+        public Font[] Fonts
+        {
+            get { return RuntimeRepl.Fonts; }
+        }
 
-		public int LineHeight
-		{
-			get { return RuntimeRepl.LineHeight; }
-		}
+        public TerminalHScrollBar HoriScrollBar { get; internal set; }
 
-		public IApply OnCloseFunction { get; internal set; }
+        public int LineHeight
+        {
+            get { return RuntimeRepl.LineHeight; }
+        }
 
-		public ThreadContext OwningThread { get; internal set; }
+        public IApply OnCloseFunction { get; internal set; }
 
-		public int Rows { get; internal set; }
+        public ThreadContext OwningThread { get; internal set; }
 
-		public TextControl TermControl { get; internal set; }
+        public int Rows { get; internal set; }
 
-		public TerminalVScrollBar VertScrollBar { get; internal set; }
+        public TextControl Content { get; internal set; }
 
-		#endregion Public Properties
+        public TerminalVScrollBar VertScrollBar { get; internal set; }
 
-		#region Protected Methods
+        #endregion Public Properties
 
-		protected override void OnFormClosed(FormClosedEventArgs e)
-		{
-			if (OnCloseFunction != null)
-			{
-				Runtime.Funcall(OnCloseFunction, TermControl.Window);
-			}
+        #region Protected Methods
 
-			base.OnFormClosed(e);
-		}
+        protected override void OnFormClosed(FormClosedEventArgs e)
+        {
+            if (OnCloseFunction != null)
+            {
+                Runtime.Funcall(OnCloseFunction, Content.Window);
+            }
 
-		protected override void OnResizeEnd(EventArgs e)
-		{
-			base.OnResizeEnd(e);
-			Cols = (ClientSize.Width - ExtraWidth) / CharWidth;
-			Rows = (ClientSize.Height - ExtraHeight) / LineHeight;
-			HoriScrollBar.LargeChange = Cols;
-			VertScrollBar.LargeChange = Rows;
-			if (TermControl != null && TermControl.Window != null)
-			{
-				TermControl.Window.OnResizeWindow();
-			}
-		}
+            base.OnFormClosed(e);
+        }
 
-		#endregion Protected Methods
-	}
+        protected override void OnResizeEnd(EventArgs e)
+        {
+            base.OnResizeEnd(e);
+            Cols = Content.Width / CharWidth;
+            Rows = Content.Height / LineHeight;
+            HoriScrollBar.LargeChange = Cols;
+            VertScrollBar.LargeChange = Rows;
+            if (Content.Window != null)
+            {
+                Content.Window.OnResizeWindow();
+            }
+        }
+
+        #endregion Protected Methods
+    }
 }
