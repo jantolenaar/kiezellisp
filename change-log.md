@@ -1,5 +1,9 @@
 # Change Log
 
+## 2016/12/09
+
+*   Using `nameof(...)` feature.
+
 ## 2016/12/01
 
 *   Changed TextForm construction.

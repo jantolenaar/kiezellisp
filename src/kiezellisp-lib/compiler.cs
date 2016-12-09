@@ -23,43 +23,43 @@ namespace Kiezel
     {
         #region Static Fields
 
-        public static MethodInfo AddEventHandlerMethod = RuntimeMethod("AddEventHandler");
-        public static MethodInfo ApplyMethod = RuntimeMethod("Apply");
-        public static MethodInfo AsListMethod = RuntimeMethod("AsList");
-        public static MethodInfo AsVectorMethod = RuntimeMethod("AsVector");
-        public static MethodInfo CastMethod = typeof(System.Linq.Enumerable).GetMethod("Cast");
-        public static MethodInfo ChangeTypeMethod = RuntimeMethod("ChangeType");
-        public static MethodInfo ConvertToEnumTypeMethod = RuntimeMethod("ConvertToEnumType");
-        public static MethodInfo DefDynamicConstMethod = RuntimeMethod("DefDynamicConst");
-        public static MethodInfo DefDynamicMethod = RuntimeMethod("DefDynamic");
-        public static MethodInfo DefineCompilerMacroMethod = RuntimeMethod("DefineCompilerMacro");
-        public static MethodInfo DefineConstantMethod = RuntimeMethod("DefineConstant");
-        public static MethodInfo DefineFunctionMethod = RuntimeMethod("DefineFunction");
-        public static MethodInfo DefineMacroMethod = RuntimeMethod("DefineMacro");
-        public static MethodInfo DefineMethodMethod = RuntimeMethod("DefineMethod");
-        public static MethodInfo DefineMultiMethodMethod = RuntimeMethod("DefineMultiMethod");
-        public static MethodInfo DefineSymbolMacroMethod = RuntimeMethod("DefineSymbolMacro");
-        public static MethodInfo DefineVariableMethod = RuntimeMethod("DefineVariable");
-        public static MethodInfo EqualMethod = RuntimeMethod("Equal");
+        public static MethodInfo AddEventHandlerMethod = RuntimeMethod(nameof(AddEventHandler));
+        public static MethodInfo ApplyMethod = RuntimeMethod(nameof(Apply));
+        public static MethodInfo AsListMethod = RuntimeMethod(nameof(AsList));
+        public static MethodInfo AsVectorMethod = RuntimeMethod(nameof(AsVector));
+        public static MethodInfo CastMethod = RuntimeMethod(typeof(System.Linq.Enumerable), nameof(System.Linq.Enumerable.Cast));
+        public static MethodInfo ChangeTypeMethod = RuntimeMethod(nameof(ChangeType));
+        public static MethodInfo ConvertToEnumTypeMethod = RuntimeMethod(nameof(ConvertToEnumType));
+        public static MethodInfo DefDynamicConstMethod = RuntimeMethod(nameof(DefDynamicConst));
+        public static MethodInfo DefDynamicMethod = RuntimeMethod(nameof(DefDynamic));
+        public static MethodInfo DefineCompilerMacroMethod = RuntimeMethod(nameof(DefineCompilerMacro));
+        public static MethodInfo DefineConstantMethod = RuntimeMethod(nameof(DefineConstant));
+        public static MethodInfo DefineFunctionMethod = RuntimeMethod(nameof(DefineFunction));
+        public static MethodInfo DefineMacroMethod = RuntimeMethod(nameof(DefineMacro));
+        public static MethodInfo DefineMethodMethod = RuntimeMethod(nameof(DefineMethod));
+        public static MethodInfo DefineMultiMethodMethod = RuntimeMethod(nameof(DefineMultiMethod));
+        public static MethodInfo DefineSymbolMacroMethod = RuntimeMethod(nameof(DefineSymbolMacro));
+        public static MethodInfo DefineVariableMethod = RuntimeMethod(nameof(DefineVariable));
+        public static MethodInfo EqualMethod = RuntimeMethod(nameof(Equal));
         public static Type GenericListType = GetTypeForImport("System.Collections.Generic.List`1", null);
-        public static MethodInfo GetDelayedExpressionResultMethod = RuntimeMethod("GetDelayedExpressionResult");
-        public static MethodInfo GetDynamicMethod = RuntimeMethod("GetDynamic");
-        public static MethodInfo GetLexicalMethod = RuntimeMethod("GetLexical");
-        public static MethodInfo GetTaskResultMethod = RuntimeMethod("GetTaskResult");
-        public static MethodInfo IsInstanceOfMethod = RuntimeMethod("IsInstanceOf");
+        public static MethodInfo GetDelayedExpressionResultMethod = RuntimeMethod(nameof(GetDelayedExpressionResult));
+        public static MethodInfo GetDynamicMethod = RuntimeMethod(nameof(GetDynamic));
+        public static MethodInfo GetLexicalMethod = RuntimeMethod(nameof(GetLexical));
+        public static MethodInfo GetTaskResultMethod = RuntimeMethod(nameof(GetTaskResult));
+        public static MethodInfo IsInstanceOfMethod = RuntimeMethod(nameof(IsInstanceOf));
         public static Cons LambdaTemplate;
-        public static MethodInfo LogBeginCallMethod = RuntimeMethod("LogBeginCall");
-        public static MethodInfo LogEndCallMethod = RuntimeMethod("LogEndCall");
-        public static MethodInfo MakeLambdaClosureMethod = RuntimeMethod(typeof(LambdaDefinition), "MakeLambdaClosure");
-        public static MethodInfo NotMethod = RuntimeMethod("Not");
-        public static MethodInfo RestoreFrameMethod = RuntimeMethod("RestoreFrame");
-        public static MethodInfo RestoreStackAndFrameMethod = RuntimeMethod("RestoreStackAndFrame");
-        public static MethodInfo SaveStackAndFrameMethod = RuntimeMethod("SaveStackAndFrame");
-        public static MethodInfo SaveStackAndFrameWithMethod = RuntimeMethod("SaveStackAndFrameWith");
-        public static MethodInfo SetDynamicMethod = RuntimeMethod("SetDynamic");
-        public static MethodInfo SetLexicalMethod = RuntimeMethod("SetLexical");
-        public static MethodInfo ToBoolMethod = RuntimeMethod("ToBool");
-        public static MethodInfo UnwindExceptionMethod = RuntimeMethod("UnwindException");
+        public static MethodInfo LogBeginCallMethod = RuntimeMethod(nameof(LogBeginCall));
+        public static MethodInfo LogEndCallMethod = RuntimeMethod(nameof(LogEndCall));
+        public static MethodInfo MakeLambdaClosureMethod = RuntimeMethod(typeof(LambdaDefinition), nameof(LambdaDefinition.MakeLambdaClosure));
+        public static MethodInfo NotMethod = RuntimeMethod(nameof(Not));
+        public static MethodInfo RestoreFrameMethod = RuntimeMethod(nameof(RestoreFrame));
+        public static MethodInfo RestoreStackAndFrameMethod = RuntimeMethod(nameof(RestoreStackAndFrame));
+        public static MethodInfo SaveStackAndFrameMethod = RuntimeMethod(nameof(SaveStackAndFrame));
+        public static MethodInfo SaveStackAndFrameWithMethod = RuntimeMethod(nameof(SaveStackAndFrameWith));
+        public static MethodInfo SetDynamicMethod = RuntimeMethod(nameof(SetDynamic));
+        public static MethodInfo SetLexicalMethod = RuntimeMethod(nameof(SetLexical));
+        public static MethodInfo ToBoolMethod = RuntimeMethod(nameof(ToBool));
+        public static MethodInfo UnwindExceptionMethod = RuntimeMethod(nameof(UnwindException));
 
         #endregion Static Fields
 
