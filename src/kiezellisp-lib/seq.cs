@@ -8,11 +8,14 @@ namespace Kiezel
 {
     using System;
     using System.Collections;
+    using System.Collections.Generic;
+    using System.Linq;
+
     using System.Threading.Tasks;
 
     using ActionFunc = System.Action<object>;
-
     using KeyFunc = System.Func<object, object>;
+    using Transducer = System.Func<Kiezel.IApply, Kiezel.IApply>;
 
     public partial class Runtime
     {
@@ -22,7 +25,7 @@ namespace Kiezel
         public static Cons Adjoin(object item, IEnumerable seq)
         {
             var seq2 = AsLazyList(seq);
-            if (Position(item, seq2) == null)
+            if (IndexOf(item, seq2) == null)
             {
                 return MakeCons(item, seq2);
             }
@@ -32,25 +35,29 @@ namespace Kiezel
         }
 
         [Lisp("any?")]
-        public static bool Any(IApply predicate, IEnumerable seq, params object[] args)
+        public static bool Any(IApply predicate, IEnumerable seq)
         {
-            var kwargs = ParseKwargs(args, new string[] { "key" });
-            var key = GetClosure(kwargs[0]);
-            return SeqBase.Any(predicate, seq, key);
+            return SeqBase.Any(predicate, seq);
         }
 
         [Lisp("append", "concat")]
         public static Cons Append(params IEnumerable[] seqs)
         {
-            return AsLazyList(SeqBase.Append(seqs));
+            // Advise compiler that seqs is one (but not two or more) argument for the 
+            // sequence function in this particular case.
+            return Sequence(Cat(), (IEnumerable)seqs);
         }
 
         [Lisp("average")]
-        public static object Average(IEnumerable seq, params object[] args)
+        public static object Average(IEnumerable seq)
         {
-            var kwargs = ParseKwargs(args, new string[] { "key" });
-            var key = GetClosure(kwargs[0]);
-            return SeqBase.Average(seq, key);
+            return SeqBase.Average(seq);
+        }
+
+        internal static IApply Cat()
+        {
+            // The value of the symbol Symbols.Cat
+            return Transducer.Cat();
         }
 
         [Lisp("conj")]
@@ -85,25 +92,13 @@ namespace Kiezel
         }
 
         [Lisp("count")]
-        public static int Count(object item, IEnumerable seq, params object[] args)
+        public static int Count(IApply predicate, IEnumerable seq)
         {
-            var kwargs = ParseKwargs(args, new string[] { "test", "key" });
-            var test = GetClosure(kwargs[0], EqualApply);
-            var key = GetClosure(kwargs[1]);
-            return SeqBase.Count(item, seq, test, key);
-        }
-
-        [Lisp("count-if")]
-        public static int CountIf(IApply predicate, IEnumerable seq, params object[] args)
-        {
-            var kwargs = ParseKwargs(args, new string[] { "key" });
-            var key = GetClosure(kwargs[0]);
-
             var count = 0;
 
             foreach (object x in ToIter(seq))
             {
-                if (FuncallBool(predicate, Funcall(key, x)))
+                if (FuncallBool(predicate, x))
                 {
                     ++count;
                 }
@@ -125,22 +120,76 @@ namespace Kiezel
             return AsLazyList(SeqBase.Cycle(seq));
         }
 
-        [Lisp("distinct")]
-        public static Cons Distinct(IEnumerable seq1, params object[] args)
+        [Lisp("dedupe")]
+        public static IApply Dedupe()
         {
-            return Union(null, seq1, args);
+            return Transducer.Dedupe(EqualApply);
+        }
+
+        [Lisp("dedupe")]
+        public static IApply Dedupe(IApply test)
+        {
+            return Transducer.Dedupe(EqualApply);
+        }
+
+        [Lisp("dedupe")]
+        public static Cons Dedupe(IEnumerable seq)
+        {
+            return Sequence(Dedupe(), seq);
+        }
+
+        [Lisp("dedupe")]
+        public static Cons Dedupe(IApply test, IEnumerable seq)
+        {
+            return Sequence(Dedupe(test), seq);
+        }
+
+        [Lisp("distinct")]
+        public static IApply Distinct()
+        {
+            return Transducer.Distinct(EqualApply);
+        }
+
+        [Lisp("distinct")]
+        public static IApply Distinct(IApply test)
+        {
+            return Transducer.Distinct(test);
+        }
+
+        [Lisp("distinct")]
+        public static Cons Distinct(IEnumerable seq)
+        {
+            return Sequence(Distinct(), seq);
+        }
+
+        [Lisp("distinct")]
+        public static Cons Distinct(IApply test, IEnumerable seq)
+        {
+            return Sequence(Distinct(test), seq);
+        }
+
+        [Lisp("drop")]
+        public static IApply Drop(int count)
+        {
+            return Transducer.Drop(count);
         }
 
         [Lisp("drop")]
         public static Cons Drop(int count, IEnumerable seq)
         {
-            return MakeCons(SeqBase.Drop(count, seq));
+            return Sequence(Drop(count), seq);
+        }
+
+        [Lisp("drop-while")]
+        public static IApply DropWhile(IApply predicate)
+        {
+            return Transducer.DropWhile(predicate);
         }
 
         [Lisp("drop-while")]
         public static Cons DropWhile(IApply predicate, IEnumerable seq)
         {
-            return MakeCons(SeqBase.DropWhile(predicate, seq).GetEnumerator());
+            return Sequence(DropWhile(predicate), seq);
         }
 
         [Lisp("each")]
@@ -153,68 +202,68 @@ namespace Kiezel
         }
 
         [Lisp("every?")]
-        public static bool Every(IApply predicate, IEnumerable seq, params object[] args)
+        public static bool Every(IApply predicate, IEnumerable seq)
         {
-            var kwargs = ParseKwargs(args, new string[] { "key" });
-            var key = GetClosure(kwargs[0]);
-            return SeqBase.Every(predicate, seq, key);
+            return SeqBase.Every(predicate, seq);
         }
 
         [Lisp("except")]
-        public static Cons Except(IEnumerable seq1, IEnumerable seq2, params object[] args)
+        public static Cons Except(IEnumerable seq1, IEnumerable seq2)
         {
-            var kwargs = ParseKwargs(args, new string[] { "test", "key" });
-            var test = GetClosure(kwargs[0], EqualApply);
-            var key = GetClosure(kwargs[1]);
-            return AsLazyList(SeqBase.Except(seq1, seq2, test, key));
+            return Except(EqualApply, seq1, seq2);
+        }
+
+        [Lisp("except")]
+        public static Cons Except(IApply test, IEnumerable seq1, IEnumerable seq2)
+        {
+            return AsLazyList(SeqBase.Except(test, seq1, seq2));
         }
 
         [Lisp("filter")]
-        public static Cons Filter(IApply predicate, IEnumerable seq, params object[] args)
+        public static IApply Filter(IApply predicate)
         {
-            var kwargs = ParseKwargs(args, new string[] { "key" });
-            var key = GetClosure(kwargs[0]);
-            return AsLazyList(SeqBase.Filter(predicate, seq, key));
+            return Transducer.Filter(predicate);
         }
 
-        [Lisp("find")]
-        public static object Find(object item, IEnumerable seq, params object[] args)
+        [Lisp("filter")]
+        public static Cons Filter(IApply predicate, IEnumerable seq)
         {
-            var kwargs = ParseKwargs(args, new string[] { "test", "key", "default" });
-            var test = GetClosure(kwargs[0], EqualApply);
-            var key = GetClosure(kwargs[1]);
-            var defaultValue = kwargs[2];
-            var mv = SeqBase.FindItem(seq, item, test, key, defaultValue);
-            return mv.Item1;
-        }
-
-        [Lisp("find-if")]
-        public static object FindIf(IApply predicate, IEnumerable seq, params object[] args)
-        {
-            var kwargs = ParseKwargs(args, new string[] { "key", "default" });
-            var key = GetClosure(kwargs[0]);
-            var defaultValue = kwargs[1];
-            var mv = SeqBase.FindItemIf(seq, predicate, key, defaultValue);
-            return mv.Item1;
-        }
-
-        [Lisp("find-in-property-list")]
-        public static object FindProperty(object item, IEnumerable seq, params object[] args)
-        {
-            var kwargs = ParseKwargs(args, new string[] { "test", "key", "default" });
-            var test = GetClosure(kwargs[0], EqualApply);
-            var key = GetClosure(kwargs[1]);
-            var defaultValue = kwargs[2];
-            return SeqBase.FindProperty(item, seq, test, key, defaultValue);
+            return Sequence(Filter(predicate), seq);
         }
 
         [Lisp("find-subsequence-position")]
-        public static object FindSubsequencePosition(IEnumerable subseq, IEnumerable seq, params object[] args)
+        public static object FindSubsequencePosition(IEnumerable subseq, IEnumerable seq)
         {
-            var kwargs = ParseKwargs(args, new string[] { "test", "key" });
-            var test = GetClosure(kwargs[0], EqualApply);
-            var key = GetClosure(kwargs[1]);
-            return SeqBase.FindSubsequencePosition(subseq, seq, test, key);
+            return SeqBase.FindSubsequencePosition(subseq, seq);
+        }
+
+        [Lisp("first")]
+        public static object First(IApply predicate, IEnumerable seq)
+        {
+            foreach (object x in ToIter(seq))
+            {
+                if (FuncallBool(predicate, x))
+                {
+                    return x;
+                }
+            }
+            return null;
+        }
+
+        [Lisp("first-position")]
+        public static object FirstPosition(IApply predicate, IEnumerable seq)
+        {
+            var i = -1;
+            foreach (object x in ToIter(seq))
+            {
+                ++i;
+
+                if (FuncallBool(predicate, x))
+                {
+                    return i;
+                }
+            }
+            return null;
         }
 
         [Lisp("flatten")]
@@ -232,7 +281,7 @@ namespace Kiezel
         [Lisp("bq:append")]
         public static Cons ForceAppend(params IEnumerable[] seqs)
         {
-            return AsList(SeqBase.Append(seqs));
+            return AsList(Eduction(Cat(), seqs));
         }
 
         [Lisp("group-by")]
@@ -251,6 +300,19 @@ namespace Kiezel
             }
         }
 
+        [Lisp("index-of")]
+        public static object IndexOf(object item, IEnumerable seq)
+        {
+            return IndexOf(item, EqualApply, seq);
+        }
+
+        [Lisp("index-of")]
+        public static object IndexOf(object item, IApply test, IEnumerable seq)
+        {
+            var mv = SeqBase.IndexOf(item, test, seq);
+            return mv.Index >= 0 ? (object)mv.Index : null;
+        }
+
         [Lisp("interleave")]
         public static Cons Interleave(params IEnumerable[] seqs)
         {
@@ -258,18 +320,27 @@ namespace Kiezel
         }
 
         [Lisp("interpose")]
+        public static IApply Interpose(object separator)
+        {
+            return Transducer.Interpose(separator);
+        }
+
+        [Lisp("interpose")]
         public static Cons Interpose(object separator, IEnumerable seq)
         {
-            return AsLazyList(SeqBase.Interpose(separator, seq));
+            return Sequence(Interpose(separator), seq);
         }
 
         [Lisp("intersect")]
-        public static Cons Intersect(IEnumerable seq1, IEnumerable seq2, params object[] args)
+        public static Cons Intersect(IEnumerable seq1, IEnumerable seq2)
         {
-            var kwargs = ParseKwargs(args, new string[] { "test", "key" });
-            var test = GetClosure(kwargs[0], EqualApply);
-            var key = GetClosure(kwargs[1]);
-            return AsLazyList(SeqBase.Intersect(seq1, seq2, test, key));
+            return Intersect(EqualApply, seq1, seq2);
+        }
+
+        [Lisp("intersect")]
+        public static Cons Intersect(IApply test, IEnumerable seq1, IEnumerable seq2)
+        {
+            return AsLazyList(SeqBase.Intersect(test, seq1, seq2));
         }
 
         [Lisp("iterate")]
@@ -279,19 +350,27 @@ namespace Kiezel
         }
 
         [Lisp("keep")]
-        public static Cons Keep(IApply func, IEnumerable seq, params object[] args)
+        public static IApply Keep(IApply func)
         {
-            var kwargs = ParseKwargs(args, new string[] { "key" });
-            var key = GetClosure(kwargs[0]);
-            return AsLazyList(SeqBase.Keep(func, seq, key));
+            return Transducer.Keep(func);
+        }
+
+        [Lisp("keep")]
+        public static Cons Keep(IApply func, IEnumerable seq)
+        {
+            return Sequence(Keep(func), seq);
         }
 
         [Lisp("keep-indexed")]
-        public static Cons KeepIndexed(IApply func, IEnumerable seq, params object[] args)
+        public static IApply KeepIndexed(IApply func)
         {
-            var kwargs = ParseKwargs(args, new string[] { "key" });
-            var key = GetClosure(kwargs[0]);
-            return AsLazyList(SeqBase.KeepIndexed(func, seq, key));
+            return Transducer.KeepIndexed(func);
+        }
+
+        [Lisp("keep-indexed")]
+        public static Cons KeepIndexed(IApply func, IEnumerable seq)
+        {
+            return Sequence(KeepIndexed(func), seq);
         }
 
         [Lisp("length")]
@@ -324,60 +403,102 @@ namespace Kiezel
         }
 
         [Lisp("map")]
+        public static IApply Map(IApply func)
+        {
+            return Transducer.Map(func);
+        }
+
+        [Lisp("map")]
         public static Cons Map(IApply func, params IEnumerable[] seqs)
         {
-            return AsLazyList(SeqBase.Map(func, seqs));
+            return Sequence(Map(func), seqs);
+        }
+
+        [Lisp("mapcat")]
+        public static IApply Mapcat(IApply func)
+        {
+            return Transducer.Mapcat(func);
+        }
+
+        [Lisp("mapcat")]
+        public static Cons Mapcat(IApply func, params IEnumerable[] seqs)
+        {
+            return Sequence(Mapcat(func), seqs);
+        }
+
+        [Lisp("map-indexed")]
+        public static IApply MapIndexed(IApply func)
+        {
+            return Transducer.MapIndexed(func);
+        }
+
+        [Lisp("map-indexed")]
+        public static Cons MapIndexed(IApply func, params IEnumerable[] seqs)
+        {
+            return Sequence(MapIndexed(func), seqs);
         }
 
         public static Cons Map(KeyFunc func, params IEnumerable[] seqs)
         {
-            return AsLazyList(SeqBase.Map(func, seqs));
+            return Map(new ApplyWrapper1(func), seqs);
         }
 
-        [Lisp("max")]
-        public static object Max(IEnumerable seq, params object[] args)
+        [Lisp("maximize")]
+        public static object Maximize(IEnumerable seq)
         {
-            var kwargs = ParseKwargs(args, new string[] { "key" });
-            var key = GetClosure(kwargs[0]);
-            Func<object, object, object> reducer = (x, y) => NotLess(x, y) ? x : y;
-            return ReduceSeq(reducer, seq, MissingValue, key);
+            var reducer = new ApplyWrapper2(Max);
+            return Reduce(reducer, seq);
         }
 
         [Lisp("merge")]
-        public static Cons Merge(IEnumerable seq1, IEnumerable seq2, params object[] args)
+        public static Cons Merge(IEnumerable seq1, IEnumerable seq2)
         {
-            var kwargs = ParseKwargs(args, new string[] { "test", "key" });
-            var test = GetClosure(kwargs[0], CompareApply);
-            var key = GetClosure(kwargs[1]);
-            return AsLazyList(SeqBase.Merge(seq1, seq2, test, key));
+            return AsLazyList(SeqBase.Merge(seq1, seq2, CompareApply, IdentityApply));
         }
 
-        [Lisp("min")]
-        public static object Min(IEnumerable seq, params object[] args)
+        [Lisp("merge")]
+        public static Cons Merge(IApply comparer, IEnumerable seq1, IEnumerable seq2)
         {
-            var kwargs = ParseKwargs(args, new string[] { "key" });
-            var key = GetClosure(kwargs[0]);
-            Func<object, object, object> reducer = (x, y) => NotGreater(x, y) ? x : y;
-            return ReduceSeq(reducer, seq, MissingValue, key);
+            return AsLazyList(SeqBase.Merge(seq1, seq2, comparer, IdentityApply));
+        }
+
+        [Lisp("merge-by")]
+        public static Cons MergeBy(IApply key, IEnumerable seq1, IEnumerable seq2)
+        {
+            return AsLazyList(SeqBase.Merge(seq1, seq2, CompareApply, key));
+        }
+
+        [Lisp("merge-by")]
+        public static Cons MergeBy(IApply key, IApply comparer, IEnumerable seq1, IEnumerable seq2)
+        {
+            return AsLazyList(SeqBase.Merge(seq1, seq2, comparer, key));
+        }
+
+        [Lisp("minimize")]
+        public static object Minimize(IEnumerable seq)
+        {
+            var reducer = new ApplyWrapper2(Min);
+            return Reduce(reducer, seq);
         }
 
         [Lisp("mismatch")]
-        public static object Mismatch(IEnumerable seq1, IEnumerable seq2, params object[] args)
+        public static object Mismatch(IEnumerable seq1, IEnumerable seq2)
         {
-            var kwargs = ParseKwargs(args, new string[] { "test", "key" });
-            var test = GetClosure(kwargs[0], EqualApply);
-            var key = GetClosure(kwargs[1]);
-            return SeqBase.Mismatch(seq1, seq2, test, key);
+            return Mismatch(EqualApply, seq1, seq2);
+        }
+
+        [Lisp("mismatch")]
+        public static object Mismatch(IApply test, IEnumerable seq1, IEnumerable seq2)
+        {
+            return SeqBase.Mismatch(test, seq1, seq2);
         }
 
         [Lisp("not-any?")]
-        public static bool NotAny(IApply predicate, IEnumerable seq, params object[] args)
+        public static bool NotAny(IApply predicate, IEnumerable seq)
         {
-            var kwargs = ParseKwargs(args, new string[] { "key" });
-            var key = GetClosure(kwargs[0]);
             foreach (var v in ToIter(seq))
             {
-                if (FuncallBool(predicate, Funcall(key, v)))
+                if (FuncallBool(predicate, v))
                 {
                     return false;
                 }
@@ -386,13 +507,11 @@ namespace Kiezel
         }
 
         [Lisp("not-every?")]
-        public static bool NotEvery(IApply predicate, IEnumerable seq, params object[] args)
+        public static bool NotEvery(IApply predicate, IEnumerable seq)
         {
-            var kwargs = ParseKwargs(args, new string[] { "key" });
-            var key = GetClosure(kwargs[0]);
             foreach (var v in ToIter(seq))
             {
-                if (!FuncallBool(predicate, Funcall(key, v)))
+                if (!FuncallBool(predicate, v))
                 {
                     return true;
                 }
@@ -440,6 +559,12 @@ namespace Kiezel
         }
 
         [Lisp("partition-all")]
+        public static IApply PartitionAll(int size)
+        {
+            return Transducer.PartitionAll(size);
+        }
+
+        [Lisp("partition-all")]
         public static Cons PartitionAll(int size, int step, IEnumerable seq)
         {
             return AsLazyList(SeqBase.Partition(true, size, step, null, seq));
@@ -452,28 +577,15 @@ namespace Kiezel
         }
 
         [Lisp("partition-by")]
+        public static IApply PartitionBy(IApply func)
+        {
+            return Transducer.PartitionBy(func);
+        }
+
+        [Lisp("partition-by")]
         public static Cons PartitionBy(IApply func, IEnumerable seq)
         {
-            return AsLazyList(SeqBase.PartitionBy(func, 0, seq));
-        }
-
-        [Lisp("position")]
-        public static object Position(object item, IEnumerable seq, params object[] args)
-        {
-            var kwargs = ParseKwargs(args, new string[] { "test", "key" });
-            var test = GetClosure(kwargs[0], EqualApply);
-            var key = GetClosure(kwargs[1]);
-            var mv = SeqBase.FindItem(seq, item, test, key, null);
-            return mv.Item2;
-        }
-
-        [Lisp("position-if")]
-        public static object PositionIf(IApply predicate, IEnumerable seq, params object[] args)
-        {
-            var kwargs = ParseKwargs(args, new string[] { "key" });
-            var key = GetClosure(kwargs[0]);
-            var mv = SeqBase.FindItemIf(seq, predicate, key, null);
-            return mv.Item2;
+            return Sequence(PartitionBy(func), seq);
         }
 
         [Lisp("range")]
@@ -500,46 +612,40 @@ namespace Kiezel
             return Range(0, int.MaxValue, 1);
         }
 
-        [Lisp("reduce")]
-        public static object Reduce(IApply reducer, IEnumerable seq, params object[] args)
+        [Lisp("reduce", "fold")]
+        public static object Reduce(IApply reducer, IEnumerable seq)
         {
-            var kwargs = ParseKwargs(args, new string[] { "initial-value", "key" }, MissingValue, null);
-            var seed = kwargs[0];
-            var key = GetClosure(kwargs[1]);
-            return SeqBase.ReduceSeq(reducer, seq, seed, key);
+            return Reduce(reducer, MissingValue, seq);
         }
 
-        public static object ReduceSeq(Func<object, object, object> reducer, IEnumerable seq, object seed, IApply key)
+        [Lisp("reduce", "fold")]
+        public static object Reduce(IApply reducer, object seed, IEnumerable seq)
         {
-            var result = seed;
-            foreach (object x in ToIter(seq))
-            {
-                if (result == MissingValue)
-                {
-                    result = Funcall(key, x);
-                }
-                else {
-                    result = reducer(result, Funcall(key, x));
-                }
-            }
-            return result == MissingValue ? null : result;
+            return SeqBase.Reduce(reducer, seed, seq);
         }
 
         [Lisp("reductions")]
-        public static Cons Reductions(IApply reducer, IEnumerable seq, params object[] args)
+        public static Cons Reductions(IApply reducer, IEnumerable seq)
         {
-            var kwargs = ParseKwargs(args, new string[] { "initial-value", "key" }, MissingValue, null);
-            var seed = kwargs[0];
-            var key = GetClosure(kwargs[1]);
-            return AsLazyList(SeqBase.Reductions(reducer, seq, seed, key));
+            return Reductions(reducer, MissingValue, seq);
+        }
+
+        [Lisp("reductions")]
+        public static Cons Reductions(IApply reducer, object seed, IEnumerable seq)
+        {
+            return AsLazyList(SeqBase.Reductions(reducer, seed, seq));
         }
 
         [Lisp("remove")]
-        public static Cons Remove(IApply predicate, IEnumerable seq, params object[] args)
+        public static IApply Remove(IApply predicate)
         {
-            var kwargs = ParseKwargs(args, new string[] { "key" }, null);
-            var key = GetClosure(kwargs[0]);
-            return AsLazyList(SeqBase.Remove(predicate, seq, key));
+            return Transducer.Remove(predicate);
+        }
+
+        [Lisp("remove")]
+        public static Cons Remove(IApply predicate, IEnumerable seq)
+        {
+            return Sequence(Remove(predicate), seq);
         }
 
         [Lisp("repeat")]
@@ -570,6 +676,33 @@ namespace Kiezel
         public static Cons Reverse(IEnumerable seq)
         {
             return AsLazyList(SeqBase.Reverse(seq));
+        }
+
+        [Lisp("sequence")]
+        public static Cons Sequence(IEnumerable seq)
+        {
+            return AsLazyList(seq);
+        }
+
+        [Lisp("sequence")]
+        public static Cons Sequence(IApply xform, params IEnumerable[] seqs)
+        {
+            if (seqs == null || seqs.Length == 0)
+            {
+                return null;
+            }
+            else if (seqs.Length == 1)
+            {
+                var seq = seqs[0];
+                var eduction = new Reducible(xform, seq, false);
+                return eduction.AsLazyList();
+            }
+            else
+            {
+                var seq = new UnisonEnumerator(seqs);
+                var eduction = new Reducible(xform, seq, true);
+                return eduction.AsLazyList();
+            }
         }
 
         [Lisp("series")]
@@ -603,12 +736,27 @@ namespace Kiezel
         }
 
         [Lisp("sort")]
-        public static Cons Sort(IEnumerable seq, params object[] args)
+        public static Cons Sort(IEnumerable seq)
         {
-            var kwargs = ParseKwargs(args, new string[] { "test", "key" });
-            var test = GetClosure(kwargs[0], CompareApply);
-            var key = GetClosure(kwargs[1]);
-            return AsLazyList(SeqBase.Sort(seq, test, key));
+            return AsLazyList(SeqBase.Sort(seq, CompareApply, IdentityApply));
+        }
+
+        [Lisp("sort")]
+        public static Cons Sort(IApply comparer, IEnumerable seq)
+        {
+            return AsLazyList(SeqBase.Sort(seq, comparer, IdentityApply));
+        }
+
+        [Lisp("sort-by")]
+        public static Cons SortBy(IApply key, IEnumerable seq)
+        {
+            return AsLazyList(SeqBase.Sort(seq, CompareApply, key));
+        }
+
+        [Lisp("sort-by")]
+        public static Cons SortBy(IApply key, IApply comparer, IEnumerable seq)
+        {
+            return AsLazyList(SeqBase.Sort(seq, comparer, key));
         }
 
         [Lisp("split-at")]
@@ -636,38 +784,72 @@ namespace Kiezel
         }
 
         [Lisp("sum")]
-        public static object Sum(IEnumerable seq, params object[] args)
+        public static object Sum(IEnumerable seq)
         {
-            var kwargs = ParseKwargs(args, new string[] { "key" });
-            var key = GetClosure(kwargs[0]);
-            return ReduceSeq(Add2, seq, 0, key);
+            var reducer = new ApplyWrapper2(Add);
+            return Reduce(reducer, seq);
+        }
+
+        [Lisp("take")]
+        public static IApply Take(int count)
+        {
+            return Transducer.Take(count);
         }
 
         [Lisp("take")]
         public static Cons Take(int count, IEnumerable seq)
         {
-            return AsLazyList(SeqBase.Take(count, seq));
+            return Sequence(Take(count), seq);
+        }
+
+        [Lisp("take-nth")]
+        public static IApply TakeNth(int step)
+        {
+            return Transducer.TakeNth(step);
         }
 
         [Lisp("take-nth")]
         public static Cons TakeNth(int step, IEnumerable seq)
         {
-            return AsLazyList(SeqBase.TakeNth(step, seq));
+            return Sequence(TakeNth(step), seq);
+        }
+
+        [Lisp("take-while")]
+        public static IApply TakeWhile(IApply predicate)
+        {
+            return Transducer.TakeWhile(predicate);
         }
 
         [Lisp("take-while")]
         public static Cons TakeWhile(IApply predicate, IEnumerable seq)
         {
-            return AsLazyList(SeqBase.TakeWhile(predicate, seq));
+            return Sequence(TakeWhile(predicate), seq);
+        }
+
+        [Lisp("transduce")]
+        public static object Transduce(IApply xform, IApply func, IEnumerable seq)
+        {
+            return Transduce(xform, MissingValue, func, seq);
+        }
+
+        [Lisp("transduce")]
+        public static object Transduce(IApply xform, object seed, IApply func, IEnumerable seq)
+        {
+            var reducer = (IApply)Funcall(xform, func);
+            var result = Reduce(reducer, seed, seq);
+            return result;
         }
 
         [Lisp("union")]
-        public static Cons Union(IEnumerable seq1, IEnumerable seq2, params object[] args)
+        public static Cons Union(IEnumerable seq1, IEnumerable seq2)
         {
-            var kwargs = ParseKwargs(args, new string[] { "test" });
-            var test = GetClosure(kwargs[0], EqualApply);
+            return Union(EqualApply, seq1, seq2);
+        }
 
-            return AsLazyList(SeqBase.Union(seq1, seq2, test));
+        [Lisp("union")]
+        public static Cons Union(IApply test, IEnumerable seq1, IEnumerable seq2)
+        {
+            return AsLazyList(SeqBase.Union(test, seq1, seq2));
         }
 
         [Lisp("unzip")]

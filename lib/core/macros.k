@@ -50,7 +50,7 @@
 
 (defun declaration? (form)
     (and (cons? form)
-         (find (first form) '(let var hidden-var letfun letmacro let-symbol-macro
+         (index-of (first form) '(let var hidden-var letfun letmacro let-symbol-macro
                                   future lazy multiple-let multiple-var))))
 
 (defmacro do? (&body forms)
@@ -300,7 +300,7 @@
     `(setf ,place (cons ,item ,place)))
 
 (defmacro pushnew (item place)
-    `(if (find ,item ,place)
+    `(if (index-of ,item ,place)
             ,place
         (push item ,place)))
 

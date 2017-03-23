@@ -8,6 +8,7 @@ namespace Kiezel
 {
     using System;
     using System.Globalization;
+    using System.IO;
     using System.Threading;
     using System.Windows.Forms;
 
@@ -48,7 +49,7 @@ namespace Kiezel
             Symbols.StdOut.VariableValue = StdScr;
             Symbols.StdLog.VariableValue = StdScr;
             Symbols.StdErr.VariableValue = StdScr;
-            Symbols.StdIn.VariableValue = StdScr;
+            Symbols.StdIn.VariableValue = TextReader.Null;
             Runtime.RestartLoadFiles(level);
         }
 

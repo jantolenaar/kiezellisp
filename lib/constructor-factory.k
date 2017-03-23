@@ -33,7 +33,7 @@
         (for head :on-list args :by cddr)
         (let name (first head))
         (let value (second head))
-        (collect (init-obj-property obj name value))))
+        (collecting (init-obj-property obj name value))))
 
 #if gtk
 
@@ -51,11 +51,11 @@
 
 (defun init-obj-property (obj kwname value)
     (let name (symbol-name kwname))
-    (let verb (find name verbs))
+    (let found (index-of name verbs))
     (lazy match (.regex-match name @"^(.*)-add$"))
     (cond
-        (verb
-            `((. ,verb) ,obj ,value))
+        (found
+            `((. ,name) ,obj ,value))
         (match
             `(.add ((. ,(second match)) ,obj) ,value))
         (true

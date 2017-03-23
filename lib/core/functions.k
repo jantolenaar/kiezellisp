@@ -8,11 +8,8 @@
     (:export
         "constantly"
         "filterv"
-        "keep-indexed"
         "partially-apply"
-        "map-indexed"
         "mapv"
-        "mapcat"
     ))
 
 (in-package "lisp")
@@ -39,14 +36,8 @@
 ;;; Sequence functions
 ;;;
 
-(defun map-indexed (func &rest seqs)
-    (apply map func (range) seqs)) 
-
 (defun mapv (func &rest seqs)
     (as-vector (apply map func seqs))) 
-
-(defun mapcat (func &rest seqs)
-    (apply concat (apply map func seqs)))
 
 (defun filterv (predicate seq &rest args)
     (as-vector (apply filter predicate seq args)))

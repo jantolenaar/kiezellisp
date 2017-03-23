@@ -59,13 +59,7 @@
     :continue-if 'continue-if-clause
     :finish 'finish-clause
     :finish-if 'finish-if-clause
-    :collect 'collect-clause
     :collect-each 'collect-each-clause
-    :count 'count-clause
-    :sum 'sum-clause
-    :multiply 'multiply-clause
-    :minimize 'minimize-clause
-    :maximize 'maximize-clause
     :collecting 'collecting-clause
     :counting 'counting-clause
     :summing 'summing-clause
@@ -336,15 +330,6 @@
         (true
             (throw-error "Invalid <continue-if> clause in loop"))))
 
-(defun collect-clause (form)
-    (prologue)
-    (cond
-        ((match '(collect ?))
-            (pushnew '%accumulator $collect-vars)
-            `(.add %accumulator ,arg1))
-        (true
-            (throw-error "Invalid <collect> clause in loop"))))
-
 (defun collect-each-clause (form)
     (prologue)
     (cond
@@ -366,16 +351,6 @@
             `(.add %accumulator ,arg1))
         (true
             (throw-error "Invalid <collecting> clause in loop"))))
-
-(defun count-clause (form)
-    (prologue)
-    (cond
-        ((match '(count ?))
-            (pushnew '%accumulator $summing-vars)
-            `(if ,arg1
-                (incf %accumulator)))
-        (true
-            (throw-error "Invalid <count> clause in loop"))))
 
 (defun counting-clause (form)
     (prologue)
@@ -409,15 +384,6 @@
         (true
             (throw-error "Invalid <finish-if> clause in loop"))))
 
-(defun sum-clause (form)
-    (prologue)
-    (cond
-        ((match '(sum ?))
-            (pushnew '%accumulator $summing-vars)
-            `(incf %accumulator ,arg1))
-        (true
-            (throw-error "Invalid <sum> clause in loop"))))
-
 (defun summing-clause (form)
     (prologue)
     (cond
@@ -430,15 +396,6 @@
             `(incf %accumulator ,arg1))
         (true
             (throw-error "Invalid <summing> clause in loop"))))
-
-(defun multiply-clause (form)
-    (prologue)
-    (cond
-        ((match '(multiply ?))
-            (pushnew '%accumulator $multiplying-vars)
-            `(setf %accumulator (* %accumulator ,arg1)))
-        (true
-            (throw-error "Invalid <multiply> clause in loop"))))
 
 (defun multiplying-clause (form)
     (prologue)
@@ -453,14 +410,6 @@
         (true
             (throw-error "Invalid <multiplying> clause in loop"))))
 
-(defun maximize-clause (form)
-    (prologue)
-    (cond
-        ((match '(maximize ?))
-            (do-maximizing '%accumulator arg1))
-        (true
-            (throw-error "Invalid <maximize> clause in loop"))))
-
 (defun maximizing-clause (form)
     (prologue)
     (cond
@@ -470,14 +419,6 @@
             (do-maximizing '%accumulator arg1))
         (true
             (throw-error "Invalid <maximizing> clause in loop"))))
-
-(defun minimize-clause (form)
-    (prologue)
-    (cond
-        ((match '(minimize ?))
-            (do-minimizing '%accumulator arg1))
-        (true
-            (throw-error "Invalid <minimize> clause in loop"))))
 
 (defun minimizing-clause (form)
     (prologue)
@@ -529,11 +470,11 @@
     (each initial-collect-step $collect-vars))
 
 (defun add-final-steps ()
-    (when (or (find '%accumulator $collect-vars)
-              (find '%accumulator $summing-vars)
-              (find '%accumulator $multiplying-vars)
-              (find '%accumulator $maximizing-vars)
-              (find '%accumulator $minimizing-vars))
+    (when (or (index-of '%accumulator $collect-vars)
+              (index-of '%accumulator $summing-vars)
+              (index-of '%accumulator $multiplying-vars)
+              (index-of '%accumulator $maximizing-vars)
+              (index-of '%accumulator $minimizing-vars))
         (.add $final-steps `%accumulator)))
 
 (defun add-initial-summing-steps ()

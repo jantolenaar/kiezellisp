@@ -75,7 +75,7 @@ namespace Kiezel
 
         IEnumerator IEnumerable.GetEnumerator()
         {
-            throw new NotImplementedException();
+            return ((IEnumerable<Vector>)this).GetEnumerator();
         }
 
         IEnumerator<Vector> IEnumerable<Vector>.GetEnumerator()

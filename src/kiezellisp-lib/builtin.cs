@@ -613,7 +613,7 @@ namespace Kiezel
             {
                 v.Add(Runtime.GetMethodSyntax(m, context));
             }
-            return Runtime.AsList(Runtime.SeqBase.Distinct(v, Runtime.StructurallyEqualApply));
+            return Runtime.Distinct(Runtime.StructurallyEqualApply, v);
         }
 
         #endregion Private Methods

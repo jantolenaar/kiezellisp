@@ -27,8 +27,8 @@
                 (let html-specific-type 
                     (new 'xml::xml-base-type
                         :tag ,name
-                        :supports-empty-tag ,(boolean (find tag empty-tags))
-                        :has-long-tag ,(boolean (find tag long-tags))))
+                        :supports-empty-tag ,(boolean (index-of tag empty-tags))
+                        :has-long-tag ,(boolean (index-of tag long-tags))))
                 (defun ,func (&rest args) 
                     (let target (new html-specific-type
                                     :attributes (new)

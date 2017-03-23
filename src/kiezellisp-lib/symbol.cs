@@ -593,6 +593,7 @@ namespace Kiezel
         public static Symbol BuiltinConstructor;
         public static Symbol BuiltinFunction;
         public static Symbol Case;
+        public static Symbol Cat;
         public static Symbol Catch;
         public static Symbol CommandLineArguments;
         public static Symbol CommandLineScriptName;
@@ -645,6 +646,7 @@ namespace Kiezel
         public static Symbol HelpHook;
         public static Symbol HiddenVar;
         public static Symbol I;
+        public static Symbol Identity;
         public static Symbol If;
         public static Symbol IfLet;
         public static Symbol Ignore;
@@ -795,6 +797,7 @@ namespace Kiezel
             BuiltinConstructor = MakeSymbol("builtin-constructor");
             BuiltinFunction = MakeSymbol("builtin-function");
             Case = MakeSymbol("case");
+            Cat = MakeSymbol("cat");
             Catch = MakeSymbol("catch");
             CommandLineArguments = MakeSymbol("$command-line-arguments");
             CommandLineScriptName = MakeSymbol("$command-line-script-name");
@@ -846,6 +849,7 @@ namespace Kiezel
             HelpHook = MakeSymbol("$help-hook");
             HiddenVar = MakeSymbol("hidden-var");
             I = MakeSymbol("math:I");
+            Identity = MakeSymbol("identity");
             If = MakeSymbol("if");
             IfLet = MakeSymbol("if-let");
             Ignore = MakeSymbol("ignore");

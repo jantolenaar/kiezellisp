@@ -6,7 +6,10 @@
 ;;;
 
 #if unix
-#if flatpak
+#if bsd
+(set-assembly-path "/home/jan/bin"
+                   "/usr/local/lib/mono/4.5")
+#elif flatpak
 (set-assembly-path "/home/jan/bin"
                    "/app/lib/mono/4.5")
 #else

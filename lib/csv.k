@@ -53,8 +53,13 @@
 ;;; Reading csv grids
 ;;;
 
+(defun get-options (args)
+	(loop
+		(for a :on-list args :by cddr)
+		(break-if (= (first a) :options) (second a))))
+
 (defun read-string-to-records (text &rest args)
-    (let options (find-in-property-list :options args))
+	(let options (get-options args))
     (do 
         (read-string-to-grid text options)
         (apply read-grid-to-subgrid (list* ~ args))

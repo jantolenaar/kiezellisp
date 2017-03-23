@@ -120,9 +120,9 @@
     (cond
         ((null? arg)
             "")
-        ((find #\double-quote arg)
+        ((index-of #\double-quote arg)
             (string "\"" arg "\""))
-        ((find #\space arg)
+        ((index-of #\space arg)
             (string "\"" arg "\""))
         (true
             arg)))

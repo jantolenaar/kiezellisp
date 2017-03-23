@@ -702,7 +702,7 @@ namespace Kiezel
             //    throw new LispException( "Require can only be called from another load/require." );
             //}
             var modules = (Cons)Symbols.Modules.Value;
-            var found = Find(file, modules);
+            var found = IndexOf(file, modules);
             if (found == null)
             {
                 Symbols.Modules.Value = MakeCons(file, modules);

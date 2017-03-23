@@ -97,7 +97,7 @@
                 (funcall (symbol-value proc) expr args)))))
 
 (defun encode-symbol (expr pattern)
-    (when (not (find pattern $variables))
+    (when (not (index-of pattern $variables))
         (.add $variables pattern))
     `(do
         (setf ,pattern ,expr)
@@ -143,7 +143,7 @@
     (loop
         (for p :in patterns)
         (for i :in (range))
-        (collect (encode-pattern `(elt ,items ,i) p))))
+        (collecting (encode-pattern `(elt ,items ,i) p))))
 
 (defun encode-enumerable (testf expr args)
     (let items (gentemp "seq"))

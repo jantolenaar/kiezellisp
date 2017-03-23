@@ -1,5 +1,22 @@
 # Change Log
 
+## 2016/03/23
+
+*	Added transducers a la Clojure.
+*	Added `transduce`, `dedupe`, `reduced`, `reduced?`, `unreduced`,
+	`completing`, `eduction`, `sequence`, `cat`.
+*	Renamed `count-if` to `count`.
+*	Renamed `find-if` to `first`.
+*	Renamed `position` to `index-of`.
+*	Renamed `position-if` to `first-position`.
+*	Removed `find-in-property-list`.
+*	Renamed `collect` loop clause to `collecting`.
+*	Similar change of `count`, `sum`, `minimize`, `maximize`, `multiply`.
+*	Added `sort-by`, `merge-by`.
+*	Renamed `min` to `minimize`.
+*	Renamed `max` to `maximize`.
+*	Added `min`, `max` reducer functions.
+
 ## 2016/12/09
 
 *   Using `nameof(...)` feature.

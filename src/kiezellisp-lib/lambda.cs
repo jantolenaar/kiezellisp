@@ -13,6 +13,8 @@ namespace Kiezel
     using System.Linq.Expressions;
     using System.Reflection;
 
+    using ReduceFunc = System.Func<object[], object>;
+
     #region Enumerations
 
     public enum LambdaKind
@@ -51,6 +53,38 @@ namespace Kiezel
         DynamicMetaObject IDynamicMetaObjectProvider.GetMetaObject(Expression parameter)
         {
             return new GenericApplyMetaObject<ApplyWrapper>(parameter, this);
+        }
+
+        #endregion Private Methods
+    }
+
+    public class ApplyWrapper1 : IApply, IDynamicMetaObjectProvider
+    {
+        #region Fields
+
+        private Func<object, object> Proc;
+
+        #endregion Fields
+
+        #region Constructors
+
+        public ApplyWrapper1(Func<object, object> proc)
+        {
+            Proc = proc;
+        }
+
+        #endregion Constructors
+
+        #region Private Methods
+
+        object IApply.Apply(object[] args)
+        {
+            return Proc(args[0]);
+        }
+
+        DynamicMetaObject IDynamicMetaObjectProvider.GetMetaObject(Expression parameter)
+        {
+            return new GenericApplyMetaObject<ApplyWrapper1>(parameter, this);
         }
 
         #endregion Private Methods

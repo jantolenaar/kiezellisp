@@ -6,7 +6,9 @@
 ;;;
 
 #if unix
-#if flatpak
+#if bsd
+(set-assembly-path "/usr/local/lib/mono/4.5")
+#elif flatpack
 (set-assembly-path "/app/lib/mono/4.5")
 #else
 (set-assembly-path "/usr/lib/mono/4.5")

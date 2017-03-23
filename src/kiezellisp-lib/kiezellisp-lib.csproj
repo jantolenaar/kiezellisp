@@ -125,6 +125,7 @@
     <Compile Include="reader-scanner.cs" />
     <Compile Include="repl-history.cs" />
     <Compile Include="console-base.cs" />
+    <Compile Include="seq-reducers.cs" />
   </ItemGroup>
   <ItemGroup>
     <BootstrapperPackage Include=".NETFramework,Version=v4.0,Profile=Client">

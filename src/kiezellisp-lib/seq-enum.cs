@@ -16,6 +16,19 @@ namespace Kiezel
 
     using TestFunc = System.Func<object, object, bool>;
 
+    public class Found
+    {
+        public object Value;
+        public int Index;
+
+        public Found(object value, int index)
+        {
+            Value = value;
+            Index = index;
+        }
+
+    }
+
     public partial class Runtime
     {
         #region Other
@@ -24,11 +37,11 @@ namespace Kiezel
         {
             #region Public Methods
 
-            public static bool Any(IApply predicate, IEnumerable seq, IApply key)
+            public static bool Any(IApply predicate, IEnumerable seq)
             {
                 foreach (var v in ToIter(seq))
                 {
-                    if (FuncallBool(predicate, Funcall(key, v)))
+                    if (FuncallBool(predicate, v))
                     {
                         return true;
                     }
@@ -46,17 +59,6 @@ namespace Kiezel
                     }
                 }
                 return false;
-            }
-
-            public static IEnumerable Append(IEnumerable[] seqs)
-            {
-                foreach (IEnumerable seq in seqs)
-                {
-                    foreach (object item in ToIter(seq))
-                    {
-                        yield return item;
-                    }
-                }
             }
 
             public static Cons Assoc(object item, Cons seq, IApply test, IApply key)
@@ -93,13 +95,13 @@ namespace Kiezel
                 return null;
             }
 
-            public static object Average(IEnumerable seq, IApply key)
+            public static object Average(IEnumerable seq)
             {
                 object result = null;
                 int count = 0;
                 foreach (object item in ToIter(seq))
                 {
-                    var val = Funcall(key, item);
+                    var val = item;
 
                     if (val != null)
                     {
@@ -118,21 +120,6 @@ namespace Kiezel
                 return result == null ? null : Div(result, count);
             }
 
-            public static int Count(object item, IEnumerable seq, IApply test, IApply key)
-            {
-                var count = 0;
-
-                foreach (object x in ToIter(seq))
-                {
-                    if (FuncallBool(test, item, Funcall(key, x)))
-                    {
-                        ++count;
-                    }
-                }
-
-                return count;
-            }
-
             public static IEnumerable Cycle(IEnumerable seq)
             {
                 while (seq != null)
@@ -144,59 +131,11 @@ namespace Kiezel
                 }
             }
 
-            public static IEnumerable Distinct(IEnumerable seq1, IApply test)
-            {
-                return Union(null, seq1, test);
-            }
-
-            public static IEnumerator Drop(int count, IEnumerable seq)
-            {
-                if (seq == null)
-                {
-                    return null;
-                }
-
-                var iter = seq.GetEnumerator();
-
-                if (count > 0)
-                {
-                    while (--count >= 0)
-                    {
-                        if (!iter.MoveNext())
-                        {
-                            return null;
-                        }
-                    }
-                }
-
-                return iter;
-            }
-
-            public static IEnumerable DropWhile(IApply pred, IEnumerable seq)
-            {
-                if (seq == null)
-                {
-                    return null;
-                }
-
-                var iter = seq.GetEnumerator();
-
-                while (iter.MoveNext())
-                {
-                    if (!FuncallBool(pred, iter.Current))
-                    {
-                        return MakeCons(iter.Current, iter);
-                    }
-                }
-
-                return null;
-            }
-
-            public static bool Every(IApply predicate, IEnumerable seq, IApply key)
+            public static bool Every(IApply predicate, IEnumerable seq)
             {
                 foreach (var v in ToIter(seq))
                 {
-                    if (!FuncallBool(predicate, Funcall(key, v)))
+                    if (!FuncallBool(predicate, v))
                     {
                         return false;
                     }
@@ -216,99 +155,36 @@ namespace Kiezel
                 return true;
             }
 
-            public static IEnumerable Except(IEnumerable seq1, IEnumerable seq2, IApply test, IApply key)
+            public static IEnumerable Except(IApply test, IEnumerable seq1, IEnumerable seq2)
             {
                 var v2 = AsVector(seq2);
                 foreach (object item in ToIter(seq1))
                 {
-                    var mv = FindItem(v2, Funcall(key, item), test, key, null);
+                    var mv = IndexOf(item, test, v2);
 
-                    if (mv.Item2 == null)
+                    if (mv.Index != -1)
                     {
                         yield return item;
                     }
                 }
             }
 
-            public static IEnumerable Filter(IApply pred, IEnumerable seq, IApply key)
+            public static Found IndexOf(object value, IApply test, IEnumerable seq)
             {
-                foreach (object item in ToIter(seq))
-                {
-                    if (FuncallBool(pred, Funcall(key, item)))
-                    {
-                        yield return item;
-                    }
-                }
-            }
-
-            public static Tuple<object, object> FindItem(IEnumerable seq, object item, IApply test, IApply key, object defaultValue)
-            {
-                int i = -1;
-
+                var i = -1;
                 foreach (object x in ToIter(seq))
                 {
                     ++i;
 
-                    if (FuncallBool(test, item, Funcall(key, x)))
+                    if (FuncallBool(test, x, value))
                     {
-                        return Tuple.Create(x, (object)i);
+                        return new Found(x, i);
                     }
                 }
-
-                return Tuple.Create(defaultValue, (object)null);
+                return new Found(null, -1);
             }
 
-            public static Tuple<object, object> FindItem(IEnumerable seq, object item, TestFunc test, KeyFunc key, object defaultValue)
-            {
-                int i = -1;
-
-                foreach (object x in ToIter(seq))
-                {
-                    ++i;
-
-                    if (test(item, key(x)))
-                    {
-                        return Tuple.Create(x, (object)i);
-                    }
-                }
-
-                return Tuple.Create(defaultValue, (object)null);
-            }
-
-            public static Tuple<object, object> FindItemIf(IEnumerable seq, IApply predicate, IApply key, object defaultValue)
-            {
-                int i = -1;
-                foreach (object x in ToIter(seq))
-                {
-                    ++i;
-
-                    if (FuncallBool(predicate, Funcall(key, x)))
-                    {
-                        return Tuple.Create(x, (object)i);
-                    }
-                }
-                return Tuple.Create(defaultValue, (object)null);
-            }
-
-            public static object FindProperty(object item, IEnumerable seq, IApply test, IApply key, object defaultValue)
-            {
-                var iter = ToIter(seq).GetEnumerator();
-
-                while (iter.MoveNext())
-                {
-                    var x = iter.Current;
-                    iter.MoveNext();
-
-                    if (FuncallBool(test, item, Funcall(key, x)))
-                    {
-                        return iter.Current;
-                    }
-                }
-
-                return defaultValue;
-            }
-
-            public static object FindSubsequencePosition(IEnumerable subseq, IEnumerable seq, IApply test, IApply key)
+            public static object FindSubsequencePosition(IEnumerable subseq, IEnumerable seq)
             {
                 var v1 = AsVector(seq);
                 var v2 = AsVector(subseq);
@@ -322,9 +198,9 @@ namespace Kiezel
                     for (var i = 0; i < v2.Count; ++i)
                     {
                         // todo: optimize
-                        var k1 = Funcall(key, v1[pos + i]);
-                        var k2 = Funcall(key, v2[i]);
-                        if (!FuncallBool(test, k2, k1))
+                        var k1 = v1[pos + i];
+                        var k2 = v2[i];
+                        if (!Equal(k2, k1))
                         {
                             eq = false;
                             break;
@@ -396,14 +272,14 @@ namespace Kiezel
                 }
             }
 
-            public static IEnumerable Intersect(IEnumerable seq1, IEnumerable seq2, IApply test, IApply key)
+            public static IEnumerable Intersect(IApply test, IEnumerable seq1, IEnumerable seq2)
             {
                 var v2 = AsVector(seq2);
 
                 foreach (object item in ToIter(seq1))
                 {
-                    var mv = FindItem(v2, Funcall(key, item), test, key, null);
-                    if (mv.Item2 != null)
+                    var mv = IndexOf(item, test, v2);
+                    if (mv.Index != -1)
                     {
                         yield return item;
                     }
@@ -426,95 +302,6 @@ namespace Kiezel
                         yield return val;
                         val = Funcall(func, val);
                     }
-                }
-            }
-
-            public static IEnumerable Keep(IApply func, IEnumerable seq, IApply key)
-            {
-                foreach (object item in ToIter(seq))
-                {
-                    var value = Funcall(func, Funcall(key, item));
-                    if (value != null)
-                    {
-                        yield return value;
-                    }
-                }
-            }
-
-            public static IEnumerable KeepIndexed(IApply func, IEnumerable seq, IApply key)
-            {
-                var index = -1;
-
-                foreach (object item in ToIter(seq))
-                {
-                    ++index;
-                    var value = Funcall(func, index, Funcall(key, item));
-                    if (value != null)
-                    {
-                        yield return value;
-                    }
-                }
-            }
-
-            public static IEnumerable Map(KeyFunc func, IEnumerable seq)
-            {
-                foreach (var item in ToIter(seq))
-                {
-                    yield return func(item);
-                }
-            }
-
-            public static IEnumerable Map(IApply func, IEnumerable[] seqs)
-            {
-                switch (seqs.Length)
-                {
-                    case 1:
-                        {
-                            var args = new object[1];
-                            foreach (var item in ToIter(seqs[0]))
-                            {
-                                args[0] = item;
-                                yield return func.Apply(args);
-                            }
-                            break;
-                        }
-                    case 2:
-                        {
-                            var args = new object[2];
-                            var iter1 = ToIter(seqs[0]).GetEnumerator();
-                            var iter2 = ToIter(seqs[1]).GetEnumerator();
-                            while (iter1.MoveNext() && iter2.MoveNext())
-                            {
-                                args[0] = iter1.Current;
-                                args[1] = iter2.Current;
-                                yield return func.Apply(args);
-                            }
-                            break;
-                        }
-                    case 3:
-                        {
-                            var args = new object[3];
-                            var iter1 = ToIter(seqs[0]).GetEnumerator();
-                            var iter2 = ToIter(seqs[1]).GetEnumerator();
-                            var iter3 = ToIter(seqs[2]).GetEnumerator();
-                            while (iter1.MoveNext() && iter2.MoveNext() && iter3.MoveNext())
-                            {
-                                args[0] = iter1.Current;
-                                args[1] = iter2.Current;
-                                args[2] = iter3.Current;
-                                yield return func.Apply(args);
-                            }
-                            break;
-                        }
-                    default:
-                        {
-                            var iter = new UnisonEnumerator(seqs);
-                            foreach (Vector item in iter)
-                            {
-                                yield return func.Apply(AsArray(item));
-                            }
-                            break;
-                        }
                 }
             }
 
@@ -570,7 +357,7 @@ namespace Kiezel
                 return Merge(left2, right2, test, key);
             }
 
-            public static object Mismatch(IEnumerable seq1, IEnumerable seq2, IApply test, IApply key)
+            public static object Mismatch(IApply test, IEnumerable seq1, IEnumerable seq2)
             {
                 IEnumerator iter1 = ToIter(seq1).GetEnumerator();
                 IEnumerator iter2 = ToIter(seq2).GetEnumerator();
@@ -580,9 +367,19 @@ namespace Kiezel
 
                 while (!atEnd1 && !atEnd2)
                 {
-                    if (!FuncallBool(test, Funcall(key, iter1.Current), Funcall(key, iter2.Current)))
+                    if (test == null)
                     {
-                        break;
+                        if (!Equal(iter1.Current, iter2.Current))
+                        {
+                            break;
+                        }
+                    }
+                    else
+                    {
+                        if (!FuncallBool(test, iter1.Current, iter2.Current))
+                        {
+                            break;
+                        }
                     }
 
                     atEnd1 = !iter1.MoveNext();
@@ -667,41 +464,6 @@ namespace Kiezel
                 }
             }
 
-            public static IEnumerable PartitionBy(IApply func, int maxParts, IEnumerable seq)
-            {
-                object previous = null;
-                var all = new Vector();
-                Vector v = null;
-                foreach (var item in ToIter(seq))
-                {
-                    if (v == null)
-                    {
-                        v = new Vector();
-                        v.Add(item);
-                        previous = Funcall(func, item);
-                    }
-                    else {
-                        var current = Funcall(func, item);
-                        if (all.Count + 1 == maxParts || Equal(current, previous))
-                        {
-                            v.Add(item);
-                        }
-                        else {
-                            all.Add(AsList(v));
-                            v = new Vector();
-                            previous = current;
-                            v.Add(item);
-                        }
-                    }
-                }
-
-                if (v != null)
-                {
-                    all.Add(AsList(v));
-                }
-                return all;
-            }
-
             public static IEnumerable Range(int start, int end, int step)
             {
                 if (step > 0)
@@ -720,46 +482,61 @@ namespace Kiezel
                 }
             }
 
-            public static object ReduceSeq(IApply reducer, IEnumerable seq, object seed, IApply key)
+            public static object Reduce(IApply reducer, object seed, IEnumerable seq)
             {
+                var reducer2 = reducer;
+                var reducible = seq as Reducible;
+                if (reducible != null)
+                {
+                    reducer2 = (IApply)Funcall(reducible.Transform, reducer);
+                    seq = reducible.Seq;
+                }
                 var result = seed;
                 foreach (object x in ToIter(seq))
                 {
                     if (result == MissingValue)
                     {
-                        result = Funcall(key, x);
+                        result = x;
                     }
                     else {
-                        result = Funcall(reducer, result, Funcall(key, x));
+                        result = Funcall(reducer2, result, x);
+                    }
+                    if (Reducedp(result))
+                    {
+                        result = Unreduced(result);
+                        break;
                     }
                 }
-                return result == MissingValue ? null : result;
+                return result == MissingValue ? Funcall(reducer2) : result;
             }
 
-            public static IEnumerable Reductions(IApply reducer, IEnumerable seq, object seed, IApply key)
+            public static IEnumerable Reductions(IApply reducer, object seed, IEnumerable seq)
             {
+                var reducer2 = reducer;
+                var reducible = seq as Reducible;
+                if (reducible != null)
+                {
+                    reducer2 = (IApply)Funcall(reducible.Transform, reducer);
+                    seq = reducible.Seq;
+                }
                 var result = seed;
                 foreach (object x in ToIter(seq))
                 {
                     if (result == MissingValue)
                     {
-                        result = Funcall(key, x);
+                        result = x;
                     }
                     else {
-                        result = Funcall(reducer, result, Funcall(key, x));
+                        result = Funcall(reducer2, result, x);
                     }
-
-                    yield return result;
-                }
-            }
-
-            public static IEnumerable Remove(IApply predicate, IEnumerable seq, IApply key)
-            {
-                foreach (object item in ToIter(seq))
-                {
-                    if (!FuncallBool(predicate, Funcall(key, item)))
+                    if (Reducedp(result))
                     {
-                        yield return item;
+                        result = Unreduced(result);
+                        yield return result;
+                        break;
+                    }
+                    else {
+                        yield return result;
                     }
                 }
             }
@@ -915,68 +692,15 @@ namespace Kiezel
                 }
             }
 
-            public static IEnumerable Take(int count, IEnumerable seq)
-            {
-                if (count > 0)
-                {
-                    foreach (var obj in ToIter(seq))
-                    {
-                        if (--count < 0)
-                        {
-                            break;
-                        }
-                        yield return obj;
-                    }
-                }
-            }
-
-            public static IEnumerable TakeNth(int step, IEnumerable seq)
-            {
-                int countdown = 1;
-
-                foreach (object item in ToIter(seq))
-                {
-                    if (--countdown <= 0)
-                    {
-                        yield return item;
-                        countdown = step;
-                    }
-                }
-            }
-
-            public static IEnumerable TakeUntil(IApply predicate, IEnumerable seq)
-            {
-                foreach (var obj in ToIter(seq))
-                {
-                    if (FuncallBool(predicate, obj))
-                    {
-                        break;
-                    }
-                    yield return obj;
-                }
-            }
-
-            public static IEnumerable TakeWhile(IApply predicate, IEnumerable seq)
-            {
-                foreach (var obj in ToIter(seq))
-                {
-                    if (!FuncallBool(predicate, obj))
-                    {
-                        break;
-                    }
-                    yield return obj;
-                }
-            }
-
-            public static IEnumerable Union(IEnumerable seq1, IEnumerable seq2, IApply test)
+            public static IEnumerable Union(IApply test, IEnumerable seq1, IEnumerable seq2)
             {
                 var z = new Vector();
 
                 foreach (object item in ToIter(seq1))
                 {
-                    var mv = FindItem(z, item, test, null, null);
+                    var mv = IndexOf(item, test, z);
 
-                    if (mv.Item2 == null)
+                    if (mv.Index == -1)
                     {
                         z.Add(item);
                     }
@@ -984,9 +708,9 @@ namespace Kiezel
 
                 foreach (object item in ToIter(seq2))
                 {
-                    var mv = FindItem(z, item, test, null, null);
+                    var mv = IndexOf(item, test, z);
 
-                    if (mv.Item2 == null)
+                    if (mv.Index == -1)
                     {
                         z.Add(item);
                     }

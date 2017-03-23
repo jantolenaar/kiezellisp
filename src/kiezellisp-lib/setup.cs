@@ -47,8 +47,8 @@ namespace Kiezel
 
 #if DEBUG
 
-		public static bool AdaptiveCompilation = false;
-		public static int CompilationThreshold = 50;
+        public static bool AdaptiveCompilation = false;
+        public static int CompilationThreshold = 50;
 
 #else
 
@@ -138,7 +138,7 @@ namespace Kiezel
             var fileVersion = FileVersionInfo.GetVersionInfo(assembly.Location);
             var date = new DateTime(2000, 1, 1).AddDays(fileVersion.FileBuildPart);
 #if DEBUG
-			return String.Format("{0} {1}.{2} (Debug Build {3} - {4:yyyy-MM-dd})", fileVersion.ProductName, fileVersion.FileMajorPart, fileVersion.FileMinorPart, fileVersion.FileBuildPart, date);
+            return String.Format("{0} {1}.{2} (Debug Build {3} - {4:yyyy-MM-dd})", fileVersion.ProductName, fileVersion.FileMajorPart, fileVersion.FileMinorPart, fileVersion.FileBuildPart, date);
 #else
             return string.Format("{0} {1}.{2} (Release Build {3} - {4:yyyy-MM-dd})", fileVersion.ProductName, fileVersion.FileMajorPart, fileVersion.FileMinorPart, fileVersion.FileBuildPart, date);
 #endif
@@ -147,8 +147,14 @@ namespace Kiezel
         public static bool HasFeature(string feature)
         {
             var list = (Cons)Symbols.Features.Value;
-            var result = SeqBase.FindItem(list, feature, Eql, SymbolName, null);
-            return result.Item2 != null;
+            foreach (var item in ToIter(list))
+            {
+                if (SymbolName(item) == feature)
+                {
+                    return true;
+                }
+            }
+            return false;
         }
 
         public static void InitAbstractTypes()
@@ -284,7 +290,39 @@ namespace Kiezel
 
         public static void RestartRuntimeSymbols()
         {
+            Symbols.Cat.FunctionValue = Cat();
             Symbols.MacroexpandHook.VariableValue = Symbols.Funcall.Value;
+        }
+
+        [Lisp("shell:exec")]
+        public static string Exec(string program, string input, string arguments)
+        {
+            using (var proc = new Process())
+            {
+                var info = proc.StartInfo;
+                info.FileName = program;
+                info.RedirectStandardError = true;
+                info.RedirectStandardInput = true;
+                info.RedirectStandardOutput = true;
+                info.UseShellExecute = false;
+                info.Arguments = arguments;
+                proc.Start();
+                using (var inp = proc.StandardInput)
+                using (var outp = proc.StandardOutput)
+                using (var err = proc.StandardError)
+                {
+                    if (input != null)
+                    {
+                        inp.Write(input);
+                    }
+                    inp.Close();
+                    var result = outp.ReadToEnd();
+                    outp.Close();
+                    proc.WaitForExit();
+                    var ok = proc.ExitCode == 0;
+                    return ok ? result : null;
+                }
+            }
         }
 
         public static void RestartSettings()
@@ -315,6 +353,18 @@ namespace Kiezel
                     AddFeature("windows");
                     break;
                 case PlatformID.Unix:
+                    var platform = Exec("uname", null, "-s");
+                    if (platform != null)
+                    {
+                        if (platform.ToLower().IndexOf("linux") != -1)
+                        {
+                            AddFeature("linux");
+                        }
+                        if (platform.ToLower().IndexOf("bsd") != -1)
+                        {
+                            AddFeature("bsd");
+                        }
+                    }
                     if (Directory.Exists("/app"))
                     {
                         AddFeature("flatpak");

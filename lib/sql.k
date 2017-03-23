@@ -108,7 +108,7 @@
     (let get-collection-name (λr (.to-lower (elt r "collectionname"))))
     (let rows1 (.rows (.get-schema database)))
     (let collections (map get-collection-name rows1))
-    (when (find "indexcolumns" collections)
+    (when (index-of "indexcolumns" collections)
         (setf keys (vector))
         (let rows (.rows (.get-schema database "indexcolumns" filter)))
         (loop

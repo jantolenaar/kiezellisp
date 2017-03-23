@@ -135,7 +135,7 @@ $print-escape and $print-base.
     (let sym (and (symbol? a)
                   a))
 
-    (var config (rest (find sym pprint-form-settings :key first)))
+    (var config (rest (first #(= sym (first %1)) pprint-form-settings)))
     (if (and config
              (not (rest config)))
         (setf (rest config) '(:indent)))
@@ -334,7 +334,7 @@ $print-escape and $print-base.
     (var tail (rest expr))
     (write head :escape false)
     (let $pprint-left-margin
-            (if (find :align (rest config))
+            (if (index-of :align (rest config))
                   (+ $pprint-left-margin 1 (.length head) 1)
                 (+ $pprint-left-margin $pprint-indent-size)))
     (var left $pprint-left-margin)
@@ -407,7 +407,7 @@ $print-escape and $print-base.
 (setq $pprint-hook pprint)
 
 ;;;
-;;; Lisp Syntax Colors
+;;; Lisp Syntax Colors (not used)
 ;;;
 
 (defconstant $syntax-color-builtin 		0x0000ff)

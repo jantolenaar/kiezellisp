@@ -1,4 +1,4 @@
-#region Header
+﻿#region Header
 
 // Copyright (C) Jan Tolenaar. See the file LICENSE for details.
 
@@ -985,6 +985,48 @@ namespace Kiezel
         public static Complex MakeComplexFromPolarCoordinates(object a, object b)
         {
             return Complex.FromPolarCoordinates(AsDouble(a), AsDouble(b));
+        }
+
+        [Pure]
+        [Lisp("max")]
+        public static object Max(params object[] args)
+        {
+            if (args.Length == 0)
+            {
+                return null;
+            }
+            else {
+                var result = args[0];
+                for (var i = 1; i < args.Length; ++i)
+                {
+                    if (Greater(args[i], result))
+                    {
+                        result = args[i];
+                    }
+                }
+                return result;
+            }
+        }
+
+        [Pure]
+        [Lisp("min")]
+        public static object Min(params object[] args)
+        {
+            if (args.Length == 0)
+            {
+                return null;
+            }
+            else {
+                var result = args[0];
+                for (var i = 1; i < args.Length; ++i)
+                {
+                    if (Less(args[i], result))
+                    {
+                        result = args[i];
+                    }
+                }
+                return result;
+            }
         }
 
         [Pure,

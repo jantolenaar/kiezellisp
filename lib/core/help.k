@@ -231,7 +231,7 @@
         (print-line "# USAGE")
         (print-line (margin) usage)
         (print-line))
-    (when (find usage usage-list-for-variables)
+    (when (index-of usage usage-list-for-variables)
         (print-line "# SYNTAX")
         (print-line (margin) (.name descr))
         (print-line))
@@ -299,23 +299,23 @@
             (cond
                 ((.starts-with line "~~~")
                     (setf inside-code (not inside-code))
-                    (collect (if inside-code
+                    (collecting (if inside-code
                                 (string italic-on "<delete-lf>")
                                 (string italic-off "<delete-lf>"))))
                 (inside-code
-                    (collect (string (margin) line)))
+                    (collecting (string (margin) line)))
                 ((.starts-with line "### ")
                     (let text (.trim (.substring line 3)))
-                    (collect (string (margin) (bold text)))
-                    (collect ""))
+                    (collecting (string (margin) (bold text)))
+                    (collecting ""))
                 ((.starts-with line "## ")
                     (let text (.to-upper (.trim (.substring line 2))))
-                    (collect (string (margin 1) (bold text))))
+                    (collecting (string (margin 1) (bold text))))
                 ((.starts-with line "# ")
                     (let text (.to-upper (.trim (.substring line 1))))
-                    (collect (bold text)))
+                    (collecting (bold text)))
                 (true
-                    (collect (string (margin) (transform-line line)))))))
+                    (collecting (string (margin) (transform-line line)))))))
     (do
         (string:join "\n" result)
         (string:replace ~ "<delete-lf>\n" "")))

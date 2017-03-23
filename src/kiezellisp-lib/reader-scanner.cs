@@ -137,10 +137,10 @@ namespace Kiezel
 
                     if (sym != null)
                     {
-                        var position = Runtime.Position(sym, Symbols.ShortLambdaVariables);
-                        if (position != null)
+                        var found = Runtime.IndexOf(sym, Symbols.ShortLambdaVariables);
+                        if (found != null)
                         {
-                            index = (int)position;
+                            index = (int)found;
                             if (index == 0)
                             {
                                 index = 1;
@@ -857,11 +857,21 @@ namespace Kiezel
                         break;
                     }
                 }
+                else if (ch == '\b')
+                {
+                    if (buf.Length > 0)
+                    {
+                        buf.Length -= 1;
+                    }
+                }
                 else if (ch == '\n')
                 {
                     break;
                 }
-                buf.Append(ch);
+                else
+                {
+                    buf.Append(ch);
+                }
             }
             return buf.ToString();
         }

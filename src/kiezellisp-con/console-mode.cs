@@ -74,6 +74,7 @@ namespace Kiezel
             }
         }
 
+        [Lisp("read-console")]
         public static string ReplRead()
         {
             try

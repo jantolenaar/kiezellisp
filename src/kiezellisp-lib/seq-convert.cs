@@ -66,6 +66,10 @@ namespace Kiezel
             {
                 return null;
             }
+            else if (seq is Reducible)
+            {
+                return ((Reducible)seq).AsList();
+            }
 
             var v = seq as Cons;
 
@@ -172,6 +176,10 @@ namespace Kiezel
             {
                 return new Vector();
             }
+            else if (seq is Reducible)
+            {
+                return ((Reducible)seq).AsVector();
+            }
 
             var v = seq as Vector;
 
@@ -215,6 +223,11 @@ namespace Kiezel
         public static IEnumerable<object> ConvertToEnumerableObject(IEnumerable seq)
         {
             return ToIter(seq).Cast<object>();
+        }
+
+        public static IEnumerable<T> ConvertToEnumerableObject<T>(IEnumerable seq)
+        {
+            return ToIter(seq).Cast<T>();
         }
 
         [Lisp("as-enumerable")]
