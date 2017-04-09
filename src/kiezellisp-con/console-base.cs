@@ -11,14 +11,12 @@ namespace Kiezel
     using System.Diagnostics;
     using System.Linq;
 
-    [RestrictedImport]
-    public class RuntimeConsoleBase
+    public partial class RuntimeConsole
     {
         #region Static Fields
 
         public static ReplHistory History = new ReplHistory();
         public static Exception LastException;
-        public static ReadLineFunction ReadFunctionImp;
         public static string[] ReplCommands =
         {
             ":clear", ":continue", ":globals", ":quit",
@@ -26,8 +24,6 @@ namespace Kiezel
             ":top", ":exception", ":Exception", ":force",
             ":describe", ":reset", ":time"
         };
-        public static ResetDisplayFunction ResetDisplayFunctionImp;
-        public static ResetRuntimeFunction ResetRuntimeFunctionImp;
         public static Stack<ThreadContextState> state;
         public static Stopwatch timer = Stopwatch.StartNew();
 
@@ -118,7 +114,7 @@ namespace Kiezel
                     case ":clear":
                         {
                             History.Clear();
-                            ResetDisplayFunctionImp();
+                            Console.Clear();
                             state = new Stack<ThreadContextState>();
                             state.Push(Runtime.SaveStackAndFrame());
                             break;
@@ -223,7 +219,7 @@ namespace Kiezel
                             }
                             timer.Reset();
                             timer.Start();
-                            ResetRuntimeFunctionImp(level);
+                            Reset(level);
                             timer.Stop();
                             var time = timer.ElapsedMilliseconds;
                             Runtime.PrintTrace("Startup time: ", time, "ms");
@@ -255,7 +251,7 @@ namespace Kiezel
 
             if (names.Count == 0)
             {
-                names.Add(prefix);
+                //names.Add(prefix);
             }
             names.Sort();
             if (names.Count > 50)
@@ -338,6 +334,9 @@ namespace Kiezel
 
             while (string.IsNullOrWhiteSpace(data))
             {
+                // This happens when only ENTER is pressed
+                // Show prompt again
+
                 int counter = History.Count + 1;
                 string prompt;
                 string debugText = debugging ? "> debug " : "";
@@ -354,16 +353,9 @@ namespace Kiezel
 
                 Runtime.Print(output, prompt);
 
-                while ((data = ReadFunctionImp()) == null)
+                while ((data = ReplRead(true, true, true)) == null)
                 {
-                }
-
-                Runtime.PrintLine(output);
-
-                if (string.IsNullOrWhiteSpace(data))
-                {
-                    // Show prompt again
-                    continue;
+                    // This happens when ESC is pressed
                 }
             }
 
@@ -387,7 +379,7 @@ namespace Kiezel
                     if (!initialized)
                     {
                         initialized = true;
-                        ResetRuntimeFunctionImp(0);
+                        Reset(0);
                     }
 
                     if (string.IsNullOrWhiteSpace(commandOptionArgument))
@@ -499,14 +491,5 @@ namespace Kiezel
 
         #endregion Public Methods
 
-        #region Other
-
-        public delegate string ReadLineFunction();
-
-        public delegate void ResetDisplayFunction();
-
-        public delegate void ResetRuntimeFunction(int level);
-
-        #endregion Other
     }
 }

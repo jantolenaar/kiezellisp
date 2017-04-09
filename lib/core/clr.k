@@ -23,7 +23,6 @@
 ;;; real classes
 ;;;
 
-
 (import "Numerics.BigRational")
 
 (import "System.Array")
@@ -58,14 +57,9 @@
 (import "System.Text.RegularExpressions.Regex")
 (import "System.Text.RegularExpressions.RegexOptions")
 (import "System.TimeSpan")
-
-#if kiezellisp-repl
-(import "System.Drawing.Color")
-#endif
-
-#if kiezellisp-con
 (import "System.Console")
-#endif
+(import "System.ConsoleColor")
+(import "System.ConsoleKey")
 
 (import "Kiezel.AssertFailedException")
 (import "Kiezel.Cons")

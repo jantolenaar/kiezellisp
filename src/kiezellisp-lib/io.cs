@@ -227,17 +227,7 @@ namespace Kiezel
                 stream = GetDynamic(Symbols.StdOut);
             }
 
-            if (stream == null)
-            {
-                return null;
-            }
-            else if (stream is IHasTextWriter)
-            {
-                return ((IHasTextWriter)stream).GetTextWriter();
-            }
-            else {
-                return (TextWriter)stream;
-            }
+            return (TextWriter)stream;
         }
 
         public static char DecodeCharacterName(string token)
@@ -475,25 +465,18 @@ namespace Kiezel
             var first = 0;
             object stream = ConvertToTextWriter(MissingValue);
 
-            if (items.Length > 0 && (items[0] is TextWriter || items[0] is IHasTextWriter))
+            if (items.Length > 0 && items[0] is TextWriter)
             {
                 stream = items[0];
                 first = 1;
             }
 
-            //if (stream is LogTextWriter)
+            // Need single Write/WriteLine.
+            using (var stream2 = new StringWriter())
             {
-                // Need single Write/WriteLine.
-                using (var stream2 = new StringWriter())
-                {
-                    PrintHelper(stream2, false, insertSpace, first, items);
-                    Write(stream2.ToString(), crlf, Symbols.Stream, stream, Symbols.Escape, false);
-                }
+                PrintHelper(stream2, false, insertSpace, first, items);
+                Write(stream2.ToString(), crlf, Symbols.Stream, stream, Symbols.Escape, false);
             }
-            //else
-            //{
-            //    PrintHelper(stream, crlf, first, items);
-            //}
         }
 
         public static void PrintHelper(object stream, bool crlf, bool insertSpace, int first, object[] items)

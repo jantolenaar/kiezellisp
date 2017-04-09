@@ -7,9 +7,12 @@
         "man"
         "set-help-path"
         "$help-path"
+        "$standout-color"
     ))
 
 (in-package "lisp")
+
+(def $standout-color console-color:MAGENTA)
 
 (def $help-path null)
 
@@ -33,117 +36,16 @@
     `(show-help ,(enquote topic)))
 
 (defmacro man (&optional (topic 'man))
-    `(show-man ,(enquote topic)))
+    `(show-help ,(enquote topic)))
 
 (defun enquote(topic)
     (if (cons? topic)
         topic
         (list 'quote topic)))
 
-#if kiezellisp-repl
-
 (defun show-help (topic)
-    (task
-        (show-help-task topic true))
-    (void))
-
-(defun make-documentation-window ()
-    (text-window:open
-        :on-close text-window:send-interrupt-key
-        :caption "Kiezellisp Help"
-        :buffer-height 999))
-
-(defun fill-documentation-window (win text)
-    (with-window-suspended (win)
-        (.resize-buffer win (.buffer-width win) 999)
-        (.set-cursor-pos win 0)
-        (.clear-to-bot win)
-        (print-line win (transform-page-gui win text))
-        (print-line win (string:repeat "-" (.buffer-width win)))
-        (.resize-buffer win (.buffer-width win) (.buffer-height-used win))
-        (.set-window-pos win 0 0)
-        (.set-cursor-pos win 0)))
-
-(defun show-help-task (topic)
-    (let win (make-documentation-window))
-    (var topics (vector))
-    (var index -1)
-    (letfun goto-new-topic (topic)
-        (when topic
-            (let text (get-documentation topic))
-            (incf index)
-            (.remove-range topics index (- (.count topics) index))
-            (.add topics (list topic text))
-            (fill-documentation-window win text)))
-    (letfun command-key? (ch)
-        (or (= ch #\slash)
-            (= ch #\colon)))
-    (letfun escape-key? (key)
-        (or (= key keys:ESCAPE)
-            (and (= key keys:BACK)
-                 (zero? index))))
-    (letfun back-key? (key)
-        (or (= key keys:BACK)
-            (= key keys:LEFT)))
-    (letfun forward-key? (key)
-        (or (= key keys:RIGHT)
-            (= key keys:ENTER)))
-    (letfun click-key? (key)
-        (= key keys:LBUTTON))
-    (goto-new-topic topic)
-    (loop
-        (let info (.read-key win))
-        (let key (.key-data info))
-        (let ch (.key-char info))
-        (let clicks (.mouse-clicks info))
-        (let x (.mouse-col info))
-        (let y (.mouse-row info))
-        (cond
-            ((command-key? ch)
-                (goto-new-topic (command-popup win "topic: ")))
-            ((escape-key? key)
-                (.close win)
-                (return))
-            ((forward-key? key)
-                (when (< (inc index) (.count topics))
-                    (incf index)
-                    (fill-documentation-window win (second (elt topics index)))))
-            ((back-key? key)
-                (when (> index 0)
-                    (decf index)
-                    (fill-documentation-window win (second (elt topics index)))))
-            ((and (click-key? key)
-                  (> clicks 1))
-                (goto-new-topic (.scrape-lisp-word-at win x y)))
-
-                )))
-
-(defun command-popup (win prompt)
-    (let w (.buffer-width win))
-    (let y (+ (.window-top win) (.window-height win) -2))
-    (let saved (.copy-buffer win))
-    (.set-cursor-top win y)
-    (.set-cursor-left win 0)
-    (.clear-to-bot win)
-    (.write win (string:repeat "=" w))
-    (.write win prompt)
-    (let str (.read win :max-chars (- w 1 (.length prompt))
-                        :code-completion true))
-    (.paste win 0 0 saved)
-    (when (not (null? str))
-        (return (.trim str))))
-
-#endif
-
-#if kiezellisp-con
-
-(defun show-help (topic)
-    (show-man topic))
-
-#endif
-
-(defun show-man (topic)
     (let doc (get-documentation topic))
+    (print "\f")
     (more (transform-page doc))
     (void))
 
@@ -227,7 +129,7 @@
         (print-line "# COMPILER-DESCRIPTION")
         (print-line (.indent compiler-documentation (margin)))
         (print-line))
-   (when usage
+    (when usage
         (print-line "# USAGE")
         (print-line (margin) usage)
         (print-line))
@@ -258,36 +160,6 @@
 (defun print-syntax (syn)
     (print (margin))
     (write-line syn :escape false))
-
-#if kiezellisp-repl
-
-(defun transform-page-gui (win text)
-    (letfun transform-line-gui (text)
-        (let bold-pattern1 #/\*\*(\S*?)\*\*/)
-        (let bold-pattern2 #/__(\S*?)__/)
-        (let italic-pattern1 #/\*(\S*?)\*/)
-        (let italic-pattern2 #/_(\S*?)_/)
-        (let code-pattern #/`(\S*?)`/)
-        (let b (.format-html win "b" @"\1"))
-        (let i (.format-html win "i" @"\1"))
-        (let ui (.format-html win "u" i))
-        (do
-            text
-            (.regex-replace ~ bold-pattern1 b)
-            (.regex-replace ~ bold-pattern2 b)
-            (.regex-replace ~ italic-pattern1 i)
-            (.regex-replace ~ italic-pattern2 i)
-            (.regex-replace ~ code-pattern ui)
-            ))
-    (letfun bold-gui (text)
-        (.format-html win "b" text))
-    (let i (.format-html win "i" "x"))
-    (let j (.index-of i "x"))
-    (let i1 (.substring i 0 j))
-    (let i2 (.substring i (inc j)))
-    (transform-page-base text bold-gui i1 i2 transform-line-gui))
-
-#endif
 
 (defun transform-page-base (text bold italic-on italic-off transform-line)
     (let lines (string:split text "\n"))

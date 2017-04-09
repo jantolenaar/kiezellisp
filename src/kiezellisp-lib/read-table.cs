@@ -285,7 +285,7 @@ namespace Kiezel
 
         public static string GetWordFromString(string text, int index, Func<char, bool> wordCharTest)
         {
-            var loc = LocateLeftWord(text, index, wordCharTest);
+            var loc = LocateWord(text, index, false, wordCharTest);
             var word = text.Substring(loc.Begin, loc.Span);
             return word;
         }
@@ -301,7 +301,7 @@ namespace Kiezel
             return item.Type == CharacterType.Constituent;
         }
 
-        public static Location LocateLeftWord(string text, int index, Func<char, bool> wordCharTest = null)
+        public static Location LocateWord(string text, int index, bool leftOnly, Func<char, bool> wordCharTest = null)
         {
             wordCharTest = wordCharTest ?? IsLispWordChar;
 
@@ -322,7 +322,7 @@ namespace Kiezel
             }
 
             var j = index;
-            while (j < text.Length)
+            while (!leftOnly && j < text.Length)
             {
                 var ch = text[j];
                 if (!wordCharTest(ch))

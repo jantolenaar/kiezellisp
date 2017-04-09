@@ -1,6 +1,12 @@
 # Change Log
 
-## 2016/03/23
+## 2017/04/09
+
+*	Removed `kiezellisp-repl` project (text windows).
+*	Added `curses.h` (open source ncurses wrapper).
+*	Improved code-completion in `kiezellisp-con`.
+
+## 2017/03/23
 
 *	Added transducers a la Clojure.
 *	Added `transduce`, `dedupe`, `reduced`, `reduced?`, `unreduced`,

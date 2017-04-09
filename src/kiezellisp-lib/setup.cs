@@ -456,6 +456,7 @@ namespace Kiezel
             Symbols.ReplListenerPort.VariableValue = 8080;
             Symbols.ScriptDirectory.ReadonlyValue = NormalizePath(HomeDirectory);
             Symbols.ScriptName.ReadonlyValue = null;
+            Symbols.StandoutColor.VariableValue = null;
             Symbols.StdErr.VariableValue = null;
             Symbols.StdIn.VariableValue = null;
             Symbols.StdLog.VariableValue = null;

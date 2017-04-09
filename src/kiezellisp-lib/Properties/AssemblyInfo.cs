@@ -12,7 +12,7 @@ using System.Runtime.InteropServices;
 [assembly: AssemblyDescription("")]
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("Tolenaar IT Services")]
-[assembly: AssemblyProduct("Kiezellisp")]
+[assembly: AssemblyProduct("Kiezellisp Library")]
 [assembly: AssemblyCopyright("Copyright \u00a9 Jan Tolenaar 2009-2017")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
@@ -34,5 +34,5 @@ using System.Runtime.InteropServices;
 //
 // You can specify all the values or you can default the Build and Revision Numbers
 // by using the '*' as shown below:
-[assembly: AssemblyVersion("2.0.*")]
-[assembly: AssemblyInformationalVersion("2.0")]
+[assembly: AssemblyVersion("3.0.*")]
+[assembly: AssemblyInformationalVersion("3.0")]

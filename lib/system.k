@@ -16,11 +16,6 @@
 (load "core/struct")
 (load "core/match")
 (load "core/threading")
-
-#if kiezellisp-repl
-(load "core/text-window")
-#endif
-
 (load "core/pprint")
 
 #if repl

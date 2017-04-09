@@ -610,19 +610,7 @@ namespace Kiezel
 
         public static void PrintStream(object stream, string style, string msg)
         {
-            if (stream is IHtmlWriter)
-            {
-                var msg2 = ((IHtmlWriter)stream).Format(style, msg);
-                Write(msg2, Symbols.Stream, stream, Symbols.Escape, false);
-            }
-            else if (stream is ILogWriter)
-            {
-                var log = (ILogWriter)stream;
-                log.WriteLog(style, msg);
-            }
-            else {
-                Write(msg, Symbols.Stream, stream, Symbols.Escape, false);
-            }
+            Write(msg, Symbols.Stream, stream, Symbols.Escape, false);
         }
 
         [Lisp("print-trace")]

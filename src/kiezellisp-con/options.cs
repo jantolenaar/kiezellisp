@@ -42,7 +42,6 @@ namespace Kiezel
             parser.AddOption("--debug");
             parser.AddOption("--release");
             parser.AddOption("--repl");
-            parser.AddOption("--no-repl");
 
             parser.Parse(args);
 
@@ -69,11 +68,6 @@ namespace Kiezel
             if (parser.GetOption("repl") != null)
             {
                 options.Repl = true;
-            }
-
-            if (parser.GetOption("no-repl") != null)
-            {
-                options.Repl = false;
             }
 
             return options;

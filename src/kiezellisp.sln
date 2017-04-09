@@ -9,8 +9,6 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "kiezellisp-embedded-demo", 
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "kiezellisp-con", "kiezellisp-con\kiezellisp-con.csproj", "{19D57ABB-ED62-4B6F-8C4C-FD5A5EADDCC8}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "kiezellisp-repl", "kiezellisp-repl\kiezellisp-repl.csproj", "{2B9726EC-06B2-4586-87B9-BB4F5491D73C}"
-EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -21,10 +19,6 @@ Global
 		{19D57ABB-ED62-4B6F-8C4C-FD5A5EADDCC8}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{19D57ABB-ED62-4B6F-8C4C-FD5A5EADDCC8}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{19D57ABB-ED62-4B6F-8C4C-FD5A5EADDCC8}.Release|Any CPU.Build.0 = Release|Any CPU
-		{2B9726EC-06B2-4586-87B9-BB4F5491D73C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{2B9726EC-06B2-4586-87B9-BB4F5491D73C}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{2B9726EC-06B2-4586-87B9-BB4F5491D73C}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{2B9726EC-06B2-4586-87B9-BB4F5491D73C}.Release|Any CPU.Build.0 = Release|Any CPU
 		{648A838C-3B6C-42B8-ADD3-AC9FF3ADB848}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{648A838C-3B6C-42B8-ADD3-AC9FF3ADB848}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{648A838C-3B6C-42B8-ADD3-AC9FF3ADB848}.Release|Any CPU.ActiveCfg = Release|Any CPU
