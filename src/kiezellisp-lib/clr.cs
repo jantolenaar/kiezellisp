@@ -413,7 +413,7 @@ namespace Kiezel
             return false;
         }
 
-        //[Lisp( "import-namespace" )]
+        [Lisp("import-namespace")]
         public static void ImportNamespace(string namespaceName, params object[] args)
         {
             var kwargs = ParseKwargs(args, new string[] { "package-name-prefix" });

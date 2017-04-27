@@ -425,7 +425,6 @@ namespace Kiezel
                 + target.LimitType.FullName + Runtime.CollectParameterInfo(target, indexes));
             }
 
-            Expression valueExpr = value.Expression;
             Debug.Assert(target.HasValue && target.LimitType != typeof(Array));
             Type valueType;
             var indexingExpr = Runtime.GetIndexingExpression(target, indexes, out valueType);
@@ -439,7 +438,7 @@ namespace Kiezel
                     "No set indexer found: " + target.LimitType.FullName + Runtime.CollectParameterInfo(target, indexes));
             }
 
-            var setIndexExpr = Expression.Assign(indexingExpr, Expression.Convert(valueExpr, valueType));
+            var setIndexExpr = Expression.Assign(indexingExpr, Runtime.ConvertArgument(value, valueType));
 
             BindingRestrictions restrictions = Runtime.GetTargetArgsRestrictions(target, indexes, false);
 
@@ -487,7 +486,7 @@ namespace Kiezel
             if (members.Length == 1 && members[0] is PropertyInfo)
             {
                 var prop = (PropertyInfo)members[0];
-                var val = Expression.Convert(value.Expression, prop.PropertyType);
+                var val = Runtime.ConvertArgument(value, prop.PropertyType);
                 var expr = Expression.Assign(Expression.MakeMemberAccess(Expression.Convert(target.Expression, prop.DeclaringType), prop), val);
                 return new DynamicMetaObject(Runtime.EnsureObjectResult(expr),
                     BindingRestrictions.GetTypeRestriction(target.Expression, target.LimitType));
@@ -495,7 +494,7 @@ namespace Kiezel
             else if (members.Length == 1 && members[0] is FieldInfo)
             {
                 var field = (FieldInfo)members[0];
-                var val = Expression.Convert(value.Expression, field.FieldType);
+                var val = Runtime.ConvertArgument(value, field.FieldType);
                 var expr = Expression.Assign(Expression.MakeMemberAccess(Expression.Convert(target.Expression, field.DeclaringType), field), val);
                 return new DynamicMetaObject(Runtime.EnsureObjectResult(expr),
                     BindingRestrictions.GetTypeRestriction(target.Expression, target.LimitType));

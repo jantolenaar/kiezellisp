@@ -857,13 +857,6 @@ namespace Kiezel
                         break;
                     }
                 }
-                else if (ch == '\b')
-                {
-                    if (buf.Length > 0)
-                    {
-                        buf.Length -= 1;
-                    }
-                }
                 else if (ch == '\n')
                 {
                     break;

@@ -1,9 +1,14 @@
 # Change Log
 
+## 2017/04/17
+
+*	Fixed conversion bug in property and indexer assigments.
+*	Added `xwt.k` (open source gtk...wrapper)
+
 ## 2017/04/09
 
 *	Removed `kiezellisp-repl` project (text windows).
-*	Added `curses.h` (open source ncurses wrapper).
+*	Added `curses.k` (open source ncurses wrapper).
 *	Improved code-completion in `kiezellisp-con`.
 
 ## 2017/03/23

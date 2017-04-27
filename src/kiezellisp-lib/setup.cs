@@ -411,7 +411,6 @@ namespace Kiezel
             LispDocPackage = MakePackage3("example", reserved: true);
 
             // these packages do use lisp package
-            MakePackage3("terminal", useLisp: true);
             UserPackage = MakePackage3("user", useLisp: true);
 
             Symbols.Create();

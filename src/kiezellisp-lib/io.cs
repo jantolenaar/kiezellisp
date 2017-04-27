@@ -408,25 +408,31 @@ namespace Kiezel
         }
 
         [Lisp("peek-char")]
-        public static object PeekChar(TextReader stream)
+        public static object PeekChar()
         {
-            return PeekChar(stream, null);
+            return PeekChar(null);
         }
 
         [Lisp("peek-char")]
-        public static object PeekChar(TextReader stream, object peekType)
+        public static object PeekChar(object peekType)
         {
-            return PeekChar(stream, peekType, true);
+            return PeekChar(peekType, null);
         }
 
         [Lisp("peek-char")]
-        public static object PeekChar(TextReader stream, object peekType, object eofErrorp)
+        public static object PeekChar(object peekType, TextReader stream)
         {
-            return PeekChar(stream, peekType, eofErrorp, null);
+            return PeekChar(peekType, stream, true);
         }
 
         [Lisp("peek-char")]
-        public static object PeekChar(TextReader stream, object peekType, object eofErrorp, object eofValue)
+        public static object PeekChar(object peekType, TextReader stream, object eofErrorp)
+        {
+            return PeekChar(peekType, stream, eofErrorp, null);
+        }
+
+        [Lisp("peek-char")]
+        public static object PeekChar(object peekType, TextReader stream, object eofErrorp, object eofValue)
         {
             var parser = AcquireReader(stream);
             var eofError = ToBool(eofErrorp);
@@ -645,19 +651,25 @@ namespace Kiezel
             }
         }
 
-        [Lisp("read-line", "readln")]
+        [Lisp("read-line")]
+        public static object ReadLine()
+        {
+            return ReadLine(null, true);
+        }
+
+        [Lisp("read-line")]
         public static object ReadLine(TextReader stream)
         {
             return ReadLine(stream, true);
         }
 
-        [Lisp("read-line", "readln")]
+        [Lisp("read-line")]
         public static object ReadLine(TextReader stream, object eofErrorp)
         {
             return ReadLine(stream, eofErrorp, null);
         }
 
-        [Lisp("read-line", "readln")]
+        [Lisp("read-line")]
         public static object ReadLine(TextReader stream, object eofErrorp, object eofValue)
         {
             var parser = AcquireReader(stream);
