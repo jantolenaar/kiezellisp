@@ -1,5 +1,9 @@
 # Change Log
 
+## 2017/05/13
+
+*	Added `#\single-quote`.
+
 ## 2017/04/17
 
 *	Fixed conversion bug in property and indexer assigments.

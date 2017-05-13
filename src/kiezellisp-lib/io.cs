@@ -149,6 +149,7 @@ namespace Kiezel
             new CharacterRepresentation(' ', null, "space"),
             new CharacterRepresentation(':', null, "colon"),
             new CharacterRepresentation(';', null, "semicolon"),
+            new CharacterRepresentation('\'', null, "single-quote"),
             new CharacterRepresentation('"', null, "double-quote"),
             new CharacterRepresentation('(', null, "left-par"),
             new CharacterRepresentation(')', null, "right-par"),
@@ -167,9 +168,22 @@ namespace Kiezel
 
         #region Private Methods
 
-        static bool EndsWithLf(object item)
+        static bool EndsWithWhiteSpace(object item)
         {
-            return (item is string && ((string)item).EndsWith("\n")) || (item is char && ((char)item) == '\n');
+            if (item is string)
+            {
+                var s = (string)item;
+                return s.Length > 0 && char.IsWhiteSpace(s, s.Length - 1);
+            }
+            else if (item is char)
+            {
+                var ch = (char)item;
+                return char.IsWhiteSpace(ch);
+            }
+            else
+            {
+                return false;
+            }
         }
 
         static IEnumerable RewriteCompileTimeBranch(IEnumerable forms)
@@ -491,7 +505,7 @@ namespace Kiezel
             {
                 var item = items[i];
                 Write(item, Symbols.Stream, stream, Symbols.Escape, false);
-                if (insertSpace && !EndsWithLf(item))
+                if (insertSpace && !EndsWithWhiteSpace(item))
                 {
                     Write(' ', Symbols.Stream, stream, Symbols.Escape, false);
                 }
