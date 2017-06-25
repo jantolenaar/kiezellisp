@@ -744,7 +744,6 @@ namespace Kiezel
         public static Symbol SpecialForm;
         public static Symbol SpecialReadonlyVariable;
         public static Symbol SpecialVariable;
-        public static Symbol StandoutColor;
         public static Symbol StdErr;
         public static Symbol StdIn;
         public static Symbol StdLog;
@@ -944,7 +943,6 @@ namespace Kiezel
             SpecialForm = MakeSymbol("special-form");
             SpecialReadonlyVariable = MakeSymbol("special-readonly-variable");
             SpecialVariable = MakeSymbol("special-variable");
-            StandoutColor = MakeSymbol("$standout-color");
             StdErr = MakeSymbol("$stderr");
             StdIn = MakeSymbol("$stdin");
             StdLog = MakeSymbol("$stdlog");

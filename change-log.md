@@ -1,5 +1,9 @@
 # Change Log
 
+## 2017/06/25
+
+*	Added `fg` and `bg` commandline options.
+
 ## 2017/05/13
 
 *	Added `#\single-quote`.

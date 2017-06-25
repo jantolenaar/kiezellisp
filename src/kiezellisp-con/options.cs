@@ -14,6 +14,8 @@ namespace Kiezel
         public bool Repl;
         public string ScriptName;
         public Cons UserArguments;
+        public int ForegroundColor;
+        public int BackgroundColor;
 
         #endregion Fields
 
@@ -25,6 +27,8 @@ namespace Kiezel
             UserArguments = null;
             Debug = true;
             Repl = true;
+            ForegroundColor = -1;
+            BackgroundColor = -1;
         }
 
         #endregion Constructors
@@ -42,6 +46,8 @@ namespace Kiezel
             parser.AddOption("--debug");
             parser.AddOption("--release");
             parser.AddOption("--repl");
+            parser.AddOption("--fg number");
+            parser.AddOption("--bg number");
 
             parser.Parse(args);
 
@@ -53,6 +59,16 @@ namespace Kiezel
                 options.Debug = false;
                 options.Repl = false;
                 options.UserArguments = Runtime.AsList(parser.GetArgumentArray(1));
+            }
+
+            if (parser.GetOption("fg") != null)
+            {
+                options.ForegroundColor = -1 + Number.ParseNumberBase(parser.GetOption("fg"), 10);
+            }
+
+            if (parser.GetOption("bg") != null)
+            {
+                options.BackgroundColor = -1 + Number.ParseNumberBase(parser.GetOption("bg"), 10);
             }
 
             if (parser.GetOption("release") != null)

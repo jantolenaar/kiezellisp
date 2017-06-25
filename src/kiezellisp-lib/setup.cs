@@ -34,6 +34,8 @@ namespace Kiezel
         public static string ProgramFeature;
         public static bool ReadDecimalNumbers;
         public static bool Repl;
+        public static int ForegroundColor;
+        public static int BackgroundColor;
         public static string ScriptName;
         public static bool SetupMode;
         public static Stopwatch StopWatch = Stopwatch.StartNew();
@@ -455,7 +457,6 @@ namespace Kiezel
             Symbols.ReplListenerPort.VariableValue = 8080;
             Symbols.ScriptDirectory.ReadonlyValue = NormalizePath(HomeDirectory);
             Symbols.ScriptName.ReadonlyValue = null;
-            Symbols.StandoutColor.VariableValue = null;
             Symbols.StdErr.VariableValue = null;
             Symbols.StdIn.VariableValue = null;
             Symbols.StdLog.VariableValue = null;

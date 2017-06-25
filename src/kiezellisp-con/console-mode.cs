@@ -21,6 +21,31 @@ namespace Kiezel
     {
         #region Public Methods
 
+        public static void WriteReverse(string text, bool hasBrackets)
+        {
+            var useColor = (Runtime.ForegroundColor != -1 && Runtime.BackgroundColor != -1);
+            if (useColor)
+            {
+                var fg = Console.ForegroundColor;
+                var bg = Console.BackgroundColor;
+                Console.ForegroundColor = bg;
+                Console.BackgroundColor = fg;
+                Console.Write(text);
+                Console.ForegroundColor = fg;
+                Console.BackgroundColor = bg;
+            }
+            else if (!hasBrackets)
+            {
+                Console.Write("[");
+                Console.Write(text);
+                Console.Write("]");
+            }
+            else
+            {
+                Console.Write(text);
+            }
+        }
+
         [Lisp("more")]
         public static void More(string text)
         {
@@ -36,7 +61,7 @@ namespace Kiezel
                     if (count == height)
                     {
                         var prompt = "(Press ' ' or ENTER to continue, 'q' or ESC to quit)";
-                        Console.Write(prompt);
+                        WriteReverse(prompt, true);
                         while (true)
                         {
                             var info = Console.ReadKey(true);
@@ -96,6 +121,7 @@ namespace Kiezel
             catch (Exception ex)
             {
                 Console.Clear();
+                Console.WriteLine(Runtime.GetDiagnostics(ex));
                 Console.WriteLine("Temporarily lost control due to console display changes. Input aborted.");
                 Console.Write("Press ENTER to continue.");
                 Console.ReadLine();
@@ -111,7 +137,6 @@ namespace Kiezel
             var buffer = new StringBuilder();
             var col = 0;
             var row = 0;
-            var standout = Runtime.GetDynamic(Symbols.StandoutColor);
 
             Action<char> writeChar = (char ch) =>
             {
@@ -339,31 +364,35 @@ namespace Kiezel
                                 writeStr(searchTerm);
                                 writeStr("\n");
 
+                                var useColors = (Runtime.ForegroundColor != -1 && Runtime.BackgroundColor != -1);
                                 var fg = Console.ForegroundColor;
+                                var bg = Console.BackgroundColor;
 
                                 for (var i = 0; i < completions.Count; ++i)
                                 {
                                     if (i == index)
                                     {
-                                        if (standout == null)
+                                        if (!useColors)
                                         {
                                             writeStr("[");
                                         }
                                         else
                                         {
-                                            Console.ForegroundColor = (ConsoleColor)standout;
+                                            Console.ForegroundColor = bg;
+                                            Console.BackgroundColor = fg;
                                         }
                                     }
                                     writeStr(completions[i]);
                                     if (i == index)
                                     {
-                                        if (standout == null)
+                                        if (!useColors)
                                         {
                                             writeStr("]");
                                         }
                                         else
                                         {
                                             Console.ForegroundColor = fg;
+                                            Console.BackgroundColor = bg;
                                         }
                                     }
                                     writeChar(' ');
@@ -464,17 +493,29 @@ namespace Kiezel
 
         public static void RunConsoleMode(CommandLineOptions options)
         {
+
             Runtime.ProgramFeature = "kiezellisp-con";
             Runtime.DebugMode = options.Debug;
             Runtime.Repl = options.Repl;
             Runtime.OptimizerEnabled = !Runtime.DebugMode;
             Runtime.ScriptName = options.ScriptName;
             Runtime.UserArguments = options.UserArguments;
+            Runtime.ForegroundColor = options.ForegroundColor;
+            Runtime.BackgroundColor = options.BackgroundColor;
 
             if (options.ScriptName == null)
             {
                 var assembly = Assembly.GetExecutingAssembly();
                 var fileVersion = FileVersionInfo.GetVersionInfo(assembly.Location);
+                if (Runtime.ForegroundColor != -1)
+                {
+                    Console.ForegroundColor = (ConsoleColor)Runtime.ForegroundColor;
+                }
+                if (Runtime.BackgroundColor != -1)
+                {
+                    Console.BackgroundColor = (ConsoleColor)Runtime.BackgroundColor;
+                }
+                Console.Clear();
                 Console.WriteLine(Runtime.GetVersion());
                 Console.WriteLine(fileVersion.LegalCopyright);
                 Console.WriteLine("Type `help` for help on top-level commands");

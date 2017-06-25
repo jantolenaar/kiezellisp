@@ -7,12 +7,9 @@
         "man"
         "set-help-path"
         "$help-path"
-        "$standout-color"
     ))
 
 (in-package "lisp")
-
-(def $standout-color console-color:MAGENTA)
 
 (def $help-path null)
 
