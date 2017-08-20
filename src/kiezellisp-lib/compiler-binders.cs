@@ -85,6 +85,11 @@ namespace Kiezel
 
         #region Public Methods
 
+        public override string ToString()
+        {
+            return string.Format("[KiezelGetIndexBinder]");
+        }
+
         public override DynamicMetaObject FallbackGetIndex(
             DynamicMetaObject target, DynamicMetaObject[] indexes,
             DynamicMetaObject errorSuggestion)
@@ -136,6 +141,11 @@ namespace Kiezel
         #endregion Constructors
 
         #region Public Methods
+
+        public override string ToString()
+        {
+            return string.Format("[KiezelGetMemberBinder {0}]", Name);
+        }
 
         public override DynamicMetaObject FallbackGetMember(DynamicMetaObject target, DynamicMetaObject errorSuggestion)
         {
@@ -191,6 +201,11 @@ namespace Kiezel
         #endregion Constructors
 
         #region Public Methods
+
+        public override string ToString()
+        {
+            return string.Format("[KiezelInvokeBinder]");
+        }
 
         public override DynamicMetaObject FallbackInvoke(
             DynamicMetaObject target, DynamicMetaObject[] args,
@@ -268,6 +283,11 @@ namespace Kiezel
         #endregion Constructors
 
         #region Public Methods
+
+        public override string ToString()
+        {
+            return string.Format("[KiezelInvokeMemberBinder {0}]", Name);
+        }
 
         public override DynamicMetaObject FallbackInvoke(
             DynamicMetaObject target, DynamicMetaObject[] args,
@@ -409,6 +429,11 @@ namespace Kiezel
 
         #region Public Methods
 
+        public override string ToString()
+        {
+            return string.Format("[KiezelSetIndexBinder]");
+        }
+
         public override DynamicMetaObject FallbackSetIndex(
             DynamicMetaObject target, DynamicMetaObject[] indexes,
             DynamicMetaObject value, DynamicMetaObject errorSuggestion)
@@ -460,6 +485,11 @@ namespace Kiezel
         #endregion Constructors
 
         #region Public Methods
+
+        public override string ToString()
+        {
+            return string.Format("[KiezelSetMemberBinder {0}]", Name);
+        }
 
         public override DynamicMetaObject FallbackSetMember(
             DynamicMetaObject target, DynamicMetaObject value,

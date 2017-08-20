@@ -22,11 +22,11 @@
 
 (defun make-obj (type args)
     (let obj (gentemp "obj"))
-    (multiple-let (ctor-args props) (split-with (complement keyword?) args))
-    `(do
-        (let ,obj (,type ,@ctor-args))
-        ,@(init-obj-properties obj props)
-        ,obj))
+    (with-multiple-let (ctor-args props) (split-with (complement keyword?) args)
+	    `(do
+	        (let ,obj (,type ,@ctor-args))
+	        ,@(init-obj-properties obj props)
+	        ,obj)))
 
 (defun init-obj-properties (obj args)
     (loop

@@ -60,7 +60,7 @@
 
 (defun read-string-to-records (text &rest args)
 	(let options (get-options args))
-    (do 
+    (chain (~)
         (read-string-to-grid text options)
         (apply read-grid-to-subgrid (list* ~ args))
         (apply read-grid-to-records (list* ~ args))))
@@ -85,7 +85,7 @@
                                        (left 0)
                                        (width int32:MAX-VALUE)
                                        (height int32:MAX-VALUE))
-    (do 
+    (chain (~)
         (subseq grid top :count height)
         (map #(subseq %1 left :count width) ~)
         (if keep-empty-lines?
@@ -134,7 +134,8 @@
         text))
 
 (defun cleanup-header (text)
-    (do text
+    (chain (~)
+    	text
         (.trim ~)
         (.to-lower ~)
         (.replace ~ " " "-")

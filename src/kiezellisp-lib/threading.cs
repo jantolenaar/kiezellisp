@@ -10,8 +10,6 @@ namespace Kiezel
     using System.Collections;
     using System.Collections.Concurrent;
     using System.Diagnostics;
-    using System.Net;
-    using System.Net.Sockets;
     using System.Threading;
     using System.Threading.Tasks;
 
@@ -52,6 +50,20 @@ namespace Kiezel
             return list.Take();
         }
 
+        public object TryResume(object eofValue)
+        {
+            // called by client of generator
+            object val;
+            if (list.TryTake(out val))
+            {
+                return val;
+            }
+            else
+            {
+                return eofValue;
+            }
+        }
+
         public void Yield(object item)
         {
             // called by generator
@@ -68,28 +80,6 @@ namespace Kiezel
 
     public partial class Runtime
     {
-        #region Static Fields
-
-        public static TcpListener CommandListenerSocket;
-
-        #endregion Static Fields
-
-        #region Private Methods
-
-        private static void AbortCommandListener()
-        {
-            if (CommandListenerSocket != null)
-            {
-                CommandListenerSocket.Stop();
-                CommandListenerSocket = null;
-            }
-        }
-
-        static void InsertExternalCommand(string str)
-        {
-        }
-
-        #endregion Private Methods
 
         #region Public Methods
 
@@ -105,21 +95,8 @@ namespace Kiezel
             return context;
         }
 
-        [Lisp("start-listener")]
-        public static void CreateCommandListener()
-        {
-            var port = (int)GetDynamic(Symbols.ReplListenerPort);
-            CreateCommandListener(port);
-        }
-
-        [Lisp("start-listener")]
-        public static void CreateCommandListener(int port)
-        {
-            Task.Factory.StartNew(Listener, port);
-        }
-
         [Lisp("system:create-generator")]
-        public static object CreateGenerator(ThreadFunc code, params object[] kwargs)
+        public static ThreadContext CreateGenerator(ThreadFunc code, params object[] kwargs)
         {
             object[] args = ParseKwargs(kwargs, new string[] { "capacity" }, 1);
             var capacity = Convert.ToInt32(args[0]);
@@ -136,19 +113,19 @@ namespace Kiezel
         }
 
         [Lisp("system:create-task")]
-        public static object CreateTask(ThreadFunc code)
+        public static ThreadContext CreateTask(ThreadFunc code)
         {
             return CreateTask(code, true);
         }
 
         [Lisp("system:create-task")]
-        public static object CreateTask(ThreadFunc code, bool start)
+        public static ThreadContext CreateTask(ThreadFunc code, bool start)
         {
             var specials = GetCurrentThread().SpecialStack;
             return CreateTaskWithContext(code, new ThreadContext(specials), start);
         }
 
-        public static object CreateTaskWithContext(ThreadFunc code, ThreadContext context, bool start)
+        public static ThreadContext CreateTaskWithContext(ThreadFunc code, ThreadContext context, bool start)
         {
             Func<object> wrapper = () =>
             {
@@ -184,19 +161,19 @@ namespace Kiezel
         }
 
         [Lisp("system:create-thread")]
-        public static object CreateThread(ThreadFunc code)
+        public static ThreadContext CreateThread(ThreadFunc code)
         {
             return CreateThread(code, true);
         }
 
         [Lisp("system:create-thread")]
-        public static object CreateThread(ThreadFunc code, bool start)
+        public static ThreadContext CreateThread(ThreadFunc code, bool start)
         {
             var specials = GetCurrentThread().SpecialStack;
             return CreateThreadWithContext(code, new ThreadContext(specials), start);
         }
 
-        public static object CreateThreadWithContext(ThreadFunc code, ThreadContext context, bool start)
+        public static ThreadContext CreateThreadWithContext(ThreadFunc code, ThreadContext context, bool start)
         {
             ThreadStart wrapper = () =>
             {
@@ -259,44 +236,6 @@ namespace Kiezel
             return task.GetResult();
         }
 
-        public static void Listener(object state)
-        {
-            var data = new byte[60000];
-
-            while (true)
-            {
-                try
-                {
-                    var port = (int)state;
-                    CommandListenerSocket = new TcpListener(IPAddress.Loopback, port);
-                    CommandListenerSocket.Start();
-
-                    while (true)
-                    {
-                        using (var socket = CommandListenerSocket.AcceptTcpClient())
-                        {
-                            socket.NoDelay = true;
-                            socket.LingerState = new LingerOption(false, 0);
-                            using (var stream = socket.GetStream())
-                            {
-                                var count = stream.Read(data, 0, data.Length);
-                                var str = System.Text.Encoding.UTF8.GetString(data, 0, count);
-                                // TO DO
-                                InsertExternalCommand(str);
-                            }
-                        }
-                    }
-                }
-                catch
-                {
-                    // Mono: long enough for program to exit before restarting listener
-                    Sleep(1000);
-                }
-
-                // no recovery
-                break;
-            }
-        }
 
         [Lisp("resume")]
         public static object Resume(ThreadContext ctx)
@@ -305,21 +244,11 @@ namespace Kiezel
             return context.Resume();
         }
 
-        //[Lisp("send")]
-        public static int Send(string text)
+        [Lisp("try-resume")]
+        public static object TryResume(ThreadContext ctx, object eofValue)
         {
-            return Send(text, 8080);
-        }
-
-        //[Lisp( "send" )]
-        public static int Send(string text, int port)
-        {
-            using (var socket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp))
-            {
-                socket.Connect(new IPEndPoint(IPAddress.Loopback, port));
-                var data = System.Text.Encoding.ASCII.GetBytes(text);
-                return socket.Send(data);
-            }
+            var context = CheckGeneratorThreadContext(ctx);
+            return context.TryResume(eofValue);
         }
 
         [Lisp("sleep")]
@@ -492,7 +421,7 @@ namespace Kiezel
             NestingDepth = saved.NestingDepth;
         }
 
-        public ThreadContextState SaveStackAndFrame(Frame frame = null, Cons form = null)
+        public ThreadContextState SaveStackAndFrame(Frame frame, Cons form)
         {
             var saved = new ThreadContextState();
 
@@ -510,7 +439,7 @@ namespace Kiezel
 
             if (frame != null)
             {
-                Frame = new Frame(frame, null);
+                Frame = frame;
                 Frame.Link = saved.Frame;
             }
 
@@ -554,7 +483,7 @@ namespace Kiezel
         #endregion Public Methods
     }
 
-    public struct ThreadContextState
+    public class ThreadContextState
     {
         #region Fields
 

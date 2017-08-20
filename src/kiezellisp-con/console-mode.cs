@@ -49,6 +49,12 @@ namespace Kiezel
         [Lisp("more")]
         public static void More(string text)
         {
+            if (Console.IsInputRedirected)
+            {
+                Console.Write(text);
+                return;
+            }
+
             var height = Console.WindowHeight - 1;
             var count = 0;
             foreach (var ch in text)
@@ -115,8 +121,20 @@ namespace Kiezel
         {
             try
             {
-                var s = ReplReadImp(lispCompletion, symbolCompletion, crlf);
-                return s;
+                if (Console.IsInputRedirected)
+                {
+                    var s = Console.ReadLine();
+                    if (s == null)
+                    {
+                        Runtime.Exit();
+                    }
+                    return s;
+                }
+                else
+                {
+                    var s = ReplReadImp(lispCompletion, symbolCompletion, crlf);
+                    return s;
+                }
             }
             catch (Exception ex)
             {
@@ -128,6 +146,7 @@ namespace Kiezel
                 return "";
             }
         }
+
 
         public static string ReplReadImp(bool lispCompletion, bool symbolCompletion, bool crlf)
         {
@@ -212,14 +231,34 @@ namespace Kiezel
                 // get next key
                 //
 
+                ConsoleKeyInfo keyInfo;
+                ConsoleKey key;
+                ConsoleModifiers mod;
+                char ch;
+
                 Console.SetCursorPosition(col, row);
-                var keyInfo = Console.ReadKey(true);
+
+            readKeyRetry:
+
+                if (TryReadCommandListener(out ch))
+                {
+                    keyInfo = new ConsoleKeyInfo(ch, 0, false, false, false);
+                }
+                else if (Console.KeyAvailable)
+                {
+                    keyInfo = Console.ReadKey(true);
+                }
+                else
+                {
+                    Runtime.Sleep(10);
+                    goto readKeyRetry;
+                }
 
             codeCompletionRetry:
 
-                var key = keyInfo.Key;
-                var mod = keyInfo.Modifiers;
-                var ch = keyInfo.KeyChar;
+                key = keyInfo.Key;
+                mod = keyInfo.Modifiers;
+                ch = keyInfo.KeyChar;
 
                 switch (key)
                 {
@@ -480,7 +519,26 @@ namespace Kiezel
                                         break;
                                 }
                             }
-                            else if (ch >= ' ')
+                            else if (ch == '\n')
+                            {
+                                var s = buffer.ToString();
+                                if (mod != ConsoleModifiers.Control && IsCompleteSourceCode(s))
+                                {
+                                    pos = buffer.Length;
+                                    paint();
+                                    if (crlf)
+                                    {
+                                        writeChar('\n');
+                                    }
+                                    return s;
+                                }
+                                else {
+                                    writeChar('\n');
+                                    buffer.Append('\n');
+                                    ++pos;
+                                }
+                            }
+                            else //if (ch >= ' ')
                             {
                                 buffer.Insert(pos, ch);
                                 ++pos;
@@ -495,9 +553,7 @@ namespace Kiezel
         {
 
             Runtime.ProgramFeature = "kiezellisp-con";
-            Runtime.DebugMode = options.Debug;
             Runtime.Repl = options.Repl;
-            Runtime.OptimizerEnabled = !Runtime.DebugMode;
             Runtime.ScriptName = options.ScriptName;
             Runtime.UserArguments = options.UserArguments;
             Runtime.ForegroundColor = options.ForegroundColor;
@@ -511,9 +567,13 @@ namespace Kiezel
                 {
                     Console.ForegroundColor = (ConsoleColor)Runtime.ForegroundColor;
                 }
-                if (Runtime.BackgroundColor != -1)
+                var term = System.Environment.GetEnvironmentVariable("TERM");
+                if (term != "xterm")
                 {
-                    Console.BackgroundColor = (ConsoleColor)Runtime.BackgroundColor;
+                    if (Runtime.BackgroundColor != -1)
+                    {
+                        Console.BackgroundColor = (ConsoleColor)Runtime.BackgroundColor;
+                    }
                 }
                 Console.Clear();
                 Console.WriteLine(Runtime.GetVersion());

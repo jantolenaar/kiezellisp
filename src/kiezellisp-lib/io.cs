@@ -106,7 +106,7 @@ namespace Kiezel
                         }
 
                         // Give other process a chance to finish writing
-                        System.Threading.Thread.Sleep(10);
+                        Runtime.Sleep(10);
                     }
                 }
             }

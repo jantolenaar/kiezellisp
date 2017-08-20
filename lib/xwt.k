@@ -358,7 +358,7 @@
 					(remove #(.contains %1 "<"))
 					(map #(string "    \"" %1 "\""))))
 
-	(do
+	(chain (~)
 		(sequence xform (list-all-packages))
 		(sort ~)
 		(file:write-all-lines "/home/jan/xwt-classes.txt" ~)))

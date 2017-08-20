@@ -134,6 +134,34 @@ namespace Kiezel
             }
         }
 
+        [Lisp("list-assemblies")]
+        public static void ListAssemblies()
+        {
+            var i = 0;
+
+            foreach (Assembly asm in AppDomain.CurrentDomain.GetAssemblies())
+            {
+                ++i;
+                PrintLine(i, ": ", asm.FullName);
+            }
+
+            PrintLine();
+            i = 0;
+
+            foreach (Assembly asm in AppDomain.CurrentDomain.GetAssemblies())
+            {
+                ++i;
+                if (asm.IsDynamic)
+                {
+                    PrintLine(i, ": ", "(dynamic)");
+                }
+                else
+                {
+                    PrintLine(i, ": ", asm.Location);
+                }
+            }
+        }
+
         public static Type GetTypeForImport(string typeName, Type[] typeParameters)
         {
             if (typeParameters != null && typeParameters.Length != 0)

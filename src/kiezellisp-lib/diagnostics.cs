@@ -12,10 +12,34 @@ namespace Kiezel
     using System.IO;
     using System.Linq;
     using System.Reflection;
+    using System.Diagnostics;
+
+    public struct CpuTime
+    {
+        public double User;
+        public double System;
+
+        public CpuTime(double u, double s)
+        {
+            User = u;
+            System = s;
+        }
+
+        public static CpuTime operator -(CpuTime t2, CpuTime t1)
+        {
+            return new CpuTime(Math.Round(t2.User - t1.User, 3), Math.Round(t2.System - t1.System, 3));
+        }
+    }
 
     public partial class Runtime
     {
         #region Public Methods
+
+        public static CpuTime GetCpuTime()
+        {
+            var p = Process.GetCurrentProcess();
+            return new CpuTime(p.UserProcessorTime.TotalSeconds, p.PrivilegedProcessorTime.TotalSeconds);
+        }
 
         [Lisp("as-prototype")]
         public static Prototype AsPrototype(object obj)
@@ -128,19 +152,23 @@ namespace Kiezel
 
         public static void DumpDictionary(object stream, Prototype prototype)
         {
-            if (prototype == null)
+            if (prototype != null)
             {
-                return;
+                DumpDictionary(stream, prototype.Dict);
             }
+        }
 
-            var dict = prototype.Dict;
-
-            foreach (string key in ToIter(SeqBase.Sort(dict.Keys, CompareApply, IdentityApply)))
+        public static void DumpDictionary(object stream, PrototypeDictionary dict)
+        {
+            if (dict != null)
             {
-                object val = dict[key];
-                string line = string.Format("{0} => ", key);
-                Write(line, Symbols.Escape, false, Symbols.Stream, stream);
-                PrettyPrintLine(stream, line.Length, null, val);
+                foreach (var key in ToIter(SeqBase.Sort(dict.Keys, CompareApply, IdentityApply)))
+                {
+                    object val = dict[key];
+                    string line = string.Format("{0} => ", key);
+                    Write(line, Symbols.Escape, false, Symbols.Stream, stream);
+                    PrettyPrintLine(stream, line.Length, null, val);
+                }
             }
         }
 
@@ -522,50 +550,10 @@ namespace Kiezel
             return Prototype.FromDictionary(env);
         }
 
-        //[Lisp( "get-lexical-variables-dictionary" )]
-        public static Prototype GetLexicalVariablesDictionary(int pos)
+        public static PrototypeDictionary GetLexicalVariablesDictionary(int pos)
         {
             Frame frame = GetFrameAt(pos);
-
-            if (frame == null)
-            {
-                return null;
-            }
-
-            var env = new PrototypeDictionary();
-
-            for (; frame != null; frame = frame.Link)
-            {
-                if (frame.Names != null)
-                {
-                    for (var i = 0; i < frame.Names.Count; ++i)
-                    {
-                        var key = frame.Names[i].DiagnosticsName;
-                        object value = null;
-                        if (frame.Values != null && i < frame.Values.Count)
-                        {
-                            value = frame.Values[i];
-                        }
-                        if (key == Symbols.Tilde.Name)
-                        {
-                            if (frame == CurrentThreadContext.Frame)
-                            {
-                                env[key] = value;
-                            }
-                            else if (!env.ContainsKey(key))
-                            {
-                                env[key] = value;
-                            }
-                        }
-                        else if (!env.ContainsKey(key))
-                        {
-                            env[key] = value;
-                        }
-                    }
-                }
-            }
-
-            return Prototype.FromDictionary(env);
+            return (frame == null) ? new PrototypeDictionary() : frame.GetDictionary();
         }
 
         public static SpecialVariables GetSpecialVariablesAt(int pos)
@@ -623,12 +611,20 @@ namespace Kiezel
         [Lisp("print-warning")]
         public static void PrintWarning(params object[] args)
         {
-            if (DebugMode && ToBool(GetDynamic(Symbols.EnableWarnings)))
+            //if (DebugMode && ToBool(GetDynamic(Symbols.EnableWarnings)))
+            if (ToBool(GetDynamic(Symbols.EnableWarnings)))
             {
                 var stream = GetDynamic(Symbols.StdErr);
                 var text = "Warning: " + MakeString(args) + "\n";
                 PrintStream(stream, "warning", text);
             }
+        }
+
+        [Lisp("set-debug-level")]
+        public static void SetDebugLevel(int level)
+        {
+            DebugLevel = Math.Max(0, Math.Min(level, 2));
+            Symbols.Debugging.ConstantValue = (DebugLevel == 2);
         }
 
         [Lisp("throw-error")]

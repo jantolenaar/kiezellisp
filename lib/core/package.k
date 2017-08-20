@@ -12,10 +12,7 @@
     `(defpackage-imp ,name ',options))
 
 (defun get-option (keyword options)
-    (do
-        options
-        (filter #(= (car %1) keyword) ~)
-        (map rest ~)))
+    (map rest (filter #(= (car %1) keyword) options)))
 
 (defun defpackage-imp (name options)
     (let $package (make-package name))

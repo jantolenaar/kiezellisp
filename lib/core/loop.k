@@ -102,18 +102,19 @@
 (defun loop-macroexpand-list (forms)
     (map loop-macroexpand-all forms))
 
-(defmacro prologue ()
-    `(merging-do
+(defmacro define-clause-pattern (name &body forms)
+    `(defun ,name (form)
         (var arg1)
         (var arg2)
         (var arg3)
         (var arg4)
-        (declare (ignore arg1 arg2  arg3 arg4))
+        (declare (ignore arg1 arg2 arg3 arg4))
         (letfun match (x)
             (let seq (pattern-match x form))
             (when (list? seq)
                 (multiple-setf (arg1 arg2 arg3 arg4) seq)
-                true))))
+                true))
+        (cond ,@forms)))
 
 (defun generate-code ()
     `(do
@@ -127,7 +128,7 @@
         (goto test-label)
         ,@(if $finish-label-used '((label finish-label)))
         ,@$final-steps
-        ,@(if $break-label-used '((label break-label)))))
+        ,@(if $break-label-used '((label break-label dummy-value)))))
 
 (defun pattern-match (pattern form)
     (cond
@@ -169,39 +170,35 @@
 (defun finally-clause (form)
     (do-finally (loop-macroexpand-list (rest form))))
 
-(defun for-clause (form)
-    (prologue)
-    (cond
-        ((match '(:for ? :times))
-            (do-enumerator (gentemp "times") `(range-enumerator 0 ,arg1 1)))
-        ((match '(:for ? :from ? :to ? :by ?))
-            (do-enumerator arg1 `(series-enumerator ,arg2 ,arg3 ,arg4)))
-        ((match '(:for ? :from ? :to ?))
-            (do-enumerator arg1 `(series-enumerator ,arg2 ,arg3 1)))
-        ((match '(:for ? :from ? :downto ?))
-            (do-enumerator arg1 `(series-enumerator ,arg2 ,arg3 -1)))
-        ((match '(:for ? :from ? :above ?))
-            (do-enumerator arg1 `(range-enumerator ,arg2 ,arg3 -1)))
-        ((match '(:for ? :from ? :below ?))
-            (do-enumerator arg1 `(range-enumerator ,arg2 ,arg3 1)))
-        ((match '(:for ? :from ?))
-            (do-enumerator arg1 `(range-enumerator ,arg2 int32:MAX-VALUE 1)))
-        ((match '(:for ? :in ?))
-            (do-enumerator arg1 arg2))
-        ((match '(:for ? :in-list ? :by ?))
-            (do-enumerator arg1 `(in-list-enumerator ,arg2 ,arg3)))
-        ((match '(:for ? :in-list ?))
-            (do-enumerator arg1 `(in-list-enumerator ,arg2 cdr)))
-        ((match '(:for ? :on-list ? :by ?))
-            (do-enumerator arg1 `(on-list-enumerator ,arg2 ,arg3)))
-        ((match '(:for ? :on-list ?))
-            (do-enumerator arg1 `(on-list-enumerator ,arg2 cdr)))
-        (true
-            (throw-error "Invalid <for> clause in loop"))))
+(define-clause-pattern for-clause 
+    ((match '(:for ? :times))
+        (do-enumerator (gentemp "times") `(range-enumerator 0 ,arg1 1)))
+    ((match '(:for ? :from ? :to ? :by ?))
+        (do-enumerator arg1 `(series-enumerator ,arg2 ,arg3 ,arg4)))
+    ((match '(:for ? :from ? :to ?))
+        (do-enumerator arg1 `(series-enumerator ,arg2 ,arg3 1)))
+    ((match '(:for ? :from ? :downto ?))
+        (do-enumerator arg1 `(series-enumerator ,arg2 ,arg3 -1)))
+    ((match '(:for ? :from ? :above ?))
+        (do-enumerator arg1 `(range-enumerator ,arg2 ,arg3 -1)))
+    ((match '(:for ? :from ? :below ?))
+        (do-enumerator arg1 `(range-enumerator ,arg2 ,arg3 1)))
+    ((match '(:for ? :from ?))
+        (do-enumerator arg1 `(range-enumerator ,arg2 int32:MAX-VALUE 1)))
+    ((match '(:for ? :in ?))
+        (do-enumerator arg1 arg2))
+    ((match '(:for ? :in-list ? :by ?))
+        (do-enumerator arg1 `(in-list-enumerator ,arg2 ,arg3)))
+    ((match '(:for ? :in-list ?))
+        (do-enumerator arg1 `(in-list-enumerator ,arg2 cdr)))
+    ((match '(:for ? :on-list ? :by ?))
+        (do-enumerator arg1 `(on-list-enumerator ,arg2 ,arg3)))
+    ((match '(:for ? :on-list ?))
+        (do-enumerator arg1 `(on-list-enumerator ,arg2 cdr)))
+    (true
+        (throw-error "Invalid <for> clause in loop")))
 
-(defun generate-clause (form)
-    (prologue)
-    (cond
+(define-clause-pattern generate-clause
         ((match '(:generate ? :from ? :to ? :by ?))
             (do-generator arg1 `(series-enumerator ,arg2 ,arg3 ,arg4)))
         ((match '(:generate ? :from ? :to ?))
@@ -225,15 +222,13 @@
         ((match '(:generate ? :on-list ?))
             (do-generator arg1 `(on-list-enumerator ,arg2 cdr)))
         (true
-            (throw-error "Invalid <generate> clause in loop"))))
+            (throw-error "Invalid <generate> clause in loop")))
 
-(defun with-clause (form)
-    (prologue)
-    (cond
+(define-clause-pattern with-clause
         ((match '(:with ? :initially ? :then ?))
             (do-init-then arg1 arg2 arg3))
         (true
-            (throw-error "Invalid <with> clause in loop"))))
+            (throw-error "Invalid <with> clause in loop")))
 
 (defun do-code (form)
     (.add $body (loop-macroexpand-all form))
@@ -275,9 +270,7 @@
 ;;; level 1 accumulator handlers
 ;;;
 
-(defun next-clause (form)
-    (prologue)
-    (cond
+(define-clause-pattern next-clause
         ((match '(next ?))
             (let sym arg1)
             (check-symbol sym)
@@ -289,11 +282,9 @@
                 (setf ,arg1 (ienumerator:current ,range-var))
                 ,arg1))
         (true
-            (throw-error "Invalid <next> clause in loop"))))
+            (throw-error "Invalid <next> clause in loop")))
 
-(defun break-clause (form)
-    (prologue)
-    (cond
+(define-clause-pattern break-clause
         ((match '(break))
             (setf $break-label-used true)
             `(goto break-label))
@@ -301,47 +292,37 @@
             (setf $break-label-used true)
             `(goto break-label ,arg1))
         (true
-            (throw-error "Invalid <break> clause in loop"))))
+            (throw-error "Invalid <break> clause in loop")))
 
-(defun break-if-clause (form)
-    (prologue)
-    (cond
+(define-clause-pattern break-if-clause
         ((match '(break-if ?))
             `(if ,arg1 (break)))
         ((match '(break-if ? ?))
             `(if ,arg1 (break ,arg2)))
         (true
-            (throw-error "Invalid <break-if> clause in loop"))))
+            (throw-error "Invalid <break-if> clause in loop")))
 
-(defun continue-clause (form)
-    (prologue)
-    (cond
+(define-clause-pattern continue-clause
         ((match '(continue))
             (setf $continue-label-used true)
             `(goto continue-label))
         (true
-            (throw-error "Invalid <continue> clause in loop"))))
+            (throw-error "Invalid <continue> clause in loop")))
 
-(defun continue-if-clause (form)
-    (prologue)
-    (cond
+(define-clause-pattern continue-if-clause
         ((match '(continue-if ?))
             `(if ,arg1 (continue)))
         (true
-            (throw-error "Invalid <continue-if> clause in loop"))))
+            (throw-error "Invalid <continue-if> clause in loop")))
 
-(defun collect-each-clause (form)
-    (prologue)
-    (cond
+(define-clause-pattern collect-each-clause
         ((match '(collect-each ?))
             (pushnew '%accumulator $collect-vars)
             `(.add-range %accumulator ,arg1))
         (true
-            (throw-error "Invalid <collect-each> clause in loop"))))
+            (throw-error "Invalid <collect-each> clause in loop")))
 
-(defun collecting-clause (form)
-    (prologue)
-    (cond
+(define-clause-pattern collecting-clause
         ((match '(collecting ? :into ?))
             (check-symbol arg2)
             (pushnew arg2 $collect-vars)
@@ -350,11 +331,9 @@
             (pushnew '%accumulator $collect-vars)
             `(.add %accumulator ,arg1))
         (true
-            (throw-error "Invalid <collecting> clause in loop"))))
+            (throw-error "Invalid <collecting> clause in loop")))
 
-(defun counting-clause (form)
-    (prologue)
-    (cond
+(define-clause-pattern counting-clause
         ((match '(counting ? :into ?))
             (check-symbol arg2)
             (pushnew arg2 $summing-vars)
@@ -365,28 +344,22 @@
             `(if ,arg1
                 (incf %accumulator)))
         (true
-            (throw-error "Invalid <counting> clause in loop"))))
+            (throw-error "Invalid <counting> clause in loop")))
 
-(defun finish-clause (form)
-    (prologue)
-    (cond
+(define-clause-pattern finish-clause
         ((match '(finish))
             (setf $finish-label-used true)
             `(goto finish-label))
         (true
-            (throw-error "Invalid <finish> clause in loop"))))
+            (throw-error "Invalid <finish> clause in loop")))
 
-(defun finish-if-clause (form)
-    (prologue)
-    (cond
+(define-clause-pattern finish-if-clause
         ((match '(finish-if ?))
             `(if ,arg1 (finish)))
         (true
-            (throw-error "Invalid <finish-if> clause in loop"))))
+            (throw-error "Invalid <finish-if> clause in loop")))
 
-(defun summing-clause (form)
-    (prologue)
-    (cond
+(define-clause-pattern summing-clause
         ((match '(summing ? :into ?))
             (check-symbol arg2)
             (pushnew arg2 $summing-vars)
@@ -395,11 +368,9 @@
             (pushnew '%accumulator $summing-vars)
             `(incf %accumulator ,arg1))
         (true
-            (throw-error "Invalid <summing> clause in loop"))))
+            (throw-error "Invalid <summing> clause in loop")))
 
-(defun multiplying-clause (form)
-    (prologue)
-    (cond
+(define-clause-pattern multiplying-clause
         ((match '(multiplying ? :into ?))
             (check-symbol arg2)
             (pushnew arg2 $multiplying-vars)
@@ -408,27 +379,23 @@
             (pushnew '%accumulator $multiplying-vars)
             `(setf %accumulator (* %accumulator ,arg1)))
         (true
-            (throw-error "Invalid <multiplying> clause in loop"))))
+            (throw-error "Invalid <multiplying> clause in loop")))
 
-(defun maximizing-clause (form)
-    (prologue)
-    (cond
+(define-clause-pattern maximizing-clause
         ((match '(maximizing ? :into ?))
             (do-maximizing arg2 arg1))
         ((match '(maximizing ?))
             (do-maximizing '%accumulator arg1))
         (true
-            (throw-error "Invalid <maximizing> clause in loop"))))
+            (throw-error "Invalid <maximizing> clause in loop")))
 
-(defun minimizing-clause (form)
-    (prologue)
-    (cond
+(define-clause-pattern minimizing-clause
         ((match '(minimizing ? :into ?))
             (do-minimizing arg2 arg1))
         ((match '(minimizing ?))
             (do-minimizing '%accumulator arg1))
         (true
-            (throw-error "Invalid <minimizing> clause in loop"))))
+            (throw-error "Invalid <minimizing> clause in loop")))
 
 ;;;
 ;;; level 2 accumulator handlers

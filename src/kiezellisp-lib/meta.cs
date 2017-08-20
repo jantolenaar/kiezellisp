@@ -8,16 +8,11 @@ namespace Kiezel
 {
     using System;
     using System.Threading;
+    using System.Linq.Expressions;
 
     public partial class Runtime
     {
         #region Public Methods
-
-        [Lisp("add-macro-to-environment")]
-        public static void AddMacroToEnvironment(Symbol localName, Symbol globalName, AnalysisScope env)
-        {
-            env.DefineMacro(localName, globalName.CompilerValue, ScopeFlags.All);
-        }
 
         [Lisp("code-walk")]
         public static object CodeWalk(object form, Func<object, object> transform)
@@ -31,7 +26,7 @@ namespace Kiezel
         {
             if (env == null)
             {
-                env = new AnalysisScope(null, "codewalk");
+                env = new AnalysisScope(null);
             }
 
             form = transform(form, env);
@@ -57,7 +52,6 @@ namespace Kiezel
                         }
                     case "def":
                     case "var":
-                    case "hidden-var":
                     case "let":
                     case "defconstant":
                     case "lazy":
@@ -70,11 +64,11 @@ namespace Kiezel
                             {
                                 foreach (var sym in ToIter(variables))
                                 {
-                                    env.DefineFrameLocal((Symbol)sym, ScopeFlags.All);
+                                    env.DefineVariable((Symbol)sym, ScopeFlags.All);
                                 }
                             }
                             else {
-                                env.DefineFrameLocal((Symbol)variables, ScopeFlags.All);
+                                env.DefineVariable((Symbol)variables, ScopeFlags.All);
                             }
                             break;
                         }
@@ -110,7 +104,7 @@ namespace Kiezel
                         }
                     case "do":
                         {
-                            var env2 = new AnalysisScope(env, "do");
+                            var env2 = new AnalysisScope(env);
                             forms = CodeWalkListAt(1, forms, transform, env2);
                             break;
                         }
@@ -145,7 +139,7 @@ namespace Kiezel
         {
             if (env == null)
             {
-                env = new AnalysisScope(null, "codewalk");
+                env = new AnalysisScope(null);
             }
 
             if (forms == null)
@@ -212,20 +206,20 @@ namespace Kiezel
             return result;
         }
 
-        [Lisp("eval")]
-        public static object Eval(object expr)
+        [Lisp("compile")]
+        public static Expression Compile(object expr)
         {
             //
             // Empty lexical scope!
             //
             var scope = new AnalysisScope();
-            return Execute(Compile(expr, scope));
+            return Compile(expr, scope);
         }
 
-        [Lisp("find-name-in-environment")]
-        public static bool FindNameOrMacroInEnvironment(Symbol sym, AnalysisScope env)
+        [Lisp("eval")]
+        public static object Eval(object expr)
         {
-            return env != null && env.FindLocal(sym) != null;
+            return Execute(Compile(expr));
         }
 
         [Lisp("gensym", "gentemp")]
@@ -300,7 +294,7 @@ namespace Kiezel
 
             if (sym != null)
             {
-                var entry = env.FindLocal(sym);
+                var entry = env.FindLocal(sym, ScopeFlags.Referenced);
                 var macro = (entry != null) ? entry.SymbolMacroValue : sym.SymbolMacroValue;
                 if (macro != null)
                 {
@@ -322,12 +316,12 @@ namespace Kiezel
                     return expr;
                 }
 
-                var entry = env.FindLocal(head);
+                var entry = env.FindLocal(head, ScopeFlags.Referenced);
                 var macro = (entry != null) ? entry.MacroValue : head.MacroValue;
                 if (macro != null)
                 {
                     var hook = (IApply)GetDynamic(Symbols.MacroexpandHook);
-                    return Funcall(hook, macro, form, new AnalysisScope(env, "try-macroexpand"));
+                    return Funcall(hook, macro, form, new AnalysisScope(env));
                 }
                 else {
                     return expr;
@@ -340,13 +334,13 @@ namespace Kiezel
         [Lisp("make-environment")]
         public static AnalysisScope MakeEnvironment()
         {
-            return new AnalysisScope(null, "env");
+            return new AnalysisScope(null);
         }
 
         [Lisp("make-environment")]
         public static AnalysisScope MakeEnvironment(AnalysisScope env)
         {
-            return new AnalysisScope(env, "env");
+            return new AnalysisScope(env);
         }
 
         [Lisp("make-extended-environment")]

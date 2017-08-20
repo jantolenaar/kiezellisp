@@ -52,6 +52,7 @@
     <Compile Include="console-mode.cs" />
     <Compile Include="console-base.cs" />
     <Compile Include="repl-history.cs" />
+    <Compile Include="listener.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />

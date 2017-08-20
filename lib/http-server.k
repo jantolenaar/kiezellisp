@@ -6,18 +6,19 @@
 
 (defpackage "http-server"
 	(:export
+		"$request"
+		"$response"
+		"create-exact-dispatcher"
+		"create-prefix-dispatcher"
+		"get"
 		"setup"
 		"start"
 		"stop"
-		"get"
-		"create-prefix-dispatcher"
-		"create-exact-dispatcher"
-		"write-response-error"
-		"write-response-text"
 		"write-response-bytes"
+		"write-response-error"
 		"write-response-file"
-		"$request"
-		"$response"))
+		"write-response-text"
+		))
 
 (in-package "http-server")
 

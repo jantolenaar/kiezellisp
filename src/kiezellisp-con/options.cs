@@ -10,12 +10,12 @@ namespace Kiezel
     {
         #region Fields
 
-        public bool Debug;
         public bool Repl;
         public string ScriptName;
         public Cons UserArguments;
         public int ForegroundColor;
         public int BackgroundColor;
+        public bool Mono5;
 
         #endregion Fields
 
@@ -25,10 +25,10 @@ namespace Kiezel
         {
             ScriptName = null;
             UserArguments = null;
-            Debug = true;
             Repl = true;
             ForegroundColor = -1;
             BackgroundColor = -1;
+            Mono5 = false;
         }
 
         #endregion Constructors
@@ -43,11 +43,10 @@ namespace Kiezel
             var parser = new CommandLineParser();
             var options = new CommandLineOptions();
 
-            parser.AddOption("--debug");
-            parser.AddOption("--release");
             parser.AddOption("--repl");
             parser.AddOption("--fg number");
             parser.AddOption("--bg number");
+            parser.AddOption("--mono5");
 
             parser.Parse(args);
 
@@ -56,7 +55,6 @@ namespace Kiezel
             if (s != null)
             {
                 options.ScriptName = s;
-                options.Debug = false;
                 options.Repl = false;
                 options.UserArguments = Runtime.AsList(parser.GetArgumentArray(1));
             }
@@ -71,19 +69,14 @@ namespace Kiezel
                 options.BackgroundColor = -1 + Number.ParseNumberBase(parser.GetOption("bg"), 10);
             }
 
-            if (parser.GetOption("release") != null)
-            {
-                options.Debug = false;
-            }
-
-            if (parser.GetOption("debug") != null)
-            {
-                options.Debug = true;
-            }
-
             if (parser.GetOption("repl") != null)
             {
                 options.Repl = true;
+            }
+
+            if (parser.GetOption("mono5") != null)
+            {
+                options.Mono5 = true;
             }
 
             return options;

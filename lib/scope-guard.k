@@ -21,10 +21,10 @@
 
 (defpackage "scope-guard"
     (:export
-        "with-scope"
-        "scope-exit-pass"
-        "scope-exit-fail"
         "scope-exit"
+        "scope-exit-fail"
+        "scope-exit-pass"
+        "with-scope"
     ))
 
 (in-package "scope-guard")

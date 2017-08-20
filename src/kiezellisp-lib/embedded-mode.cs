@@ -23,12 +23,10 @@ namespace Kiezel
             return Runtime.GetDiagnostics(ex);
         }
 
-        public static void Init(bool debugMode = false)
+        public static void Init()
         {
             Runtime.ProgramFeature = "kiezellisp-lib";
-            Runtime.DebugMode = debugMode;
             Runtime.Repl = false;
-            Runtime.OptimizerEnabled = !Runtime.DebugMode;
             Runtime.Reset();
             Runtime.RestartLoadFiles(0);
         }

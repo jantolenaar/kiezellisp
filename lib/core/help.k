@@ -57,7 +57,7 @@
     special-constant))
 
 (defun transform-topic-to-path-name (topic)
-    (do
+    (chain (~)
         (.long-name topic)
         (.replace ~ "$" "(dollar)")
         (.replace ~ "?" "(qm)")
@@ -185,7 +185,7 @@
                     (collecting (bold text)))
                 (true
                     (collecting (string (margin) (transform-line line)))))))
-    (do
+    (chain (~)
         (string:join "\n" result)
         (string:replace ~ "<delete-lf>\n" "")))
 
@@ -195,7 +195,7 @@
     (let italic-pattern1 #/\*(\S*?)\*/)
     (let italic-pattern2 #/_(\S*?)_/)
     ;(let code-pattern #/`(\S*?)`/)
-    (do
+    (chain (~)
         text
         (.regex-replace ~ bold-pattern1 @"\1")
         (.regex-replace ~ bold-pattern2 @"\1")

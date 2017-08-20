@@ -25,7 +25,7 @@
 
 (defun parallel-assign (setter forms)
     (letfun prepare-forms (forms)
-        (do
+        (chain (~)
             (partition 2 forms)
             (map #(cons (gentemp) %1) ~)))
     (letfun get-let-form (form)
@@ -33,7 +33,7 @@
     (letfun get-set-form (form)
         (list setter (second form) (first form)))
     (let genforms (prepare-forms forms))
-    `(merging-do
+    `(do
         ,@(map get-let-form genforms)
         ,@(map get-set-form genforms)))
 

@@ -32,7 +32,7 @@ namespace Kiezel
             var type = FindType(name);
             if (type == null)
             {
-                throw new LispException("Undefined type name: {0}", name);
+                throw new LispException("Undefined type name: {0}", name.LongName);
             }
             return type;
         }

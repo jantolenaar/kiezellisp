@@ -78,3 +78,5 @@
 
 (import "System.Collections.IEnumerable")
 (import "System.Collections.IEnumerator")
+
+(import "System.Runtime.CompilerServices.IRuntimeVariables")

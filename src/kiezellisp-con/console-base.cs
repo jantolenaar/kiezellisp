@@ -22,7 +22,7 @@ namespace Kiezel
             ":clear", ":continue", ":globals", ":quit",
             ":abort", ":backtrace", ":variables", ":$variables",
             ":top", ":exception", ":Exception", ":force",
-            ":describe", ":reset", ":time"
+            ":describe", ":reset", ":time", ":modify", ":eval"
         };
         public static Stack<ThreadContextState> state;
         public static Stopwatch timer = Stopwatch.StartNew();
@@ -154,6 +154,33 @@ namespace Kiezel
                             break;
                         }
 
+                    case ":eval":
+                        {
+                            var expr = Runtime.Second(code);
+                            var pos = Runtime.Integerp(Runtime.Third(code)) ? (int)Runtime.Third(code) : 0;
+                            var val = EvalCommand(expr, pos);
+                            if (Runtime.ToBool(Runtime.GetDynamic(Symbols.ReplForceIt)))
+                            {
+                                val = Runtime.Force(val);
+                            }
+                            Runtime.SetSymbolValue(Symbols.It, val);
+                            if (val != VOID.Value)
+                            {
+                                Runtime.PrintStream(output, "", "it: ");
+                                Runtime.PrettyPrintLine(output, 4, null, val);
+                            }
+                            break;
+                        }
+
+                    case ":modify":
+                        {
+                            var name = (Symbol)Runtime.Second(code);
+                            var expr = Runtime.Third(code);
+                            var pos = Runtime.Integerp(Runtime.Fourth(code)) ? (int)Runtime.Fourth(code) : 0;
+                            ModifyCommand(name, expr, pos);
+                            break;
+                        }
+
                     case ":variables":
                         {
                             var pos = Runtime.Integerp(Runtime.Second(code)) ? (int)Runtime.Second(code) : 0;
@@ -212,17 +239,17 @@ namespace Kiezel
 
                     case ":reset":
                         {
-                            var level = Runtime.Integerp(Runtime.Second(code)) ? (int)Runtime.Second(code) : 0;
+                            var level = Runtime.Integerp(Runtime.Second(code)) ? (int)Runtime.Second(code) : -1;
                             while (state.Count > 1)
                             {
                                 state.Pop();
                             }
-                            timer.Reset();
-                            timer.Start();
+                            var t1 = Runtime.GetCpuTime();
                             Reset(level);
-                            timer.Stop();
-                            var time = timer.ElapsedMilliseconds;
-                            Runtime.PrintTrace("Startup time: ", time, "ms");
+                            var t2 = Runtime.GetCpuTime();
+                            var t = t2 - t1;
+                            var msg = String.Format("Reset {0:N3}s user {1:N3}s system", t.User, t.System);
+                            Runtime.PrintTrace(msg);
                             break;
                         }
 
@@ -337,25 +364,52 @@ namespace Kiezel
                 // This happens when only ENTER is pressed
                 // Show prompt again
 
-                int counter = History.Count + 1;
                 string prompt;
                 string debugText = debugging ? "> debug " : "";
                 var package = Runtime.CurrentPackage();
-                if (state.Count == 1)
+                if (Console.IsInputRedirected)
                 {
-                    Runtime.PrintLine(output);
-                    prompt = string.Format("{0} {1} {2}> ", package.Name, counter, debugText);
+                    if (state.Count == 1)
+                    {
+                        Runtime.PrintLine(output);
+                        prompt = string.Format("{0} {1}> ", package.Name, debugText);
+                    }
+                    else
+                    {
+                        Runtime.PrintLine(output);
+                        prompt = string.Format("{0} {1}: {2} > ", package.Name, debugText, state.Count - 1);
+                    }
                 }
-                else {
-                    Runtime.PrintLine(output);
-                    prompt = string.Format("{0} {1} {2}: {3} > ", package.Name, counter, debugText, state.Count - 1);
+                else
+                {
+                    if (state.Count == 1)
+                    {
+                        Runtime.PrintLine(output);
+                        prompt = string.Format("{0} {1}> ", package.Name, debugText);
+                    }
+                    else
+                    {
+                        Runtime.PrintLine(output);
+                        prompt = string.Format("{0} {1}: {2} > ", package.Name, debugText, state.Count - 1);
+                    }
                 }
-
                 Runtime.Print(output, prompt);
 
-                while ((data = ReplRead(true, true, true)) == null)
+                while (true)
                 {
-                    // This happens when ESC is pressed
+                    var chunk = ReplRead(true, true, true);
+                    if (chunk == null)
+                    {
+                        data = "";
+                    }
+                    else
+                    {
+                        data = data + (data.Length == 0 ? "" : " ") + chunk;
+                        if (IsCompleteSourceCode(data))
+                        {
+                            break;
+                        }
+                    }
                 }
             }
 
@@ -379,7 +433,7 @@ namespace Kiezel
                     if (!initialized)
                     {
                         initialized = true;
-                        Reset(0);
+                        Reset(-1);
                     }
 
                     if (string.IsNullOrWhiteSpace(commandOptionArgument))
@@ -435,6 +489,45 @@ namespace Kiezel
             return string.Join("\n", ex.ToString().Split('\n').Where(IsNotDlrCode));
         }
 
+        public static object WrapInFrame(object expr, int pos)
+        {
+            var dict = Runtime.GetLexicalVariablesDictionary(pos);
+            if (dict.Count != 0)
+            {
+                var block = new Vector();
+                block.Add(Symbols.Do);
+                foreach (var item in dict)
+                {
+                    block.Add(Runtime.MakeList(Symbols.Let, item.Key, item.Value));
+                    block.Add(Runtime.MakeList(Symbols.Declare, Runtime.MakeList(Symbols.Ignore, item.Key)));
+                }
+                block.Add(expr);
+                return Runtime.AsList(block);
+            }
+            else
+            {
+                return expr;
+            }
+        }
+
+        public static object EvalCommand(object expr, int pos)
+        {
+            var expr1 = WrapInFrame(expr, pos);
+            var expr2 = Runtime.Compile(expr1);
+            object val = Runtime.Execute(expr2);
+            return val;
+        }
+
+        public static void ModifyCommand(Symbol name, object expr, int pos)
+        {
+            var val = Runtime.Force(EvalCommand(expr, pos));
+            var frame = Runtime.GetFrameAt(pos);
+            if (frame == null || !frame.Modify(name, val))
+            {
+                Runtime.PrintError("Lexical variable not found");
+            }
+        }
+
         public static void RunCommand(Action<object> func, Cons lispCode, bool showTime = false, bool smartParens = false)
         {
             var output = GetConsoleOut();
@@ -442,7 +535,6 @@ namespace Kiezel
             if (lispCode != null)
             {
                 var head = Runtime.First(lispCode) as Symbol;
-                var scope = Runtime.ReplGetCurrentAnalysisScope();
 
                 if (smartParens && head != null)
                 {
@@ -452,18 +544,15 @@ namespace Kiezel
                     }
                 }
 
-                timer.Reset();
+                var t1 = Runtime.GetCpuTime();
 
                 foreach (var expr in lispCode)
                 {
-                    var expr2 = Runtime.Compile(expr, scope);
-                    timer.Start();
-                    object val = Runtime.Execute(expr2);
+                    var val = EvalCommand(expr, 0);
                     if (Runtime.ToBool(Runtime.GetDynamic(Symbols.ReplForceIt)))
                     {
                         val = Runtime.Force(val);
                     }
-                    timer.Stop();
                     if (func == null)
                     {
                         Runtime.SetSymbolValue(Symbols.It, val);
@@ -478,10 +567,13 @@ namespace Kiezel
                     }
                 }
 
-                var time = timer.ElapsedMilliseconds;
+
                 if (showTime)
                 {
-                    Runtime.PrintStream(GetConsoleLog(), "info", Runtime.MakeString("Elapsed time: ", time, " ms\n"));
+                    var t2 = Runtime.GetCpuTime();
+                    var t = t2 - t1;
+                    var msg = String.Format("Time {0:N3}s user {1:N3}s system", t.User, t.System);
+                    Runtime.PrintTrace(msg);
                 }
             }
             else {

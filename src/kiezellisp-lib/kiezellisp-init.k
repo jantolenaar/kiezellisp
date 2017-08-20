@@ -32,15 +32,16 @@
 (setq $stdlog (open-log "d:/temp/stdlog"))
 #endif
 
+
 #if unix
-(let project-path "/home/jan/projects/")
+(def project-path "/home/jan/projects/")
 #elif wine
-(let project-path "z:/home/jan/projects/")
+(def project-path "z:/home/jan/projects/")
 #elif windows
-(let project-path "d:/projects/")
+(def project-path "f:/")
 #endif
 
-(letfun make-path (x)
+(defun make-path (x)
     (if (.starts-with x "/")
           x
         (string project-path x)))
@@ -52,14 +53,19 @@
                 "kiezellisp/lib"
                 "kiezellisp/app" )))
 
-(setq $repl-force-it true)
-
 (require "system")
-(require "shell")
-(require "unit-test")
 
 #if repl
+
+(require "shell")
+(require "unit-test")
+(require "diagnostics")
+
 (apply set-help-path (map make-path (list
                 "kiezellisp/help"
                 "/home/jan/documents/help")))
+
+(setq $repl-force-it true)
+(set-debug-level 2)
+
 #endif

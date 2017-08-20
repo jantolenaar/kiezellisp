@@ -6,9 +6,10 @@
 
 (defpackage "unit-test"
     (:export
+        "run-all"
         "run-function"
         "run-package"
-        "run-all"))
+    ))
 
 (in-package "unit-test")
 
@@ -47,12 +48,14 @@
     (.starts-with x "unit-test-"))
 
 (defun run-package (name)
-	(list-exported-symbols name)
-	(filter test-function? ~)
-	(each run-function ~))
+	(chain (~)
+		(list-exported-symbols name)
+		(filter test-function? ~)
+		(each run-function ~)))
 
 (defun run-all ()
-	(list-all-packages)
-	(filter test-package? ~)
-	(each run-package ~))
+	(chain (~)
+		(list-all-packages)
+		(filter test-package? ~)
+		(each run-package ~)))
 		

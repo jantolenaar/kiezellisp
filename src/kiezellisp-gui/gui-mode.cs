@@ -15,9 +15,7 @@ namespace Kiezel
 		public static void RunGuiMode(CommandLineOptions options)
 		{
 			Runtime.ProgramFeature = "kiezellisp-gui";
-			Runtime.DebugMode = options.Debug;
 			Runtime.Repl = false;
-			Runtime.OptimizerEnabled = !Runtime.DebugMode;
 			Runtime.ScriptName = options.ScriptName;
 			Runtime.UserArguments = options.UserArguments;
 

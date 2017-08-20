@@ -34,7 +34,7 @@ namespace Kiezel
             var sym = CheckSymbol(target);
             if (sym.Usage == SymbolUsage.None)
             {
-                ThrowError("Undefined variable: ", sym.ContextualName);
+                ThrowError("Undefined variable: ", sym.LongName);
             }
             return sym;
         }
@@ -379,6 +379,14 @@ namespace Kiezel
             }
         }
 
+        public bool IsReservedName
+        {
+            get
+            {
+                return Name[0] == '%';
+            }
+        }
+
         public bool IsUndefined
         {
             get
@@ -571,6 +579,7 @@ namespace Kiezel
         #region Static Fields
 
         public static Symbol And;
+        public static Symbol Anonymous;
         public static Symbol Append;
         public static Symbol Apply;
         public static Symbol Args;
@@ -603,7 +612,7 @@ namespace Kiezel
         public static Symbol Constant;
         public static Symbol CreateDelayedExpression;
         public static Symbol CreateTask;
-        public static Symbol DebugMode;
+        public static Symbol Debugging;
         public static Symbol Declare;
         public static Symbol Def;
         public static Symbol DefConstant;
@@ -644,7 +653,7 @@ namespace Kiezel
         public static Symbol HashElse;
         public static Symbol HashEndif;
         public static Symbol HelpHook;
-        public static Symbol HiddenVar;
+        public static Symbol HoistedArgs;
         public static Symbol I;
         public static Symbol Identity;
         public static Symbol If;
@@ -652,9 +661,7 @@ namespace Kiezel
         public static Symbol Ignore;
         public static Symbol ImportedConstructor;
         public static Symbol ImportedFunction;
-        public static Symbol InfoColor;
         public static Symbol InitialValue;
-        public static Symbol InteractiveMode;
         public static Symbol It;
         public static Symbol Key;
         public static Symbol kwForce;
@@ -682,7 +689,6 @@ namespace Kiezel
         public static Symbol Main;
         public static Symbol Math;
         public static Symbol MaxElements;
-        public static Symbol MergingDo;
         public static Symbol Method;
         public static Symbol MethodKeyword;
         public static Symbol MissingValue;
@@ -721,6 +727,7 @@ namespace Kiezel
         public static Symbol ReadonlyVariable;
         public static Symbol Readtable;
         public static Symbol Recur;
+        public static Symbol RecursionArgs;
         public static Symbol RecursionLabel;
         public static Symbol ReplForceIt;
         public static Symbol ReplListenerPort;
@@ -731,6 +738,7 @@ namespace Kiezel
         public static Symbol ReturnFromLoad;
         public static Symbol Returns;
         public static Symbol Right;
+        public static Symbol RuntimeVariables;
         public static Symbol ScriptDirectory;
         public static Symbol ScriptName;
         public static Symbol Self;
@@ -753,10 +761,8 @@ namespace Kiezel
         public static Symbol Stream;
         public static Symbol StructurallyEqual;
         public static Symbol SymbolMacro;
-        public static Symbol Target;
         public static Symbol Temp;
         public static Symbol Throw;
-        public static Symbol Tilde;
         public static Symbol Tracing;
         public static Symbol True;
         public static Symbol Try;
@@ -779,9 +785,10 @@ namespace Kiezel
         public static void Create()
         {
             And = MakeSymbol("and");
+            Anonymous = MakeSymbol("anonymous");
             Append = MakeSymbol("append");
             Apply = MakeSymbol("apply");
-            Args = MakeSymbol("__args__");
+            Args = MakeSymbol("%args");
             Array = MakeSymbol("array");
             AssemblyPath = MakeSymbol("$assembly-path");
             AsVector = MakeSymbol("as-vector");
@@ -807,7 +814,7 @@ namespace Kiezel
             Constant = MakeSymbol("constant");
             CreateDelayedExpression = MakeSymbol("system:create-delayed-expression");
             CreateTask = MakeSymbol("system:create-task");
-            DebugMode = MakeSymbol("$debug-mode");
+            Debugging = MakeSymbol("$debugging");
             Declare = MakeSymbol("declare");
             Def = MakeSymbol("def");
             DefConstant = MakeSymbol("defconstant");
@@ -847,7 +854,7 @@ namespace Kiezel
             HashElse = MakeSymbol("#else");
             HashEndif = MakeSymbol("#endif");
             HelpHook = MakeSymbol("$help-hook");
-            HiddenVar = MakeSymbol("hidden-var");
+            HoistedArgs = MakeSymbol("%hoisted-args");
             I = MakeSymbol("math:I");
             Identity = MakeSymbol("identity");
             If = MakeSymbol("if");
@@ -855,14 +862,12 @@ namespace Kiezel
             Ignore = MakeSymbol("ignore");
             ImportedConstructor = MakeSymbol("imported-constructor");
             ImportedFunction = MakeSymbol("imported-function");
-            InfoColor = MakeSymbol("$info-color");
             InitialValue = MakeSymbol(":initial-value");
-            InteractiveMode = MakeSymbol("$interactive-mode");
             It = MakeSymbol("it");
             Key = MakeSymbol("&key");
             Label = MakeSymbol("label");
             Lambda = MakeSymbol("lambda");
-            LambdaList = MakeSymbol(@"__lambdas__");
+            LambdaList = MakeSymbol(@"%lambdas");
             LazyImport = MakeSymbol("$lazy-import");
             LazyVar = MakeSymbol("lazy");
             Left = MakeSymbol(":left");
@@ -884,7 +889,6 @@ namespace Kiezel
             Main = MakeSymbol("user:main");
             Math = MakeSymbol("math");
             MaxElements = MakeSymbol(":max-elements");
-            MergingDo = MakeSymbol("merging-do");
             Method = MakeSymbol("method");
             MethodKeyword = MakeSymbol(":method");
             MissingValue = MakeSymbol("missing-value");
@@ -922,6 +926,7 @@ namespace Kiezel
             ReadonlyVariable = MakeSymbol("readonly-variable");
             Readtable = MakeSymbol("$readtable");
             Recur = MakeSymbol("recur");
+            RecursionArgs = MakeSymbol("%recursion-args");
             RecursionLabel = MakeSymbol("%recursion-label");
             ReplForceIt = MakeSymbol("$repl-force-it");
             ReplListenerPort = MakeSymbol("$repl-listener-port");
@@ -931,6 +936,7 @@ namespace Kiezel
             ReturnFromLoad = MakeSymbol("system:return-from-load");
             Returns = MakeSymbol("&returns");
             Right = MakeSymbol(":right");
+            RuntimeVariables = MakeSymbol("runtime-variables");
             ScriptDirectory = MakeSymbol("$script-directory");
             ScriptName = MakeSymbol("$script-name");
             Self = MakeSymbol("self");
@@ -952,10 +958,8 @@ namespace Kiezel
             Stream = MakeSymbol(":stream");
             StructurallyEqual = MakeSymbol("structurally-equal");
             SymbolMacro = MakeSymbol("symbol-macro");
-            Target = MakeSymbol("__target__");
-            Temp = MakeSymbol(@"__temp__");
+            Temp = MakeSymbol("%temp");
             Throw = MakeSymbol("throw");
-            Tilde = MakeSymbol("~");
             Tracing = MakeSymbol("$tracing");
             True = MakeSymbol("true");
             Try = MakeSymbol("try");

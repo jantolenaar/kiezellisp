@@ -17,25 +17,25 @@
 
 (defpackage "sql"
     (:export
-        "with-open-database"
-        "get-database"
+        "$provider"
+        "create-table"
         "execute-non-query"
         "execute-reader"
         "execute-scalar"
-        "create-table"
+        "get-database"
+        "get-non-text-fields"
         "get-schema"
         "get-text-fields"
-        "get-non-text-fields"
-        "$provider"
+        "with-open-database"
     ))
 
 (in-package "sql")
 
-(import "System.Data.DataTable")
-(import "System.Data.DataSet")
-(import "System.Data.SchemaType")
-(import "System.Data.ConnectionState")
 (import "System.Data.Common.DbProviderFactories")
+(import "System.Data.ConnectionState")
+(import "System.Data.DataSet")
+(import "System.Data.DataTable")
+(import "System.Data.SchemaType")
 (import "System.DBNull")
 
 
@@ -132,14 +132,14 @@
             (make-schema table-name (elt tables 0) keys))))
 
 (defun get-text-fields (database table-name)
-    (do 
+    (chain (~)
         (get-schema database table-name)
         (.column-defs ~)
         (filter .max-length ~)
         (map .name ~)))
 
 (defun get-non-text-fields (database table-name)
-    (do
+    (chain (~)
         (get-schema database table-name)
         (.column-defs ~)
         (filter (lambda (x) (not (.max-length x))) ~)

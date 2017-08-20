@@ -1,5 +1,26 @@
 # Change Log
 
+## 2017/08/20
+
+*   Added `mono5` commandline option.
+
+## 2017/08/04
+
+*	Kiezellisp 4.0
+*	Removed options for debug/release.
+*	Renamed `$debug-mode` to `$debugging`.
+*	Added `set-debug-level` function.
+*   Added `decompile` function (diagnostics.k).
+*   Fixed bug in compilation of `.a.b.c` and `?a.b.c` forms.
+*   Removed chaining with `~` from `do` special form.
+*   Added `chain` macro.
+*   Added `:eval` and `:modify` debugger commands.
+
+## 2017/07/28
+
+*	Removed `multiple-let`, `multiple-var` and `merging-do`.
+*	Added `with-multiple-let` and `with-multiple-var`.
+
 ## 2017/06/25
 
 *	Added `fg` and `bg` commandline options.

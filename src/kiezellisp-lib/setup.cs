@@ -20,9 +20,8 @@ namespace Kiezel
         #region Static Fields
 
         public static Dictionary<Type, List<Type>> AbstractTypes;
-        public static bool DebugMode;
         public static Readtable DefaultReadtable;
-        public static Dictionary<object, string> Documentation;
+        public static int DebugLevel;
         public static long GentempCounter;
         public static string HomeDirectory = Directory.GetCurrentDirectory();
         public static Package KeywordPackage;
@@ -30,7 +29,6 @@ namespace Kiezel
         public static Package LispPackage;
         public static Missing MissingValue = Missing.Value;
         public static bool Mono;
-        public static bool OptimizerEnabled;
         public static string ProgramFeature;
         public static bool ReadDecimalNumbers;
         public static bool Repl;
@@ -38,7 +36,6 @@ namespace Kiezel
         public static int BackgroundColor;
         public static string ScriptName;
         public static bool SetupMode;
-        public static Stopwatch StopWatch = Stopwatch.StartNew();
         public static Package TempPackage;
         public static Cons UserArguments;
         public static Package UserPackage;
@@ -50,12 +47,12 @@ namespace Kiezel
 #if DEBUG
 
         public static bool AdaptiveCompilation = false;
-        public static int CompilationThreshold = 50;
+        public static int CompilationThreshold = 40;
 
 #else
 
         public static bool AdaptiveCompilation = true;
-        public static int CompilationThreshold = 50;
+        public static int CompilationThreshold = 40;
 
 #endif
 
@@ -270,11 +267,6 @@ namespace Kiezel
             {
                 switch (level)
                 {
-                    case 0:
-                        {
-                            TryLoad(path, false, false);
-                            break;
-                        }
                     case 1:
                         {
                             TryLoad(path, true, false);
@@ -285,7 +277,13 @@ namespace Kiezel
                             TryLoad(path, true, true);
                             break;
                         }
-
+                    case -1:
+                    case 0:
+                    default:
+                        {
+                            TryLoad(path, false, false);
+                            break;
+                        }
                 }
             }
         }
@@ -396,11 +394,6 @@ namespace Kiezel
                 AddFeature("repl");
             }
 
-            if (DebugMode)
-            {
-                AddFeature("debug");
-            }
-
             Symbols.Features.VariableValue = AsList(Sort((Cons)Symbols.Features.Value));
         }
 
@@ -421,15 +414,13 @@ namespace Kiezel
             Symbols.AssemblyPath.ReadonlyValue = null;
             Symbols.CommandLineArguments.ReadonlyValue = UserArguments;
             Symbols.CommandLineScriptName.ReadonlyValue = ScriptName;
-            Symbols.DebugMode.ConstantValue = DebugMode;
+            Symbols.Debugging.ConstantValue = false;
             Symbols.E.ConstantValue = Math.E;
             Symbols.EnableWarnings.VariableValue = true;
             Symbols.Exception.ReadonlyValue = null;
             Symbols.Features.VariableValue = null;
             Symbols.HelpHook.VariableValue = null;
             Symbols.I.ConstantValue = Complex.ImaginaryOne;
-            Symbols.InfoColor.Value = "gray";
-            Symbols.InteractiveMode.ConstantValue = Repl;
             Symbols.It.VariableValue = null;
             Symbols.LazyImport.VariableValue = true;
             Symbols.LoadPath.ReadonlyValue = null;
@@ -471,7 +462,6 @@ namespace Kiezel
             LispPackage = null;
             KeywordPackage = null;
             UserPackage = null;
-            Documentation = new Dictionary<object, string>();
             Packages = new Dictionary<string, Package>();
             PackagesByType = new Dictionary<Type, Package>();
             Types = new Dictionary<Symbol, object>();

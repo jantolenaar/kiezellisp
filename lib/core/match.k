@@ -53,7 +53,7 @@
     (cond
         ($variables
             `(do
-                (multiple-var ,(as-list $variables) null)
+            	,@(map #(list 'var %1) $variables)
                 (if ,test-form (return-from case-match ,body))))
         ((= test-form true)
             `(return-from case-match ,body))

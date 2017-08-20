@@ -22,7 +22,24 @@ namespace Kiezel
 
             var options = RuntimeConsole.ParseArgs(args);
 
-            RuntimeConsole.RunConsoleMode(options);
+            //
+            // Mono5 option is a workaround for a performance problem in the compilation of
+            // linq expressions (https://bugzilla.xamarin.com/show_bug.cgi?id=56240).
+            // 
+            // The problem disappears when not running on the primary thread. Therefore this
+            // workaraound is not a solution for gui programs.
+            //
+
+            if (options.Mono5)
+            {
+                var t = new Thread(() => RuntimeConsole.RunConsoleMode(options));
+                t.Start();
+                t.Join();
+            }
+            else
+            {
+                RuntimeConsole.RunConsoleMode(options);
+            }
         }
 
         #endregion Private Methods
@@ -41,7 +58,13 @@ namespace Kiezel
             Symbols.StdLog.VariableValue = Console.Out;
             Symbols.StdOut.VariableValue = Console.Out;
             Symbols.StdIn.VariableValue = Console.In;
+            Runtime.SetDebugLevel(level);
             Runtime.RestartLoadFiles(level);
+            if (level != -1)
+            {
+                // Could be changed by action in loaded files.
+                Runtime.SetDebugLevel(level);
+            }
         }
 
         #endregion Public Methods

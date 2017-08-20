@@ -22,8 +22,16 @@
 (set-load-path "../lib" "../app")
 
 (require "system")
-(require "shell")
 
 #if repl
+
+(require "shell")
+(require "diagnostics")
+
 (set-help-path "../help")
+
+(setq $repl-force-it true)
+(set-debug-level 2)
+
 #endif
+

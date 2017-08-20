@@ -6,16 +6,18 @@
 
 namespace Kiezel
 {
+    using System;
     using System.Collections;
     using System.Collections.Generic;
+    using System.Runtime.CompilerServices;
 
-    public class Frame : IEnumerable
+    public class Frame
     {
         #region Fields
 
         public Frame Link;
         public List<Symbol> Names;
-        public List<object> Values;
+        public IRuntimeVariables Values;
 
         #endregion Fields
 
@@ -25,101 +27,61 @@ namespace Kiezel
         {
         }
 
-        public Frame(List<Symbol> names)
+        public Frame(List<Symbol> names, IRuntimeVariables values)
         {
             Link = null;
-            Names = names ?? new List<Symbol>();
-            Values = null;
-        }
-
-        public Frame(Frame template, List<object> args)
-        {
-            Link = template.Link;
-            Names = template.Names;
-            Values = args;
+            Names = names;
+            Values = values;
         }
 
         #endregion Constructors
 
         #region Public Methods
 
-        public IEnumerator GetEnumerator()
+        public bool Modify(Symbol name, object value)
         {
-            for (var i = 0; i < Names.Count; ++i)
+            for (var f = this; f != null; f = f.Link)
             {
-                if (Values != null && i < Values.Count)
+                var i = f.Names.IndexOf(name);
+                if (i != -1)
                 {
-                    yield return new KeyValuePair<Symbol, object>(Names[i], Values[i]);
-                }
-                else
-                {
-                    yield return new KeyValuePair<Symbol, object>(Names[i], null);
+                    f.Values[i] = value;
+                    return true;
                 }
             }
+            return false;
         }
 
-        public object GetValueAt(int depth, int index)
+        public static Frame MakeFrame(List<Symbol> names, IRuntimeVariables values)
         {
-            int d = depth;
-            for (Frame frame = this; frame != null; frame = frame.Link, --d)
-            {
-                if (d == 0)
-                {
-                    if (frame.Values == null || index >= frame.Values.Count)
-                    {
-                        return null;
-                        //throw new LispException( "Undefined lexical variable: ({0},{1})", depth, index );
-                    }
-
-                    return frame.Values[index];
-                }
-            }
-
-            throw new LispException("No lexical variable at ({0},{1})", depth, index);
+            return new Frame(names, values);
         }
 
-        public object SetValueAt(int depth, int index, object val)
+        public PrototypeDictionary GetDictionary()
         {
-            int d = depth;
-            for (Frame frame = this; frame != null; frame = frame.Link, --d)
+            var dict = new PrototypeDictionary();
+            for (var f = this; f != null; f = f.Link)
             {
-                if (d == 0)
+                if (f.Names != null)
                 {
-                    if (frame.Values == null)
+                    for (var i = 0; i < f.Names.Count; ++i)
                     {
-                        frame.Values = new List<object>();
-                    }
-                    while (frame.Values.Count <= index)
-                    {
-                        frame.Values.Add(null);
-                    }
-                    frame.Values[index] = val;
-                    return val;
-                }
-            }
+                        var n = f.Names[i];
+                        var v = f.Values[i];
 
-            throw new LispException("No lexical variable at ({0},{1})", depth, index);
-        }
-
-        public object TryGetValue(Symbol sym)
-        {
-            for (Frame frame = this; frame != null; frame = frame.Link)
-            {
-                if (frame.Names != null)
-                {
-                    int index = frame.Names.IndexOf(sym);
-                    if (index != -1)
-                    {
-                        return frame.Values[index];
+                        if (!n.IsReservedName && !dict.ContainsKey(n))
+                        {
+                            dict[n] = v;
+                        }
                     }
                 }
             }
-
-            return null;
+            return dict;
         }
 
         #endregion Public Methods
     }
+
 
     public class FrameAndScope
     {
@@ -137,9 +99,10 @@ namespace Kiezel
             Frame = new Frame();
             Scope = new AnalysisScope();
             Scope.IsFileScope = true;
-            Scope.IsBlockScope = true;
         }
 
         #endregion Constructors
     }
+
+
 }

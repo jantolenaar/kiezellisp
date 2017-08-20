@@ -9,6 +9,8 @@ namespace Kiezel
     using System;
     using System.Collections.Generic;
     using System.Linq;
+    using System.Linq.Expressions;
+    using System.Runtime.CompilerServices;
 
     public partial class Runtime
     {
@@ -52,10 +54,11 @@ namespace Kiezel
             return sym.CheckedValue;
         }
 
-        public static object GetLexical(int depth, int index)
+        public static object GetLexical(object hoistedArgs, int index)
         {
             // used by compiler generated code
-            return CurrentThreadContext.Frame.GetValueAt(depth, index);
+            var rt = (IRuntimeVariables)hoistedArgs;
+            return rt[index];
         }
 
         public static object[] ParseKwargs(object[] args, string[] names, params object[] defaults)
@@ -105,6 +108,7 @@ namespace Kiezel
                 consoleScope = new AnalysisScope();
             }
 
+            /*
             var stack = new Stack<AnalysisScope>();
             stack.Push(consoleScope);
 
@@ -142,8 +146,9 @@ namespace Kiezel
                 top.Parent = scope;
                 scope = top;
             }
+*/
 
-            return scope;
+            return consoleScope;
         }
 
         public static AnalysisScope ReplGetCurrentAnalysisScope()
@@ -195,10 +200,12 @@ namespace Kiezel
             return value;
         }
 
-        public static object SetLexical(int depth, int index, object value)
+        public static object SetLexical(object hoistedArgs, int index, object value)
         {
             // used by compiler generated code
-            return CurrentThreadContext.Frame.SetValueAt(depth, index, value);
+            var rt = (IRuntimeVariables)hoistedArgs;
+            rt[index] = value;
+            return value;
         }
 
         public static object TryConvertToEnumType(Type enumType, object value)
@@ -235,12 +242,6 @@ namespace Kiezel
                     return null;
                 }
             }
-        }
-
-        public static object TryGetLexicalSymbol(Symbol sym)
-        {
-            // used by compiler generated code
-            return CurrentThreadContext.Frame.TryGetValue(sym);
         }
 
         #endregion Public Methods

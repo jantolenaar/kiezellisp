@@ -54,7 +54,6 @@
       (defun* 1)
       (defsetf 1)
       (do 0)
-      (merging-do 0)
       (ecase pprint-case)
       (ecase-match pprint-case)
       (etypecase pprint-case)
@@ -71,6 +70,7 @@
       (letmacro 2)
       (let-symbol-macro 2)
       (loop 0)
+      (multiple-setf 2)
       ;(new 1 :align)
       (new pprint-new)
       (or 1 :align)
@@ -88,14 +88,18 @@
       (try 0)
       (try-and-catch 0)
       (typecase pprint-case)
-      (let 2)
+      (unless 1)
       (var 2)
-      (multiple-let 2)
-      (multiple-var 2)
-      (multiple-setf 2)
       (when 1)
       (when-match 2)
       (while 1)
+      (with-multiple-let 2)
+      ;(BLOCK 0)
+      ;(VARIABLES 0)
+      ;(LABEL 0)
+      ;(GOTO 0)
+      ;(ASSIGN 0)
+      ;(CALL 0)
      ))
 
 (defun pprint (expr &key (left $pprint-left-margin) (right $pprint-right-margin))
@@ -132,6 +136,7 @@ $print-escape and $print-base.
         (return))
 
     (let a (first expr))
+
     (let sym (and (symbol? a)
                   a))
 
@@ -248,23 +253,21 @@ $print-escape and $print-base.
             (pprint-formatted-code expr config))))
 
 (defun pprint-if (expr)
-    (multiple-let (operator test then else) expr)
-    (print "(" operator " ")
-    (with-default-indent ()
-        (pprint test)
-        (print-line)
-        (pprint-left-margin)
-        (cond
-            (else
-                (print "  ")
-                (with-indent (2)
-                    (pprint then))
-                (print-line)
-                (pprint-left-margin)
-                (pprint else))
-            (true
-                (pprint then))))
-    (print ")"))
+    (with-multiple-let (operator test then else) expr
+	    (print "(" operator " ")
+	    (with-default-indent ()
+	        (pprint test)
+	        (print-line)
+	        (pprint-left-margin)
+	        (cond
+	            (else
+	                (pprint then)
+	                (print-line)
+	                (pprint-left-margin)
+	                (pprint else))
+	            (true
+	                (pprint then))))
+	    (print ")")))
 
 (defun pprint-cond (expr)
     (print "(" (first expr) " ")

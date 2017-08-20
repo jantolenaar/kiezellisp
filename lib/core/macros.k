@@ -14,6 +14,7 @@
         "block"
         "call-next-method"
         "case"
+        "chain"
         "cond"
         "defonce"
         "deftype"
@@ -22,9 +23,7 @@
         "if-let"
         "ignore-errors"
         "macroexpand-all"
-        "multiple-let"
         "multiple-setf"
-        "multiple-var"
         "new"
         "otherwise"
         "return-from"
@@ -33,11 +32,14 @@
         "trace"
         "try-and-catch"
         "typecase"
+        "unless"
         "using"
         "when"
         "when-let"
         "with"
         "with-input-from-string"
+        "with-multiple-let"
+        "with-multiple-var"
         "with-output-to-string"
     ))
 
@@ -50,8 +52,8 @@
 
 (defun declaration? (form)
     (and (cons? form)
-         (index-of (first form) '(let var hidden-var letfun letmacro let-symbol-macro
-                                  future lazy multiple-let multiple-var))))
+         (index-of (first form) '(let var letfun letmacro let-symbol-macro
+                                  future lazy))))
 
 (defmacro do? (&body forms)
     (let count (length forms))
@@ -87,9 +89,15 @@
 (defmacro with ((sym value) &body forms)
     `(do (let (,sym ,value) ,@forms)))
 
+(defmacro chain ((&optional (x '~)) &body forms)
+	`(do (var ,x) ,@(map #(list 'setq x %1) forms) ,x))
+
 ;;;
 ;;; conditions
 ;;;
+
+(defmacro unless (test &body forms)
+    `(if ,test null (do? ,@forms)))
 
 (defmacro when (test &body forms)
     `(if ,test (do? ,@forms)))
@@ -179,7 +187,7 @@
     "Enables/disables tracing by the `trace` macro.")
 
 (defmacro trace (expr)
-    (when $debug-mode
+    (when $debugging
         (let result (gentemp))
         `(when $tracing
             (let ,result ,expr)
@@ -232,7 +240,7 @@
                     ,(string:format "Failed condition: {0} " expr)))))
 
 (defmacro assert (&rest exprs)
-    (when $debug-mode
+    (when $debugging
         `(do? ,@(map do-assert exprs))))
 
 (defmacro throws-exception? (expr)
@@ -242,14 +250,14 @@
         (catch (ex) true)))
 
 (defmacro assert-throws-exception (expr)
-    (when $debug-mode
+    (when $debugging
         `(if (not (throws-exception? expr))
             (throw (assert-failed-exception:new
                             ,(string:format "Failed throws-exception: {0} " expr))))))
 
 
 (defmacro assert-throws-no-exception (expr)
-    (when $debug-mode
+    (when $debugging
         `(if (throws-exception? expr)
             (throw (assert-failed-exception:new
                             ,(string:format "Failed throws-no-exception: {0} " expr))))))
@@ -272,18 +280,13 @@
 ;;; named blocks
 ;;;
 
-(defun make-exit-label (tag)
-    tag
-    ;(make-symbol (string (symbol-name (or tag :nil)) "-exit") "keyword")
-    )
-
 (defmacro block (tag &body forms)
     `(do
         ,@forms
-        (label ,(make-exit-label tag))))
+        (label ,tag dummy-value)))
 
 (defmacro return-from (tag &optional value)
-    `(goto ,(make-exit-label tag) ,value))
+    `(goto ,tag ,value))
 
 ;;;
 ;;; lists
@@ -305,31 +308,32 @@
         (push item ,place)))
 
 ;;;
-;;; multiple var macros
+;;; multiple macros
 ;;;
 
-(defmacro multiple-let ((&rest vars) form)
-    (multiple-declare 'let vars form))
+(defmacro with-multiple-let ((&rest vars) form &body forms)
+	(with-multiple-thingy 'let vars form forms))
 
-(defmacro multiple-var ((&rest vars) form)
-    (multiple-declare 'var vars form))
+(defmacro with-multiple-var ((&rest vars) form &body forms)
+	(with-multiple-thingy 'var vars form forms))
 
-(defun multiple-declare (decl-keyword vars form)
+(defun with-multiple-thingy (thingy vars form forms)
     (let temp (gentemp))
     (let count (length vars))
-    (letfun do-var (index name)
-        `(,decl-keyword ,name (elt ,temp ,index)))
-    `(merging-do
+    (letfun do-var (index place)
+        `(,thingy ,place (elt ,temp ,index)))
+    `(do
         (let ,temp (as-multiple-elements ,form ,count))
-        ,@(map-indexed do-var vars)))
-
+        ,@(map-indexed
+            do-var vars)
+        ,@forms))
 
 (defmacro multiple-setf ((&rest places) form)
     (let temp (gentemp))
     (let count (length places))
     (letfun do-var (index place)
         `(setf ,place (elt ,temp ,index)))
-    `(merging-do
+    `(do
         (let ,temp (as-multiple-elements ,form ,count))
         ,@(map-indexed
             do-var places)))

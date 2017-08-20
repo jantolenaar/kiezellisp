@@ -6,9 +6,10 @@
 
 (defpackage "mime-types"
 	(:export
-        "init-mime-types"
+		"get-mime-type"
         "define-mime-type"
-		"get-mime-type"))
+        "init-mime-types"
+	))
 
 (in-package "mime-types")
 

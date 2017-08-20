@@ -5,16 +5,17 @@
 ;;;;
 
 (defpackage "www"
-	(:export
-	    "get"
-        "ddg"))
+    (:export
+        "ddg"
+        "get"
+    ))
 
 
 (in-package "www")
 
-(import "System.Net.WebRequest")
-(import "System.Net.HttpStatusCode")
 (import "System.Net.CookieContainer")
+(import "System.Net.HttpStatusCode")
+(import "System.Net.WebRequest")
 (import "System.Uri")
 
 

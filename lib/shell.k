@@ -10,28 +10,29 @@
 
 (defpackage "shell"
     (:export
-        "here"
-        "cd"
-        "dir"
-        "exec"
-        "with-directory"
-        "make-safe-argument-string"
-        "pwd"
-        "run-windows-command"
-        "run"
-        "env"
-        "path"
-        "get-special-folder"
         "$home"
         "$local-application-data"
-        "$roaming-application-data"
         "$my-documents"
-        "robocopy-mirror"
+        "$roaming-application-data"
+        "cd"
+        "dir"
+        "env"
+        "exec"
         "expand-path-name"
+        "get-special-folder"
+        "here"
+        "make-safe-argument-string"
+        "path"
+        "pwd"
+        "robocopy-mirror"
+        "run"
+        "run-windows-command"
+        "with-directory"
     )
     (:shadow
+        "path"
         "run"
-        "path"))
+    ))
 
 
 (in-package "shell")

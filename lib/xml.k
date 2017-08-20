@@ -8,9 +8,9 @@
     (:export
         "add"
         "add-range"
-        "to-string"
         "DOC-TYPE"
         "make-xml-function"
+        "to-string"
     ))
 
 (in-package "xml")

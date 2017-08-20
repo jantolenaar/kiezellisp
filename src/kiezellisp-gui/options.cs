@@ -10,7 +10,7 @@ namespace Kiezel
 	{
 		#region Fields
 
-		public bool Debug;
+		public int DebugLevel;
 		public string ScriptName;
 		public Cons UserArguments;
 
@@ -21,7 +21,6 @@ namespace Kiezel
 		public CommandLineOptions()
 		{
 			ScriptName = null;
-			Debug = true;
 			UserArguments = null;
 		}
 
@@ -37,9 +36,6 @@ namespace Kiezel
 			var options = new CommandLineOptions();
 			var parser = new CommandLineParser();
 
-			parser.AddOption("--debug");
-			parser.AddOption("--release");
-
 			parser.Parse(args);
 
 			var s = parser.GetArgument(0);
@@ -47,18 +43,8 @@ namespace Kiezel
 			if (s != null)
 			{
 				options.ScriptName = s;
-				options.Debug = false;
+				options.DebugLevel = 0;
 				options.UserArguments = Runtime.AsList(parser.GetArgumentArray(1));
-			}
-
-			if (parser.GetOption("release") != null)
-			{
-				options.Debug = false;
-			}
-
-			if (parser.GetOption("debug") != null)
-			{
-				options.Debug = true;
 			}
 
 			return options;

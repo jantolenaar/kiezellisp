@@ -16,7 +16,7 @@ namespace kiezellisp_embedded_demo
         {
             try
             {
-                Kiezel.EmbeddedMode.Init(debugMode: false);
+                Kiezel.EmbeddedMode.Init();
                 var a = Kiezel.EmbeddedMode.Funcall("+", 2, 3);
                 Console.WriteLine("a={0}", a);
                 Kiezel.EmbeddedMode.Funcall("++", 3, 4);

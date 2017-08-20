@@ -179,56 +179,83 @@ namespace Kiezel
         public static Expression MakeExpression(bool nullable, string members, Expression[] args)
         {
             // Warning: modifies args
+            // args[0] is replaced after executing the next member.
+            // The last member gets the args array, the others only args[0].
 
             if (args.Length == 0)
             {
                 throw new LispException("Member accessor invoked without a target: {0}", members);
             }
 
-            var names = members.Split(new char[] { '.' }, StringSplitOptions.RemoveEmptyEntries);
-            var code = args[0];
+            var names = Runtime.AsList(members.Split(new char[] { '.' }, StringSplitOptions.RemoveEmptyEntries));
 
             if (nullable)
             {
-                var temp = Expression.Parameter(typeof(object));
-
-                for (var i = 0; i < names.Length; ++i)
-                {
-                    Expression code2;
-
-                    if (i < names.Length - 1)
-                    {
-                        var binder = Runtime.GetInvokeMemberBinder(new InvokeMemberBinderKey(names[i], 0));
-                        code2 = Runtime.CompileDynamicExpression(binder, typeof(object), new Expression[] { code });
-                    }
-                    else {
-                        var binder = Runtime.GetInvokeMemberBinder(new InvokeMemberBinderKey(names[i], args.Length - 1));
-                        args[0] = code;
-                        code2 = Runtime.CompileDynamicExpression(binder, typeof(object), args);
-                    }
-
-                    code = Expression.Condition(Runtime.WrapBooleanTest(Expression.Assign(temp, code)), code2, Expression.Constant(null));
-                }
-
-                code = Expression.Block(typeof(object), new ParameterExpression[] { temp }, code);
+                var temp = Expression.Parameter(typeof(object), "temp");
+                var code = MakeNullableExpression(temp, names, args);
+                var block = Expression.Block(typeof(object), new ParameterExpression[] { temp }, code);
+                return block;
             }
             else {
-                for (var i = 0; i < names.Length; ++i)
-                {
-                    if (i < names.Length - 1)
-                    {
-                        var binder = Runtime.GetInvokeMemberBinder(new InvokeMemberBinderKey(names[i], 0));
-                        code = Runtime.CompileDynamicExpression(binder, typeof(object), new Expression[] { code });
-                    }
-                    else {
-                        var binder = Runtime.GetInvokeMemberBinder(new InvokeMemberBinderKey(names[i], args.Length - 1));
-                        args[0] = code;
-                        code = Runtime.CompileDynamicExpression(binder, typeof(object), args);
-                    }
-                }
+                return MakeExpression(names, args);
             }
 
-            return code;
+        }
+
+        public static Expression MakeExpression(Cons members, Expression[] args)
+        {
+            //
+            // members must contain at least one member.
+            //
+
+            if (members.Cdr == null)
+            {
+                // last
+                var member = (string)members.Car;
+                var binder = Runtime.GetInvokeMemberBinder(new InvokeMemberBinderKey(member, args.Length - 1));
+                var code = Runtime.CompileDynamicExpression(binder, typeof(object), args);
+                return code;
+            }
+            else
+            {
+                // not last
+                var member = (string)members.Car;
+                var binder = Runtime.GetInvokeMemberBinder(new InvokeMemberBinderKey(member, 0));
+                var code = Runtime.CompileDynamicExpression(binder, typeof(object), new Expression[] { args[0] });
+                args[0] = code;
+                return MakeExpression(members.Cdr, args);
+            }
+        }
+
+        public static Expression MakeNullableExpression(ParameterExpression temp, Cons members, Expression[] args)
+        {
+            //
+            // members must contain at least one member.
+            //
+
+            if (members.Cdr == null)
+            {
+                // last
+                var member = (string)members.Car;
+                var binder = Runtime.GetInvokeMemberBinder(new InvokeMemberBinderKey(member, args.Length - 1));
+                var target = args[0];
+                args[0] = temp;
+                var body = Runtime.CompileDynamicExpression(binder, typeof(object), args);
+                var code = Expression.Condition(Runtime.WrapBooleanTest(Expression.Assign(temp, target)), body, Expression.Constant(null));
+                return code;
+            }
+            else
+            {
+                // not last
+                var member = (string)members.Car;
+                var binder = Runtime.GetInvokeMemberBinder(new InvokeMemberBinderKey(member, 0));
+                var target = args[0];
+                args[0] = temp;
+                var body = Runtime.CompileDynamicExpression(binder, typeof(object), new Expression[] { args[0] });
+                var code = Expression.Condition(Runtime.WrapBooleanTest(Expression.Assign(temp, target)), body, Expression.Constant(null));
+                args[0] = code;
+                return MakeNullableExpression(temp, members.Cdr, args);
+            }
         }
 
         #endregion Public Methods

@@ -36,44 +36,71 @@ namespace Kiezel
         #region Fields
 
         public bool AnyLabelsCreated;
-        public HashSet<Symbol> FreeVariables;
         public bool IsBlockScope;
         public bool IsFileScope;
-        public bool IsLambda;
         public List<LabelTarget> Labels = new List<LabelTarget>();
-        public string Name;
-        public List<Symbol> Names;
+        public List<LabelTarget> ValueLabels = new List<LabelTarget>();
+        public Symbol Name;
         public AnalysisScope Parent;
-        public ParameterExpression TagBodySaved;
-        public ParameterExpression Tilde;
+        public AnalysisScope LambdaParent;
+        public ParameterExpression SavedState = Expression.Parameter(typeof(ThreadContextState), "%state");
         public bool UsesDynamicVariables;
-        public bool UsesFramedVariables;
         public List<ScopeEntry> Variables = new List<ScopeEntry>();
+        public List<ScopeEntry> HoistVariables = new List<ScopeEntry>();
+        public ParameterExpression HoistedArgs;
 
         #endregion Fields
 
         #region Constructors
 
-        public AnalysisScope()
-        {
-        }
-
-        public AnalysisScope(AnalysisScope parent, string name)
-            : this()
+        public AnalysisScope(AnalysisScope parent = null)
         {
             Parent = parent;
-            Name = name;
+            LambdaParent = parent == null ? null : parent.LambdaParent;
+            Name = parent == null ? Symbols.Anonymous : parent.Name;
         }
 
         #endregion Constructors
 
         #region Public Properties
 
+        public bool IsLambda
+        {
+            get
+            {
+                return LambdaParent == this;
+            }
+        }
+
+        public List<Symbol> Names
+        {
+            get
+            {
+                return Variables.Where(x => x.Parameter != null).Select(x => x.Key).ToList();
+            }
+        }
+
         public List<ParameterExpression> Parameters
         {
             get
             {
                 return Variables.Where(x => x.Parameter != null).Select(x => x.Parameter).ToList();
+            }
+        }
+
+        public List<Symbol> HoistNames
+        {
+            get
+            {
+                return HoistVariables.Where(x => x.Parameter != null).Select(x => x.Key).ToList();
+            }
+        }
+
+        public List<ParameterExpression> HoistParameters
+        {
+            get
+            {
+                return HoistVariables.Where(x => x.Parameter != null).Select(x => x.Parameter).ToList();
             }
         }
 
@@ -87,32 +114,7 @@ namespace Kiezel
 
         #endregion Public Properties
 
-        #region Private Methods
-
-        bool LexicalSymEqual(Symbol sym1, Symbol sym2)
-        {
-            if (sym1 == sym2)
-            {
-                return true;
-            }
-            return false;
-        }
-
-        #endregion Private Methods
-
         #region Public Methods
-
-        public void ChangeNativeToFrameLocal(ScopeEntry entry)
-        {
-            if (Names == null)
-            {
-                Names = new List<Symbol>();
-            }
-
-            UsesFramedVariables = true;
-            Names.Add(entry.Key);
-            entry.Value = Names.Count - 1;
-        }
 
         public void CheckVariables()
         {
@@ -122,7 +124,7 @@ namespace Kiezel
             {
                 if (sc.IsLambda && sc.Name != null)
                 {
-                    context = sc.Name;
+                    context = sc.Name.ContextualName;
                     break;
                 }
             }
@@ -146,30 +148,15 @@ namespace Kiezel
             }
         }
 
-        public int DefineFrameLocal(Symbol sym, ScopeFlags flags)
-        {
-            if (Names == null)
-            {
-                Names = new List<Symbol>();
-            }
-
-            UsesFramedVariables = true;
-            Names.Add(sym);
-            Variables.Add(new ScopeEntry(this, sym, Names.Count - 1, flags));
-
-            return Names.Count - 1;
-        }
-
         public void DefineMacro(Symbol sym, object macro, ScopeFlags flags)
         {
             Variables.Add(new ScopeEntry(this, sym, macro, flags));
         }
 
-        public ParameterExpression DefineNativeLocal(Symbol sym, ScopeFlags flags, Type type = null)
+        public ParameterExpression DefineVariable(Symbol sym, ScopeFlags flags, Type type = null)
         {
             var parameter = Expression.Parameter(type ?? typeof(object), sym.Name);
             Variables.Add(new ScopeEntry(this, sym, parameter, flags));
-
             return parameter;
         }
 
@@ -179,96 +166,48 @@ namespace Kiezel
             return entry != null && entry.Scope == this;
         }
 
-        public bool FindLocal(Symbol sym, ScopeFlags reason)
+        public ScopeEntry FindLocal(Symbol sym, ScopeFlags reason = 0)
         {
-            int depth;
-            ScopeEntry entry;
-            return FindLocal(sym, reason, out depth, out entry);
-        }
-
-        public bool FindLocal(Symbol sym, ScopeFlags reason, out int depth, out ScopeEntry entry)
-        {
-            bool noCapturedNativeParametersBeyondThisPoint = false;
-
-            depth = 0;
-            entry = null;
-
-            for (AnalysisScope sc = this; sc != null; sc = sc.Parent)
+            for (var sc = this; sc != null; sc = sc.Parent)
             {
-                ScopeEntry item;
-
-                if (sc.IsBlockScope && sym == Symbols.Tilde)
+                foreach (var item in sc.Variables)
                 {
-                    if (sc.Tilde == null)
+                    if (item.Key == sym)
                     {
-                        sc.Tilde = sc.DefineNativeLocal(Symbols.Tilde, ScopeFlags.All);
-                    }
-                }
-
-                for (var i = sc.Variables.Count - 1; i >= 0; --i)
-                {
-                    item = sc.Variables[i];
-
-                    // Looking for exact match
-                    if (LexicalSymEqual(item.Key, sym))
-                    {
-                        entry = item;
                         item.Flags |= reason;
 
-                        if (item.Index != -1 || item.MacroValue != null || item.SymbolMacroValue != null)
-                        {
-                        }
-                        else if (reason != 0 && noCapturedNativeParametersBeyondThisPoint && !LexicalSymEqual(sym, Symbols.Tilde))
+                        if (item.Parameter != null && LambdaParent != sc.LambdaParent)
                         {
                             // Linq.Expression closures do not support native variables defined
-                            // outside the LambdaExpression. Whenever we encounter such a variable
-                            // it is added to the free variables and also added as frame variable
-                            // to keep the compiler happy.
-                            // The recompile that comes later uses the list of free variables to
-                            // choose the correct implementation scheme.
-                            sc.FreeVariables.Add(sym);
-                            sc.ChangeNativeToFrameLocal(item);
+                            // outside a separately compiled lambda.
+                            var index = LambdaParent.HoistVariables.Count;
+                            var hoistedItem = new ScopeEntry(item, index);
+                            LambdaParent.HoistVariables.Add(hoistedItem);
+                            return hoistedItem;
                         }
-
-                        return true;
+                        else
+                        {
+                            return item;
+                        }
                     }
                 }
 
-                if (sc.IsBlockScope && sym == Symbols.Tilde)
+                if (LambdaParent == sc)
                 {
-                    // boundary for ~ variable which is tightly coupled to its DO block.
-                    break;
-                }
-
-                if (sc.IsLambda)
-                {
-                    // boundary for native variables in closures.
-                    noCapturedNativeParametersBeyondThisPoint = true;
-                }
-
-                if (sc.Names != null)
-                {
-                    ++depth;
+                    foreach (var item in sc.HoistVariables)
+                    {
+                        if (item.Key == sym)
+                        {
+                            item.Flags |= reason;
+                            item.HoistOriginal.Flags |= reason;
+                            return item;
+                        }
+                    }
                 }
 
             }
 
-            depth = 0;
-
-            return false;
-        }
-
-        public ScopeEntry FindLocal(Symbol name)
-        {
-            int depth;
-            ScopeEntry entry;
-            if (FindLocal(name, 0, out depth, out entry))
-            {
-                return entry;
-            }
-            else {
-                return null;
-            }
+            return null;
         }
 
         public void PrintWarning(string context, string error, Symbol sym)
@@ -293,6 +232,8 @@ namespace Kiezel
         public Symbol Key;
         public AnalysisScope Scope;
         public object Value;
+        public int HoistIndex;
+        public ScopeEntry HoistOriginal;
 
         #endregion Fields
 
@@ -304,6 +245,15 @@ namespace Kiezel
             Key = key;
             Value = value;
             Flags = flags;
+            HoistIndex = -1;
+            HoistOriginal = null;
+        }
+
+        public ScopeEntry(ScopeEntry item, int index)
+        : this(item.Scope, item.Key, item.Value, item.Flags)
+        {
+            HoistIndex = index;
+            HoistOriginal = item;
         }
 
         #endregion Constructors
@@ -383,5 +333,6 @@ namespace Kiezel
         }
 
         #endregion Public Properties
+
     }
 }

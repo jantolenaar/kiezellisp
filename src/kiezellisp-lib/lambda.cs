@@ -12,6 +12,7 @@ namespace Kiezel
     using System.Dynamic;
     using System.Linq.Expressions;
     using System.Reflection;
+    using System.Runtime.CompilerServices;
 
     using ReduceFunc = System.Func<object[], object>;
 
@@ -232,8 +233,9 @@ namespace Kiezel
     {
         #region Fields
 
-        public LambdaDefinition Definition;
-        public Frame Frame;
+        public LambdaDefinition Definition { get; set; }
+
+        public Frame HoistFrame;
         public BindingRestrictions GenericRestrictions;
         public object Owner;
 
@@ -304,7 +306,7 @@ namespace Kiezel
         {
             var context = Runtime.CurrentThreadContext;
             var saved = context.Frame;
-            context.Frame = Frame;
+            context.Frame = HoistFrame;
             object result;
 
             if (!bound)
@@ -312,14 +314,14 @@ namespace Kiezel
                 args = MakeArgumentFrame(args, env, wholeMacroForm);
             }
 
-            if (Runtime.DebugMode)
+            if (Runtime.DebugLevel >= 1)
             {
                 context.EvaluationStack = Runtime.MakeListStar(saved, context.SpecialStack, context.EvaluationStack);
-                result = Definition.Proc(lambdaList, Owner ?? this, args);
+                result = Definition.Proc(lambdaList, Owner ?? this, args, HoistFrame.Values);
                 context.EvaluationStack = Runtime.Cddr(context.EvaluationStack);
             }
             else {
-                result = Definition.Proc(lambdaList, Owner ?? this, args);
+                result = Definition.Proc(lambdaList, Owner ?? this, args, HoistFrame.Values);
             }
             context.Frame = saved;
 
@@ -515,21 +517,22 @@ namespace Kiezel
         #region Fields
 
         public Symbol Name;
-        public Func<Cons, object, object[], object> Proc;
+        public Func<Cons, object, object[], object, object> Proc;
         public LambdaSignature Signature;
         public Cons Source;
         public Cons Syntax;
-
+        public Expression Code { get; set; }
+        public List<Symbol> HoistNames;
         #endregion Fields
 
         #region Public Methods
 
-        public static LambdaClosure MakeLambdaClosure(LambdaDefinition def)
+        public static LambdaClosure MakeLambdaClosure(LambdaDefinition def, IRuntimeVariables hoistValues)
         {
             var closure = new LambdaClosure
             {
                 Definition = def,
-                Frame = Runtime.CurrentThreadContext.Frame
+                HoistFrame = new Frame(def.HoistNames, hoistValues)
             };
 
             return closure;
