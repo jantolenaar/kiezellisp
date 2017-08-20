@@ -263,7 +263,8 @@ namespace Kiezel
                             default:
                                 var result = args[0];
                                 var input = args[1];
-                                return Funcall(f, input) != null ? Apply(rf, args) : result;
+                                var val = Funcall(f, input);
+                                return val != null ? Funcall(rf, result, val) : result;
                         }
                     };
                     return new ApplyWrapper2(nrf);
@@ -288,8 +289,9 @@ namespace Kiezel
                             default:
                                 var result = args[0];
                                 var input = args[1];
+                                var val = Funcall(f, index, input);
                                 ++index;
-                                return Funcall(f, index, input) != null ? Apply(rf, args) : result;
+                                return val != null ? Funcall(rf, result, val) : result;
                         }
                     };
                     return new ApplyWrapper2(nrf);

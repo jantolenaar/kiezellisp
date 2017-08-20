@@ -2,6 +2,10 @@
 
 ## 2017/08/20
 
+*   Fixed bug in `keep` and `keep-indexed`.
+
+## 2017/08/20
+
 *   Added `mono5` commandline option.
 
 ## 2017/08/04
