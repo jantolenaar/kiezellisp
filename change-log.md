@@ -1,5 +1,9 @@
 # Change Log
 
+## 2017/08/31
+
+*   Added `lftp` wrapper.
+
 ## 2017/08/20
 
 *   Fixed bug in `keep` and `keep-indexed`.
