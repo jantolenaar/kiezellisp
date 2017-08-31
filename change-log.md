@@ -2,6 +2,7 @@
 
 ## 2017/08/31
 
+*   Prevent keyword-like variable names.
 *   Added `lftp` wrapper.
 
 ## 2017/08/20

@@ -175,14 +175,14 @@ namespace Kiezel
         [Lisp("symbol-name")]
         public static string SymbolName(object target)
         {
-            var sym = CheckSymbol(target);
+            var sym = CheckSymbolOrKeyword(target);
             return sym.Name;
         }
 
         [Lisp("symbol-package")]
         public static Package SymbolPackage(object target)
         {
-            var sym = CheckSymbol(target);
+            var sym = CheckSymbolOrKeyword(target);
             return sym.Package;
         }
 

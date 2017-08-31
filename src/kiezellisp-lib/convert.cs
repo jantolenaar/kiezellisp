@@ -375,12 +375,23 @@ namespace Kiezel
 
         public static Symbol CheckSymbol(object val)
         {
+            var sym = val as Symbol;
+            if (sym != null && sym.Package != KeywordPackage)
+            {
+                return sym;
+            }
+
+            throw new LispException("{0} is not a non-keyword symbol", val);
+        }
+
+        public static Symbol CheckSymbolOrKeyword(object val)
+        {
             if (val is Symbol)
             {
                 return (Symbol)val;
             }
 
-            throw new LispException("{0} is not a symbol", val);
+            throw new LispException("{0} is not a symbol or keyword", val);
         }
 
         public static Delegate ConvertToDelegate(Type type, IApply closure)

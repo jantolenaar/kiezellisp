@@ -294,15 +294,16 @@ namespace Kiezel
 
             if (sym != null)
             {
-                var entry = env.FindLocal(sym, ScopeFlags.Referenced);
-                var macro = (entry != null) ? entry.SymbolMacroValue : sym.SymbolMacroValue;
-                if (macro != null)
+                if (!Keywordp(sym))
                 {
-                    return macro.Form;
+                    var entry = env.FindLocal(sym, ScopeFlags.Referenced);
+                    var macro = (entry != null) ? entry.SymbolMacroValue : sym.SymbolMacroValue;
+                    if (macro != null)
+                    {
+                        return macro.Form;
+                    }
                 }
-                else {
-                    return expr;
-                }
+                return expr;
             }
 
             var form = expr as Cons;
@@ -311,7 +312,7 @@ namespace Kiezel
             {
                 var head = First(form) as Symbol;
 
-                if (head == null)
+                if (head == null || Keywordp(head))
                 {
                     return expr;
                 }
