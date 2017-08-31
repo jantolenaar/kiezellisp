@@ -2,6 +2,7 @@
 
 ## 2017/08/31
 
+*   Fixed `call-next-method` macro.
 *   Prevent keyword-like variable names.
 *   Added `lftp` wrapper.
 

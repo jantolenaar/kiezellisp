@@ -202,7 +202,7 @@
 ;;;
 
 (defmacro call-next-method ()
-    `(system:call-next-method __lambdas__ __args__))
+    `(system:call-next-method %lambdas %args))
 
 ;;;
 ;;; exception handling
