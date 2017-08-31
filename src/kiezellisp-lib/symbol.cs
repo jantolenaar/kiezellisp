@@ -31,7 +31,7 @@ namespace Kiezel
 
         public static Symbol CheckReadVariable(object target)
         {
-            var sym = CheckSymbol(target);
+            var sym = CheckSymbolOrKeyword(target);
             if (sym.Usage == SymbolUsage.None)
             {
                 ThrowError("Undefined variable: ", sym.LongName);

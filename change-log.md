@@ -2,6 +2,7 @@
 
 ## 2017/08/31
 
+*   Fixed bug in generated `loop` code, present in debug version only.
 *   Fixed `call-next-method` macro.
 *   Prevent keyword-like variable names.
 *   Added `lftp` wrapper.

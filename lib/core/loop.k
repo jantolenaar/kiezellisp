@@ -120,14 +120,15 @@
     `(do
         ,@$initial-steps
         (label test-label)
-        ,@$tests
         (do
-            ,@$body)
-        ,@(if $continue-label-used '((label continue-label)))
-        ,@$next-steps
-        (goto test-label)
-        ,@(if $finish-label-used '((label finish-label)))
-        ,@$final-steps
+            ,@$tests
+            (do
+                ,@$body)
+            ,@(if $continue-label-used '((label continue-label)))
+            ,@$next-steps
+            (goto test-label)
+            ,@(if $finish-label-used '((label finish-label)))
+            ,@$final-steps)
         ,@(if $break-label-used '((label break-label dummy-value)))))
 
 (defun pattern-match (pattern form)
