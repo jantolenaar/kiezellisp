@@ -441,7 +441,7 @@ namespace Kiezel
         public static SymbolDescriptor ParseSymbol(string name)
         {
             var descr = new SymbolDescriptor();
-            var index = name.LastIndexOf(PackageSymbolSeparator);
+            var index = name.IndexOf(PackageSymbolSeparator);
 
             if (index == 0)
             {
@@ -449,6 +449,7 @@ namespace Kiezel
                 descr.PackageName = "keyword";
                 descr.Exported = true;
                 descr.SymbolName = name.Substring(1);
+                descr.SymbolName = descr.SymbolName.TrimStart(PackageSymbolSeparator);
                 if (descr.SymbolName.Length == 0)
                 {
                     throw new LispException("Keyword name cannot be null or blank");
@@ -458,7 +459,7 @@ namespace Kiezel
 
             if (index == -1)
             {
-                if (Symbols.Package == null)
+                if (SetupMode)
                 {
                     descr.Package = LispPackage;
                     descr.PackageName = "lisp";
@@ -478,12 +479,12 @@ namespace Kiezel
                 return descr;
             }
 
-            if (index > 0 && name[index - 1] == PackageSymbolSeparator)
+            if (index + 1 < name.Length && name[index + 1] == PackageSymbolSeparator)
             {
                 // two consecutives colons
                 descr.Exported = false;
-                descr.PackageName = name.Substring(0, index - 1);
-                descr.SymbolName = name.Substring(index + 1);
+                descr.PackageName = name.Substring(0, index);
+                descr.SymbolName = name.Substring(index + 2);
             }
             else {
                 // one colon

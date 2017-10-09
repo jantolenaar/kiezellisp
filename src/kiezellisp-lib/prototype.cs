@@ -128,7 +128,7 @@ namespace Kiezel
         public PrototypeDictionary AsDictionary()
         {
             var dict = new PrototypeDictionary();
-            MergeInto(this, dict);
+            MergeInto(dict);
             return dict;
         }
 
@@ -343,7 +343,21 @@ namespace Kiezel
             return false;
         }
 
-        public void MergeInto(Prototype original, PrototypeDictionary dict)
+        [Lisp("merge")]
+        public static Prototype Merge(params Prototype[] prototypes)
+        {
+            var dict = new PrototypeDictionary();
+            foreach (var p in prototypes)
+            {
+                if (p != null)
+                {
+                    p.MergeInto(dict);
+                }
+            }
+            return FromDictionary(dict);
+        }
+
+        public void MergeInto(PrototypeDictionary dict)
         {
             foreach (var item in Dict)
             {
@@ -355,7 +369,7 @@ namespace Kiezel
 
             foreach (var parent in Parents)
             {
-                parent.MergeInto(original, dict);
+                parent.MergeInto(dict);
             }
         }
 

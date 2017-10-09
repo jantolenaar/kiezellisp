@@ -74,7 +74,7 @@
 
 (defun print-xml-attribute (attr)
     (let key (.key attr))
-    (let val (.to-string (.value attr)))
+    (let val (or (?to-string (.value attr)) ""))
     (let quote (if (index-of #\' val) "\"" "'"))
     (print " " key "=" quote (.html-encode val) quote))
 

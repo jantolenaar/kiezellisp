@@ -460,6 +460,7 @@ namespace Kiezel
             ReadDecimalNumbers = true;
             GentempCounter = 0;
             LispPackage = null;
+            LispDocPackage = null;
             KeywordPackage = null;
             UserPackage = null;
             Packages = new Dictionary<string, Package>();

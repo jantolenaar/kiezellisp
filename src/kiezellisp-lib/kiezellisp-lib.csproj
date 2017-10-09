@@ -177,7 +177,7 @@
   -->
   <ItemGroup>
     <Content Include="kiezellisp-init.k">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
   </ItemGroup>
 </Project>

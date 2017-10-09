@@ -354,7 +354,7 @@ namespace Kiezel
             CheckMinLength(form, 3);
             CheckMaxLength(form, 4);
             var sym = CheckSymbol(Second(form));
-            WarnWhenShadowing(sym);
+            WarnWhenShadowing("def", sym);
             var value = Compile(Third(form), scope);
             var doc = (string)Fourth(form);
             return Expression.Call(DefineVariableMethod, Expression.Constant(sym), value, Expression.Constant(doc, typeof(string)));
@@ -366,7 +366,7 @@ namespace Kiezel
             CheckMinLength(form, 3);
             CheckMaxLength(form, 4);
             var sym = CheckSymbol(Second(form));
-            WarnWhenShadowing(sym);
+            WarnWhenShadowing("defconstant", sym);
             var value = Compile(Third(form), scope);
             var doc = (string)Fourth(form);
             return Expression.Call(DefineConstantMethod, Expression.Constant(sym), value, Expression.Constant(doc, typeof(string)));
@@ -381,7 +381,7 @@ namespace Kiezel
             {
                 throw new LispException("Invalid macro name: {0}", sym);
             }
-            WarnWhenShadowing(sym);
+            WarnWhenShadowing("define-compiler-macro", sym);
             string doc;
             var lambda = CompileLambdaDef(sym, Cddr(form), scope, LambdaKind.Macro, out doc);
             return Expression.Call(DefineCompilerMacroMethod, Expression.Constant(sym), lambda, Expression.Constant(doc, typeof(string)));
@@ -396,7 +396,7 @@ namespace Kiezel
             {
                 throw new LispException("Invalid symbol-macro name: {0}", sym);
             }
-            WarnWhenShadowing(sym);
+            WarnWhenShadowing("define-symbol-macro", sym);
             string doc = "";
             var macro = new SymbolMacro(Third(form));
             return Expression.Call(DefineSymbolMacroMethod, Expression.Constant(sym), Expression.Constant(macro), Expression.Constant(doc, typeof(string)));
@@ -411,7 +411,7 @@ namespace Kiezel
             {
                 throw new LispException("Invalid macro name: {0}", sym);
             }
-            WarnWhenShadowing(sym);
+            WarnWhenShadowing("defmacro", sym);
             string doc;
             var lambda = CompileLambdaDef(sym, Cddr(form), scope, LambdaKind.Macro, out doc);
             return Expression.Call(DefineMacroMethod, Expression.Constant(sym), lambda, Expression.Constant(doc, typeof(string)));
@@ -426,7 +426,7 @@ namespace Kiezel
             {
                 throw new LispException("Invalid method name: {0}", sym);
             }
-            WarnWhenShadowing(sym);
+            WarnWhenShadowing("defmethod", sym);
             string doc;
             var lambda = CompileLambdaDef(sym, Cddr(form), scope, LambdaKind.Method, out doc);
             return CallRuntime(DefineMethodMethod, Expression.Constant(sym), lambda);
@@ -441,7 +441,7 @@ namespace Kiezel
             {
                 throw new LispException("Invalid method name: {0}", sym);
             }
-            WarnWhenShadowing(sym);
+            WarnWhenShadowing("defmulti", sym);
             var args = (Cons)Third(form);
             var body = Cdr(Cddr(form));
             var lispParams = CompileFormalArgs(args, new AnalysisScope(), LambdaKind.Function);
@@ -462,7 +462,7 @@ namespace Kiezel
             {
                 throw new LispException("Invalid function name: {0}", sym);
             }
-            WarnWhenShadowing(sym);
+            WarnWhenShadowing("defun", sym);
             string doc;
             var lambda = CompileLambdaDef(sym, Cddr(form), scope, LambdaKind.Function, out doc);
             return CallRuntime(DefineFunctionMethod, Expression.Constant(sym), lambda, Expression.Constant(doc, typeof(string)));
@@ -1391,25 +1391,7 @@ namespace Kiezel
             return Expression.Block(typeof(object), Expression.Throw(Compile(Second(form), scope)), CompileLiteral(null));
         }
 
-        public static Delegate CompileToDelegate(Expression expr)
-        {
-            var lambda = expr as LambdaExpression;
-
-            if (lambda == null)
-            {
-                lambda = Expression.Lambda(expr);
-            }
-
-            if (AdaptiveCompilation)
-            {
-                return Microsoft.Scripting.Generation.CompilerHelpers.LightCompile(lambda, CompilationThreshold);
-            }
-            else {
-                return lambda.Compile();
-            }
-        }
-
-        public static Delegate CompileToDelegate(Expression expr, ParameterExpression[] parameters)
+        public static Delegate CompileToDelegate(Expression expr, params ParameterExpression[] parameters)
         {
             var lambda = expr as LambdaExpression;
 

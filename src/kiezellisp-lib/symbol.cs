@@ -201,12 +201,12 @@ namespace Kiezel
             EraseVariable(sym);
         }
 
-        public static void WarnWhenShadowing(Symbol sym)
+        public static void WarnWhenShadowing(string context, Symbol sym)
         {
             var package = CurrentPackage();
             if (sym.Package != package && sym.Package != UserPackage)
             {
-                PrintWarning("defining symbol ", sym.Name, " shadows ", sym.LongName);
+                PrintWarning("(", context, " ", sym.Name, " ...) overwrites the value of ", sym.LongName);
             }
         }
 
@@ -483,7 +483,6 @@ namespace Kiezel
             {
                 return Package == Runtime.TempPackage
                 || Name.StartsWith("_")
-                || Name.StartsWith("~")
                 || Name.StartsWith("%");
             }
         }
@@ -867,7 +866,7 @@ namespace Kiezel
             Key = MakeSymbol("&key");
             Label = MakeSymbol("label");
             Lambda = MakeSymbol("lambda");
-            LambdaList = MakeSymbol(@"%lambdas");
+            LambdaList = MakeSymbol("%lambdas");
             LazyImport = MakeSymbol("$lazy-import");
             LazyVar = MakeSymbol("lazy");
             Left = MakeSymbol(":left");

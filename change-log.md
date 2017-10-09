@@ -2,6 +2,9 @@
 
 ## 2017/08/31
 
+*   Parse `a:b:c` as package name `a` and symbol name `b:c` to support
+    things like `:xmlns:xlink` as a keyword in `XmlElement`.
+*   Improved warning about shadowing symbols.
 *   Fixed bug in generated `loop` code, present in debug version only.
 *   Fixed `call-next-method` macro.
 *   Prevent keyword-like variable names.
