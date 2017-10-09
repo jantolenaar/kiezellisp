@@ -267,6 +267,9 @@
 (defun prefix-symbol (prefix sym)
     (make-symbol prefix "-" (if sym (symbol-name sym) "temp")))
 
+(defun tail-symbol (sym)
+    (prefix-symbol sym :tail))
+
 ;;;
 ;;; level 1 accumulator handlers
 ;;;
@@ -323,14 +326,24 @@
         (true
             (throw-error "Invalid <collect-each> clause in loop")))
 
+(defun do-collect (sym val)
+    (let tail-sym (tail-symbol sym))
+    `(cond
+        ((null? ,tail-sym)
+            (setf ,tail-sym (cons ,val null))
+            (setf ,sym ,tail-sym))
+        (true
+            (setf (cdr ,tail-sym) (cons ,val null))
+            (setf ,tail-sym (cdr ,tail-sym)))))
+
 (define-clause-pattern collecting-clause
         ((match '(collecting ? :into ?))
             (check-symbol arg2)
             (pushnew arg2 $collect-vars)
-            `(.add ,arg2 ,arg1))
+            (do-collect arg2 arg1))
         ((match '(collecting ?))
             (pushnew '%accumulator $collect-vars)
-            `(.add %accumulator ,arg1))
+            (do-collect '%accumulator arg1))
         (true
             (throw-error "Invalid <collecting> clause in loop")))
 
@@ -456,7 +469,8 @@
     (each initial-minimaximizing-step $minimizing-vars))
 
 (defun initial-collect-step (sym)
-    (.add $initial-steps `(var ,sym (vector))))
+    (.add $initial-steps `(var ,sym null))
+    (.add $initial-steps `(var ,(tail-symbol sym) null)))
 
 (defun initial-summing-step (sym)
     (.add $initial-steps `(var ,sym 0)))

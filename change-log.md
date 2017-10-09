@@ -1,5 +1,9 @@
 # Change Log
 
+## 2017/10/09
+
+*   loop collecting clause now returns list instead of vector.
+ 
 ## 2017/08/31
 
 *   Parse `a:b:c` as package name `a` and symbol name `b:c` to support
