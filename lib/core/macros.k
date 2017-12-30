@@ -296,7 +296,7 @@
     (let temp (gentemp))
     `(do
         (var ,temp (car ,place))
-        (setf ,sym (cdr ,place))
+        (setf ,place (cdr ,place))
         ,temp))
 
 (defmacro push (item place)

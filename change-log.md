@@ -1,5 +1,9 @@
 # Change Log
 
+## 2017/12/01
+
+*   Fixed `pop` macro.
+
 ## 2017/10/09
 
 *   loop collecting clause now returns list instead of vector.
