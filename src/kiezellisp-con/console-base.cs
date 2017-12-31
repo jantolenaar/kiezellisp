@@ -19,10 +19,10 @@ namespace Kiezel
         public static Exception LastException;
         public static string[] ReplCommands =
         {
-            ":clear", ":continue", ":globals", ":quit",
-            ":abort", ":backtrace", ":variables", ":$variables",
-            ":top", ":exception", ":Exception", ":force",
-            ":describe", ":reset", ":time", ":modify", ":eval"
+            "clear", "continue", "globals", "quit",
+            "abort", "backtrace", "variables", "$variables",
+            "top", "exception", "Exception", "force",
+            "describe", "reset", "time", "modify", "eval"
         };
         public static Stack<ThreadContextState> state;
         public static Stopwatch timer = Stopwatch.StartNew();
@@ -55,6 +55,36 @@ namespace Kiezel
             }
         }
 
+        public static string ExtractCommand(Cons code)
+        {
+            var head = Runtime.First(code);
+            var sym = head as Symbol;
+            var cons = head as Cons;
+
+            if (sym != null)
+            {
+                if (Runtime.Keywordp(sym))
+                {
+                    return sym.Name;
+                }
+                else if (sym.Name == "?")
+                {
+                    return "?";
+                }
+            }
+
+            if (cons != null)
+            {
+                var head2 = Runtime.First(cons);
+                if (head2 == Symbols.Unquote)
+                {
+                    return Runtime.MakeString(Runtime.Second(cons));
+                }
+            }
+
+            return null;
+        }
+
         public static void EvalPrintCommand(string data, bool debugging)
         {
             var output = GetConsoleOut();
@@ -68,11 +98,10 @@ namespace Kiezel
 
             Runtime.RestoreStackAndFrame(state.Peek());
 
-            var head = Runtime.First(code) as Symbol;
+            var dotCommand = ExtractCommand(code);
 
-            if (head != null && (Runtime.Keywordp(head) || head.Name == "?"))
+            if (dotCommand != null)
             {
-                var dotCommand = Runtime.First(code).ToString();
                 var command = "";
                 var commandsPrefix = ReplCommands.Where(x => x.StartsWith(dotCommand)).ToList();
                 var commandsExact = ReplCommands.Where(x => x == dotCommand).ToList();
@@ -103,7 +132,7 @@ namespace Kiezel
 
                 switch (command)
                 {
-                    case ":continue":
+                    case "continue":
                         {
                             if (debugging)
                             {
@@ -111,7 +140,7 @@ namespace Kiezel
                             }
                             break;
                         }
-                    case ":clear":
+                    case "clear":
                         {
                             History.Clear();
                             Console.Clear();
@@ -119,7 +148,7 @@ namespace Kiezel
                             state.Push(Runtime.SaveStackAndFrame());
                             break;
                         }
-                    case ":abort":
+                    case "abort":
                         {
                             if (state.Count > 1)
                             {
@@ -132,7 +161,7 @@ namespace Kiezel
                             break;
                         }
 
-                    case ":top":
+                    case "top":
                         {
                             while (state.Count > 1)
                             {
@@ -141,20 +170,20 @@ namespace Kiezel
                             break;
                         }
 
-                    case ":quit":
+                    case "quit":
                         {
                             Quit();
                             break;
                         }
 
-                    case ":globals":
+                    case "globals":
                         {
                             var pattern = (string)Runtime.Second(code);
                             Runtime.DumpDictionary(output, Runtime.GetGlobalVariablesDictionary(pattern));
                             break;
                         }
 
-                    case ":eval":
+                    case "eval":
                         {
                             var expr = Runtime.Second(code);
                             var pos = Runtime.Integerp(Runtime.Third(code)) ? (int)Runtime.Third(code) : 0;
@@ -172,7 +201,7 @@ namespace Kiezel
                             break;
                         }
 
-                    case ":modify":
+                    case "modify":
                         {
                             var name = (Symbol)Runtime.Second(code);
                             var expr = Runtime.Third(code);
@@ -181,53 +210,53 @@ namespace Kiezel
                             break;
                         }
 
-                    case ":variables":
+                    case "variables":
                         {
                             var pos = Runtime.Integerp(Runtime.Second(code)) ? (int)Runtime.Second(code) : 0;
                             Runtime.DumpDictionary(output, Runtime.GetLexicalVariablesDictionary(pos));
                             break;
                         }
 
-                    case ":$variables":
+                    case "$variables":
                         {
                             var pos = Runtime.Integerp(Runtime.Second(code)) ? (int)Runtime.Second(code) : 0;
                             Runtime.DumpDictionary(output, Runtime.GetDynamicVariablesDictionary(pos));
                             break;
                         }
 
-                    case ":backtrace":
+                    case "backtrace":
                         {
                             Runtime.PrintLine(output, Runtime.GetEvaluationStack());
                             break;
                         }
 
-                    case ":Exception":
+                    case "Exception":
                         {
                             Runtime.PrintLine(output, LastException.ToString());
                             break;
                         }
 
-                    case ":exception":
+                    case "exception":
                         {
                             Runtime.PrintLine(output, RemoveDlrReferencesFromException(LastException));
                             break;
                         }
 
-                    case ":force":
+                    case "force":
                         {
                             var expr = Runtime.Second(code) ?? Symbols.It;
                             RunCommand(null, Runtime.MakeList(Runtime.MakeList(Symbols.Force, expr)));
                             break;
                         }
 
-                    case ":time":
+                    case "time":
                         {
                             var expr = Runtime.Second(code) ?? Symbols.It;
                             RunCommand(null, Runtime.MakeList(expr), showTime: true);
                             break;
                         }
 
-                    case ":describe":
+                    case "describe":
                         {
                             RunCommand(x =>
                             {
@@ -237,7 +266,7 @@ namespace Kiezel
                             break;
                         }
 
-                    case ":reset":
+                    case "reset":
                         {
                             var level = Runtime.Integerp(Runtime.Second(code)) ? (int)Runtime.Second(code) : -1;
                             while (state.Count > 1)

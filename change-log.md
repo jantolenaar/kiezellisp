@@ -1,5 +1,9 @@
 # Change Log
 
+## 2017/12/30
+
+*   Allow :commands and ,commands in REPL.
+
 ## 2017/12/01
 
 *   Fixed `pop` macro.
