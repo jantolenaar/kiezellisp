@@ -1,5 +1,11 @@
 # Change Log
 
+## 2018/05/18
+
+*   Removed 'goto' and 'label'.
+*   Changed 'block' to special form.
+*   Added 'redo' and 'leave' special forms to jump in named blocks.
+
 ## 2017/12/30
 
 *   Allow :commands and ,commands in REPL.

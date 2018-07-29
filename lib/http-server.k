@@ -99,13 +99,14 @@
     (using ($response (.response context))
         (setf $$request $request)
         (setf $$response $response)
-        (let url (.trim-end (.local-path (.url $request)) "/"))
+        (let url (.local-path (.url $request)))
         (let result (try-and-catch (find-and-call-url-handler url)))
         (when (exception? result)
             (let diag (get-diagnostics result))
             (write-response-text diag))))
 
-(defun find-and-call-url-handler (url)
+(defun find-and-call-url-handler (url-encoded)
+    (let url (.trim-end (.url-decode url-encoded) "/"))
     (let handler (get-url-handler url))
     (funcall handler url))
 
@@ -122,7 +123,7 @@
     ;; Used for debugging
     (let $request null)
     (let $response null)
-    (find-and-call-url-handler (.trim-end url "/")))
+    (find-and-call-url-handler url))
 
 ;;;
 ;;; response writers

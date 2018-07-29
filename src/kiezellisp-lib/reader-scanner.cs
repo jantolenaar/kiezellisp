@@ -41,6 +41,14 @@ namespace Kiezel
             }
         }
 
+        public int Line
+        {
+            get
+            {
+                return line;
+            }
+        }
+
         #endregion Public Properties
 
         #region Private Methods

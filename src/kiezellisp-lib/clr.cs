@@ -482,33 +482,35 @@ namespace Kiezel
                 a = a + ".dll";
             }
 
+            Assembly asm = null;
+
             try
             {
                 a = FindFileInPath(a);
-                Assembly.LoadFile(a);
+                asm = Assembly.LoadFile(a);
             }
             catch
             {
                 try
                 {
-                    Assembly.LoadFrom(a);
+                    asm = Assembly.LoadFrom(a);
                 }
                 catch
                 {
                     try
                     {
-                        Assembly.Load(a);
+                        asm = Assembly.Load(a);
                     }
                     catch
                     {
                         try
                         {
-                            Assembly.LoadFile(a);
+                            asm = Assembly.LoadFile(a);
                         }
                         catch
                         {
                             a = FindFileInPath(a);
-                            Assembly.LoadFile(a);
+                            asm = Assembly.LoadFile(a);
                         }
                     }
                 }

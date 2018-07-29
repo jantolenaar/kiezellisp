@@ -50,6 +50,7 @@ namespace Kiezel
         public static MethodInfo GetTaskResultMethod = RuntimeMethod(nameof(GetTaskResult));
         public static MethodInfo IsInstanceOfMethod = RuntimeMethod(nameof(IsInstanceOf));
         public static Cons LambdaTemplate;
+        public static Cons ProgTemplate;
         public static MethodInfo LogBeginCallMethod = RuntimeMethod(nameof(LogBeginCall));
         public static MethodInfo LogEndCallMethod = RuntimeMethod(nameof(LogEndCall));
         public static MethodInfo MakeLambdaClosureMethod = RuntimeMethod(typeof(LambdaDefinition), nameof(LambdaDefinition.MakeLambdaClosure));
@@ -111,7 +112,8 @@ namespace Kiezel
                 context.RestoreStackAndFrame(saved);
                 return result;
             }
-            else {
+            else
+            {
                 var result = CompileWrapped(expr, scope);
                 return result;
             }
@@ -133,11 +135,23 @@ namespace Kiezel
             {
                 return Compile(First(forms), scope);
             }
-            else {
+            else
+            {
                 return Expression.Condition(WrapBooleanTest(Compile(First(forms), scope)),
                     CompileAndExpression(Cdr(forms), scope),
                     CompileLiteral(null));
             }
+        }
+
+        public static Expression CompileBlock(Cons form, AnalysisScope scope)
+        {
+            CheckMinLength(form, 2);
+            var sym = CheckSymbol(Second(form));
+            if (sym.IsDynamic)
+            {
+                throw new LispException("Invalid block name: {0}", sym);
+            }
+            return CompileBody(sym, Cddr(form), scope);
         }
 
         public static bool ContainsFrameDeclarations(Cons forms)
@@ -172,6 +186,11 @@ namespace Kiezel
 
         public static Expression CompileBody(Cons forms, AnalysisScope scope)
         {
+            return CompileBody(null, forms, scope);
+        }
+
+        public static Expression CompileBody(Symbol blockName, Cons forms, AnalysisScope scope)
+        {
             //if (forms == null)
             //{
             //    PrintWarning(scope.Name, ": no forms in statement body, using null.");
@@ -180,24 +199,13 @@ namespace Kiezel
 
             var bodyScope = new AnalysisScope(scope);
             bodyScope.IsBlockScope = true;
-
-            for (var items = forms; items != null; items = items.Cdr)
+            bodyScope.BlockName = blockName;
+            if (blockName != null)
             {
-                var name = ExtractLabelName(items.Car);
-
-                if (name != null)
-                {
-                    var label = Expression.Label(typeof(object), name);
-                    bodyScope.Labels.Add(label);
-
-
-                    if (Length((Cons)items.Car) == 3)
-                    {
-                        // (label name dummy-value) vs (label name)
-                        bodyScope.ValueLabels.Add(label);
-                    }
-                }
+                bodyScope.RedoLabel = Expression.Label("redo-label");
+                bodyScope.LeaveLabel = Expression.Label("leave-label");
             }
+            bodyScope.ResultVar = Expression.Parameter(typeof(object), "%result");
 
             var bodyExprs = CompileBodyExpressions(forms, bodyScope);
 
@@ -206,15 +214,7 @@ namespace Kiezel
                 return CompileLiteral(null);
             }
 
-            var parameters = bodyScope.Parameters;
-
-            if (bodyExprs.Count == 1 && parameters.Count == 0 && bodyScope.Labels.Count == 0)
-            {
-                //return bodyExprs[0];
-            }
-
             bodyScope.CheckVariables();
-
             var code = WrapEvaluationStack(bodyExprs, bodyScope);
             return code;
         }
@@ -226,31 +226,8 @@ namespace Kiezel
             for (var list = forms; list != null; list = list.Cdr)
             {
                 var expr = list.Car;
-
-                var name = ExtractLabelName(expr);
-
-                if (name != null)
-                {
-                    bodyScope.AnyLabelsCreated = true;
-                    AnalysisScope labelScope;
-                    LabelTarget label;
-                    TryFindLabel(bodyScope, name, out labelScope, out label);
-                    var i = bodyExprs.Count - 1;
-                    if (labelScope.ValueLabels.Contains(label))
-                    {
-                        var code = Expression.Label(label, bodyExprs[i]);
-                        bodyExprs[i] = code;
-                    }
-                    else
-                    {
-                        var code = Expression.Label(label, CompileLiteral(null));
-                        bodyExprs.Add(code);
-                    }
-                }
-                else {
-                    var code = Compile(expr, bodyScope);
-                    bodyExprs.Add(code);
-                }
+                var code = Compile(expr, bodyScope);
+                bodyExprs.Add(code);
             }
 
             return bodyExprs;
@@ -271,7 +248,8 @@ namespace Kiezel
                                    CompileBody(forms, scope)));
                 return code;
             }
-            else {
+            else
+            {
                 var catchScope = new AnalysisScope(scope);
                 var var1 = catchScope.DefineVariable(Symbols.Temp, ScopeFlags.All, type);
                 var var2 = catchScope.DefineVariable(sym, ScopeFlags.All);
@@ -479,7 +457,8 @@ namespace Kiezel
             {
                 return Microsoft.Scripting.Ast.Utils.LightDynamic(binder, returnType, new ReadOnlyCollectionBuilder<Expression>(args));
             }
-            else {
+            else
+            {
                 return Expression.Dynamic(binder, returnType, args);
             }
         }
@@ -516,7 +495,8 @@ namespace Kiezel
                     throw new LispException("Constant variable must have an initializer: {0}", sym);
                 }
             }
-            else {
+            else
+            {
                 flags |= ScopeFlags.Initialized | (constant ? ScopeFlags.Constant : 0);
                 val = Compile(Third(form), scope);
             }
@@ -527,7 +507,8 @@ namespace Kiezel
             {
                 return CallRuntime(DefDynamicConstMethod, Expression.Constant(sym), val);
             }
-            else {
+            else
+            {
                 return CallRuntime(DefDynamicMethod, Expression.Constant(sym), val);
             }
         }
@@ -582,7 +563,8 @@ namespace Kiezel
                         signature.RequiredArgsCount = signature.Parameters.Count;
                         continue;
                     }
-                    else {
+                    else
+                    {
                         var arg = new ParameterDef(sym);
                         signature.Parameters.Add(arg);
                         signature.Names.Add(sym);
@@ -601,7 +583,8 @@ namespace Kiezel
                             signature.Parameters.Add(new ParameterDef(sym));
                             signature.Names.Add(sym);
                         }
-                        else {
+                        else
+                        {
                             var initForm2 = Compile(initForm, scope);
                             signature.Parameters.Add(new ParameterDef(sym, initForm: initForm2));
                             signature.Names.Add(sym);
@@ -632,7 +615,8 @@ namespace Kiezel
                             signature.Parameters.Add(arg);
                             signature.Names.Add(sym);
                         }
-                        else {
+                        else
+                        {
                             if (!Symbolp(type) || Keywordp(type))
                             {
                                 throw new LispException("Invalid type specifier: {0}", type);
@@ -643,7 +627,8 @@ namespace Kiezel
                             signature.Names.Add(sym);
                         }
                     }
-                    else {
+                    else
+                    {
                         throw new LispException("Invalid CONS in lambda parameter list");
                     }
                 }
@@ -704,7 +689,8 @@ namespace Kiezel
                 var args = ToIter(formArgs).Cast<object>().Select(x => Compile(x, scope)).ToArray();
                 return AccessorLambdaMetaObject.MakeExpression(true, names, args);
             }
-            else {
+            else
+            {
                 var func = Compile(formFunc, scope);
                 var args = new List<Expression>();
                 args.Add(func);
@@ -719,7 +705,8 @@ namespace Kiezel
                 {
                     return WrapEvaluationCallStack(code, form);
                 }
-                else {
+                else
+                {
                     return code;
                 }
             }
@@ -759,7 +746,8 @@ namespace Kiezel
                 var binder = GetGetMemberBinder(name);
                 return CompileDynamicExpression(binder, typeof(object), new Expression[] { target });
             }
-            else {
+            else
+            {
                 // not a constant name
                 var newform = MakeCons(Symbols.Funcall, form);
                 return CompileFunctionCall(newform, scope);
@@ -776,7 +764,8 @@ namespace Kiezel
             {
                 return Expression.Constant(sym, typeof(Symbol));
             }
-            else {
+            else
+            {
                 var entry = scope.FindLocal(sym, ScopeFlags.Referenced);
                 if (entry != null)
                 {
@@ -812,69 +801,10 @@ namespace Kiezel
                 {
                     return Expression.PropertyOrField(Expression.Constant(sym), "CheckedOrEnvironmentValue");
                 }
-                else {
+                else
+                {
                     return Expression.PropertyOrField(Expression.Constant(sym), "CheckedValue");
                 }
-            }
-        }
-
-        public static Expression CompileGoto(Cons form, AnalysisScope scope)
-        {
-            // goto symbol [value]
-            CheckMinLength(form, 2);
-            CheckMaxLength(form, 3);
-            var tag = CheckSymbol(Second(form));
-            AnalysisScope labelScope;
-            LabelTarget label;
-            if (!TryFindLabel(scope, tag.LongName, out labelScope, out label))
-            {
-                throw new LispException("Label {0} not found", tag);
-            }
-
-            if (labelScope.ValueLabels.Contains(label))
-            {
-                // label can have a value
-                var value = Compile(Third(form), scope);
-
-                if (labelScope == scope)
-                {
-                    var code = Expression.Goto(label, value, typeof(object));
-                    return code;
-                }
-                else {
-                    var temp = Expression.Parameter(typeof(object), "%temp");
-                    var code = Expression.Block(
-                                   typeof(object),
-                                   new ParameterExpression[] { temp },
-                                   Expression.Assign(temp, value),
-                                   CallRuntime(RestoreStackAndFrameMethod, labelScope.SavedState),
-                                   Expression.Goto(label, temp, typeof(object)),
-                                   CompileLiteral(null));
-
-                    return code;
-                }
-            }
-
-            else
-            {
-                var value = CompileLiteral(null);
-
-                if (labelScope == scope)
-                {
-                    var code = Expression.Goto(label, value, typeof(object));
-                    return code;
-                }
-                else {
-                    var code = Expression.Block(
-                                   typeof(object),
-                                   CallRuntime(RestoreStackAndFrameMethod, labelScope.SavedState),
-                                   Expression.Goto(label, value, typeof(object)),
-                                   CompileLiteral(null));
-
-                    return code;
-                }
-
-
             }
         }
 
@@ -890,12 +820,6 @@ namespace Kiezel
             return Expression.Condition(test, thenExpr, elseExpr);
         }
 
-        public static Expression CompileLabel(Cons form, AnalysisScope scope)
-        {
-            // Labels are compiled in CompileBodyExpressions.
-            throw new LispException("Labels must be placed at the top level of a implicit or explicit DO block");
-        }
-
         public static Expression CompileLambda(Cons form, AnalysisScope scope)
         {
             // lambda [name] args body
@@ -906,7 +830,8 @@ namespace Kiezel
                 CheckMinLength(form, 3);
                 return CompileLambdaDef((Symbol)Second(form), Cddr(form), scope, LambdaKind.Function, out doc);
             }
-            else {
+            else
+            {
                 CheckMinLength(form, 2);
                 return CompileLambdaDef(null, Cdr(form), scope, LambdaKind.Function, out doc);
             }
@@ -969,7 +894,8 @@ namespace Kiezel
                                 template.Signature.Parameters.Add(newpar);
                                 template.Signature.Names.Add(par.Sym);
                             }
-                            else {
+                            else
+                            {
                                 // Insert place holder
                                 var newpar = new ParameterDef(par.Sym, hidden: true);
                                 template.Signature.Parameters.Add(newpar);
@@ -1008,7 +934,8 @@ namespace Kiezel
 
             var rawparams = template.Signature.ArgModifier == Symbols.RawParams;
             var names = GetLambdaArgumentNames(template.Signature);
-            var body4 = FormatCode(LambdaTemplate, Symbols.Args, GetDeclarations(rawparams, names, Symbols.RecursionArgs), body);
+            var decls = GetDeclarations(rawparams, names, Symbols.Args);
+            var body4 = FormatCode(LambdaTemplate, decls, body);
             code = Compile(body4, funscope);
 
             template.Code = code;
@@ -1022,6 +949,26 @@ namespace Kiezel
         public static Expression CompileLazyVar(Cons form, AnalysisScope scope)
         {
             return CompileVarInScope(form, scope, lazy: true, constant: true);
+        }
+
+        public static Expression CompileLeave(Cons form, AnalysisScope scope)
+        {
+            // leave symbol [value]
+            CheckMinLength(form, 2);
+            CheckMaxLength(form, 3);
+            var tag = CheckSymbol(Second(form));
+            var blockScope = FindBlockScope(scope, tag);
+            if (blockScope == null)
+            {
+                throw new LispException("Block {0} not found", tag);
+            }
+            blockScope.LeaveLabelUsed = true;
+            var value = Compile(Third(form), scope);
+            var code = Expression.Block(
+                Expression.Assign(blockScope.ResultVar, value),
+                CallRuntime(RestoreStackAndFrameMethod, blockScope.SavedState),
+                Expression.Goto(blockScope.LeaveLabel, value, typeof(object)));
+            return code;
         }
 
         public static Expression CompileLet(Cons form, AnalysisScope scope)
@@ -1116,7 +1063,8 @@ namespace Kiezel
 
                 val = CompileLiteral(null);
             }
-            else {
+            else
+            {
                 flags |= ScopeFlags.Initialized | (constant ? ScopeFlags.Constant : 0);
                 if (lazy && future)
                 {
@@ -1139,7 +1087,8 @@ namespace Kiezel
                     flags |= ScopeFlags.Future;
                     val = Compile(MakeList(Symbols.CreateTask, MakeList(Symbols.Lambda, null, initForm), true), scope);
                 }
-                else {
+                else
+                {
                     val = Compile(initForm, scope);
                 }
             }
@@ -1169,7 +1118,8 @@ namespace Kiezel
             {
                 return Compile(First(forms), scope);
             }
-            else {
+            else
+            {
                 var expr1 = Compile(First(forms), scope);
                 var expr2 = CompileOrExpression(Cdr(forms), scope);
                 var temp = Expression.Variable(typeof(object), "temp");
@@ -1194,7 +1144,8 @@ namespace Kiezel
                 Expression block = Expression.Block(typeof(object), expressions);
                 return block;
             }
-            else {
+            else
+            {
                 // compile into new block scope
                 return CompileBody(body, scope);
             }
@@ -1224,7 +1175,8 @@ namespace Kiezel
                     name = First(binding);
                     value = Second(binding);
                 }
-                else {
+                else
+                {
                     name = binding;
                     value = null;
                 }
@@ -1238,7 +1190,8 @@ namespace Kiezel
                 values.Add(value);
             }
             var args = MakeListStar(Symbols.Array, values);
-            var body4 = FormatCode(LambdaTemplate, args, GetDeclarations(false, names, Symbols.RecursionArgs), body);
+            var decls = GetDeclarations(false, names, Symbols.RecursionArgs);
+            var body4 = FormatCode(ProgTemplate, args, decls, body);
             return Compile(body4, scope);
         }
 
@@ -1251,15 +1204,34 @@ namespace Kiezel
         public static Expression CompileRecur(Cons form, AnalysisScope scope)
         {
             // recur value*
-            if (!TryFindLabel(scope, Symbols.RecursionLabel))
+            var progScope = FindBlockScope(scope, Symbols.Lambda);
+            if (progScope == null)
             {
-                ThrowError("recur: not contained in recursion block");
+                throw new LispException("Block LAMBDA not found");
             }
             var values = Cdr(form);
             var code = MakeList(Symbols.Do,
                                 MakeList(Symbols.Setq, Symbols.RecursionArgs, MakeListStar(MakeSymbol("array"), values)),
-                                MakeList(Symbols.Goto, Symbols.RecursionLabel));
+                                MakeList(Symbols.Redo, Symbols.Lambda));
             return Compile(code, scope);
+        }
+
+        public static Expression CompileRedo(Cons form, AnalysisScope scope)
+        {
+            // redo symbol
+            CheckLength(form, 2);
+            var tag = CheckSymbol(Second(form));
+            var blockScope = FindBlockScope(scope, tag);
+            if (blockScope == null)
+            {
+                throw new LispException("Block {0} not found", tag);
+            }
+            blockScope.RedoLabelUsed = true;
+            var value = CompileLiteral(null);
+            var code = Expression.Block(
+               CallRuntime(RestoreStackAndFrameMethod, blockScope.SavedState),
+               Expression.Goto(blockScope.RedoLabel, value, typeof(object)));
+            return code;
         }
 
         public static Expression CompileReturn(Cons form, AnalysisScope scope)
@@ -1278,9 +1250,10 @@ namespace Kiezel
             {
                 return Compile(MakeList(Symbols.ReturnFromLoad), scope);
             }
-            else {
+            else
+            {
                 var value = Cadr(form);
-                return Compile(MakeList(Symbols.Goto, Symbols.FunctionExitLabel, value), scope);
+                return Compile(MakeList(Symbols.Leave, Symbols.Lambda, value), scope);
             }
         }
 
@@ -1315,7 +1288,8 @@ namespace Kiezel
                 var binder = GetSetMemberBinder(name);
                 return CompileDynamicExpression(binder, typeof(object), new Expression[] { target, value });
             }
-            else {
+            else
+            {
                 // not a constant name
                 var newform = MakeCons(Symbols.Funcall, form);
                 return CompileFunctionCall(newform, scope);
@@ -1345,11 +1319,13 @@ namespace Kiezel
                     // REPL does not require def before set.
                     return Expression.Assign(Expression.PropertyOrField(Expression.Constant(sym), "LessCheckedValue"), value);
                 }
-                else {
+                else
+                {
                     return CallRuntime(SetDynamicMethod, Expression.Constant(sym), value);
                 }
             }
-            else {
+            else
+            {
                 var entry = scope.FindLocal(sym, ScopeFlags.Assigned);
                 if (entry != null)
                 {
@@ -1379,7 +1355,8 @@ namespace Kiezel
                     // REPL assigments
                     return Expression.Assign(Expression.PropertyOrField(Expression.Constant(sym), "LessCheckedValue"), value);
                 }
-                else {
+                else
+                {
                     return Expression.Assign(Expression.PropertyOrField(Expression.Constant(sym), "CheckedValue"), value);
                 }
             }
@@ -1404,7 +1381,8 @@ namespace Kiezel
             {
                 return Microsoft.Scripting.Generation.CompilerHelpers.LightCompile(lambda, CompilationThreshold);
             }
-            else {
+            else
+            {
                 return lambda.Compile();
             }
         }
@@ -1457,7 +1435,8 @@ namespace Kiezel
             {
                 return CompileTryCatch(AsList(tryForms), catchForms, scope);
             }
-            else {
+            else
+            {
                 return CompileBody(AsList(tryForms), scope);
             }
         }
@@ -1528,7 +1507,8 @@ namespace Kiezel
             {
                 return CompileDynamicVarInScope(form, scope, future, lazy, constant);
             }
-            else {
+            else
+            {
                 return CompileLexicalVarInScope(form, scope, future, lazy, constant);
             }
         }
@@ -1574,15 +1554,18 @@ namespace Kiezel
                     {
                         return head.SpecialFormValue.Helper(form, scope);
                     }
-                    else {
+                    else
+                    {
                         return CompileFunctionCall(form, scope);
                     }
                 }
-                else {
+                else
+                {
                     return CompileFunctionCall(form, scope);
                 }
             }
-            else {
+            else
+            {
                 // anything else is a literal
                 return CompileLiteral(expr);
             }
@@ -1594,21 +1577,6 @@ namespace Kiezel
             return proc();
         }
 
-        public static string ExtractLabelName(object form)
-        {
-            if (form is Cons && First(form) == Symbols.Label && Symbolp(Second(form)))
-            {
-                if (Keywordp(Second(form)))
-                {
-                    return null;
-                }
-                return ((Symbol)Second(form)).LongName;
-            }
-            else {
-                return null;
-            }
-        }
-
         public static AnalysisScope FindFirstLambda(AnalysisScope scope)
         {
             var curscope = scope;
@@ -1618,7 +1586,8 @@ namespace Kiezel
                 {
                     return curscope;
                 }
-                else {
+                else
+                {
                     curscope = curscope.Parent;
                 }
             }
@@ -1634,7 +1603,8 @@ namespace Kiezel
                 {
                     return curscope;
                 }
-                else {
+                else
+                {
                     curscope = curscope.Parent;
                 }
             }
@@ -1700,7 +1670,8 @@ namespace Kiezel
             {
                 v.Add(MakeList(Symbols.Var, names[0], values));
             }
-            else {
+            else
+            {
                 foreach (var name in names)
                 {
                     v.Add(MakeList(Symbols.Var, name, MakeList(Symbols.GetElt, values, i)));
@@ -1734,17 +1705,19 @@ namespace Kiezel
             return v;
         }
 
-        public static void InitLambdaTemplate()
+        public static void InitLambdaTemplates()
         {
             LambdaTemplate = (Cons)ReadFromString(@"
-					(do
-						(var %recursion-args %1)
-						(label %recursion-label)
-                        (return 
-                            (do
-                                %%2
-                                (do %%3)))
-						(label %function-exit dummy-value))");
+					(block lambda
+                        %%1
+                        (do %%2))");
+
+            ProgTemplate = (Cons)ReadFromString(@"
+                    (block lambda
+                        (var %recursion-args %1)
+                        %%2
+                        (do %%3))");
+
         }
 
         [Lisp("system:optimizer")]
@@ -1765,7 +1738,8 @@ namespace Kiezel
                     {
                         expr = Second(forms);
                     }
-                    else {
+                    else
+                    {
                         var tail = Map(Optimizer, Cdr(forms));
                         bool simple = SeqBase.Every(Literalp, tail);
                         if (simple)
@@ -1788,6 +1762,7 @@ namespace Kiezel
         public static void RestartCompiler()
         {
             Symbols.And.SpecialFormValue = new SpecialForm(CompileAnd);
+            Symbols.Block.SpecialFormValue = new SpecialForm(CompileBlock);
             Symbols.CompileTimeBranch.SpecialFormValue = new SpecialForm(CompileMergingDo);
             Symbols.Declare.SpecialFormValue = new SpecialForm(CompileDeclare);
             Symbols.Def.SpecialFormValue = new SpecialForm(CompileDef);
@@ -1802,9 +1777,7 @@ namespace Kiezel
             Symbols.FutureVar.SpecialFormValue = new SpecialForm(CompileFutureVar);
             Symbols.GetAttr.SpecialFormValue = new SpecialForm(CompileGetMember);
             Symbols.GetElt.SpecialFormValue = new SpecialForm(CompileGetElt);
-            Symbols.Goto.SpecialFormValue = new SpecialForm(CompileGoto);
             Symbols.If.SpecialFormValue = new SpecialForm(CompileIf);
-            Symbols.Label.SpecialFormValue = new SpecialForm(CompileLabel);
             Symbols.Lambda.SpecialFormValue = new SpecialForm(CompileLambda);
             Symbols.LazyVar.SpecialFormValue = new SpecialForm(CompileLazyVar);
             Symbols.Let.SpecialFormValue = new SpecialForm(CompileLet);
@@ -1823,8 +1796,10 @@ namespace Kiezel
             Symbols.Throw.SpecialFormValue = new SpecialForm(CompileThrow);
             Symbols.Try.SpecialFormValue = new SpecialForm(CompileTry);
             Symbols.Var.SpecialFormValue = new SpecialForm(CompileVar);
+            Symbols.Redo.SpecialFormValue = new SpecialForm(CompileRedo);
+            Symbols.Leave.SpecialFormValue = new SpecialForm(CompileLeave);
 
-            InitLambdaTemplate();
+            InitLambdaTemplates();
         }
 
         public static MethodInfo RuntimeMethod(string name)
@@ -1844,26 +1819,16 @@ namespace Kiezel
             return methods.First();
         }
 
-        public static bool TryFindLabel(AnalysisScope scope, Symbol labelName)
-        {
-            AnalysisScope labelScope;
-            LabelTarget label;
-            return TryFindLabel(scope, labelName.LongName, out labelScope, out label);
-        }
-
-        public static bool TryFindLabel(AnalysisScope scope, string labelName, out AnalysisScope labelScope, out LabelTarget label)
+        public static AnalysisScope FindBlockScope(AnalysisScope scope, Symbol blockName)
         {
             var curscope = scope;
             while (curscope != null)
             {
                 if (curscope.IsBlockScope)
                 {
-                    var tag = curscope.Labels.FirstOrDefault(x => x.Name == labelName);
-                    if (tag != null)
+                    if (curscope.BlockName == blockName)
                     {
-                        labelScope = curscope;
-                        label = tag;
-                        return true;
+                        return curscope;
                     }
                     curscope = curscope.Parent;
                 }
@@ -1871,15 +1836,12 @@ namespace Kiezel
                 {
                     break;
                 }
-                else {
+                else
+                {
                     curscope = curscope.Parent;
                 }
             }
-
-            labelScope = null;
-            label = null;
-
-            return false;
+            return null;
         }
 
         public static Expression WrapBooleanTest(Expression expr)
@@ -1897,16 +1859,31 @@ namespace Kiezel
             {
                 // For function, try and loop: anything that has a non-local exit method.
                 var saved = scope.SavedState;
-                var result = Expression.Parameter(typeof(object), "%result");
+                var result = scope.ResultVar;
                 var index = Expression.Parameter(typeof(int), "%index");
                 var exprs = new List<Expression>();
                 var form = Expression.Constant(null, typeof(Cons));
-                var frame = fullWrap ? CallRuntime(MakeFrameMethod, Expression.Constant(scope.Names), Expression.RuntimeVariables(scope.Parameters))
-                    : Expression.Constant(null, typeof(Frame));
+                Expression frame;
+                if (fullWrap)
+                {
+                    frame = CallRuntime(MakeFrameMethod, Expression.Constant(scope.Names), Expression.RuntimeVariables(scope.Parameters));
+                }
+                else
+                {
+                    frame = Expression.Constant(null, typeof(Frame));
+                }
                 body.Insert(0, Expression.Assign(saved, CallRuntime(SaveStackAndFrameWithMethod, frame, form)));
+                if (scope.RedoLabelUsed)
+                {
+                    exprs.Add(Expression.Label(scope.RedoLabel));
+                }
                 var code = Expression.Block(typeof(object), parameters, body);
                 exprs.Add(Expression.Assign(result, code));
                 exprs.Add(CallRuntime(RestoreStackAndFrameMethod, saved));
+                if (scope.LeaveLabelUsed)
+                {
+                    exprs.Add(Expression.Label(scope.LeaveLabel));
+                }
                 exprs.Add(result);
 
                 return Expression.Block

@@ -1037,6 +1037,9 @@ namespace Kiezel
                 Environment.CurrentDirectory = newDir;
             }
 
+            var t1 = GetCpuTime();
+            var lines = 0;
+
             try
             {
                 var reader = AcquireReader(stream);
@@ -1057,6 +1060,8 @@ namespace Kiezel
                         }
                     }
                 }
+
+                lines = reader.Line;
             }
             catch (ReturnFromLoadException)
             {
@@ -1067,6 +1072,16 @@ namespace Kiezel
             }
 
             RestoreStackAndFrame(saved);
+
+            var t2 = GetCpuTime();
+            var t = t2 - t1;
+
+            if (loadVerbose)
+            {
+                var msg = String.Format("Load time {0:N3}s user {1:N3}s system {2:N3}ms/line", t.User, t.System, 1000 * (t.User + t.System) / lines);
+                Runtime.PrintTrace(msg);
+            }
+
         }
 
         public static char UnescapeCharacter(char ch)

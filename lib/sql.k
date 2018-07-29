@@ -75,9 +75,9 @@
 (def $provider null)
 
 (defun get-database (provider-name connection-data)
-    (let formatter (λx (string (.replace (.to-lower (.trim (.to-string (.key x)) "|")) "-" "_")
+    (let formatter #(string (.replace (.to-lower (.trim (.to-string (.key %1)) "|")) "-" "_")
                                 "="
-                                (.value x))))
+                                (.value %1)))
     (let connection-string (string:join ";" (map formatter connection-data)))
     (let provider (db-provider-factories:get-factory provider-name))
     (setf $provider provider)
@@ -105,7 +105,7 @@
                                         table-name
                                         null)
                                    'string))
-    (let get-collection-name (λr (.to-lower (elt r "collectionname"))))
+    (let get-collection-name #(.to-lower (elt %1 "collectionname")))
     (let rows1 (.rows (.get-schema database)))
     (let collections (map get-collection-name rows1))
     (when (index-of "indexcolumns" collections)

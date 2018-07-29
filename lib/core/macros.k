@@ -11,7 +11,6 @@
         "assert"
         "assert-throws-exception"
         "assert-throws-no-exception"
-        "block"
         "call-next-method"
         "case"
         "chain"
@@ -26,7 +25,6 @@
         "multiple-setf"
         "new"
         "otherwise"
-        "return-from"
         "return-if"
         "return-or-throw"
         "trace"
@@ -275,18 +273,6 @@
     `(using (,variable (string-writer:new))
         ,@forms
         (.to-string ,variable)))
-
-;;;
-;;; named blocks
-;;;
-
-(defmacro block (tag &body forms)
-    `(do
-        ,@forms
-        (label ,tag dummy-value)))
-
-(defmacro return-from (tag &optional value)
-    `(goto ,tag ,value))
 
 ;;;
 ;;; lists

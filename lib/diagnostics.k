@@ -18,18 +18,18 @@
 
 ;(import-namespace "System.Linq.Expressions.*" :package-name-prefix "linq-")
 (import "System.Linq.Expressions.AssignBinaryExpression" :package-name-prefix "linq-")
+(import "System.Linq.Expressions.BlockExpression" :package-name-prefix "linq-")
 (import "System.Linq.Expressions.ConditionalExpression" :package-name-prefix "linq-")
 (import "System.Linq.Expressions.ConstantExpression" :package-name-prefix "linq-")
-(import "System.Linq.Expressions.DynamicExpressionN" :package-name-prefix "linq-")
+(import "System.Linq.Expressions.DynamicExpression" :package-name-prefix "linq-")
 (import "System.Linq.Expressions.GotoExpression" :package-name-prefix "linq-")
 (import "System.Linq.Expressions.LabelExpression" :package-name-prefix "linq-")
 (import "System.Linq.Expressions.LabelTarget" :package-name-prefix "linq-")
-(import "System.Linq.Expressions.MethodCallExpressionN" :package-name-prefix "linq-")
+(import "System.Linq.Expressions.MethodCallExpression" :package-name-prefix "linq-")
 (import "System.Linq.Expressions.ParameterExpression" :package-name-prefix "linq-")
 (import "System.Linq.Expressions.PropertyExpression" :package-name-prefix "linq-")
 (import "System.Linq.Expressions.PropertyExpression" :package-name-prefix "linq-")
-(import "System.Linq.Expressions.Scope1" :package-name-prefix "linq-")
-(import "System.Linq.Expressions.ScopeN" :package-name-prefix "linq-")
+(import "System.Linq.Expressions.ScopeExpression" :package-name-prefix "linq-")
 (import "System.Linq.Expressions.TryExpression" :package-name-prefix "linq-")
 
 ;(import-namespace "Microsoft.Scripting.Ast.*" :package-name-prefix "ast-")
@@ -41,7 +41,8 @@
 (defmulti decompile (code))
 
 (defmethod decompile (code)
-	code)
+    (.get-type code)
+	#;code)
 
 (defmethod decompile ((code cons))
 	(decompile (compile code)))
@@ -52,11 +53,11 @@
 (defmethod decompile ((code lambda-definition))
 	(decompile (.code code)))
 
-(defmethod decompile ((code linq-scope1))
-	(decompile-block code))
+(defmethod decompile ((code linq-scope-expression))
+    (decompile-scope code))
 
-(defmethod decompile ((code linq-scope-n))
-	(decompile-block code))
+(defmethod decompile ((code linq-block-expression))
+    (decompile-block code))
 
 (defun decompile-block (code)	
 	(when code
@@ -65,6 +66,14 @@
 		(if vars
 			`(BLOCK (VARIABLES ,@(map decompile vars)) ,@(map decompile exprs))
 			`(BLOCK ,@(map decompile exprs)))))
+
+(defun decompile-scope (code)   
+    (when code
+        (let vars (.variables code))
+        (let exprs (.expressions code))
+        (if vars
+            `(SCOPE (VARIABLES ,@(map decompile vars)) ,@(map decompile exprs))
+            `(SCOPE ,@(map decompile exprs)))))
 
 (defmethod decompile ((code linq-parameter-expression))
 	(decompile-name code))
@@ -86,7 +95,7 @@
 		(make-symbol (.name code))
 		'unnamed))
 
-(defmethod decompile ((code linq-method-call-expression-n))
+(defmethod decompile ((code linq-method-call-expression))
 	`(CALL ,(decompile (.method code)) ,@(map decompile (.arguments code))))
 
 (defmethod decompile ((code reflection-method-info))
@@ -95,7 +104,7 @@
 (defmethod decompile ((code linq-constant-expression))
 	(.value code))
 
-(defmethod decompile ((code linq-dynamic-expression-n))
+(defmethod decompile ((code linq-dynamic-expression))
 	`(DYNAMIC ,(decompile (.binder code)) ,@(map decompile (.arguments code))))
 
 (defmethod decompile ((code ast-light-typed-dynamic-expression-n))

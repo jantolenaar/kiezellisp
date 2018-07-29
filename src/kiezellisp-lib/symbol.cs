@@ -592,6 +592,7 @@ namespace Kiezel
         public static Symbol BitShiftLeft;
         public static Symbol BitShiftRight;
         public static Symbol BitXor;
+        public static Symbol Block;
         public static Symbol Body;
         public static Symbol Bool;
         public static Symbol bqAppend;
@@ -647,7 +648,6 @@ namespace Kiezel
         public static Symbol GetArgumentOrDefault;
         public static Symbol GetAttr;
         public static Symbol GetElt;
-        public static Symbol Goto;
         public static Symbol HashElif;
         public static Symbol HashElse;
         public static Symbol HashEndif;
@@ -664,12 +664,12 @@ namespace Kiezel
         public static Symbol It;
         public static Symbol Key;
         public static Symbol kwForce;
-        public static Symbol Label;
         public static Symbol Lambda;
         public static Symbol LambdaList;
         public static Symbol LazyImport;
         public static Symbol LazyVar;
         public static Symbol Left;
+        public static Symbol Leave;
         public static Symbol Let;
         public static Symbol LetFun;
         public static Symbol LetMacro;
@@ -728,6 +728,7 @@ namespace Kiezel
         public static Symbol Recur;
         public static Symbol RecursionArgs;
         public static Symbol RecursionLabel;
+        public static Symbol Redo;
         public static Symbol ReplForceIt;
         public static Symbol ReplListenerPort;
         public static Symbol[] ReservedVariables;
@@ -798,6 +799,7 @@ namespace Kiezel
             BitShiftLeft = MakeSymbol("bit-shift-left");
             BitShiftRight = MakeSymbol("bit-shift-right");
             BitXor = MakeSymbol("bit-xor");
+            Block = MakeSymbol("block");
             Body = MakeSymbol("&body");
             Bool = MakeSymbol("bool");
             BuiltinConstructor = MakeSymbol("builtin-constructor");
@@ -848,7 +850,6 @@ namespace Kiezel
             GetArgumentOrDefault = MakeSymbol("get-argument-or-default");
             GetAttr = MakeSymbol("attr");
             GetElt = MakeSymbol("elt");
-            Goto = MakeSymbol("goto");
             HashElif = MakeSymbol("#elif");
             HashElse = MakeSymbol("#else");
             HashEndif = MakeSymbol("#endif");
@@ -864,11 +865,11 @@ namespace Kiezel
             InitialValue = MakeSymbol(":initial-value");
             It = MakeSymbol("it");
             Key = MakeSymbol("&key");
-            Label = MakeSymbol("label");
             Lambda = MakeSymbol("lambda");
             LambdaList = MakeSymbol("%lambdas");
             LazyImport = MakeSymbol("$lazy-import");
             LazyVar = MakeSymbol("lazy");
+            Leave = MakeSymbol("leave");
             Left = MakeSymbol(":left");
             Let = MakeSymbol("let");
             LetFun = MakeSymbol("letfun");
@@ -927,6 +928,7 @@ namespace Kiezel
             Recur = MakeSymbol("recur");
             RecursionArgs = MakeSymbol("%recursion-args");
             RecursionLabel = MakeSymbol("%recursion-label");
+            Redo = MakeSymbol("redo");
             ReplForceIt = MakeSymbol("$repl-force-it");
             ReplListenerPort = MakeSymbol("$repl-listener-port");
             Rest = MakeSymbol("&rest");

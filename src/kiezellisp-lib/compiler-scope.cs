@@ -38,8 +38,6 @@ namespace Kiezel
         public bool AnyLabelsCreated;
         public bool IsBlockScope;
         public bool IsFileScope;
-        public List<LabelTarget> Labels = new List<LabelTarget>();
-        public List<LabelTarget> ValueLabels = new List<LabelTarget>();
         public Symbol Name;
         public AnalysisScope Parent;
         public AnalysisScope LambdaParent;
@@ -48,6 +46,13 @@ namespace Kiezel
         public List<ScopeEntry> Variables = new List<ScopeEntry>();
         public List<ScopeEntry> HoistVariables = new List<ScopeEntry>();
         public ParameterExpression HoistedArgs;
+        // named block
+        public ParameterExpression ResultVar;
+        public LabelTarget RedoLabel;
+        public LabelTarget LeaveLabel;
+        public Symbol BlockName;
+        public bool RedoLabelUsed;
+        public bool LeaveLabelUsed;
 
         #endregion Fields
 
@@ -108,7 +113,7 @@ namespace Kiezel
         {
             get
             {
-                return Labels.Count != 0;
+                return BlockName != null;
             }
         }
 

@@ -14,7 +14,7 @@
 (in-package "lisp")
 
 (defconstant default-right-margin 80)
-(defconstant default-indent-size 4)
+(defconstant default-indent-size 2)
 
 (def $pprint-left-margin 0)
 (def $pprint-right-margin default-right-margin)
@@ -22,7 +22,7 @@
 
 (defmacro with-indent ((offset) &body forms)
     `(do
-        (let $pprint-left-margin (+ $pprint-left-margin ,offset))
+        (let $pprint-left-margin (+ $pprint-left-margin (max 2 ,offset)))
         ,@forms))
 
 (defmacro with-default-indent ((&optional (offset 0)) &body forms)
@@ -98,8 +98,8 @@
       ;(VARIABLES 0)
       ;(LABEL 0)
       ;(GOTO 0)
-      ;(ASSIGN 0)
-      ;(CALL 0)
+      (ASSIGN 1)
+      (CALL 1)
      ))
 
 (defun pprint (expr &key (left $pprint-left-margin) (right $pprint-right-margin))

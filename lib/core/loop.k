@@ -28,9 +28,6 @@
     (var $multiplying-vars null)
     (var $maximizing-vars null)
     (var $minimizing-vars null)
-    (var $continue-label-used false)
-    (var $finish-label-used false)
-    (var $break-label-used false)
     (when (null? forms)
         (throw-error "LOOP body cannot be empty"))
     (each do-form forms)
@@ -89,12 +86,12 @@
     (return (macroexpand-1 form env)))
 
 (defun loop-macroexpand (form env)
-    (label continue-label)
-    (let result (loop-macroexpand-1 form env))
-    (setf form (first result))
-    (if (second result)
-        (goto continue-label))
-    (return form))
+    (block LOOP
+        (let result (loop-macroexpand-1 form env))
+        (setf form (first result))
+        (if (second result)
+            (redo LOOP))
+        (return form)))
 
 (defun loop-macroexpand-all (form)
     (code-walk form loop-macroexpand $env))
@@ -117,19 +114,15 @@
         (cond ,@forms)))
 
 (defun generate-code ()
-    `(do
+    `(block LOOP
         ,@$initial-steps
-        (label test-label)
-        (do
+        (block TESTS
             ,@$tests
-            (do
+            (block MAIN
                 ,@$body)
-            ,@(if $continue-label-used '((label continue-label)))
             ,@$next-steps
-            (goto test-label)
-            ,@(if $finish-label-used '((label finish-label)))
-            ,@$final-steps)
-        ,@(if $break-label-used '((label break-label dummy-value)))))
+            (redo TESTS))
+        ,@$final-steps))
 
 (defun pattern-match (pattern form)
     (cond
@@ -279,10 +272,9 @@
             (let sym arg1)
             (check-symbol sym)
             (let range-var (prefix-symbol "%range" sym))
-            (setf $finish-label-used true)
             `(do
                 (if (not (ienumerator:move-next ,range-var))
-                    (goto finish-label))
+                    (leave TESTS))
                 (setf ,arg1 (ienumerator:current ,range-var))
                 ,arg1))
         (true
@@ -290,11 +282,9 @@
 
 (define-clause-pattern break-clause
         ((match '(break))
-            (setf $break-label-used true)
-            `(goto break-label))
+            `(leave LOOP))
         ((match '(break ?))
-            (setf $break-label-used true)
-            `(goto break-label ,arg1))
+            `(leave LOOP ,arg1))
         (true
             (throw-error "Invalid <break> clause in loop")))
 
@@ -308,8 +298,7 @@
 
 (define-clause-pattern continue-clause
         ((match '(continue))
-            (setf $continue-label-used true)
-            `(goto continue-label))
+            `(leave MAIN))
         (true
             (throw-error "Invalid <continue> clause in loop")))
 
@@ -362,8 +351,7 @@
 
 (define-clause-pattern finish-clause
         ((match '(finish))
-            (setf $finish-label-used true)
-            `(goto finish-label))
+            `(leave TESTS))
         (true
             (throw-error "Invalid <finish> clause in loop")))
 
