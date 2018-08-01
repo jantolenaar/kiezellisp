@@ -277,7 +277,8 @@ namespace Kiezel
             {
                 return ApplyLambdaBind(null, args, true, null, null);
             }
-            else {
+            else
+            {
                 return ApplyLambdaBind(null, args, false, null, null);
             }
         }
@@ -293,7 +294,8 @@ namespace Kiezel
             {
                 return new Cons(Definition.Syntax, null);
             }
-            else {
+            else
+            {
                 return null;
             }
         }
@@ -304,6 +306,19 @@ namespace Kiezel
 
         public object ApplyLambdaBind(Cons lambdaList, object[] args, bool bound, object env, Cons wholeMacroForm)
         {
+            if (!Definition.ProcInitialized)
+            {
+                // race condition??
+                lock (Definition)
+                {
+                    if (!Definition.ProcInitialized)
+                    {
+                        Definition.Proc = Definition.ProcBuilder();
+                        Definition.ProcInitialized = true;
+                    }
+                }
+            }
+
             var context = Runtime.CurrentThreadContext;
             var saved = context.Frame;
             context.Frame = HoistFrame;
@@ -320,7 +335,8 @@ namespace Kiezel
                 result = Definition.Proc(lambdaList, Owner ?? this, args, HoistFrame.Values);
                 context.EvaluationStack = Runtime.Cddr(context.EvaluationStack);
             }
-            else {
+            else
+            {
                 result = Definition.Proc(lambdaList, Owner ?? this, args, HoistFrame.Values);
             }
             context.Frame = saved;
@@ -425,7 +441,8 @@ namespace Kiezel
                 {
                     val = Runtime.MissingValue;
                 }
-                else {
+                else
+                {
                     throw new LispException("Missing required argument: {0}", arg.Sym);
                 }
 
@@ -435,7 +452,8 @@ namespace Kiezel
                     {
                         val = arg.InitFormProc();
                     }
-                    else {
+                    else
+                    {
                         val = null;
                     }
                 }
@@ -447,7 +465,8 @@ namespace Kiezel
                     FillDataFrame(arg.NestedParameters, nestedInput, output, offsetOutput, env, null);
                     offsetOutput += arg.NestedParameters.Names.Count;
                 }
-                else {
+                else
+                {
                     output[offsetOutput++] = val;
                 }
             }
@@ -504,7 +523,8 @@ namespace Kiezel
             {
                 return string.Format("Macro Name=\"{0}\"", name == null ? "" : name.Name);
             }
-            else {
+            else
+            {
                 return string.Format("Lambda Name=\"{0}\"", name == null ? "" : name.Name);
             }
         }
@@ -518,6 +538,8 @@ namespace Kiezel
 
         public Symbol Name;
         public Func<Cons, object, object[], object, object> Proc;
+        public Func<Func<Cons, object, object[], object, object>> ProcBuilder;
+        public bool ProcInitialized;
         public LambdaSignature Signature;
         public Cons Source;
         public Cons Syntax;
@@ -647,7 +669,8 @@ namespace Kiezel
                         {
                             output.Add(signature.Parameters[i].InitForm ?? Expression.Constant(null));
                         }
-                        else {
+                        else
+                        {
                             output.Add(Expression.Convert(val, elementType));
                         }
                     }
@@ -733,7 +756,8 @@ namespace Kiezel
                         {
                             tests = test;
                         }
-                        else {
+                        else
+                        {
                             tests = Expression.Or(tests, test);
                         }
                     }

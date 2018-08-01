@@ -32,9 +32,6 @@
 (import "System.Linq.Expressions.ScopeExpression" :package-name-prefix "linq-")
 (import "System.Linq.Expressions.TryExpression" :package-name-prefix "linq-")
 
-;(import-namespace "Microsoft.Scripting.Ast.*" :package-name-prefix "ast-")
-(import "Microsoft.Scripting.Ast.LightTypedDynamicExpressionN" :package-name-prefix "ast-")
-
 (import "Kiezel.LambdaClosure")
 (import "Kiezel.LambdaDefinition")
 
@@ -105,9 +102,6 @@
 	(.value code))
 
 (defmethod decompile ((code linq-dynamic-expression))
-	`(DYNAMIC ,(decompile (.binder code)) ,@(map decompile (.arguments code))))
-
-(defmethod decompile ((code ast-light-typed-dynamic-expression-n))
 	`(DYNAMIC ,(decompile (.binder code)) ,@(map decompile (.arguments code))))
 
 (defmethod decompile ((code linq-property-expression))

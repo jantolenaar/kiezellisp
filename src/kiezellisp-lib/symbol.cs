@@ -143,7 +143,8 @@ namespace Kiezel
             {
                 return (string)target;
             }
-            else {
+            else
+            {
                 return SymbolName(target);
             }
         }
@@ -156,7 +157,8 @@ namespace Kiezel
             {
                 SetDynamic(sym, val);
             }
-            else {
+            else
+            {
                 EraseCompilerValue(sym);
                 sym.CheckedValue = val;
             }
@@ -242,7 +244,8 @@ namespace Kiezel
             {
                 IsDynamic = true;
             }
-            else {
+            else
+            {
                 IsDynamic = false;
             }
 
@@ -254,7 +257,8 @@ namespace Kiezel
                 _value = this;
                 Usage = SymbolUsage.Constant;
             }
-            else {
+            else
+            {
                 _value = null;
                 Usage = SymbolUsage.None;
             }
@@ -330,7 +334,8 @@ namespace Kiezel
                 {
                     return Name;
                 }
-                else {
+                else
+                {
                     return LongName;
                 }
             }
@@ -434,7 +439,8 @@ namespace Kiezel
                 {
                     return Package.Name + ":" + Name;
                 }
-                else {
+                else
+                {
                     return Package.Name + "::" + Name;
                 }
             }
@@ -725,9 +731,8 @@ namespace Kiezel
         public static Symbol ReadEval;
         public static Symbol ReadonlyVariable;
         public static Symbol Readtable;
-        public static Symbol Recur;
-        public static Symbol RecursionArgs;
-        public static Symbol RecursionLabel;
+        public static Symbol Reprog;
+        public static Symbol ProgArgs;
         public static Symbol Redo;
         public static Symbol ReplForceIt;
         public static Symbol ReplListenerPort;
@@ -925,9 +930,8 @@ namespace Kiezel
             ReadEval = MakeSymbol("$read-eval");
             ReadonlyVariable = MakeSymbol("readonly-variable");
             Readtable = MakeSymbol("$readtable");
-            Recur = MakeSymbol("recur");
-            RecursionArgs = MakeSymbol("%recursion-args");
-            RecursionLabel = MakeSymbol("%recursion-label");
+            Reprog = MakeSymbol("reprog");
+            ProgArgs = MakeSymbol("%prog-args");
             Redo = MakeSymbol("redo");
             ReplForceIt = MakeSymbol("$repl-force-it");
             ReplListenerPort = MakeSymbol("$repl-listener-port");

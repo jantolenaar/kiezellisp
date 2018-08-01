@@ -1,14 +1,13 @@
 # Kiezellisp
 
-**Kiezellisp** is a lisp compiler/interpreter running on .NET and using the
-Dynamic Language Runtime (DLR).
+**Kiezellisp** is a lisp compiler/interpreter running on .NET.
 
 ## Some features:
 
-+   A fast startup time of 0.270s on a Intel i7-4790
++   A reasonable startup time of 0.340s on an Intel i7-4790 (mono)
 +   Big numbers
 +   Futures
-+   Generic functions
++   Multi-methods
 +   Import of .NET classes into packages
 +   Lazy lists
 +   Macros and compiler macros
@@ -16,8 +15,10 @@ Dynamic Language Runtime (DLR).
 +   Parallel expressions
 +   Prototypes
 +   REPL
+    + has history and code completion
+    + uses `System.Console`
 +   Symbols and packages
-+	Transducers
++   Transducers
 
 ## Website
 

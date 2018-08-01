@@ -221,7 +221,8 @@ namespace Kiezel
             {
                 Runtime.PrintWarning(error, " ", sym.Name);
             }
-            else {
+            else
+            {
                 Runtime.PrintWarning(error, " ", sym.Name, " in ", context);
             }
         }

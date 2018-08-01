@@ -51,12 +51,6 @@
   <ItemGroup>
     <Reference Include="System" />
     <Reference Include="System.Numerics" />
-    <Reference Include="Microsoft.Dynamic">
-      <HintPath>dlls\Microsoft.Dynamic.dll</HintPath>
-    </Reference>
-    <Reference Include="Microsoft.Scripting">
-      <HintPath>dlls\Microsoft.Scripting.dll</HintPath>
-    </Reference>
     <Reference Include="System.Configuration" />
     <Reference Include="System.Data" />
     <Reference Include="System.Xml" />

@@ -44,18 +44,6 @@ namespace Kiezel
 
         #endregion Static Fields
 
-#if DEBUG
-
-        public static bool AdaptiveCompilation = false;
-        public static int CompilationThreshold = 40;
-
-#else
-
-        public static bool AdaptiveCompilation = true;
-        public static int CompilationThreshold = 40;
-
-#endif
-
         #region Public Properties
 
         public static ThreadContext CurrentThreadContext
@@ -190,7 +178,8 @@ namespace Kiezel
                     AbstractTypes[key] = subtypes;
                     key = null;
                 }
-                else {
+                else
+                {
                     subtypes.Add(t);
                 }
             }
@@ -332,7 +321,8 @@ namespace Kiezel
                 Mono = true;
                 AddFeature("mono");
             }
-            else {
+            else
+            {
                 Mono = false;
                 AddFeature("microsoft");
             }
@@ -380,7 +370,8 @@ namespace Kiezel
             {
                 AddFeature("x64");
             }
-            else {
+            else
+            {
                 AddFeature("x32");
                 AddFeature("x86");
             }

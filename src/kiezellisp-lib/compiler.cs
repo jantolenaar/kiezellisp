@@ -453,14 +453,7 @@ namespace Kiezel
 
         public static Expression CompileDynamicExpression(CallSiteBinder binder, Type returnType, IEnumerable<Expression> args)
         {
-            if (AdaptiveCompilation)
-            {
-                return Microsoft.Scripting.Ast.Utils.LightDynamic(binder, returnType, new ReadOnlyCollectionBuilder<Expression>(args));
-            }
-            else
-            {
-                return Expression.Dynamic(binder, returnType, args);
-            }
+            return Expression.Dynamic(binder, returnType, args);
         }
 
         public static Expression CompileDynamicVarInScope(Cons form, AnalysisScope scope, bool future, bool lazy, bool constant)
@@ -939,7 +932,8 @@ namespace Kiezel
             code = Compile(body4, funscope);
 
             template.Code = code;
-            template.Proc = CompileToFunction4(code, lambdaListNative, selfNative, argsNative, hoistedArgsNative);
+            template.ProcBuilder = () => CompileToFunction4(code, lambdaListNative, selfNative, argsNative, hoistedArgsNative);
+            //template.Proc = template.ProcBuilder();
             template.HoistNames = funscope.HoistNames;
 
             var hoisted = Expression.RuntimeVariables(funscope.HoistParameters);
@@ -1190,7 +1184,7 @@ namespace Kiezel
                 values.Add(value);
             }
             var args = MakeListStar(Symbols.Array, values);
-            var decls = GetDeclarations(false, names, Symbols.RecursionArgs);
+            var decls = GetDeclarations(false, names, Symbols.ProgArgs);
             var body4 = FormatCode(ProgTemplate, args, decls, body);
             return Compile(body4, scope);
         }
@@ -1201,18 +1195,18 @@ namespace Kiezel
             return CompileLiteral(Second(form));
         }
 
-        public static Expression CompileRecur(Cons form, AnalysisScope scope)
+        public static Expression CompileReprog(Cons form, AnalysisScope scope)
         {
-            // recur value*
-            var progScope = FindBlockScope(scope, Symbols.Lambda);
+            // reprog value*
+            var progScope = FindBlockScope(scope, Symbols.Prog);
             if (progScope == null)
             {
-                throw new LispException("Block LAMBDA not found");
+                throw new LispException("Block PROG not found");
             }
             var values = Cdr(form);
             var code = MakeList(Symbols.Do,
-                                MakeList(Symbols.Setq, Symbols.RecursionArgs, MakeListStar(MakeSymbol("array"), values)),
-                                MakeList(Symbols.Redo, Symbols.Lambda));
+                                MakeList(Symbols.Setq, Symbols.ProgArgs, MakeListStar(MakeSymbol("array"), values)),
+                                MakeList(Symbols.Redo, Symbols.Prog));
             return Compile(code, scope);
         }
 
@@ -1377,14 +1371,7 @@ namespace Kiezel
                 lambda = Expression.Lambda(expr, parameters);
             }
 
-            if (AdaptiveCompilation)
-            {
-                return Microsoft.Scripting.Generation.CompilerHelpers.LightCompile(lambda, CompilationThreshold);
-            }
-            else
-            {
-                return lambda.Compile();
-            }
+            return lambda.Compile();
         }
 
         public static Func<object> CompileToFunction(Expression expr)
@@ -1713,10 +1700,11 @@ namespace Kiezel
                         (do %%2))");
 
             ProgTemplate = (Cons)ReadFromString(@"
-                    (block lambda
-                        (var %recursion-args %1)
-                        %%2
-                        (do %%3))");
+                    (do
+                        (var %prog-args %1)
+                        (block prog
+                            %%2
+                            (do %%3)))");
 
         }
 
@@ -1788,7 +1776,7 @@ namespace Kiezel
             Symbols.Prog.SpecialFormValue = new SpecialForm(CompileProg);
             Symbols.Quote.SpecialFormValue = new SpecialForm(CompileQuote);
             Symbols.bqQuote.SpecialFormValue = new SpecialForm(CompileQuote);
-            Symbols.Recur.SpecialFormValue = new SpecialForm(CompileRecur);
+            Symbols.Reprog.SpecialFormValue = new SpecialForm(CompileReprog);
             Symbols.Return.SpecialFormValue = new SpecialForm(CompileReturn);
             Symbols.SetAttr.SpecialFormValue = new SpecialForm(CompileSetMember);
             Symbols.SetElt.SpecialFormValue = new SpecialForm(CompileSetElt);

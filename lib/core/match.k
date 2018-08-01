@@ -54,11 +54,11 @@
         ($variables
             `(do
             	,@(map #(list 'var %1) $variables)
-                (if ,test-form (return-from case-match ,body))))
+                (if ,test-form (leave case-match ,body))))
         ((= test-form true)
-            `(return-from case-match ,body))
+            `(leave case-match ,body))
         (true
-            `(if ,test-form (return-from case-match ,body)))))
+            `(if ,test-form (leave case-match ,body)))))
 
 (def encode-handlers (new
     :quote 'encode-quote
