@@ -31,7 +31,8 @@ namespace Kiezel
             {
                 return Add2(args[0], 0);
             }
-            else {
+            else
+            {
                 var result = args[0];
                 for (var i = 1; i < args.Length; ++i)
                 {
@@ -133,7 +134,8 @@ namespace Kiezel
                 var b = (int)a2;
                 return a + new TimeSpan(b, 0, 0, 0);
             }
-            else {
+            else
+            {
                 return Add2(Convert.ToInt32(a1), Convert.ToInt32(a2));
             }
         }
@@ -172,7 +174,8 @@ namespace Kiezel
                 var d2 = Convert.ToInt32(a2);
                 return d1 & d2;
             }
-            else {
+            else
+            {
                 //return CallOperatorMethod( "op_BitwiseAnd", a1, a2 );
                 throw new LispException("BitAnd - not implemented");
             }
@@ -197,7 +200,8 @@ namespace Kiezel
                 var d1 = Convert.ToInt32(a1);
                 return ~d1;
             }
-            else {
+            else
+            {
                 //return CallOperatorMethod( "op_OnesComplement", a1 );
                 throw new LispException("BitNot - not implemented");
             }
@@ -237,7 +241,8 @@ namespace Kiezel
                 var d2 = Convert.ToInt32(a2);
                 return d1 | d2;
             }
-            else {
+            else
+            {
                 //return CallOperatorMethod( "op_BitwiseOr", a1, a2 );
                 throw new LispException("BitOr - not implemented");
             }
@@ -253,7 +258,8 @@ namespace Kiezel
                 var i2 = ToInt(a2);
                 return i1 << i2;
             }
-            else {
+            else
+            {
                 //return CallOperatorMethod( "op_LeftShift", a1, a2 );
                 throw new LispException("BitLeftShift - not implemented");
             }
@@ -269,7 +275,8 @@ namespace Kiezel
                 var i2 = ToInt(a2);
                 return i1 >> i2;
             }
-            else {
+            else
+            {
                 //return CallOperatorMethod( "op_RightShift", a1, a2 );
                 throw new LispException("BitRightShift - not implemented");
             }
@@ -309,7 +316,8 @@ namespace Kiezel
                 var d2 = Convert.ToInt32(a2);
                 return d1 ^ d2;
             }
-            else {
+            else
+            {
                 //return CallOperatorMethod( "op_ExclusiveOr", a1, a2 );
                 throw new LispException("BitXor - not implemented");
             }
@@ -404,7 +412,8 @@ namespace Kiezel
             {
                 return char.ToLower((char)a).CompareTo(char.ToLower((char)b));
             }
-            else {
+            else
+            {
                 return Compare(a, b);
             }
         }
@@ -429,7 +438,8 @@ namespace Kiezel
                     return (long)i1 - (long)1;
                 }
             }
-            else {
+            else
+            {
                 return Sub(a1, 1);
             }
         }
@@ -444,7 +454,8 @@ namespace Kiezel
                     ch = 'z';
                     return true;
                 }
-                else {
+                else
+                {
                     carry = false;
                     --ch;
                     return true;
@@ -458,7 +469,8 @@ namespace Kiezel
                     ch = 'Z';
                     return true;
                 }
-                else {
+                else
+                {
                     carry = false;
                     --ch;
                     return true;
@@ -472,13 +484,15 @@ namespace Kiezel
                     ch = '9';
                     return true;
                 }
-                else {
+                else
+                {
                     carry = false;
                     --ch;
                     return true;
                 }
             }
-            else {
+            else
+            {
                 carry = true;
                 return false;
             }
@@ -633,7 +647,8 @@ namespace Kiezel
                 var quo = (d1 - rem) / d2;
                 return MakeList(Number.Shrink(quo), Number.Shrink(rem));
             }
-            else {
+            else
+            {
                 return Divrem(Convert.ToInt32(a1), Convert.ToInt32(a2));
             }
         }
@@ -686,7 +701,8 @@ namespace Kiezel
                 {
                     return ((Complex)a).Equals(AsComplex(b));
                 }
-                else {
+                else
+                {
                     return false;
                 }
             }
@@ -697,7 +713,8 @@ namespace Kiezel
                 {
                     return ((Complex)b).Equals(AsComplex(a));
                 }
-                else {
+                else
+                {
                     return false;
                 }
             }
@@ -736,7 +753,8 @@ namespace Kiezel
             {
                 return Char.ToLower((char)a) == Char.ToLower((char)b);
             }
-            else {
+            else
+            {
                 return Equal(a, b);
             }
         }
@@ -747,7 +765,8 @@ namespace Kiezel
             {
                 return CultureInfo.InvariantCulture;
             }
-            else {
+            else
+            {
                 return ident as CultureInfo ?? CultureInfo.GetCultureInfo(GetDesignatedString(ident));
             }
         }
@@ -786,7 +805,8 @@ namespace Kiezel
                     return (long)i1 + (long)1;
                 }
             }
-            else {
+            else
+            {
                 return Add2(a1, 1);
             }
         }
@@ -801,7 +821,8 @@ namespace Kiezel
                     ch = 'a';
                     return true;
                 }
-                else {
+                else
+                {
                     carry = false;
                     ++ch;
                     return true;
@@ -815,7 +836,8 @@ namespace Kiezel
                     ch = 'A';
                     return true;
                 }
-                else {
+                else
+                {
                     carry = false;
                     ++ch;
                     return true;
@@ -829,13 +851,15 @@ namespace Kiezel
                     ch = '0';
                     return true;
                 }
-                else {
+                else
+                {
                     carry = false;
                     ++ch;
                     return true;
                 }
             }
-            else {
+            else
+            {
                 carry = true;
                 return false;
             }
@@ -903,7 +927,8 @@ namespace Kiezel
             {
                 return a2;
             }
-            else {
+            else
+            {
                 return a1;
             }
         }
@@ -939,7 +964,8 @@ namespace Kiezel
             {
                 return a2;
             }
-            else {
+            else
+            {
                 return a3;
             }
         }
@@ -952,7 +978,8 @@ namespace Kiezel
             {
                 return a1;
             }
-            else {
+            else
+            {
                 return a2;
             }
         }
@@ -993,9 +1020,10 @@ namespace Kiezel
         {
             if (args.Length == 0)
             {
-                return null;
+                return MissingValue;
             }
-            else {
+            else
+            {
                 var result = args[0];
                 for (var i = 1; i < args.Length; ++i)
                 {
@@ -1014,9 +1042,10 @@ namespace Kiezel
         {
             if (args.Length == 0)
             {
-                return null;
+                return MissingValue;
             }
-            else {
+            else
+            {
                 var result = args[0];
                 for (var i = 1; i < args.Length; ++i)
                 {
@@ -1120,7 +1149,8 @@ namespace Kiezel
                     return Number.Shrink(new BigInteger(i1) * new BigInteger(i2));
                 }
             }
-            else {
+            else
+            {
                 return Mul(Convert.ToInt32(a1), Convert.ToInt32(a2));
             }
         }
@@ -1218,7 +1248,8 @@ namespace Kiezel
                         return ascending * Math.Sign(l2 - l1);
                     }
                 }
-                else {
+                else
+                {
                     var d = String.Compare(new string(c1, 1), new string(c2, 1), true, culture);
                     if (d != 0)
                     {
@@ -1237,7 +1268,8 @@ namespace Kiezel
             {
                 return ascending * -1;
             }
-            else {
+            else
+            {
                 return ascending * 1;
             }
         }
@@ -1300,7 +1332,8 @@ namespace Kiezel
                     return Number.Shrink(-1 * (new BigInteger(i1)));
                 }
             }
-            else {
+            else
+            {
                 return Neg(Convert.ToInt32(a1));
             }
         }
@@ -1532,7 +1565,8 @@ namespace Kiezel
                 var b = (int)a2;
                 return a - new TimeSpan(b, 0, 0, 0);
             }
-            else {
+            else
+            {
                 return Sub(Convert.ToInt32(a1), Convert.ToInt32(a2));
             }
         }
@@ -1549,7 +1583,8 @@ namespace Kiezel
             {
                 return a;
             }
-            else {
+            else
+            {
                 return a.GetType();
             }
         }
@@ -1584,7 +1619,8 @@ namespace Kiezel
             {
                 return a2;
             }
-            else {
+            else
+            {
                 return null;
             }
         }

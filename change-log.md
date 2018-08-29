@@ -1,5 +1,11 @@
 # Change Log
 
+## 2018/08/29
+
+*   Fixed bug in `reduce`.
+*   Fixed bug in `min`, `max` , `minimize` and `maximize`.
+*   Fixed bug in `loop`.
+
 ## 2018/07/31
 
 *   Removed DLR (lightcompile, lightdynamic) from project.

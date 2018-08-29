@@ -433,6 +433,7 @@
     (add-initial-collect-steps)
     (add-initial-summing-steps)
     (add-initial-multiplying-steps)
+    (add-initial-minimaximizing-steps)
     (add-final-steps))
 
 (defun add-initial-collect-steps ()

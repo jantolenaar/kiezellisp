@@ -64,7 +64,8 @@ namespace Kiezel
                 var dict = ConvertToDictionary((Type)obj, null, false);
                 return Prototype.FromDictionary(dict);
             }
-            else {
+            else
+            {
                 var dict = ConvertToDictionary(obj.GetType(), obj, false);
                 return Prototype.FromDictionary(dict);
             }
@@ -191,7 +192,8 @@ namespace Kiezel
             {
                 runtimeValue = obj;
             }
-            else {
+            else
+            {
                 runtimeValue = sym.Value;
 
                 z["symbol"] = sym;
@@ -255,7 +257,8 @@ namespace Kiezel
                                 z["usage"] = Symbols.SpecialConstant;
                                 isVariable = true;
                             }
-                            else {
+                            else
+                            {
                                 z["usage"] = Symbols.Constant;
                                 isVariable = true;
                             }
@@ -268,7 +271,8 @@ namespace Kiezel
                                 z["usage"] = Symbols.SpecialReadonlyVariable;
                                 isVariable = true;
                             }
-                            else {
+                            else
+                            {
                                 z["usage"] = Symbols.ReadonlyVariable;
                                 isVariable = true;
                             }
@@ -281,7 +285,8 @@ namespace Kiezel
                                 z["usage"] = Symbols.SpecialVariable;
                                 isVariable = true;
                             }
-                            else {
+                            else
+                            {
                                 z["usage"] = Symbols.Variable;
                                 isVariable = true;
                             }
@@ -374,7 +379,8 @@ namespace Kiezel
                 var p = (Prototype)runtimeValue;
                 z["type-specifier"] = p.GetTypeSpecifier();
             }
-            else {
+            else
+            {
                 var dict = AsPrototype(runtimeValue);
 
                 if (dict.Dict.Count != 0)

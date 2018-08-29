@@ -111,7 +111,8 @@ namespace Kiezel
                         {
                             result = val;
                         }
-                        else {
+                        else
+                        {
                             result = Add2(result, val);
                         }
                     }
@@ -230,7 +231,8 @@ namespace Kiezel
                             yield return item2;
                         }
                     }
-                    else {
+                    else
+                    {
                         yield return item;
                     }
                 }
@@ -296,7 +298,8 @@ namespace Kiezel
                         val = Funcall(func, val);
                     }
                 }
-                else {
+                else
+                {
                     while (count-- > 0)
                     {
                         yield return val;
@@ -323,7 +326,8 @@ namespace Kiezel
                         yield return iter1.Current;
                         atEnd1 = !iter1.MoveNext();
                     }
-                    else {
+                    else
+                    {
                         yield return iter2.Current;
                         atEnd2 = !iter2.MoveNext();
                     }
@@ -391,7 +395,8 @@ namespace Kiezel
                 {
                     return null;
                 }
-                else {
+                else
+                {
                     return position;
                 }
             }
@@ -457,7 +462,8 @@ namespace Kiezel
                             source = Runtime.Drop(step - size, source);
                             v.Clear();
                         }
-                        else {
+                        else
+                        {
                             v.Clear();
                         }
                     }
@@ -491,14 +497,15 @@ namespace Kiezel
                     reducer2 = (IApply)Funcall(reducible.Transform, reducer);
                     seq = reducible.Seq;
                 }
-                var result = seed;
+                var result = seed == MissingValue ? Funcall(reducer2) : seed;
                 foreach (object x in ToIter(seq))
                 {
                     if (result == MissingValue)
                     {
-                        result = x;
+                        result = Funcall(reducer2, x);
                     }
-                    else {
+                    else
+                    {
                         result = Funcall(reducer2, result, x);
                     }
                     if (Reducedp(result))
@@ -507,7 +514,7 @@ namespace Kiezel
                         break;
                     }
                 }
-                return result == MissingValue ? Funcall(reducer2) : result;
+                return result;
             }
 
             public static IEnumerable Reductions(IApply reducer, object seed, IEnumerable seq)
@@ -519,14 +526,15 @@ namespace Kiezel
                     reducer2 = (IApply)Funcall(reducible.Transform, reducer);
                     seq = reducible.Seq;
                 }
-                var result = seed;
+                var result = seed == MissingValue ? Funcall(reducer2) : seed;
                 foreach (object x in ToIter(seq))
                 {
                     if (result == MissingValue)
                     {
-                        result = x;
+                        result = Funcall(reducer2, x);
                     }
-                    else {
+                    else
+                    {
                         result = Funcall(reducer2, result, x);
                     }
                     if (Reducedp(result))
@@ -535,7 +543,8 @@ namespace Kiezel
                         yield return result;
                         break;
                     }
-                    else {
+                    else
+                    {
                         yield return result;
                     }
                 }
@@ -550,7 +559,8 @@ namespace Kiezel
                         yield return value;
                     }
                 }
-                else {
+                else
+                {
                     while (count-- > 0)
                     {
                         yield return value;
@@ -567,7 +577,8 @@ namespace Kiezel
                         yield return Funcall(func);
                     }
                 }
-                else {
+                else
+                {
                     while (count-- > 0)
                     {
                         yield return Funcall(func);
@@ -645,7 +656,8 @@ namespace Kiezel
                         {
                             v.Add(iter.Current);
                         }
-                        else {
+                        else
+                        {
                             left = AsList(v);
                             right = MakeCons(iter.Current, iter);
                             return;
