@@ -1,0 +1,109 @@
+{
+    "name": "Kiezellisp Colors Scheme",
+    "rules":
+    [
+        {
+            "name": "Line Comment",
+            "scope": "comment.line.kiezellisp",
+            "font_style": "italic",
+            "foreground": "firebrick"
+        },
+        {
+            "name": "Block Comment",
+            "scope": "comment.block.kiezellisp",
+            "foreground": "firebrick",
+            "font_style": "italic"
+        },
+        {
+            "name": "Special Form",
+            "scope": "keyword.specialform.kiezellisp",
+            "font_style": "normal",
+            "foreground": "purple"
+        },
+        {
+            "name": "Debug Form",
+            "scope": "keyword.debugform.kiezellisp",
+            "font_style": "normal",
+            "foreground": "purple"
+        },
+        {
+            "name": "Error Form",
+            "scope": "keyword.errorform.kiezellisp",
+            "foreground": "#cc2222",
+            "font_style": "bold"
+        },
+        {
+            "name": "Function Name",
+            "scope": "entity.name.function.kiezellisp",
+            "font_style": "normal",
+            "foreground": "cornflowerblue",
+        },
+        {
+            "name": "Parameter Modifier",
+            "scope": "variable.modifier.kiezellisp",
+            "font_style": "normal",
+            "foreground": "forestgreen",
+        },
+        {
+            "name": "Constant",
+            "scope": "constant.language.kiezellisp",
+            "font_style": "normal",
+            "foreground": "cornflowerblue",
+        },
+        {
+            "name": "Escape Char",
+            "scope": "constant.character.escape.kiezellisp",
+            "font_style": "normal",
+            "foreground": "firebrick",
+        },
+        {
+            "name": "Reader Stuff",
+            "scope": "keyword.lispreader.kiezellisp",
+            "foreground": "firebrick",
+            "font_style": "bold"
+        },
+        {
+            "name": "String1",
+            "scope": "string.quoted.single.kiezellisp",
+            "font_style": "normal",
+            "foreground": "rosybrown",
+        },
+        {
+            "name": "String2",
+            "scope": "string.quoted.triple.kiezellisp",
+            "font_style": "normal",
+            "foreground": "rosybrown"
+        },
+        {
+            "name": "String3",
+            "scope": "string.quoted.other.kiezellisp",
+            "font_style": "normal",
+            "foreground": "rosybrown"
+        },
+        {
+            "name": "String",
+            "scope": "string.regexp.kiezellisp",
+            "font_style": "normal",
+            "foreground": "rosybrown"
+        },
+        {
+            "name": "Keyword",
+            "scope": "constant.other.kiezellisp",
+            "font_style": "normal",
+            "foreground": "orchid"
+        },
+        {
+            "name": "Special Variable",
+            "scope": "variable.special.kiezellisp",
+            "font_style": "normal",
+            "foreground": "darkgoldenrod"
+        },
+        {
+            "name": "Reserved Variable",
+            "scope": "variable.language.kiezellisp",
+            "font_style": "normal",
+            "foreground": "cornflowerblue"
+        }
+    ]
+}
+

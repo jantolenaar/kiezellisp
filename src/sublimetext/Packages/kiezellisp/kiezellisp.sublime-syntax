@@ -1,0 +1,206 @@
+%YAML 1.2
+---
+# http://www.sublimetext.com/docs/3/syntax.html
+name: Kiezellisp
+file_extensions:
+  - k
+  - mdk 
+  - kiezel
+scope: source.kiezellisp
+
+variables:
+  word_break_before: '(?<![A-Za-z0-9~!@#%^&\-_=+|:.<>/?])'
+  word_break: '(?![A-Za-z0-9~!@#%^&\-_=+|:.<>/?])'
+  free_format: (?x)
+  leading_parens: (?<=(\())
+  word: '[A-Za-z0-9~!@#%^&\-_=+|:.<>/?]+'
+
+contexts:
+
+  main:
+    - include: reader_stuff
+    - include: line_comment
+    - include: block_comment
+    - include: param_modifier
+    - include: keyword
+    - include: special_var
+    - include: reserved_var
+    - include: constant
+    - include: special_form
+    - include: debug_form
+    - include: error_form
+    - include: string
+    - include: string_noescape1
+    - include: string_noescape2
+    - include: string_noescape3
+    - include: string_noescape4
+    - include: string_noescape5
+    - include: string_noescape6
+    - include: string_regex
+
+  reader_stuff:
+    - match: \#;
+      scope: keyword.lispreader.kiezellisp
+    - match: \#(if|elif|else|endif|ignore)\b
+      scope: keyword.lispreader.kiezellisp
+
+  line_comment:
+    - match: ((\#!|;).*$)
+      scope: comment.line.kiezellisp
+
+  block_comment:
+    - match: \#\|
+      push:
+        - meta_scope: comment.block.kiezellisp
+        - match: \|\#
+          pop: true
+
+  param_modifier:
+    - match: \&(environment|optional|key|rest|body|params|vector|whole)\b
+      scope: variable.modifier.kiezellisp
+
+  keyword:
+    - match: '{{word_break_before}}:{{word}}'
+      scope: constant.other.kiezellisp
+
+  special_var:
+    - match: '{{word_break_before}}\${{word}}'
+      scope: variable.special.kiezellisp 
+    - match: '{{word_break_before}}\*{{word}}\*'
+      scope: variable.special.kiezellisp 
+
+  reserved_var:
+    - match: (self)\b
+      scope: variable.language.kiezellisp
+
+  constant:
+    - match: (nil|null|true|false)\b
+      scope: constant.language.kiezellisp
+
+  debug_form:
+    - match: > 
+                (?x)
+                {{leading_parens}}
+                (
+                  trace|
+                  breakpoint|
+                  assert|
+                  assert-throws-exception|
+                  assert-throws-no-exception|
+                ){{word_break}}
+
+      scope: keyword.debugform.kiezellisp
+
+  error_form:
+    - match: > 
+                (?x)
+                {{leading_parens}}
+                (
+                  not-implemented|
+                  throw-error|
+                  throw
+                ){{word_break}}
+
+      scope: keyword.errorform.kiezellisp
+
+
+  special_form:
+    - match: >
+                (?x)
+                {{leading_parens}}
+                (
+                    simple-lambda|lambda\*|lambda|case-lambda|make-lambda|
+                    declare|public|private|import|
+                    var|let|letfun|letmacro|let-symbol-macro|lazy|future|
+                    set|setf|setq|psetf|psetq|quote|quasi-quote|
+                    with-multiple-let|with-multiple-var|multiple-setf|
+                    do|block|
+                    prog|reprog|self|
+                    doseq|loop|foreach|while|
+                    or|and|new|
+                    case(-match)?|ecase(-match)?|
+                    if(-let|-match)?|when(-let|-match)?|unless|
+                    cond|typecase|etypecase|
+                    leave|redo|
+                    return(-if|-or-throw)?|break(-if)?|continue(-if)?|finish(-if)?|
+                    try(-and-catch)?|finally|catch|ignore-errors|
+                    using|
+                    with(-scope)?|scope-exit-pass|scope-exit-fail|scope-exit|
+                ){{word_break}}
+
+      scope: keyword.specialform.kiezellisp
+
+    - match: >
+                (?x)
+                {{leading_parens}}
+                ((
+                    package|defpackage|defclass|defstruct|deftype|defsetf|
+                    define-modify-macro|define-compiler-macro|
+                    defun|defun\*|defmulti|defmethod|
+                    define-simple-macro|defmacro|defmacro\*|define-symbol-macro|
+                    def|undef|defonce|defconstant|
+                )\s+({{word}})?)
+
+      captures:
+        3: keyword.specialform.kiezellisp
+        4: entity.name.function.kiezellisp
+
+  string:
+    - match: '"'
+      push:
+        - meta_scope: string.quoted.single.kiezellisp
+        - match: '"'
+          pop: true
+        - include: string_char
+ 
+  string_char:
+    - match: '\\(u[0-9a-fA-F]{4}|x[0-9a-fA-F]{2}|b|t|n|f|r|"|\\|[0-3]?[0-7]{1,2})'
+      scope: constant.character.escape.kiezellisp
+
+  string_noescape1:
+    - match: '@"'
+      push:
+        - meta_scope: string.quoted.single.kiezellisp
+        - match: '"'
+          pop: true
+
+  string_noescape2:
+    - match: '"""'
+      push:
+        - meta_scope: string.quoted.triple.kiezellisp
+        - match: '"""'
+          pop: true
+
+  string_noescape3:
+    - match: \#q\{
+      push:
+        - meta_scope: string.quoted.other.kiezellisp
+        - match: \}
+          pop: true
+
+  string_noescape4:
+    - match: \#q\[
+      push:
+        - meta_scope: string.quoted.other.kiezellisp
+        - match: \]
+          pop: true
+
+  string_noescape5:
+    - match: \#q\<
+      push:
+        - meta_scope: string.quoted.other.kiezellisp
+        - match: \>
+          pop: true
+
+  string_noescape6:
+    - match: \#q\(
+      push:
+        - meta_scope: string.quoted.other.kiezellisp
+        - match: \)
+          pop: true
+
+  string_regex:
+    - match: \#/.*?/([a-z]*)
+      scope: string.regexp.kiezellisp
+
+
