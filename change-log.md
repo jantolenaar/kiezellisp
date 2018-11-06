@@ -1,5 +1,9 @@
 # Change Log
 
+### 2018/11/17
+
+*   Moved `kiezellisp-init.k` to application data folder of `kiezellisp`.
+
 ### 2018/11/6
 
 *   Added source of documentation and build scripts.

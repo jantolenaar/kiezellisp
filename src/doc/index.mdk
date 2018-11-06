@@ -1,7 +1,8 @@
 
 # Kiezellisp
 
-**Kiezellisp** is a lisp compiler/interpreter running on .NET.
+**Kiezellisp** is a lisp compiler/interpreter running on .NET Framework
+and Mono. 
 
 Web site generated on: <%= (date-time:today) %>
 

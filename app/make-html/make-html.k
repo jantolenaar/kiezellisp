@@ -37,9 +37,15 @@
 (import "System.IO.Path")
 (import "System.IO.File")
 
+(defun time-stamp ()
+    (let span (.subtract (date-time:now) (date-time:new 2000 1 1)))
+    (as-long (.total-seconds span)))
+
 (def $input-dir null)
 (def $output-dir null)
 (def $master-index null)
+(def $style-sheet "styles.css?v=<%=(time-stamp)%>")
+
 
 (defun make-kiezellisp-html()
     (let $input-dir "${projects}/kiezellisp/src/doc")
@@ -48,7 +54,8 @@
     ;; master index of the public api. If $master-index is null no 
     ;; master index is created.
     (let $master-index (vector))
-    (copy-change-log)
+    ;;(copy-change-log)
+    (rewrite-md-change-log)
     (make-html))
 
 (defun make-html ()
@@ -95,14 +102,20 @@
         (.add $master-index item))
     (let md-text (.data item))
     (let anchor (.anchor item))
-    (let html-text (render-html name (md:convert-to-html md-text) anchor))
+    (let html-text (render-html name (md:convert-to-html md-text) :anchor anchor))
     (save-html-file name html-text))
 
 (defun rewrite-md-file (name)
     (let input-file (path:combine $input-dir name))
     (let md-text (file:read-all-text input-file))
-    (let html-text (render-html name (md:convert-to-html md-text) null))
+    (let html-text (render-html name (md:convert-to-html md-text)))
     (save-html-file name html-text))
+
+(defun rewrite-md-change-log ()
+    (let input-file (path:combine $input-dir "../../change-log.md"))
+    (let md-text (file:read-all-text input-file))
+    (let html-text (render-html "change-log" (md:convert-to-html md-text)))
+    (save-html-file "change-log" html-text))
 
 (defun render-header (name &key math)
     (let depth (count #(= %1 #\/) name))
@@ -121,16 +134,17 @@
         (<title> name)
         (<link> :rel "StyleSheet"
                 :type "text/css"
-                :href "${root}styles.css")
+                :href (string root $style-sheet))
         (if math
             (<script> :type "text/x-mathjax-config" mathjax-config))
         (if math
             (<script> :type "text/javascript" :src mathjax-url-2))
         ))
 
-(defun render-body (name content anchor)
+(defun render-body (name content &key anchor wide)
     (let depth (count #(= %1 #\/) name))
     (let root (.repeat "../" depth))
+    (let content-id (if wide "wide-content" "content"))
     (<body>        
         (<a> :class "kiezel banner" :href "${root}index.html" "www.<span style='color:yellow'>kiezel</span>lisp.nl")
         "&nbsp;"
@@ -141,16 +155,16 @@
         "&nbsp;"
         (if (and anchor (vector? $master-index))
             (<a> :class "kiezel banner" :href "${root}help/index.html" "Index of Everything"))
-        (<div> :id "content" content)))
+        (<div> :id content-id content)))
 
-(defun render-html(name body anchor)
+(defun render-html(name body &key anchor wide)
     (html:to-string
         (<html>
             :lang "en"
             (render-header name :math (and (string? body)
                                     (or (/= (.index-of body "$") -1)
                                     (/= (.index-of body @"\(") -1))))
-            (render-body name body anchor))))
+            (render-body name body :anchor anchor :wide wide))))
 
 (defun save-html-file (name html-text)
     (let path (path:combine $output-dir name))
@@ -183,14 +197,14 @@
                             #(elt (symbol-name (.anchor %1)) 0)))
 
     (let md-text (with-output-to-string ($stdout)
-        (print-line "## Index of Everything")
+        (print-line "# Index of Everything")
         (print-line)
     	(print-line "<div class=indexofeverything>")
         (print-line set1 "</br></br>" set2)
     	(print-line "</div>")))
 
     (let name "help/index.html")
-    (let html-text (render-html name (md:convert-to-html md-text) null))
+    (let html-text (render-html name (md:convert-to-html md-text) :wide true))
     (save-html-file name html-text))
 
 (defun* make-links
@@ -229,18 +243,18 @@
                     (let text (.trim (.substring line (.length ".index"))))
                     (setf anchor (make-symbol text))
                     (setf index text)
-                    (collecting "### Name")
-                    (collecting text))
+                    (collecting "## Name")
+                    (collecting (.html-encode text)))
                 ((.starts-with line ".usage")
                     (let text (.trim (.substring line (.length ".usage"))))
                     (setf usage text)
-                    (collecting "\n### Usage")
+                    (collecting "\n## Usage")
                     (collecting text))
                 ((.starts-with line ".syntax*")
                     (collecting "<% embedded-syntax")
                     (setf terminator-line "%>"))
                 ((.starts-with line ".syntax")
-                    (collecting "\n### Syntax")
+                    (collecting "\n## Syntax")
                     (collecting "<% embedded-syntax")
                     (setf terminator-line "%>"))
                 ((.starts-with line ".api")
@@ -253,9 +267,9 @@
                     (collecting "<! embedded-code #q qwerty")
                     (setf terminator-line "qwerty !>"))
                 ((.starts-with line ".see-also")
-                    (collecting "\n### See also"))
+                    (collecting "\n## See also"))
                 ((.starts-with line ".description")
-                    (collecting "\n### Description\n")
+                    (collecting "\n## Description\n")
                     (setf terminator-line null))
                (true
                     (collecting line)))
@@ -328,6 +342,7 @@
     (each do-prototype prototypes))
 
 (defun do-prototype (prototype)
+    (print-line "<code>")
     (cond
         ((list? prototype)
             (cond
@@ -341,7 +356,7 @@
                     (do-prototype-list prototype))))
         (true
             (do-variable prototype)))
-     (print-line "<br/>"))
+     (print-line "</code><br/>"))
 
 (defun do-prototype-list (seq)
     (print "(")
@@ -384,7 +399,9 @@
 
 (defun do-indent (text)
     (print-line "~~~")
-    (print-line (string:indent text "   "))
+    (if (.ends-with text "\n")
+        (print text)
+        (print-line text))
     (print-line "~~~"))
 
 (defun do-examples (example-text)

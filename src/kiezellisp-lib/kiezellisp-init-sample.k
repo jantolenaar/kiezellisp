@@ -5,6 +5,9 @@
 ;;; kiezellisp-init-sample.k
 ;;;
 
+;;; Make a copy of this file to kiezellisp-init.k
+;;; Use this copy to customize the kiezellisp runtime environment.
+
 #if unix
 #if bsd
 (set-assembly-path "/home/jan/bin"

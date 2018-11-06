@@ -28,14 +28,14 @@ parameters on its left. The default of `default-value` is `null`.
 array of objects. `&vector` is like `&rest`, but binds the remainder of the
 argument list as a vector. `&body` is a synonym of `&rest`.
 
-### Function Parameter List
+## Function Parameter List
 
     required-arg := symbol
 
 .api
 defun lambda defun* lambda* letfun
 
-### Method Parameter List
+## Method Parameter List
 
     required-arg := symbol | '(' symbol [type] ')'
     type := type-symbol | '(' 'eql' value ')'
@@ -45,7 +45,7 @@ A `type-symbol` is the name of a type created by `deftype`.
 .api
 defmulti defmethod deftype
 
-### Macro Parameter List
+## Macro Parameter List
 
     required-arg := symbol | paramlist
 

@@ -1,5 +1,5 @@
 .index break-if
-.usage loop clause:w
+.usage loop clause
 
 .syntax
 (break-if test &optional val)

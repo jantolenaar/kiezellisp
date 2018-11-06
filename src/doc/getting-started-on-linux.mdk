@@ -16,11 +16,13 @@ execute the line:
 
 ## Configuration
 
-Customize the contents of the file `~/abc/kiezellisp/src/kiezellisp-lib/kiezellisp-init.k`
+Make a copy of `~/abc/kiezellisp/src/kiezellisp-lib/kiezellisp-init-sample.k` 
+to `~/.config/kiezellisp/kiezellisp-init.k`. 
+Customize the contents of the copy.
 
 ## Build
 
-Open the solution file `abc/kiezellisp/kiezellisp.sln` and build 
+Open the solution file `~/abc/kiezellisp/src/kiezellisp.sln` and build 
 the solution.
 
 ## Terminal and window versions
@@ -37,15 +39,15 @@ During development you should use `kiezellisp-con.exe`.
 
 Create the following executable scripts in a folder on your `path` environment, e.g. `~/bin`.
 
-### Script `~/bin/kiezellisp`
+#### Script `~/bin/kiezellisp`
 
     #! /bin/bash
-    mono ~/abc/kiezellisp/bin/kiezellisp-con.exe "$@"
+    mono ~/abc/kiezellisp/src/kiezellisp-con/bin/Release/kiezellisp-con.exe "$@"
 
-### Script `~/bin/kiezellisp-gui`
+#### Script `~/bin/kiezellisp-gui`
 
     #! /bin/bash
-    mono ~/abc/kiezellisp/bin/kiezellisp-gui.exe "$@" &
+    mono ~/abc/kiezellisp/src/kiezellisp-gui/bin/Release/kiezellisp-gui.exe "$@" &
 
 Please note the `&` which detaches the graphical program from the shell terminal.
 
@@ -57,8 +59,7 @@ You will be greeted by Kiezellisp's Read-Eval-Print-Loop:
 
     Kiezellisp 4.0 (Build 6427 - 2017-08-06)
     Copyright (C) Jan Tolenaar 2009-2017
-    Type 'help' for help on top-level commands
-
+    
     user >
 
 The word `user` is the name of the current package. 

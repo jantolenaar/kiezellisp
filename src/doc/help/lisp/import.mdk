@@ -24,12 +24,12 @@ and the rightmost name part of `type-name`.
 (import "System.Net.WebRequestMethods+Ftp" :package-name :ftp-methods)
 (import "System.Collections.Generic.List" :type-parameters '(int))
 
-#### Static methods
+### Static methods
 
 .examples
 (path:get-extension "readme.txt")
 
-#### Instance methods
+### Instance methods
 
 .examples
 (string:to-upper "hello")
@@ -37,26 +37,26 @@ and the rightmost name part of `type-name`.
 
 The expression `.to-upper` is discussed in more detail below.
 
-#### Instance properties
+### Instance properties
 
 .examples
 (string:length "hello")
 (.length "hello")
 
-#### Literal and static readonly fields
+### Literal and static readonly fields
 
 The name is converted to upper case instead of lower case.
 
 .examples
 int32:MAX-VALUE
 
-#### Static properties
+### Static properties
 
 .examples
 (encoding:ascii)
 (date-time:now)
 
-#### .members and ?members notation
+### .members and ?members notation
 
 Instance properties may be accessed by using *getter* and *setter* functions but 
 this requires that the class is `import`ed. A convenient alternative is to use

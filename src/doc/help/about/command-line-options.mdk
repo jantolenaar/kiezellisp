@@ -10,7 +10,7 @@ con `options` are:
     --repl                        Show REPL after running `file`.
     --fg number                   Terminal palette color index of text (1-16)
     --bg number                   Terminal palette color index of background (1-16)
-    --mono5                       
+    --rlwrap                      To indicate kiezellisp runs under control of rlwrap.                       
 
 `file` is the name of the kiezellisp source file to run and
 `user-args` are arguments to the source code file.
@@ -18,22 +18,18 @@ con `options` are:
 The options `fg` and `bg` are required to enable the display of text in 
 reverse colors, for example during symbol expansion by the TAB key.
 
-The option `mono5` is a workaround for mono 5.2 linq expression performance
-problems. If present, the kiezellisp runtime runs on a secondary stack (and
-using the repl to debug gui programs no longer works).
-
 Starting `kiezellisp-con` without a `file` implies `repl`.
 Starting `kiezellisp-con` with a `file` implies no `repl`.
 These defaults may be changed by supplying `options`.
 
-#### Example 1
+### Example 1
 
 If `file` is not given, `kiezellisp-con` runs a REPL.
 
 .code
 kiezellisp-con
 
-#### Example 2
+### Example 2
 
 If `file` is given, `kiezellisp-con` runs in release mode, loads `file`,
 calls the function `user::main` when defined and finally calls
@@ -42,21 +38,21 @@ the function `exit`.
 .code
 kiezellisp-con my-app
 
-#### Example 3
+### Example 3
 
 When developing a `winforms` application:
 
 .code
 mono kiezellisp-con.exe my-win-app
 
-#### Example 4
+### Example 4
 
 When running a `winforms` application:
 
 .code
 mono kiezellisp-gui.exe my-win-app
 
-#### Example 5
+### Example 5
 
 Add the `--repl` option to not terminate after running `file`.
 

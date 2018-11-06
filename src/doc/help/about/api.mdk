@@ -3,7 +3,7 @@
 .api
 import reference add-event-handler
 
-### Explicit interfaces
+## Explicit interfaces
 
 To call a method on an explicit interface, first import the interface, then call
 the corresponding function in its package.

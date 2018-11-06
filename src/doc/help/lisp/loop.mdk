@@ -7,7 +7,7 @@
 Creates a loop. The `loop` macro is based on the Common Lisp `iterate` macro 
 by Jonathan Amsterdam.
 
-#### Elements of a loop
+### Elements of a loop
 
 A loop consists of top-level clauses that drive the loop, such as `for` and 
 `generate`, clauses that may appear at deeper levels than the top level, such 
@@ -23,7 +23,7 @@ The value of a `loop` expression is (in this order):
 +   the value of the `finally` block
 +   `null`
 
-#### Neverending loop
+### Neverending loop
 
 .code
 (loop
@@ -32,43 +32,43 @@ The value of a `loop` expression is (in this order):
 .examples
 (macroexpand '(loop (print-line "Hello, world")))
 
-#### Loop with a counter
+### Loop with a counter
 
 .examples
 (loop (with i initially 2 then (inc i)) (finish-if (= i 5)) (print-line i))
 
-#### Loop with a range
+### Loop with a range
 
 .examples
 (loop (for i in (range 2 5)) (print-line i))
 (loop (for i from 2 below 5) (print-line i))
 
-#### Loop over a list
+### Loop over a list
 
 .examples
 (loop (for i in-list '(a b c d e) by cddr) (print-line i))
 (loop (for i on-list '(a b c d e) by cddr) (print-line i))
 
-#### Generate and next clauses
+### Generate and next clauses
 
 .examples
 (loop (for x in '(a b null c))
       (generate i from 1)
       (if x (collecting (list x (next i)))))
 
-#### Loop with an explicit return value
+### Loop with an explicit return value
 
 .examples
 (loop (for x in '(a b c d))
     (break-if (= x 'b) 123))
 
-#### Loop with an unnamed accumulated value
+### Loop with an unnamed accumulated value
 
 .examples
 (loop (for x in (series 1 50))
     (summing x))
 
-#### Loop with a named accumulated value
+### Loop with a named accumulated value
 
 .examples
 (loop (for x in (series 1 50))
@@ -77,7 +77,7 @@ The value of a `loop` expression is (in this order):
     (finally
         (list the-sum the-product)))
 
-#### Toplevel loop clauses
+### Toplevel loop clauses
 
 .syntax*
 (initially form*)
@@ -109,7 +109,7 @@ The value of a `loop` expression is (in this order):
 (generate sym :on-list lst)
 
 
-#### Other loop clauses
+### Other loop clauses
 
 .syntax*
 (next sym)

@@ -1,14 +1,16 @@
 .index about:lisp-reader
 .description
 
-A lisp reader is an invisible wrapper around a TextReader and a combination of a
-scanner and parser. The scanner recognizes tokens such as parentheses, numbers,
+A lisp reader is an invisible wrapper around a `TextReader`. It consists of a
+scanner and a parser. 
+
+The scanner recognizes tokens such as parentheses, numbers,
 strings and other character combinations that have a special meaning.
 
 The parser creates S-expressions from the stream of tokens. Sometimes tokens are
 converted to multiple tokens.
 
-### Comments
+## Comments
 
 The reader handles line comments and block comments
 
@@ -16,16 +18,14 @@ The reader handles line comments and block comments
     123 #! line comment
     (+ 123 #| block comment |# 456)
 
-
-### Abbreviated lambda expressions
-
+## Abbreviated lambda expressions
 
 .examples
 #(+ 2 %)
 #(* %3 %3)
 (it 1 2 3)
 
-### Accessor functions
+## Accessor functions
 
 .examples
 .
@@ -33,7 +33,7 @@ The reader handles line comments and block comments
 .to-upper
 (.to-upper "hello")
 
-### Numbers
+## Numbers
 
 .examples
 #9r13
@@ -41,7 +41,7 @@ The reader handles line comments and block comments
 #o77
 #x20
 
-### Strings
+## Strings
 
 .examples
 #q{a b c}
@@ -53,13 +53,13 @@ een                          \
 twee                         \
 drieanything really
 
-### Regular expression literals
+## Regular expression literals
 
 .examples
 #/a(a)p/i
 :d
 
-### Backquote expressions
+## Backquote expressions
 
 A backquote expression is a template for a piece of lisp code that must execute
 to produce output. The names `bq:list`, `bq:force`, `bq:quote` and `bq:append`
@@ -75,14 +75,14 @@ their counterparts in the `lisp` package.
 (quote `(a ,@b c))
 `(a ,@b c)
 
-### Immediate execution expressions
+## Immediate execution expressions
 
 .examples
 '(1 (+ 2 3) 4)
 (setq $read-eval true)
 '(1 #.(+ 2 3) 4)
 
-### (Un)conditional inclusion or exclusion  of forms
+## (Un)conditional inclusion or exclusion  of forms
 
 The following examples show how to include or exclude a single form. The first
 argument after `#+` and `#-` is a logical expression that refers to symbols in
@@ -106,13 +106,13 @@ We can also include/exclude more than one (usually top-level) form:
 Please note that this feature is form-aware and not line-aware and that the
 forms in the choosen branch are executed as a single top-level form.
 
-### Infix notation
+## Infix notation
 
 .examples
 '#i(1+x)
 '#i(sin(x)**(1+1)+cos(x)**2)
 
-### Structures
+## Structures
 
 The `#s(...)` reader macro produces a prototype object as a literal. When the
 number of items in the list is odd, the first item must be the type name of a
@@ -126,11 +126,11 @@ prototype which will become the parent of the constructed prototype.
 :throws
 #s(mies2 aap 1 noot 2)
 
-### Read tables
+## Read tables
 
 TO DO
 
-### See also
+## See also
 
 .api
 $readtable

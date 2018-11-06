@@ -1,14 +1,14 @@
 .index about:running-light+running-fast
 .description
 
-### Precompiled assemblies on Windows
+## Precompiled assemblies on Windows
 
 Use `ngen.exe` to create native images of Kiezellisp and its dependencies.
 
     C:\Windows\Microsoft.NET\Framework\v4.0.30319\ngen.exe install kiezellisp-gui.exe
     C:\Windows\Microsoft.NET\Framework\v4.0.30319\ngen.exe install kiezellisp-con.exe
 
-### Precompiled assemblies on Mono/Linux
+## Precompiled assemblies on Mono/Linux
 
 Use `--aot` to create native images of Kiezellisp and its dependencies.
 
@@ -16,7 +16,7 @@ Use `--aot` to create native images of Kiezellisp and its dependencies.
     mono --aot kiezellisp-con.exe
     mono --aot kiezellisp-lib.dll
 
-### Light Lambda
+## Light Lambda
 
 Kiezellisp no longer uses the `LightCompile` and `LightDynamic` features of 
 the DLR. 
@@ -27,7 +27,7 @@ threshold has been reached. In some cases the interpretion gave the wrong result
 Instead Kiezellisp uses a lazy compile mechanism, that postpones Linq compilation 
 until a lambda is called for the first time.
 
-### Debug vs release code
+## Debug vs release code
 
 The Kiezellisp compiler inserts code to improve your debugging experience. This 
 depends on the debug level (which is typically 0 during init and 2 in the REPL).

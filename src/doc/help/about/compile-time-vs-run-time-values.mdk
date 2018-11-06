@@ -10,7 +10,7 @@ When a symbol is referenced in the first position of a form, its compile-time
 value is considered before its run-time value. In any other position only the
 run-time value is considered.
 
-### Examples
+## Examples
 
 `do` is a special form equivalent to a `{...}` block in other languages. It has
 a compile-time value but no run-time value:
@@ -36,7 +36,7 @@ run-time value:
 or
 (map or '(true false) '(true true))
 
-### Functions with special forms
+## Functions with special forms
 
 Depending on the actual arguments, calls to the following functions can be made
 faster by some Dynamic Language Runtime trickery.
@@ -44,7 +44,7 @@ faster by some Dynamic Language Runtime trickery.
 .api
 attr elt set-attr set-elt
 
-### Special forms with functions
+## Special forms with functions
 
 Only special forms can implement the short-circuiting behaviour of these
 functions, but the equivalent functions are nice to have.
@@ -52,7 +52,7 @@ functions, but the equivalent functions are nice to have.
 .api
 and or if
 
-### Compiler Macros
+## Compiler Macros
 
 Kiezellisp compiler macros are similar to Common Lisp compiler macros. Use a
 compiler macro to optimize special cases of a function call.
@@ -69,7 +69,7 @@ compiler macro to optimize special cases of a function call.
 (macroexpand '(++ a b c))
 (macroexpand '(++ a 1))
 
-### Rules
+## Rules
 
 The special forms `def`, `defun`, `defun*`, `defconstant`, `defonce`, `defmulti`
 and `defmethod` set a symbol's run-time value while erasing its

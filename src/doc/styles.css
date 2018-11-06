@@ -1,150 +1,47 @@
 
-body {
-xxfont-family:sans-serif;
-xxfont-size:13pt;
-xxline-height:1.5em;
-font-weight:normal;
-text-align:left;
-color: #111155;
-background-color:#FFFCEF;
-}
-
-h1 {
-xxfont-size:150%;
-color: #2e4a9e;
-xxmargin-left: -10pt;
-font-variant: small-caps;
-}
-
-h2 {
-xxfont-size:118%;
-color: #2e4a9e;
-xxmargin-left: -10pt;
-font-variant: small-caps;
-}
-
-h3 {
-color: #2e4a9e;
-xxfont-size:100%;
-xxmargin-left: -1em;
-font-variant: small-caps;
-}
-
-h4 {
-color: #2e4a9e;
-xxfont-size:100%;
-}
-
-blockquote {
-xxmargin-left:2em;
-}
-
-p.red {
-color: darkred;
-}
-
-xxpre {
-xxpadding: 5px;
-font-size: 100%;
-xxline-height: 1.2em;
-xxbackground-color: #eeeeee;
-xxborder: 1px solid darkgray;
-xxborder-radius: 3px;
-}
-
-xxcode {
-font-family: courier, monospace;
-}
-
-xxspan.api {
-font-family: courier, monospace;
-}
-
-dt {
-font-style: italic;
-}
-
-ul {
-margin-left:0em;
-xxpadding-left:1em;
-text-indent:0em;
-}
-
-ul ul {
-margin-left:0em;
-xxpadding-left:1em;
-text-indent:0em;
-}
-
-#main {
-padding-left: 2em;
-}
-
-td {
-vertical-align:top;
-}
-
-li.folder {
-list-style-image: url(/resources/folder.png);
-}
-
-li.folder-star {
-list-style-image: url(/resources/folder_star.png);
-}
-
-li.page {
-list-style-image: url(/resources/page.png);
-}
-
-li.home {
-list-style-image: url(/resources/world.png);
-}
-
-/* used by generated website: */
-
-#canvas {
+pre {
 margin-left: 2em;
-margin-top: 2em;
-width:62em;
 }
 
-#banner {
+p {
+margin-left: 1em;
 }
 
-#banner img {
-border:none;
+h1 { 
+font-size: 150%;
+font-variant: small-caps;
+}
+
+h2 { 
+font-size: 115%;
+font-variant: small-caps;
+}
+
+h3 { 
+font-size: 100%;
+font-variant: small-caps;
 }
 
 a.banner {
-background-color: blue;
-color: #eeeeee;
 padding: 5px;
 border-radius: 10px;
 text-decoration: none;
 font-weight: bold;
-font-size: 24pt;
+font-size: 200%;
+color: white;
 }
 
 a.kiezel {
 background-image: url("kiezelsteen.jpg");
 }
 
-a.silent {
-text-decoration: none;
-color: blue;
-}
-
-#top {
-width:40em;
-padding:2em;
+#wide-content {
 }
 
 #content {
-xxmargin-top:2em;
 width:45em;
 }
 
 div.indexofeverything {
-/*white-space:nowrap;*/
-column-count:3;
+column-width:18em;
 }

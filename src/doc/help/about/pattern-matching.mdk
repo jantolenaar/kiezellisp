@@ -38,7 +38,7 @@ The `property` pattern tests one or more properties of a prototype object.
 (if-match (property :name (type 'string)) obj true)
 (if-match (property :city (regex "lei") name) obj name)
 
-### Patterns
+## Patterns
 
     literal-expr
     symbol

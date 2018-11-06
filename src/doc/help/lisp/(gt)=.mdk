@@ -4,6 +4,6 @@
 (>= &rest args)
 
 .description
-Returns true if `args` is in monotonic increasing order. See `compare`.
+Returns true if `args` is in monotonic decreasing order. See `compare`.
 
 

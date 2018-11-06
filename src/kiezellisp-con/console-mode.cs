@@ -292,7 +292,8 @@ namespace Kiezel
                                 }
                                 return s;
                             }
-                            else {
+                            else
+                            {
                                 writeChar('\n');
                                 buffer.Append('\n');
                                 ++pos;
@@ -532,7 +533,8 @@ namespace Kiezel
                                     }
                                     return s;
                                 }
-                                else {
+                                else
+                                {
                                     writeChar('\n');
                                     buffer.Append('\n');
                                     ++pos;
@@ -578,7 +580,6 @@ namespace Kiezel
                 Console.Clear();
                 Console.WriteLine(Runtime.GetVersion());
                 Console.WriteLine(fileVersion.LegalCopyright);
-                Console.WriteLine("Type `help` for help on top-level commands");
             }
             ReadEvalPrintLoop(commandOptionArgument: options.ScriptName, initialized: false);
         }
