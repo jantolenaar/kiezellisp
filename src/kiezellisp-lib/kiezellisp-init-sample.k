@@ -2,7 +2,7 @@
 ;;; Copyright (C) Jan Tolenaar. See the file LICENSE for details.
 
 ;;;
-;;; kiezellisp-init.k
+;;; kiezellisp-init-sample.k
 ;;;
 
 #if unix
@@ -49,7 +49,6 @@
 (apply set-load-path (map make-path (list
                 "kiezellisp-private/lib"
                 "kiezellisp-private/app"
-                "kiezellisp/contrib/lib"
                 "kiezellisp/lib"
                 "kiezellisp/app" )))
 
@@ -60,11 +59,6 @@
 (require "shell")
 (require "unit-test")
 (require "diagnostics")
-
-(apply set-help-path (map make-path (list
-                "kiezellisp/help"
-                "/home/jan/documents/help")))
-
 (setq $repl-force-it true)
 (set-debug-level 2)
 

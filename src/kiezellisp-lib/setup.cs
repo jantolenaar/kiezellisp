@@ -422,8 +422,6 @@ namespace Kiezel
             Symbols.Package.VariableValue = LispPackage;
             Symbols.PackageNamePrefix.VariableValue = null;
             Symbols.PI.ConstantValue = Math.PI;
-            Symbols.PlaybackDelay.VariableValue = 100;
-            Symbols.PlaybackDelimiter.VariableValue = "<";
             Symbols.PrettyPrintHook.VariableValue = null;
             Symbols.PrintBase.VariableValue = 10;
             Symbols.PrintCompact.Value = true;

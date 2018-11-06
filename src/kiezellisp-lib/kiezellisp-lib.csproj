@@ -149,9 +149,6 @@
   <ItemGroup>
     <EmbeddedResource Include="lisp-icon.bmp" />
   </ItemGroup>
-  <ItemGroup>
-    <None Include="release-kiezellisp-init.k" />
-  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <ProjectExtensions>
     <VisualStudio>
@@ -173,5 +170,8 @@
     <Content Include="kiezellisp-init.k">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="kiezellisp-init-sample.k" />
   </ItemGroup>
 </Project>

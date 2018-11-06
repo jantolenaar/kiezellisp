@@ -86,7 +86,8 @@ namespace Kiezel
                 {
                     name = CreateDocSymbol(((LispAttribute)attrs[0]).Names[0]);
                 }
-                else {
+                else
+                {
                     name = CreateDocSymbol(method.Name.LispName());
                 }
             }
@@ -129,7 +130,8 @@ namespace Kiezel
             {
                 return member.GetValue(null);
             }
-            else {
+            else
+            {
                 return null;
             }
         }
@@ -221,7 +223,8 @@ namespace Kiezel
                 ImportExtensionMethodsIntoPackage(package, type);
                 return package;
             }
-            else {
+            else
+            {
                 var package = FindPackage(packageName);
 
                 if (package != null)
@@ -236,13 +239,15 @@ namespace Kiezel
                     {
                         // silently do nothing
                     }
-                    else {
+                    else
+                    {
                         Packages.Remove(packageName);
                         package = MakePackage(packageName);
                         ImportIntoPackage(package, type);
                     }
                 }
-                else {
+                else
+                {
                     package = MakePackage(packageName);
                     ImportIntoPackage(package, type);
                 }
@@ -297,7 +302,8 @@ namespace Kiezel
                     methods.AddRange(builtin.BuiltinExtensionMembers);
                     builtin.BuiltinExtensionMembers = methods.Distinct().ToArray();
                 }
-                else {
+                else
+                {
                     // todo: change order
                     // Goes after other methods as in c#.
                     methods.AddRange(builtin.ExternalExtensionMembers);
@@ -550,7 +556,8 @@ namespace Kiezel
             {
                 return "";
             }
-            else {
+            else
+            {
                 return name.Substring(0, index) + "+" + name.Substring(index + 1);
             }
         }
