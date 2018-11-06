@@ -1,0 +1,11 @@
+.index defconstant
+.usage special-form
+.syntax
+(defconstant name value \[doc-string\])
+
+.description
+Defines a global constant `name` in the current package with initial value `value`.
+
+.examples
+(defconstant a 123)
+

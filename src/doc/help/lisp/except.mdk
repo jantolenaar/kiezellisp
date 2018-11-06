@@ -1,0 +1,16 @@
+.index except
+.usage builtin-function
+.syntax
+(except seq1 seq2)
+(except test seq1 seq2)
+
+.description
+Returns all elements from `seq1` that are not also in `seq2`.
+The default equality test is `=`.
+
+.examples
+(except '(1 2 3 4) '(3))
+
+.see-also
+.api
+distinct intersect index-of union dedupe

@@ -1,0 +1,15 @@
+.index defmethod
+.usage special-form
+.syntax
+(defmethod name (arg*) form*)
+
+.description
+Defines a method for the multi-method `name`.
+
+.see-also
+.api
+defmulti call-next-method
+
+
+
+

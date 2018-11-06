@@ -1,0 +1,13 @@
+.index defsetf
+.usage macro
+.syntax
+(defsetf name func)
+
+.description
+Defines `func` as a setter for an expression of the form: `(setf (name ...) value)`.
+`func` takes parameters corresponding to `...` and `value`. 
+
+.see-also
+setf.k
+
+

@@ -1,0 +1,16 @@
+.index read-from-string
+.usage builtin-function
+.syntax
+(read-from-string text &optional (eof-error? true) (eof-value null))
+
+.description
+Reads an expression from the string `text`.
+
+.examples
+(read-from-string "(+ 3 4)")
+:throws
+(read-from-string "")
+(read-from-string "" false)
+(read-from-string "" false 42)
+
+

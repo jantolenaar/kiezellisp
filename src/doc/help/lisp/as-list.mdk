@@ -1,0 +1,13 @@
+.index as-list
+.usage builtin-function
+.syntax
+(as-list seq)
+
+.description
+Converts a sequence to a list.
+
+.examples
+(let z (as-list (series 5)))
+(first z)
+(rest z)
+

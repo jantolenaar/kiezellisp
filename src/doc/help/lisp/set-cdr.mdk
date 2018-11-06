@@ -1,0 +1,14 @@
+.index set-cdr
+.usage builtin-function
+.syntax
+(set-cdr list item)
+
+.description
+Assigns the list `item` to the rest or cdr of `list`.
+
+.examples
+(let z '(1 111))
+(set-cdr z '(111))
+z
+(macroexpand '(setf (cdr z) '(111)))
+

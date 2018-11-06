@@ -1,0 +1,26 @@
+.index about:embedded-mode
+
+.description
+A .NET program can call Kiezellisp functions by using the `Kiezel.EmbeddedMode`
+class contained in `kiezellisp-lib.dll`.
+
+The following example can be found in the Kiezellisp C# solution:
+
+.code
+static void Main( string[] args )
+{
+    try
+    {
+        Kiezel.EmbeddedMode.Init( debugMode: false );
+        var a = Kiezel.EmbeddedMode.Funcall( "+", 3, 4 );
+        Kiezel.EmbeddedMode.Funcall( "print", a );
+        var b = Kiezel.EmbeddedMode.Funcall( "+", a, a );
+        Kiezel.EmbeddedMode.Funcall( "++", 3, 4 );
+
+    }
+    catch ( Exception ex )
+    {
+        var s = Kiezel.EmbeddedMode.GetDiagnostics( ex );
+        Console.WriteLine( s );
+    }
+}

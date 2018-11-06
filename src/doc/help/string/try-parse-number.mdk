@@ -1,0 +1,15 @@
+.index string:try-parse-number
+.usage builtin-function
+
+.syntax
+(string:try-parse-number str &key (base 10) (decimal-point-is-comma false) culture)
+
+.description
+Converts a string to a number. The parameters `base` and `decimal-point-is-comma`
+have precedence over `culture`.
+
+.examples
+(.try-parse-number "123.4" )
+(.try-parse-number "123,4" :decimal-point-is-comma true)
+(.try-parse-number "123a" )
+(.try-parse-number "123a" :base 16 )

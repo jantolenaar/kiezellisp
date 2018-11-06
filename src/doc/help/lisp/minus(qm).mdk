@@ -1,0 +1,9 @@
+.index minus?
+.usage builtin-function
+.syntax
+(minus? number)
+
+.description
+Return true if `number` is a negative number.
+
+

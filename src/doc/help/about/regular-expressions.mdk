@@ -1,0 +1,26 @@
+.index about:regular-expressions
+.description
+
+### Standard regular expression
+
+.examples
+#/aap/
+:d
+(.regex-match "slaap" #/aap/)
+#/(a*)(p)/i
+:d
+(.regex-match "SLAAp" #/(a*)(p)/i)
+
+### Regular expression from a wildcard pattern
+
+.examples
+#/*.k/w
+(filter #/*.k/w '("a.k" "b.cs" "c.K"))
+(filter #/*.k/wi '("a.k" "b.cs" "c.K"))
+
+### Regular expression as a function
+
+.examples
+(filter #/aap/ '("slaap" "jaap" "teun" "mies" "jaap"))
+
+

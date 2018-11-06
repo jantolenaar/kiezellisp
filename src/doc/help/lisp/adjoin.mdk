@@ -1,0 +1,13 @@
+.index adjoin
+.usage builtin-function
+.syntax
+(adjoin item seq)
+
+.description
+Returns `seq` if `seq` contains `item`, otherwise returns a new list
+with `item` as its new (first or last) element.
+
+.examples
+(adjoin 2 (list 1 2 3))
+(adjoin 2 (list 1 3))
+(adjoin 2 (vector 1 3))

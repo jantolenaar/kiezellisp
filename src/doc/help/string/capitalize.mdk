@@ -1,0 +1,11 @@
+.index string:capitalize
+.usage builtin-function
+.syntax 
+(string:capitalize str)
+
+.description
+Capitalizes each word of a string.
+
+.examples
+(.capitalize "aap noot mies")
+

@@ -1,0 +1,13 @@
+.index in-package
+.usage builtin-function
+.syntax
+(in-package name)
+
+.description
+Sets the current package. The special variable `$package` holds the value of the
+current package.
+
+.examples
+(in-package "user")
+(in-package :example)
+

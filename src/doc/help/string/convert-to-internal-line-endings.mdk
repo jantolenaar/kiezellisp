@@ -1,0 +1,8 @@
+.index string:convert-to-internal-line-endings
+.usage builtin-function
+
+.syntax
+(string:convert-to-internal-line-endings str)
+
+.description
+On Windows, changes CRLF to LF.

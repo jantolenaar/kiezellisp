@@ -1,0 +1,15 @@
+.index and
+.usage special-form/function
+.syntax
+(and expr*)
+
+.description
+Returns the value of the first argument that evaluates as false. Otherwise 
+returns the value of the last argument. As a special form `and` evaluates as 
+few arguments as possible.
+
+.examples
+(let n 12)
+(and (number? n)
+     (< n 13))
+

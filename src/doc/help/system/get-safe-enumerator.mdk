@@ -1,0 +1,9 @@
+.index system:get-safe-enumerator
+.usage builtin-function
+.syntax
+(system:get-safe-enumerator list)
+
+.description
+Internal use.
+
+

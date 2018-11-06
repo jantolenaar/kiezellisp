@@ -1,0 +1,11 @@
+.index find-type
+.usage builtin-function
+.syntax
+(find-type name)
+
+.description
+Returns the prototype or System.Type associated with the symbol `name`.
+
+.examples
+(find-type 'string)
+

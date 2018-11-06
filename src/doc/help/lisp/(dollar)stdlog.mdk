@@ -1,0 +1,4 @@
+.index $stdlog
+.usage special-variable
+.description
+Log and trace output stream. Default is `true` which means to use whatever `$stdout` uses.

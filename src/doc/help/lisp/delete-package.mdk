@@ -1,0 +1,9 @@
+.index delete-package
+.usage builtin-function
+.syntax
+(delete-package name)
+
+.description
+Deletes the package with the given `name`.
+
+

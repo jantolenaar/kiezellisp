@@ -1,0 +1,22 @@
+.index defun*
+.usage special-form
+.syntax
+(defun* name ((arg*) \[doc-string\] form*) ...)
+
+.description
+Defines a multi-arity function.
+
+.examples
+(defun* f
+    (() (self 0))
+    ((x) (self x x))
+    ((x y) (+ x y)))
+(f)
+(f 3)
+(f 3 4)
+
+.see-also
+.api
+defun lambda lambda*
+
+

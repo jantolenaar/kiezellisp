@@ -1,0 +1,13 @@
+.index assert-throws-exception
+.usage macro
+.syntax
+(assert-throws-exception expr)
+
+.description
+Throws an AssertFailedException if `expr` does not throw an exception. Generates no code 
+when `$debugging` is false.
+
+.examples
+:throws
+(assert-throws-exception (= 1 2))
+

@@ -1,0 +1,42 @@
+.index about:numbers
+
+.description
+Kiezellisp offers integers, rationals, floating point numbers and complex
+numbers. 
+
+### Integers
+
+The standard integer types `System.Int32` etc and `System.Numerics.BigInteger`.
+
+.examples
+1111111111
+:d
+(* it it)
+:d
+(* it it)
+:d
+
+### Rationals
+
+The type `BigRational`.
+
+.examples
+3/4
+:d
+(* 4 it)
+:d
+
+### Floating point
+
+The types `System.Float`, `System.Double` and `System.Decimal`. The latter
+is the preferred type.
+
+.examples
+2.10
+:d
+
+### Complex
+
+.examples
+#c(3 4)
+:d

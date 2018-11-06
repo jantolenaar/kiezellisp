@@ -1,0 +1,11 @@
+.index bit-xor
+.usage builtin-function
+.syntax
+(bit-xor &rest numbers)
+
+.description
+Returns the bitwise exclusive or of the given integer numbers.
+
+.examples
+(bit-xor 5 6)
+

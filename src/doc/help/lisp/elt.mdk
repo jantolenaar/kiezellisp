@@ -1,0 +1,13 @@
+.index elt
+.usage special-form/function
+.syntax
+(elt obj &rest indices)
+
+.description
+`elt` can be used on every object with an indexer method.
+
+.examples
+(let a '(a b c d e))
+(elt a 1)
+(elt a 2)
+

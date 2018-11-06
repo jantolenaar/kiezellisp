@@ -1,0 +1,9 @@
+.index set-third
+.usage builtin-function
+.syntax
+(set-third seq item)
+
+.description
+Sets the third element of `seq` to `item`.
+
+

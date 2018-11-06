@@ -1,0 +1,16 @@
+.index reduce
+.usage builtin-function
+.syntax
+(reduce reducer seq)
+(reduce reducer seed seq)
+
+.description
+Returns the accumulated result of repeatly calling the function `reducer` 
+on each element of `seq`. `reducer` is a function with two parameters. 
+The first argument is the result so far, the second argument is the current 
+element of `seq`.
+
+.examples
+(reduce + (series 10))
+(reduce + 100 (series 10))
+

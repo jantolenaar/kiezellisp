@@ -1,0 +1,13 @@
+.index repeatedly
+.usage builtin-function
+.syntax
+(repeatedly count func)
+(repeatedly func)
+
+.description
+Returns a lazy sequence of the values returned by repeated calls to `func`. 
+The second form yields an infinite sequence.
+
+.examples
+(repeatedly 10 (lambda null "a"))
+

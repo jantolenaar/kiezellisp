@@ -1,0 +1,12 @@
+.index string:next
+.usage builtin-function
+
+.syntax
+(string:next str)
+
+.description
+Returns the string that succeeds `str`.
+
+.examples
+(.next "abc")
+(.next "abz")

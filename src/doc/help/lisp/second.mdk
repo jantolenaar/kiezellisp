@@ -1,0 +1,12 @@
+.index second
+.usage builtin-function
+.syntax
+(second seq)
+
+.description
+Returns the second element of `seq`, or `null`.
+
+.examples
+(second '(a))
+(second '(a b))
+

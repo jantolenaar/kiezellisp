@@ -1,0 +1,12 @@
+.index when-let
+.usage macro
+.syntax
+(when-let (sym test) &body forms)
+
+.description
+If `test` is true, binds the test value to the variable `sym`,
+then evaluates `forms` as a `do`-block; else `null`.
+
+.examples
+(when-let (x true) (print-line "yes") x)
+

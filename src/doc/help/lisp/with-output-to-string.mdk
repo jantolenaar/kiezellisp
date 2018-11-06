@@ -1,0 +1,12 @@
+.index with-output-to-string
+.usage macro
+.syntax
+(with-output-to-string (sym) &body forms)
+
+.description
+Binds `sym` to a string writer and executes `forms` as a `do` block.
+Returns the contents of the string writer.
+
+.examples
+(with-output-to-string ($stdout) (print "hello"))
+

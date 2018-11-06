@@ -1,0 +1,11 @@
+.index string:pad-right
+.usage inbuilt-function
+
+.syntax
+(string:pad-right str width)
+(string:pad-right str width padding-char)
+(string:pad-right str width padding-str)
+
+.description
+The third form is a Kiezellisp extension.
+

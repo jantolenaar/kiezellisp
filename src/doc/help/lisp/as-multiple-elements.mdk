@@ -1,0 +1,12 @@
+.index as-multiple-elements
+.usage builtin-function
+.syntax
+(as-multiple-elements seq size)
+(as-multiple-elements seq)
+
+.description
+Converts a `DictionaryEntry`, `KeyValuePair` or an enumerable to `object[]`.
+Used by the following macro:
+
+.api
+multiple-setf

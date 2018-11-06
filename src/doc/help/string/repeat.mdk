@@ -1,0 +1,11 @@
+.index string:repeat
+.usage builtin-function
+
+.syntax
+(string:repeat str count)
+
+.description
+Returns a string consisting of `count` copies of `str`.
+
+.examples
+(.repeat "abc" 3)

@@ -1,0 +1,41 @@
+.index write
+.usage builtin-function
+.syntax
+(write item &key stream escape width padding pretty left right force base)
+
+.description
+Writes `item` to the output stream `stream`. 
+
+    stream := null | true | false | string | Window | TextWriter (default: $stdout)
+    escape := boolean
+    width := integer
+    padding := value-to-be-converted-to-a-string (default: #\space)
+    pretty := boolean
+    left := integer
+    right := integer
+    force := boolean
+    base := integer (default: 10)
+
+If `stream` is null or false the output is discarded.
+If `stream` is true the output goes to $stdout which usually maps to
+`$stdscr` which is the terminal window of the REPL.
+If `stream` is a string, the output goes to the file `stream`-yyyy-MM-dd.log. This
+is thread-safe.
+If `stream` is a terminal window, output goes to the textwriter attached to the 
+window.
+Otherwise `stream` must be a `TextWriter`.
+
+If `escape` is false the output is text-like otherwise the output is code-like.
+
+`base` is the number base for integer numbers.
+
+`width` is the exact number of characters to be printed. If `width` is to small,
+the output is truncated. If `width` is to big, numbers are padded on the left 
+and strings are padded on the right.
+
+`left` and `right` are column offsets. Used `pretty` is true. 
+
+.see-also
+pprint.k
+
+

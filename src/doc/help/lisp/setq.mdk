@@ -1,0 +1,28 @@
+.index setq
+.usage special-form
+.syntax
+(setq sym value)
+
+.description
+Sets the value of a lexical, dynamic or global variable. If symbol macro 
+expansion changes `sym` to something else, the compiler changes `setq` to
+`setf` before continuing the compilation.
+
+.examples
+(do
+    (var x 1)
+    (setq x 3)
+    x)
+:throws
+(do
+    (let x 1)
+    (setq x 3)
+    x)
+(var numbers '(1 2 3))    
+(do
+	(let-symbol-macro argh (car numbers))
+	(setq argh 4))
+numbers
+
+
+

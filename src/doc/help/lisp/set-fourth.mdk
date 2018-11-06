@@ -1,0 +1,9 @@
+.index set-fourth
+.usage builtin-function
+.syntax
+(set-fourth seq item)
+
+.description
+Sets the fourth element of `seq` to `item`.
+
+

@@ -1,0 +1,17 @@
+.index compare
+.usage builtin-function
+.syntax
+(compare a1 a2)
+
+.description
+Compares two numbers, characters, strings, symbols, dates and timespans.
+
+.examples
+(compare 3 5)
+:throws
+(compare 3 null)
+(compare "een" "twee")
+:throws
+(compare #\a "a")
+(compare (date-time:today) (.add-years (date-time:today) 1))
+

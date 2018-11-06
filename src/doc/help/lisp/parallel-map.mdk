@@ -1,0 +1,13 @@
+.index parallel-map
+.usage builtin-function
+.syntax
+(parallel-map func seq)
+
+.description
+Returns a lazy sequence where each element of `seq` is transformed by the
+function `func`. Uses the Task Parallel Library.
+
+.examples
+(parallel-map length (vector "aap" "noot" "mies"))
+(parallel-map #(odd? (length %1)) (vector "aap" "noot" "mies"))
+

@@ -1,0 +1,13 @@
+.index $print-prototype-with-braces
+.usage special-variable
+.description
+When true, prototypes are printed like `{...}` otherwise like `#s(...)`.
+
+.examples
+(do
+    (let $print-prototype-with-braces true)
+    (write-line (new :a 1 :b 2)))
+(do
+    (let $print-prototype-with-braces false)
+    (write-line (new :a 1 :b 2)))
+

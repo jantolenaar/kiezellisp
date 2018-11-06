@@ -1,0 +1,16 @@
+.index mapcat
+.usage function
+.syntax
+(mapcat func &rest seqs)
+(mapcat func)
+
+.description
+Applies `func` to `seqs` as in `map` and concatenates the return values 
+which must be sequences.
+Returns a transducer if no `seqs` are supplied.
+
+.examples
+(map #(list %1 %1) (series 5))
+(mapcat  #(list %1 %1) (series 5))
+(as-list (eduction (map #(list %1 %1)) (series 5)))
+

@@ -1,0 +1,9 @@
+.index range-enumerator
+.usage builtin-function
+.syntax
+(range-enumerator start end step)
+
+.description
+Like `range` but returns an IEnumerable. Used by the `loop` macro.
+
+

@@ -1,0 +1,18 @@
+.index chain
+.usage macro
+.syntax
+(chain (sym) form*)
+
+.description
+Evaluates the forms and returns the value of the last form. The
+value of each form is stored in the variable `~` which can be 
+referenced by the next form.
+
+.examples
+(chain (~)
+    "een twee drie vier vijf zes zeven"
+    (.split ~)
+    (map .length ~)
+    (sum ~))
+(sum (map .length (.split "een twee   drie vier vijf zes zeven")))
+

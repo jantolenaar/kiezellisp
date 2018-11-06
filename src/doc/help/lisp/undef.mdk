@@ -1,0 +1,15 @@
+.index undef
+.usage builtin-function
+.syntax
+(undef sym)
+
+.description
+Makes `sym` an undefined symbol.
+
+.examples
+(def a 123)
+a
+(undef 'a)
+:throws
+a
+

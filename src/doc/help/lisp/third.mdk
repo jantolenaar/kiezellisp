@@ -1,0 +1,12 @@
+.index third
+.usage builtin-function
+.syntax
+(third seq)
+
+.description
+Returns the third item in `seq`.
+
+.examples
+(third '(1 2 3 4))
+(third '(1 2))
+

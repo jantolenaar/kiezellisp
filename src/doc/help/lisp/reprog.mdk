@@ -1,0 +1,10 @@
+.index reprog
+.usage special-form
+.syntax
+(reprog arg*)
+
+Performs a tail recursive call in a `prog` form.
+
+.see-also
+.api
+prog

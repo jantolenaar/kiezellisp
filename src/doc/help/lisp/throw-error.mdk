@@ -1,0 +1,14 @@
+.index throw-error
+.usage builtin-function
+.syntax
+(throw-error &rest args)
+
+.description
+Throws an exception of type LispException. The arguments are combined as if by 
+the function `string`.
+
+.examples
+(let n 2)
+:throws
+(throw-error "There are " n " things wrong.")
+

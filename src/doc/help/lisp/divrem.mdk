@@ -1,0 +1,14 @@
+.index divrem
+.usage builtin-function
+.syntax
+(divrem number)
+(divrem numerator denominator)
+
+.description
+Returns a list with the quotient and remainder of the division.
+
+.examples
+(divrem 6)
+(divrem 12 7)
+(divrem 0.2)
+

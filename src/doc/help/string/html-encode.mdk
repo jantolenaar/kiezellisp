@@ -1,0 +1,10 @@
+.index string:html-encode
+.usage builtin-function
+
+.syntax
+(string:html-encode str)
+
+
+.description
+Same as HttpUtility.HtmlEncode
+

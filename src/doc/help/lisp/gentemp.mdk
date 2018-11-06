@@ -1,0 +1,13 @@
+.index gentemp
+.usage builtin-function
+.syntax
+(gentemp prefix)
+(gentemp)
+
+.description
+Returns a new symbol in the "temp" package. For use by macro writers.
+
+.examples
+(gentemp "xyz")
+(gentemp)
+

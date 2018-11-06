@@ -1,0 +1,12 @@
+.index vector*
+.usage builtin-function
+.syntax
+(vector* &rest items)
+
+.description
+Returns a vector (`List<object>`) containing `items`. The last item must be a
+sequence.
+
+.examples
+(vector* 1 2 3 '(4 5 6))
+

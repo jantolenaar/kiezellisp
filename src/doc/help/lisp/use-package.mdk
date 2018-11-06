@@ -1,0 +1,9 @@
+.index use-package
+.usage builtin-function
+.syntax
+(use-package name)
+
+.description
+Add package `name` from the use list of the current package.
+
+

@@ -1,0 +1,14 @@
+.index eql
+.usage builtin-function
+.syntax
+(eql a b)
+
+.description
+Returns true if `a` and `b` are equal objects (`object.Equals`).
+
+.examples
+(eql 'foo 'foo)
+(eql "foo" "foo")
+(eql 1 1)
+(eql 1 1.0)
+

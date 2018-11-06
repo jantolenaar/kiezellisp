@@ -1,0 +1,16 @@
+.index set-elt
+.usage special-form/function
+.syntax
+(set-elt obj "index..." value)
+
+.description
+Assigns `value` to the place `index...` of `obj`. A multi-dimensional array uses
+more than one index.
+
+.examples
+(let obj (new null))
+(set-elt obj "name" "mies")
+(elt obj "name")
+(attr obj 'name)
+(macroexpand '(setf (elt obj "name") "mies"))
+

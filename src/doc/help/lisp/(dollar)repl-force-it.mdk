@@ -1,0 +1,11 @@
+.index $repl-force-it
+.usage special-variable
+.description
+When true, the REPL automatically forces lazy results.
+
+.examples
+$repl-force-it
+
+.see-also
+.api
+force

@@ -1,0 +1,11 @@
+.index read-line
+.usage builtin-function
+.syntax
+(read-line &optional (stream $stdin) (eof-error? true) (eof-value null))
+
+Reads characters from a TextReader stream until a LF or EOF is 
+encountered. Returns the characters as a string without a terminating LF.
+Returns `eof-value` if no characters were read and `eof-error?` equals false.
+
+
+

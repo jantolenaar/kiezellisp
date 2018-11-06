@@ -1,0 +1,7 @@
+.index file:read-shared-all-lines
+.usage builtin-function
+
+.syntax
+(file:read-shared-all-lines path)
+
+Same as `file:read-all-lines` but does not require exclusive use.

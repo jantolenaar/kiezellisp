@@ -1,0 +1,13 @@
+.index structurally-equal
+.usage builtin-function
+.syntax
+(structurally-equal obj1 obj2)
+
+.description
+Returns true if `obj1` and `obj2` are `equal` objects or sequences containing
+the same `structurally_equal` objects.
+
+.examples
+(structurally-equal 1 1)
+(structurally-equal (series 5) (vector 1 2 3 4 5))
+

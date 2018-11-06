@@ -1,0 +1,14 @@
+.index filterv
+.usage function
+.syntax
+(filterv predicate seq &rest args)
+
+.description
+Same as `filter` but returns a vector.
+
+.see-also
+.api
+filter
+
+
+

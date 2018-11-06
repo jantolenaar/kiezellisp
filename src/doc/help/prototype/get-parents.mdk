@@ -1,0 +1,15 @@
+.index prototype:get-parents
+.usage builtin-function
+.syntax
+(prototype:get-parents object &key (inherited false))
+
+.description
+Returns the list of parent objects of the prototype object `object`.
+
+.examples
+(let a (new :color "black"
+            :model "0"))
+(let b (new a
+            :model "12"))
+(prototype:get-parents b)
+

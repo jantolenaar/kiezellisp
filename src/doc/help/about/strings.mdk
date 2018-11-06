@@ -1,0 +1,28 @@
+.index about:strings
+.description
+
+.examples
+"hello, world"
+:d
+"hello, \"world\""
+@"hello, ""world"""
+"""hello, "world" """
+#q{hello, "world"}
+#q(hello, "world")
+#q[hello, "world"]
+#q<hello, "world">
+
+Strings with real quotes can have interpolation markers:
+
+.examples
+(var s "wo")
+"hello, ${s}rld"
+"hello, <%=s%>rld"
+@"hello, <%(print #\w)(print #\o)%>rld"
+
+Strings with interpolation markers are not literals but code:
+
+.examples
+(quote "hello, ${s}rld")
+
+

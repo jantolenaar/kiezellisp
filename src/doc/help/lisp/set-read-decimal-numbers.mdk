@@ -1,0 +1,14 @@
+.index set-read-decimal-numbers
+.usage builtin-function
+.syntax
+(set-read-decimal-numbers flag)
+
+Determines the type of the floating point numbers returned by the lisp reader.
+If `flag` then `decimal` else `double`.
+
+
+
+
+
+
+

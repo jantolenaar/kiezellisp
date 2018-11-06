@@ -1,0 +1,10 @@
+.index defonce
+.usage macro
+.syntax
+(defonce name value &optional doc-string)
+
+.description
+Defines the global variable `name` in the current package with value `value` if 
+currently undefined. Does nothing if the variable already exists.
+
+

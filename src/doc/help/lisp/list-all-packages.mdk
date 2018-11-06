@@ -1,0 +1,11 @@
+.index list-all-packages
+.usage builtin-function
+.syntax
+(list-all-packages)
+
+.description
+Returns a list with the names of all packages.
+
+.examples
+(list-all-packages)
+

@@ -1,0 +1,13 @@
+.index zip
+.usage builtin-function
+.syntax
+(zip &rest seqs)
+
+.description
+Returns a lazy sequence consisting a vector with all first elements, a vector with
+all second elements, and so on.
+
+.examples
+(zip '(1 2 3) '(4 5 6 7))
+(zip '(1 2 3) (repeat '-))
+

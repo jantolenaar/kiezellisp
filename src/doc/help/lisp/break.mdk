@@ -1,0 +1,16 @@
+.index break
+.usage loop clause
+.syntax
+(break &optional val)
+
+.description
+Breaks out of the current `loop`, `while` or `foreach` loop skipping the
+`finally` clause and returning the value of `val` instead of any accumulated
+values.
+
+.examples
+(loop
+    (break null))
+(loop
+    (break 123))
+

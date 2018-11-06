@@ -1,0 +1,15 @@
+.index subseq
+.usage builtin-function
+.syntax
+(subseq seq start &key end count default)
+
+.description
+Returns a subsequence of `seq` starting at position `start` and continuing
+to position `end` or until `count` elements have been yielded. If the sequence
+is too short to yield `count` arguments and if `default` is supplied, the 
+subsequence is padded by `default` elements.
+
+.examples
+(subseq (series 5) 2)
+(subseq (series 5) 2 :count 7 :default 9999)
+

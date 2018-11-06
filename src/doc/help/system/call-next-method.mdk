@@ -1,0 +1,9 @@
+.index system:call-next-method
+.usage builtin-function
+.syntax
+(system:call-next-method current-method args)
+
+.description
+Internal use.
+
+

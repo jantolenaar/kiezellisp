@@ -1,0 +1,11 @@
+.index write-to-string
+.usage builtin-function
+.syntax
+(write-to-string item &key escape width padding pretty left right force base)
+
+.description
+Returns a string written to a `StringWriter` stream by the function `write`.
+
+.examples
+(write-to-string 123 :width 6 :padding "0" :base 9)
+

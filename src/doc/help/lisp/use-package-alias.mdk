@@ -1,0 +1,12 @@
+.index use-package-alias
+.usage builtin-function
+.syntax
+(use-package-alias package-name nick-name)
+
+.description
+Gives the package with the long offical name `package-name` a short `nick-name`
+but only within the current package.
+
+.examples
+(use-package-alias "lisp" "l")
+

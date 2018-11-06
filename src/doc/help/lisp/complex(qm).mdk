@@ -1,0 +1,12 @@
+.index complex?
+.usage builtin-function
+.syntax
+(complex? expr)
+
+.description
+Returns true if `expr` has type `System.Numerics.Complex`.
+
+.examples
+(complex? #c(1 1))
+(complex? #c(0 0))
+

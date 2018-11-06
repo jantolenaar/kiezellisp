@@ -1,0 +1,16 @@
+.index pairlis
+.usage builtin-function
+.syntax
+(pairlis keys values)
+(pairlis keys values alist)
+
+.description
+Creates an association list.
+
+.examples
+(pairlis '(a b c) '(1 2 3))
+(pairlis '(a b c) '(1 2 3) '((d 4)))
+
+.see-also
+.api
+acons assoc assoc-if

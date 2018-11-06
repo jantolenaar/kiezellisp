@@ -1,0 +1,10 @@
+.index path:get-unix-name
+.usage builtin-function
+
+.syntax
+(path:get-unix-name name)
+
+Converts backslashes to forward backslashes.
+
+.examples
+(path:get-unix-name "d:\\temp\\foo.txt")

@@ -1,0 +1,19 @@
+.index dedupe
+.usage builtin-function
+.syntax
+(dedupe seq)
+(dedupe test seq)
+(dedupe)
+(dedupe test)
+
+.description
+Returns a lazy sequence without consecutive duplicates.
+The third and fourth forms return a transducer. 
+The default equality test is `=`.
+
+.examples
+(dedupe '(1 2 2 3 3 4 5))
+
+.see-also
+.api
+distinct intersect index-of union except

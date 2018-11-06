@@ -1,0 +1,9 @@
+.index get-type
+.usage builtin-function
+.syntax
+(get-type name)
+
+.description
+Like `find-type`. Throws exception if not found.
+
+

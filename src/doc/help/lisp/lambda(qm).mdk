@@ -1,0 +1,14 @@
+.index lambda?
+.usage builtin-function
+.syntax
+(lambda? expr)
+
+.description
+Returns true if `expr` is a lambda.
+
+.examples
+(defun f (x)
+    (not x))
+(lambda? f)
+(lambda? 'f)
+

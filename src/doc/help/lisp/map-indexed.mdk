@@ -1,0 +1,13 @@
+.index map-indexed
+.usage function
+.syntax
+(map-indexed func &rest seqs)
+(map-indexed func)
+
+.description
+Equivalent to `(apply map func (range) seqs)`.
+The second form returns a transducer.
+
+.examples
+(map-indexed vector '(a b c))
+

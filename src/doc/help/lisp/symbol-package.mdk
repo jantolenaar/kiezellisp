@@ -1,0 +1,11 @@
+.index symbol-package
+.usage builtin-function
+.syntax
+(symbol-package sym)
+
+.description
+Returns the package owning the symbol `sym`.
+
+.examples
+(symbol-package 'csv:read-string-to-grid)
+

@@ -1,0 +1,14 @@
+.index zero?
+.usage builtin-function
+.syntax
+(zero? number)
+
+.description
+Returns true if the number `number` equals zero. Fails if `number` is not a number.
+
+.examples
+(zero? 0)
+(zero? 1)
+:throws
+(zero? "aaa")
+

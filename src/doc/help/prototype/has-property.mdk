@@ -1,0 +1,11 @@
+.index prototype:has-property
+.usage builtin-function
+.syntax
+(prototype:has-property object ident &key (inherited true))
+
+.examples
+(let z (new "name" "Piet"))
+(prototype:has-property z :name)
+(prototype:has-property z :address)
+
+

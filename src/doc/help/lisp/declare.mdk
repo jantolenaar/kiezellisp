@@ -1,0 +1,14 @@
+.index declare
+.usage special-form
+.syntax
+(declare &rest args)
+
+.description
+Gives compiling instructions to the compiler.
+
+`(declare (ignore a b c...))`
+
+An `ignore` declaration instructs the compiler to not emit warning messages about already
+defined lexical variables that are unreferenced.
+
+

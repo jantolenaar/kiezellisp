@@ -1,0 +1,12 @@
+.index string:regex-split
+.usage builtin-function
+
+.syntax
+(string:regex-split str pattern)
+
+Like `string:split` but with separators defined by the regular expression `pattern`.
+
+.examples
+(.regex-split "een1twee22drie333vier" #/\d/)
+
+

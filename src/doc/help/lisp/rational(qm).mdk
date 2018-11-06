@@ -1,0 +1,13 @@
+.index rational?
+.usage builtin-function
+.syntax
+(rational? expr)
+
+.description
+Returns true if `expr` is a rational number.
+
+.examples
+(rational? (/ 1 2))
+(rational? 1)
+(rational? (math:pow 2 0.5))
+

@@ -1,0 +1,14 @@
+.index start-listener
+.usage builtin-function
+.syntax
+(start-listener &optional (port $repl-listener-port))
+
+.description 
+Starts a secondary thread listening to the given TCP port number. A text
+editor may send snippets of Kiezellisp code to this port to be executed. This is
+feature is available in the kiezellisp-sublimetext download.
+
+.see-also
+.api
+$repl-listener-port
+

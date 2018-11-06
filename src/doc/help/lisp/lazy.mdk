@@ -1,0 +1,11 @@
+.index lazy
+.usage special-form
+.syntax
+(lazy sym expr)
+
+.description
+The form `(lazy a expr)` compiles to `(let a (system:create-delayed-expression (lambda () expr)))`.
+The expression is not evaluated until the variable is read. Reading references to `a` are 
+compiled as `(system:get-delayed-expression-result a)`.
+
+

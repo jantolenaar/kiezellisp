@@ -1,0 +1,9 @@
+.index as-long
+.usage builtin-function
+.syntax
+(as-long a)
+
+.description
+Converts a number to Int64.
+
+

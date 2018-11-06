@@ -1,0 +1,13 @@
+.index keyword?
+.usage builtin-function
+.syntax
+(keyword? expr)
+
+.description
+Returns true if `expr` is a keyword.
+
+.examples
+(keyword? 123)
+(keyword? 'aap)
+(keyword? :aap)
+

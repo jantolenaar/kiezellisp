@@ -1,0 +1,9 @@
+.index make-extended-environment
+.usage builtin-function
+.syntax
+(make-extended-environment)
+
+.description
+Internal use.
+
+

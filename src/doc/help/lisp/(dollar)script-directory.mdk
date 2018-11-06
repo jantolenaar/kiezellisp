@@ -1,0 +1,9 @@
+.index $script-directory
+.usage special-readonly-variable
+.description
+Returns the directory name of the file that is being `loaded` or `required`.
+Initially the startup directory.
+
+.examples
+$script-directory
+

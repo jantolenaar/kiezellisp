@@ -1,0 +1,6 @@
+.index $exception
+.usage special-readonly-variable
+.description
+Stores the latest exception encountered by the REPL.
+
+

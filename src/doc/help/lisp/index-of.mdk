@@ -1,0 +1,17 @@
+.index index-of
+.usage builtin-function
+.syntax
+(index-of item seq)
+(index-of item test seq)
+
+.description
+Returns the position of `item` in `seq`.
+The default equality test is `=`.
+
+.examples
+(index-of 3 '(1 2 3 4))
+(index-of 3 '(1 2 4))
+
+.see-also
+.api
+distinct intersect union except dedupe

@@ -1,0 +1,10 @@
+.index path:get-windows-name
+.usage builtin-function
+
+.syntax
+(path:get-windows-name name)
+
+Converts forward slashes to backslashes.
+
+.examples
+(path:get-windows-name "d:/temp/foo.txt")

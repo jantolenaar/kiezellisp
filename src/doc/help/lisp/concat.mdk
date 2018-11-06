@@ -1,0 +1,14 @@
+.index concat
+.usage builtin-function
+.syntax
+(concat &rest seqs)
+
+.description
+Alias for the function `append`.
+
+.see-also
+.api
+append
+
+
+

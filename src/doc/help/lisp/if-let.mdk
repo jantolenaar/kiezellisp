@@ -1,0 +1,12 @@
+.index if-let
+.usage macro
+.syntax
+(if-let (sym test) then-form \[else-form\])
+
+.description
+Assigns the result of `test` to the local variable `sym` before doing the *if*
+thing. `then-form` and `else-form` may refer to `sym`.
+
+.examples
+(if-let (x (filter odd? '(1 2 3 4))) (print-line x))
+

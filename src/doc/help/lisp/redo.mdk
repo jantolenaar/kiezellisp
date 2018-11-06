@@ -1,0 +1,11 @@
+.index redo
+.usage special-form
+.syntax
+(redo tag-symbol)
+
+.description
+Jumps to the first expression in a named block.
+
+.see-also
+.api
+block leave

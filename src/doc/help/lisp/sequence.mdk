@@ -1,0 +1,16 @@
+.index sequence
+.usage builtin-function
+.syntax
+(sequence seq)
+(sequence xform &rest seqs)
+
+.description
+The first form is equivalent to `(as-lazy-list seq)`.
+The second form creates a lazy list from the values returned by the
+transducer `xform`.
+
+.see-also
+.api
+reduce transduce map
+
+

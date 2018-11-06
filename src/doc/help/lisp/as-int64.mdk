@@ -1,0 +1,9 @@
+.index as-int64
+.usage builtin-function
+.syntax
+(as-int64 a)
+
+.description
+Converts a number to Int64.
+
+

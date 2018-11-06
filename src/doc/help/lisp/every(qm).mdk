@@ -1,0 +1,11 @@
+.index every?
+.usage builtin-function
+.syntax
+(every? predicate seq)
+
+.description
+Returns true if every element in `seq` satisfies the function `predicate`.
+
+.examples
+(every? even? '(1 2 3 4))
+

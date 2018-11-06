@@ -1,0 +1,13 @@
+.index $print-compact
+.usage special-variable
+.description
+Used by `write`.
+
+.examples
+(do
+    (let $print-compact false)
+    (write-line '(.to-upper "abc")))
+(do
+    (let $print-compact true)
+    (write-line '(.to-upper "abc")))
+

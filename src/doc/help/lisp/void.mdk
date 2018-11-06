@@ -1,0 +1,15 @@
+.index void
+.usage builtin-function
+.syntax
+(void)
+
+.description
+Returns the unique instance of the class `VOID`. May be used to signal the absence
+of a return value, similar to Common Lisp's `(values)`.
+
+.examples
+(void)
+(if (void)
+      1
+    2)
+

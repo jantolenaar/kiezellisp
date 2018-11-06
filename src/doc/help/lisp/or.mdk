@@ -1,0 +1,16 @@
+.index or
+.usage special-form/function
+.syntax
+(or expr*)
+
+.description
+Returns the value of the first argument that evaluates as true. Otherwise 
+returns the value of the last argument. As a special form `or` evaluates as 
+few arguments as possible.
+
+.examples
+(or ""
+    "default")
+(or "abc"
+    "default")
+

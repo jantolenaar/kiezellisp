@@ -1,0 +1,13 @@
+.index get-package
+.usage builtin-function
+.syntax
+(get-package name)
+
+.description
+Returns the package corresponding to `name`. Throws an exception if not found.
+
+.examples
+:throws
+(get-package "bla-bla")
+(get-package :lisp)
+

@@ -1,0 +1,12 @@
+.index ignore-errors
+.usage macro
+.syntax
+(ignore-errors &body forms)
+
+.description
+Executes `forms`. Returns `null` if an exception is thrown.
+
+.examples
+(ignore-errors
+    (+ 3 hello))
+

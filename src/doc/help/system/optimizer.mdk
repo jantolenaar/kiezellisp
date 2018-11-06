@@ -1,0 +1,9 @@
+.index system:optimizer
+.usage builtin-function
+.syntax
+(system:optimizer expr)
+
+.description
+Internal use.
+
+

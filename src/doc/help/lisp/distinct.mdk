@@ -1,0 +1,19 @@
+.index distinct
+.usage builtin-function
+.syntax
+(distinct seq)
+(distinct test seq)
+(distinct)
+(distinct test)
+
+.description
+Returns a lazy sequence of distinct elements in `seq`. 
+The third and fourth forms return a transducer.
+The default equality test is `=`.
+
+.examples
+(distinct '(1 2 2 3 3 4 5))
+
+.see-also
+.api
+intersect index-of union except dedupe

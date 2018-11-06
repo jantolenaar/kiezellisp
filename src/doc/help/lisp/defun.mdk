@@ -1,0 +1,32 @@
+.index defun
+.usage special-form
+.syntax
+(defun name (arg*) \[doc-string\] form*)
+
+.description
+Defines a global function.
+
+.examples
+(defun f (x y) (+ x y))
+(f 21 34)
+
+With optional parameters:
+
+.examples
+(defun f (x &optional (y 2)) (+ x y))
+(f 3 4)
+(f 3)
+
+With named parameters:
+
+.examples
+(defun f (x &key (y 2) (z 3)) (+ x y z))
+(f 3 :y 4)
+(f 3 :z 9 :y 77)
+
+.see-also
+.api
+about:parameters defun* lambda lambda*
+
+
+

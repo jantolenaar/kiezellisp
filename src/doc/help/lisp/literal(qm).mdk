@@ -1,0 +1,13 @@
+.index literal?
+.usage builtin-function
+.syntax
+(literal? expr)
+
+.description
+Returns true if `expr` is `null`, a value type, a number or a string.
+
+.examples
+(literal? 123)
+(literal? "abc")
+(literal? 'aap)
+

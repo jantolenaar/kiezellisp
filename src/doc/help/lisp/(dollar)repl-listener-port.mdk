@@ -1,0 +1,11 @@
+.index $repl-listener-port
+.usage special-variable
+.description
+The TCP port number used by the REPL listener. Defaults to 8080. 
+
+.examples
+$repl-listener-port
+
+.see-also
+.api
+start-listener

@@ -1,0 +1,15 @@
+.index quote
+.usage special-form
+.syntax
+'expr
+
+.description
+Returns `expr` as literal data instead of evaluation `expr` as code. Usually 
+written as `'expr` instead of `(quote expr)`.
+
+.examples
+(quote a)
+'a
+(quote (+ 3 4))
+'(+ 3 4)
+

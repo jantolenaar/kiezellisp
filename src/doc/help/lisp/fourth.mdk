@@ -1,0 +1,11 @@
+.index fourth
+.usage builtin-function
+.syntax
+(fourth seq)
+
+.description
+Returns the fourth element in a `seq`; or `null` if there is no fourth element.
+
+.examples
+(fourth '(1 2 3 4 5 6))
+

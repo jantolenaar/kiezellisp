@@ -1,0 +1,18 @@
+.index range
+.usage builtin-function
+.syntax
+(range start end step)
+(range start end)
+(range end)
+(range)
+
+.description
+Returns a lazy list of integer numbers. By default, a range starts at 0 and
+excludes its upper bound.
+
+.examples
+(range 3 10 2)
+(range 3 10)
+(range 10)
+(range 10 3 -1)
+

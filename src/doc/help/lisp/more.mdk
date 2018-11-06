@@ -1,0 +1,7 @@
+.index more
+.usage builtin-function
+.syntax
+(more text)
+
+.description
+Prints `text` to the REPL window inserting a pause every page-full of lines.

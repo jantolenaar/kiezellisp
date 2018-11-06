@@ -1,0 +1,14 @@
+.index eduction
+.usage builtin-function
+.syntax
+(eduction xform... seq)
+
+.description
+Returns an enumerable object that applies the transducers `xform...`
+from left-to-right to `seq`.
+
+.see-also
+.api
+transduce sequence reduce
+
+

@@ -1,0 +1,16 @@
+.index sort-by
+.usage builtin-function
+.syntax
+(sort-by key seq)
+(sort-by key comparer seq)
+
+.description
+Sorts `seq`. The function `key` procedure the values to compare. 
+The default comparer is the inbuilt function `compare`.
+
+.examples
+(sort-by length '("hello" "goodbye" "doei" "farewell"))
+
+.see-also
+.api
+sort merge merge-by

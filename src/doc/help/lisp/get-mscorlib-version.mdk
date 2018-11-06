@@ -1,0 +1,11 @@
+.index get-mscorlib-version
+.usage builtin-function
+.syntax
+(get-mscorlib-version)
+
+.description
+Returns the file version of mscorlib.dll
+
+.examples
+(get-mscorlib-version)
+:d

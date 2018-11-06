@@ -1,0 +1,4 @@
+.index $stdin
+.usage special-variable
+.description
+A `TextReader` stream. The functions `read` and `read-all` read lisp expressions.

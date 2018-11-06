@@ -1,0 +1,6 @@
+.index $command-line-arguments
+.usage special-readonly-variable
+.description
+A list of strings. The arguments following the script name on the
+command line used to start Kiezellisp.
+

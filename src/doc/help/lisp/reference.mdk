@@ -1,0 +1,14 @@
+.index reference
+.usage builtin-function
+.syntax
+(reference assembly-name)
+
+.description
+Loads an assembly.
+
+.examples
+(reference "ICSharpCode.SharpZipLib")
+
+.see-also
+.api
+$assembly-path set-assembly-path

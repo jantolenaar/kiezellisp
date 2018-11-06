@@ -1,0 +1,9 @@
+.index system:create-task
+.usage builtin-function
+.syntax
+(system:create-task func)
+
+.description
+Internal use.
+
+

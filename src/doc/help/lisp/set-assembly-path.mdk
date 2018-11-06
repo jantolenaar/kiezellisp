@@ -1,0 +1,11 @@
+.index set-assembly-path
+.usage builtin-function
+.syntax
+(set-assembly-path &rest folders)
+
+.description
+Sets the variable `$assembly-path` to `folders`.
+
+.see-also
+.api
+reference $assembly-path

@@ -1,0 +1,14 @@
+.index take-nth
+.usage builtin-function
+.syntax
+(take-nth step seq)
+(take-nth step)
+
+.description
+Returns every `step` item from `seq`. The second form returns a
+transducer.
+
+.examples
+(take-nth 1 (series 10))
+(take-nth 2 (series 10))
+

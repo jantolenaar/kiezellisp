@@ -1,0 +1,14 @@
+.index if-match
+.usage macro
+.syntax
+(if-match pattern expr then-form \[else-form\])
+
+.description
+If `expr` matches `pattern`, returns  the result of `then-form`, else returns 
+the result of `else-form` or `null`.
+
+.see-also
+.api
+ecase-match case-match when-match about:pattern-matching
+
+

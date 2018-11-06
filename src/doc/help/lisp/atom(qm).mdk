@@ -1,0 +1,13 @@
+.index atom?
+.usage builtin-function
+.syntax
+(atom? expr)
+
+.description
+Returns true if `expr` is `null`, a value type, a number, a string or a symbol.
+
+.examples
+(atom? 1)
+(atom? null)
+(atom? '(a))
+

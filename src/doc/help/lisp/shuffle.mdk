@@ -1,0 +1,11 @@
+.index shuffle
+.usage builtin-function
+.syntax
+(shuffle seq)
+
+.description
+Returns a random reordering of `seq`.
+
+.examples
+(shuffle (range 10))
+

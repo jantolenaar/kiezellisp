@@ -1,0 +1,11 @@
+.index inc
+.usage builtin-function
+.syntax
+(inc number)
+
+.description
+Returns `number` incremented by 1.
+
+.examples
+(inc 4)
+

@@ -1,0 +1,7 @@
+.index unread-char
+.usage builtin-function
+.syntax
+(unread-char &key (stream $stdin))
+
+Places the last character read back on the TextReader stream,
+so it can be `read-char`-ed again.

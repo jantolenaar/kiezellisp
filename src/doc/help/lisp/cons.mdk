@@ -1,0 +1,14 @@
+.index cons
+.usage builtin-function
+.syntax
+(cons item list)
+(cons item delayed-expression)
+
+.description
+Returns a new list with specified first and rest elements.
+
+.examples
+(defun fibo (a b)
+    (cons a (delay (fibo b (+ a b)))))
+(take 15 (fibo 1 1))
+

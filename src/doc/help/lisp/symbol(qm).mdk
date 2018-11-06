@@ -1,0 +1,11 @@
+.index symbol?
+.usage builtin-function
+.syntax
+(symbol? expr)
+
+.description
+Returns true if `expr` is a symbol.
+
+.examples
+(symbol? 'loop)
+

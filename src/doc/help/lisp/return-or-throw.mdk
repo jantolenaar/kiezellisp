@@ -1,0 +1,10 @@
+.index return-or-throw
+.usage function
+.syntax
+(return-or-throw try-and-catch-result)
+
+.description
+Depending on the run-time type of the value of `try-and-catch-result`, returns the
+value or throws the exception.
+
+

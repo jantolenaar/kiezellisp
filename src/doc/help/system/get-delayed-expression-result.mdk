@@ -1,0 +1,10 @@
+.index system:get-delayed-expression-result
+.usage builtin-function
+.syntax
+(system:get-delayed-expression-result expr)
+
+.see-also
+.api 
+lazy
+
+

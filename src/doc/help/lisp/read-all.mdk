@@ -1,0 +1,7 @@
+.index read-all
+.usage builtin-function
+.syntax
+(read-all &optional (stream $stdin))
+
+.description
+Reads a list of expressions from a TextReader stream.

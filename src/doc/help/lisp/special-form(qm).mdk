@@ -1,0 +1,12 @@
+.index special-form?
+.usage builtin-function
+.syntax
+(special-form? sym)
+
+.description
+Returns true if the symbol `sym` names a special form.
+
+.examples
+(special-form? 'if)
+(special-form? 'when)
+

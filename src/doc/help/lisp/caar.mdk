@@ -1,0 +1,11 @@
+.index caar
+.usage builtin-function
+.syntax
+(caar list)
+
+.description
+Equivalent to `(car (car list))`.
+
+.examples
+(caar '((1 2) 3 4))
+

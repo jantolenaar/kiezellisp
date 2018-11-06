@@ -1,0 +1,10 @@
+.index using
+.usage macro
+.syntax
+(using (sym resource) &body forms)
+
+.description
+Executes `forms` as a `do` block and guarantees to call `IDispose.dispose`
+on the variable `sym` to release the `resource`.
+
+

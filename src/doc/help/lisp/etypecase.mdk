@@ -1,0 +1,9 @@
+.index etypecase
+.usage macro
+.syntax
+(etypecase keyform normal-clause* \[otherwise-clause\])
+
+.description
+Like `typecase`, but throws an exception if no case matches.
+
+

@@ -1,0 +1,11 @@
+.index maximize
+.usage builtin-function
+.syntax
+(maximize seq)
+
+.description
+Returns the largest value in `seq`.
+
+.examples
+(maximize '(1 2 4 1 3))
+

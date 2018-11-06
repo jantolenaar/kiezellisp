@@ -1,0 +1,11 @@
+.index split-at
+.usage builtin-function
+.syntax
+(split-at count seq)
+
+.description
+Equivalent to `(list (take count seq) (drop count seq))`.
+
+.examples
+(split-at 4 (series 10))
+

@@ -1,0 +1,11 @@
+.index string:regex-replace
+.usage inbuilt-function
+
+.syntax
+(string:regex-replace str pattern transform-func)
+(string:regex-replace str pattern replacement-str)
+
+.description
+Compares `str` to the string or Regex `pattern`. The number of arguments of 
+`transform-func` must be equal to the number of groups in the pattern. 
+`replacement-str` may refer to groups as \1, \2, etc.

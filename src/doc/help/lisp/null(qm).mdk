@@ -1,0 +1,12 @@
+.index null?
+.usage builtin-function
+.syntax
+(null? expr)
+
+.description
+Returns true if `expr` equals `null`.
+
+.examples
+(null? null)
+(null? '(3 4))
+

@@ -1,0 +1,14 @@
+.index odd?
+.usage builtin-function
+.syntax
+(odd? number)
+
+.description
+Returns true if `number` is odd. `number` must be an integer.
+
+.examples
+(odd? 3)
+(odd? 4)
+:throws
+(odd? 3.4)
+

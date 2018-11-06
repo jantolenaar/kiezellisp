@@ -1,0 +1,13 @@
+.index push
+.usage macro
+.syntax
+(push item place)
+
+.description
+Prepends `item` to the list `place` and updates the `setf`able `place` to 
+the new list.
+
+.examples
+(let a '(1 2 3))
+(push 4 a)
+

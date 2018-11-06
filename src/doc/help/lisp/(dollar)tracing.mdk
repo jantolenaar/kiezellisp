@@ -1,0 +1,8 @@
+.index $tracing
+.usage special-variable
+.description
+Enables/disables tracing by the `trace` macro.
+
+.examples
+$tracing
+

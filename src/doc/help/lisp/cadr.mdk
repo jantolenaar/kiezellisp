@@ -1,0 +1,11 @@
+.index cadr
+.usage builtin-function
+.syntax
+(cadr list)
+
+.description
+Equivalent to `(car (cdr list))`.
+
+.examples
+(cadr '((1 2) 3 4))
+

@@ -1,0 +1,9 @@
+.index $load-verbose
+.usage special-variable
+.description
+When true, the functions `load` and `require` print some data to the console.
+By default enabled in the interactive REPL.
+
+.examples
+$load-verbose
+

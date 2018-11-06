@@ -1,0 +1,9 @@
+.index continue
+.usage loop clause
+.syntax
+(continue)
+
+.description
+Starts the next iteration of the current `loop`, `while` or `foreach` loop.
+
+

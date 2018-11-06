@@ -1,0 +1,36 @@
+.index defmulti
+.usage special-form
+.syntax
+(defmulti name (arg*) \[doc-string\])
+
+.description
+Defines a multi-method (same as generic function in CommonLisp).
+
+.examples
+(defmulti m (a b) "The m multimethod.")
+(defmethod m ((a (eql 'red)) (b string))
+    (print-line "red string: " b))
+(defmethod m ((a (eql 'blue)) (b string))
+    (print-line "blue string: " b))
+(defmethod m ((a (eql 'red)) (b number))
+    (print-line "red number: " b))
+(defmethod m ((a (eql 'blue)) (b number))
+    (print-line "blue number: " b)
+    (call-next-method))
+(defmethod m (a (b number))
+    (print-line "a: " a  " number: " b)
+    (call-next-method))
+(defmethod m (a b)
+    (print-line "a: " a  " b: " b))
+(m 'red "cherry")
+(m 'blue "berry")
+(m 'red 123)
+(m 'blue 456)
+
+
+.see-also
+.api 
+defmethod call-next-method
+
+
+

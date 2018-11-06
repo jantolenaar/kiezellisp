@@ -1,0 +1,5 @@
+.index system:get-lexical-or-environment-variable
+.usage special-form
+.description
+Reserved for internal use.
+

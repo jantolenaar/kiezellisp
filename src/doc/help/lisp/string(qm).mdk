@@ -1,0 +1,12 @@
+.index string?
+.usage builtin-function
+.syntax
+(string? value)
+
+.description
+Returns true if `value` is a string.
+
+.examples
+(string? "aap")
+(string? 123)
+

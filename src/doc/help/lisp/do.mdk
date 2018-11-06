@@ -1,0 +1,19 @@
+.index do
+.usage special-form
+.syntax
+(do form*)
+
+.description
+Evaluates the forms and returns the value of the last form. The body 
+of a function is an implicit `do` block. Macros such as `when` and `loop` 
+generate `do` blocks.
+
+.description
+The `let` and `var` special forms declare lexical or dynamic variables.
+
+.examples
+(do
+    (let x 3)
+    (let y 2)
+    (+ x y))
+

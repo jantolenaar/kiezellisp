@@ -1,0 +1,18 @@
+.index continue-if
+.usage loop clause
+.syntax
+(continue-if test)
+
+.description
+Starts the next iteration of the current `loop`, `while` or `foreach` loop if 
+`test` condition is true.
+
+.examples
+(loop
+    (for i in (series 5))
+    (print-line i)
+    (continue-if
+        (odd? i))
+    (print-line i))
+(macroexpand-1 '(continue-if (odd? i)))
+

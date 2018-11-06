@@ -1,0 +1,13 @@
+.index symbol-value
+.usage builtin-function
+.syntax
+(symbol-value sym)
+
+.description
+Returns the value of the global variable `sym`.
+
+.examples
+(let a 'csv:read-string-to-grid)
+(symbol-value a)
+csv:read-string-to-grid
+

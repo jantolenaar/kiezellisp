@@ -1,0 +1,13 @@
+.index -
+.usage builtin-function
+.syntax
+(- &rest numbers)
+
+.description
+Subtracts subsequent numbers from the first number. If one
+number is given, negates the number.
+
+.examples
+(- 7 3)
+(- 7)
+

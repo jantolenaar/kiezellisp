@@ -1,0 +1,12 @@
+.index complement
+.usage builtin-function
+.syntax
+(complement func)
+
+.description
+Returns a function that applies `not` to the result of `func`.
+
+.examples
+(mapv odd? (series 5))
+(mapv (complement odd?) (series 5))
+

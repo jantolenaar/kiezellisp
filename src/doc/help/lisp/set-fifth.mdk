@@ -1,0 +1,9 @@
+.index set-fifth
+.usage builtin-function
+.syntax
+(set-fifth seq item)
+
+.description
+Sets the fifth element of `seq` to `item`.
+
+

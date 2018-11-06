@@ -1,0 +1,14 @@
+.index partition-by
+.usage builtin-function
+.syntax
+(partition-by key seq)
+(partition-by key)
+
+.description
+Returns a list of subsequences of `seq`. A new subsequence is started every time
+the function `key` has a different value for two adjacent elements of `seq`.
+The second form returns a transducer.
+
+.examples
+(partition-by odd? '(1 2 3 3 4 2 5 6 6))
+

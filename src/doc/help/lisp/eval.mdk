@@ -1,0 +1,16 @@
+.index eval
+.usage builtin-function
+.syntax
+(eval expr env)
+(eval expr)
+
+.description
+Evaluates a lisp expression.
+
+.examples
+(eval '(+ 3 4))
+(let n 3)
+(+ 3 n)
+:throws
+(eval '(+ 3 n))
+

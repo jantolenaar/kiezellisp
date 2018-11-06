@@ -1,0 +1,15 @@
+.index attr
+.usage special-form/function
+.syntax
+(attr obj attr-name)
+
+.description
+Returns the value of attribute or property `attr-name` of `obj`. The compiler 
+generates efficient code if `attr-name` is a compile-time constant, otherwise 
+the compiler uses a call to the function `attr`.
+
+.examples
+(attr "hello" :length)
+(let s "length")
+(attr "hello" s)
+

@@ -1,0 +1,12 @@
+.index parallel-each
+.usage builtin-function
+.syntax
+(parallel-each action seq)
+
+.description
+Applies the function `action` to each element of `seq`. Uses the Task Parallel 
+Library.
+
+.examples
+(parallel-each print-line (series 15))
+

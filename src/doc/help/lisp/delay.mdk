@@ -1,0 +1,12 @@
+.index delay
+.usage macro
+.syntax
+(delay &body forms)
+
+.description
+Creates a delayed expression which is not evaluated until the function `force` is called.
+Unfortunately, the example processor always calls `force`.
+
+.examples
+(let z (delay (+ 1 2)))
+

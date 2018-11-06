@@ -1,0 +1,37 @@
+.index defmacro
+.usage special-form
+.syntax
+(defmacro name (arg*) \[doc-string\] form*)
+
+.description
+Macros are functions that do not evaluate their arguments but use them as given
+in order to construct and return lisp code which is then compiled and executed.
+
+Typically, the return value of a macro is a backquote (aka quasiquote) expression:
+
+.examples
+(defmacro my-trace (expr)
+    (when $debugging
+        (var result (gentemp))
+        `(when $tracing
+            (var ,result ,expr)
+            (write-line (string
+                            ,(write-to-string expr :escape true)
+                            " => "
+                            (write-to-string ,result :escape true)) :stream $stdlog))))
+
+The code returned by this macro is always `null` in no-debug mode, but otherwise...
+
+.examples
+(macroexpand '(my-trace (setq x (blabla))))
+
+.see-also
+.api
+defmacro define-symbol-macro define-compiler-macro gentemp 
+macroexpand macroexpand-1 macroexpand-all 
+code-walk code-walk-list
+letmacro let-symbol-macro
+
+
+
+

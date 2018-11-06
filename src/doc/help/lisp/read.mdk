@@ -1,0 +1,6 @@
+.index read
+.usage builtin-function
+.syntax
+(read &optional (stream $stdin) (eof-error? true) (eof-value null))
+
+Reads a lisp expression from a TextReader stream.

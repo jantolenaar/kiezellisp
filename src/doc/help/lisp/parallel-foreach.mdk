@@ -1,0 +1,12 @@
+.index parallel-foreach
+.usage macro
+.syntax
+(parallel-foreach (sym seq) &body forms)
+
+.description
+Applies the `forms` to each element of `seq` in parallel. Uses the Task Parallel 
+Library.
+
+.examples
+(parallel-foreach (x (series 15)) (print-line x))
+

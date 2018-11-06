@@ -1,0 +1,14 @@
+.index macroexpand-all
+.usage builtin-function
+.syntax
+(macroexpand-all form)
+(macroexpand-all form env)
+
+Recursively expands all macros in `form`.
+
+.examples
+(macroexpand-all '(do (var x 1) (while (test x) (incf x))))
+
+
+
+

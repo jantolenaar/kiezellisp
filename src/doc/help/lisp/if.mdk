@@ -1,0 +1,21 @@
+.index if
+.usage special-form/function
+.syntax
+(if test then-form \[else-form\])
+
+.description
+If `test` is true, returns the result of `then-form`, else returns the result of 
+`else-form` or `null`. Truth is defined by the function `boolean`.
+
+.examples
+(if (zero? 0)
+      1
+    2)
+(if (zero? 1)
+      1
+    2)
+(if (zero? 1)
+    1)
+(map if '(true false true) '(1 2 3) '(a b c))
+(map if '(true false true) '(1 2 3))
+

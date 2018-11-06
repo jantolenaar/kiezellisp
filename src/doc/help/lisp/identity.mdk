@@ -1,0 +1,13 @@
+.index identity
+.usage builtin-function
+.syntax
+(identity a)
+
+.description
+Returns its single argument or a list of its multiple arguments.
+
+.examples
+(identity 1)
+(identity)
+(identity 1 2 3)
+

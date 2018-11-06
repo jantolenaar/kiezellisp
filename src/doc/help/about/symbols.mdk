@@ -1,0 +1,16 @@
+.index about:symbols
+.description
+If something in a lisp program is not a number, string or parenthesis, then it
+probably is a symbol. It is just a name in a package (which is not entirely
+unlike a namespace). Symbols may have a global value and/or a lexical value or
+even no value at all. The value may be a simple value like a number or a string,
+or a more complex value like a function.
+
+.examples
+(undef 'z)
+'z
+:d
+(var z 123)
+z 
+
+

@@ -1,0 +1,13 @@
+.index yield
+.usage builtin-function
+.syntax
+(yield item)
+
+.description
+Adds `item` to the output of the active generator.
+
+.see-also
+.api
+generator
+
+

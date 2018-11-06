@@ -1,0 +1,14 @@
+.index call-next-method
+.usage macro
+.syntax
+(call-next-method &rest args)
+
+.description
+Calls the next, i.e. less specialized method of the currently executing 
+multi-method. Returns `null` if there is no next method.
+
+.see-also
+.api
+defmulti defmethod
+
+

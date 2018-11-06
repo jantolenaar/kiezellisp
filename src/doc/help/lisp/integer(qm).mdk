@@ -1,0 +1,13 @@
+.index integer?
+.usage builtin-function
+.syntax
+(integer? expr)
+
+.description
+Returns true if `expr` is a integer number, i.e. an Int32, an Int64 or a
+BigInteger.
+
+.examples
+(integer? 12)
+(integer? (/ 12 2))
+

@@ -1,0 +1,11 @@
+.index date?
+.usage builtin-function
+.syntax
+(date? expr)
+
+.description
+Returns true if `expr` is a DateTime.
+
+.examples
+(date? (date-time:now))
+

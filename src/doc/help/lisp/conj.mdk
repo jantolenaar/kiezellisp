@@ -1,0 +1,22 @@
+.index conj
+.usage builtin-function
+.syntax
+(conj seq &rest items)
+
+.description
+Adds each `item` to the begin or end of `seq` which must be a list or a vector.
+
+.examples
+(def a (list 1 2 3))
+a
+(conj a 4)
+a
+
+.examples
+(def a (vector 1 2 3))
+a
+(conj a 4 5)
+a
+
+
+

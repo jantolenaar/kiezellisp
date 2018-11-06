@@ -1,0 +1,15 @@
+.index set-attr
+.usage special-form/function
+.syntax
+(set-attr object property value)
+
+.description
+Assigns `value` to `property` of `object`.
+
+.examples
+(let obj (new null))
+(set-attr obj 'name "mies")
+(attr obj 'name)
+(.name obj)
+(macroexpand '(setf (.name obj) "mies"))
+

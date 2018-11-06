@@ -1,0 +1,17 @@
+.index lambda*
+.usage special-form
+.syntax
+(lambda* ((arg*) form*) ...)
+
+.description
+Defines an anonymous multi-arity function.
+
+.examples
+(lambda* (() (self 3)) ((x) (+ x x)))
+(it)
+
+.see-also
+.api
+defun defun* lambda lambda*  
+
+

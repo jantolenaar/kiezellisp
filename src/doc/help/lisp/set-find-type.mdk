@@ -1,0 +1,16 @@
+.index set-find-type
+.usage builtin-function
+.syntax
+(set-find-type name type)
+
+.description
+Gives the name `name` to the prototype or System.Type `type`. The symbol `name`
+may now be used by the function `type?` and by the special form `defmethod`.
+
+.examples
+(set-find-type 'a (new :name "mies"))
+
+.see-also
+.api 
+type? defmethod deftype
+

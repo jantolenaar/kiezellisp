@@ -1,0 +1,15 @@
+.index generator
+.usage macro
+.syntax
+(generator &body forms)
+
+.description
+Returns an `IEnumerable` that returns a value for each `yield` statement in `forms`.
+The `yield` statements may be issued by functions called by `forms`. Generators are 
+implemented as native threads.
+
+.examples
+(generator (yield 1) (yield 2) (yield 3))
+(as-vector it)
+(macroexpand '(generator (yield 1) (yield 2) (yield 3)))
+

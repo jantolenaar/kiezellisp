@@ -1,0 +1,9 @@
+.index add-event-handler
+.usage builtin-function
+.syntax
+(add-event-handler eventinfo target func)
+
+.description
+TO DO
+
+

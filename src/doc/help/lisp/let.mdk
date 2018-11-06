@@ -1,0 +1,9 @@
+.index let
+.usage special-form
+.syntax
+(let sym expr)
+
+.description
+Declares a readonly variable. Lazy and future variables are also readonly variables.
+
+

@@ -1,0 +1,11 @@
+.index read-delimited-list
+.usage builtin-function
+.syntax
+(read-delimited-list terminator &optional (stream $stdin))
+
+Reads a list of expressions from a TextReader stream until the string
+`terminator` is encountered.
+
+.see-also
+.api
+read read-all

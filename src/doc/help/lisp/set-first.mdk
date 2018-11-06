@@ -1,0 +1,13 @@
+.index set-first
+.usage builtin-function
+.syntax
+(set-first seq item)
+
+.description
+Sets the first element of `seq` to `item`.
+
+.examples
+(let seq '(a 2 3 4))
+(set-first seq 'a)
+(macroexpand '(setf (first seq) 'a))
+

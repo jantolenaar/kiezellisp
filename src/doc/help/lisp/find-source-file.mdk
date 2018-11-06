@@ -1,0 +1,23 @@
+.index find-source-file
+.usage builtin-function
+.syntax
+(find-source-file name)
+
+.description
+Returns the full path name corresponding to the string `name`. Searches in the
+current directory and in the directories of the load path (see also `$load-path`,
+`set-load-path`). If `name` has an extension, then `name` is used as given. 
+If `name` has no extension, then the following set of filenames is used:
+
+    NAME.k
+    NAME.kiezel
+    NAME/NAME.k
+    NAME/NAME.kiezel
+    NAME/main.k
+    NAME/main.kiezel
+
+.examples
+(find-source-file "system")
+(find-source-file :ftp)
+$load-path
+

@@ -1,0 +1,18 @@
+.index map
+.usage builtin-function
+.syntax
+(map func &rest seqs)
+(map func)
+
+.description
+Returns a lazy sequence where the elements of `seq` are transformed by the
+function `func`. The first sequence supplies the first argument of `func`, 
+the second sequence supplies the second argument of `func`, etc. The operation
+stops when one of the sequences runs out. Returns a transducer if no `seqs` are 
+supplied.
+
+.examples
+(map length (vector "aap" "noot" "mies"))
+(map + '(1 2 3) '(4 5))
+(map #(odd? (length %1)) (vector "aap" "noot" "mies"))
+(as-list (eduction (map inc) '(1 2 3)))

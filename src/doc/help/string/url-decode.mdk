@@ -1,0 +1,8 @@
+.index string:url-decode
+.usage builtin-function
+
+.syntax
+(string:url-decode str)
+
+.description
+Same as HttpUtility.UrlDecode

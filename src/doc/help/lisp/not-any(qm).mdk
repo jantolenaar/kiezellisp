@@ -1,0 +1,12 @@
+.index not-any?
+.usage builtin-function
+.syntax
+(not-any? predicate seq)
+
+.description
+Returns true if no elements of `seq` satisfy the function `predicate`.
+
+.examples
+(not-any? odd? '(1 2 3 4))
+(not-any? odd? '(2 4))
+

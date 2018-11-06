@@ -1,0 +1,9 @@
+.index system:dispose
+.usage builtin-function
+.syntax
+(system:dispose resource)
+
+.description
+Internal use.
+
+

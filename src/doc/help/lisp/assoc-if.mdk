@@ -1,0 +1,15 @@
+.index assoc-if
+.usage builtin-function
+.syntax
+(assoc-if predicate alist &key key)
+
+.description
+Returns the first `Cons` item in association list `alist` with a `car` 
+satisfying `predicate`.
+
+.examples
+(assoc-if odd? '((2 c) (4 d) (5 f)))
+
+.see-also
+.api
+acons assoc pairlis

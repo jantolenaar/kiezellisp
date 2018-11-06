@@ -1,0 +1,9 @@
+.index enumerable?
+.usage builtin-function
+.syntax
+(enumerable? expr)
+
+.description
+Returns true if `expr` is IEnumerable.
+
+

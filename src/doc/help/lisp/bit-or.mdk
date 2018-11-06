@@ -1,0 +1,11 @@
+.index bit-or
+.usage builtin-function
+.syntax
+(bit-or &rest numbers)
+
+.description
+Returns the bitwise or of the given integer numbers.
+
+.examples
+(bit-or 1 2)
+

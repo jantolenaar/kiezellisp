@@ -1,0 +1,21 @@
+.index string:split
+.usage builtin-function
+
+.syntax
+(string:split str)
+(string:split str count)
+(string:split str separators)
+(string:split str separators count)
+
+.description
+These forms are Kiezellisp extension methods. The first and second forms split on
+white space and always remove empty substrings. In the third and fourth forms
+`separators` is a string or another sequence (IEnumerable other than string).
+In case of a string, the function splits on the individual characters of the
+string.
+
+.examples
+(.split "aap noot mies" 2)
+:d
+(.split "hello, world" "lw")
+:d

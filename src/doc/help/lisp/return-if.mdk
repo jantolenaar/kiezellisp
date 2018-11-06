@@ -1,0 +1,10 @@
+.index return-if
+.usage macro
+.syntax
+(return-if test &optional value)
+
+.description
+If `test` evaluates as true, returns `value` or `null` from a function, otherwise
+continues execution of the function.
+
+

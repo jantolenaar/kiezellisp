@@ -1,0 +1,12 @@
+.index macroexpand
+.usage builtin-function
+.syntax
+(macroexpand expr &optional environment)
+
+.description
+Returns the macro expansion of `expr` by repeatedly calling `macroexpand-1`.
+
+.examples
+(macroexpand '(setf (car x) 123))
+(macroexpand '(while a b))
+

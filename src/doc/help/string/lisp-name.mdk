@@ -1,0 +1,11 @@
+.index string:lisp-name
+.usage builtin-function
+
+.syntax
+(string:lisp-name name)
+
+.description
+Converts between naming conventions.
+
+.examples
+(.lisp-name "EenTweeDrie")

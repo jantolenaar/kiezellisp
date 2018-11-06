@@ -1,0 +1,11 @@
+.index append
+.usage builtin-function
+.syntax
+(append &rest seqs)
+
+.description
+Concatenates sequences into a new lazy sequence.
+
+.examples
+(append '(1 2 3) '(4 5))
+

@@ -1,0 +1,9 @@
+.index copy-readtable
+.usage builtin-function
+.syntax
+(copy-readtable &key (readtable $readtable))
+
+.description
+Returns a copy of `readtable`. If `null` returns the standard readtable.
+
+

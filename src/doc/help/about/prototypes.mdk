@@ -1,0 +1,75 @@
+.index about:prototypes
+.description
+
+A prototype object is a lightweight object based on `DynamicObject`. It is also
+a class, i.e. you can derive a new prototype object from an existing prototype
+object.
+
+Prototype objects can be constructed by the lisp reader as a literal or by the
+function `new` at run-time.
+
+When the literal expression or the `new` function call has an even number of
+arguments, the arguments are key-value pairs. The key can be given as a keyword,
+symbol or string. The key's string representation is the real key.
+
+.examples
+(var a { :name b :city "amsterdam" })
+(var b #s( name b city "amsterdam" ))
+(.name a)
+(.city a)
+(.telephone a)
+(var x "mies")
+(var c (new :name x :city "amsterdam"))
+(.name c)
+(.city c)
+(.telephone c)
+
+When the number of arguments is odd, the first argument must be either a type
+specifier or a list of type specifiers. A type specifier is either a prototype
+object or the name of a type created by `deftype`, `defclass`, `defstruct` or
+`import`.
+
+In second part of the next example every argument is a constant: `b` is the name
+of a type.
+
+.examples
+(deftype b #s( :country "netherlands" ))
+#s(b)
+#s(b name "john" city "amsterdam" )
+
+
+In the second part of the next example every argument is evaluated: `b` is the 
+name of a variable with a prototype value. The last two lines show that a 
+prototype object can be used as a function.
+
+.examples
+(def b (new :country "netherlands"))
+(def a (new b
+            :name "john" 
+            :city "amsterdam"))
+a
+(.name a)
+(.nam a)
+(elt a "name")
+(elt a :name)
+(elt a 'name)
+(.city a)
+(.country a)
+(prototype:keys a)
+(prototype:get-parents a)
+(funcall a "city")
+(map a '(city name))
+
+
+
+.api
+prototype:has-property
+prototype:new
+prototype:keys
+prototype:get-parents
+prototype:set-parents
+prototype:get-type-specifier
+new
+deftype
+defstruct
+defclass

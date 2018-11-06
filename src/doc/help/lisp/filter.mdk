@@ -1,0 +1,13 @@
+.index filter
+.usage builtin-function
+.syntax
+(filter predicate seq)
+(filter predicate)
+
+.description
+Returns a lazy list containing the elements of `seq` that satisfy the function
+`predicate`. The second form returns a transducer.
+
+.examples
+(filter odd? (series 1 10)) 
+

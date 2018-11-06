@@ -1,0 +1,14 @@
+.index reductions
+.usage builtin-function
+.syntax
+(reductions reducer seq)
+(reductions reducer seed seq)
+
+.description
+Returns a lazy list of every intermediate value produced by the function `reduce` 
+called with the same arguments.
+
+.examples
+(reductions + (series 10))
+(reductions + 100 (series 10))
+

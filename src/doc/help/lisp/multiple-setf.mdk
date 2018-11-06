@@ -1,0 +1,16 @@
+.index multiple-setf
+.usage macro
+.syntax
+(multiple-setf (place*) value)
+
+.description
+Assigns places with the elements of a sequence or tuple.
+
+.examples
+(do
+    (var a '(1 2))
+    (var b null)
+    (var c (new :city "leiden"))
+    (multiple-setf ((car a) b (.city c)) '(one two three))
+    (vector a b c))
+

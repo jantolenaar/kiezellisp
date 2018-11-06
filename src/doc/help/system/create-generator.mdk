@@ -1,0 +1,9 @@
+.index system:create-generator
+.usage builtin-function
+.syntax
+(system:create-generator func &rest kwargs)
+
+.description
+Internal use.
+
+

@@ -1,0 +1,13 @@
+.index foreach
+.usage macro
+.syntax
+(foreach (sym seq) &body forms)
+
+.description
+Executes `forms` repeatedly. Uses `loop`.
+
+.examples
+(foreach (x (series 1 5)) (collecting (+ x x)))
+(macroexpand-1 '(foreach (x y) a b c))
+(macroexpand '(foreach (x y) a b c))
+

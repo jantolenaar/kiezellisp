@@ -1,0 +1,11 @@
+.index make-environment
+.usage builtin-function
+.syntax
+(make-environment)
+
+.description
+Returns an object representing an empty lexical scope. Non empty lexical
+environment objects are only visible during macro expansion of a macro with
+an `&environment` parameter. For an example see the file `loop.k`.
+
+

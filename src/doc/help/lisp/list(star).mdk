@@ -1,0 +1,13 @@
+.index list*
+.usage builtin-function
+.syntax
+(list* &rest items)
+
+.description
+Returns a list containing the given items. The last item is a list that becomes 
+the tail of the new list.
+
+.examples
+(list* 1 2 '(3 4))
+(list 1 2 '(3 4))
+

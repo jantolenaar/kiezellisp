@@ -1,0 +1,12 @@
+.index list-all-types
+.usage builtin-function
+.syntax
+(list-all-types)
+
+Returns a list of all types.
+
+.see-also
+.api
+deftype
+
+

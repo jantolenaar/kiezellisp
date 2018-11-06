@@ -1,0 +1,12 @@
+.index macro?
+.usage builtin-function
+.syntax
+(macro? sym)
+
+.description
+Returns true if the symbol `sym` names a globally defined macro.
+
+.examples
+(macro? 'when)
+(macro? 'if)
+

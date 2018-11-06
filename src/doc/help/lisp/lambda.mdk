@@ -1,0 +1,24 @@
+.index lambda
+.usage special-form
+.syntax
+(lambda (arg*) form*)
+
+.description
+The special form `lambda` and the reader macro #(...) define anonymous
+functions.
+
+.examples
+(lambda (x y) (+ x y))
+(it 21 34)
+#(+ %1 %2)
+(it 21 34)
+(defun adder (n) #(+ n %1))
+(def g (adder 2))
+(g 3)
+
+.see-also
+.api
+about:parameters defun defun* lambda lambda*
+
+
+

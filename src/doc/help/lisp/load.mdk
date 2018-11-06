@@ -1,0 +1,17 @@
+.index load
+.usage builtin-function
+.syntax
+(load file &key (verbose $load-verbose) (print $load-print))
+
+.description
+Loads, parses and evaluates the contents of file `file`. If `verbose` is true,
+the name and true location of `file` are printed to standard output. If `print`
+is true, the result of every top-level statement is printed to standard output.
+
+.examples
+(load "ftp" :print true)
+(load :ftp)
+
+.see-also
+.api
+find-source-file require run

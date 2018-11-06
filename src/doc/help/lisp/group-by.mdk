@@ -1,0 +1,12 @@
+.index group-by
+.usage builtin-function
+.syntax
+(group-by key seq)
+
+.description
+Collects the elements of `seq` that have the same key into subsequences, as
+determined by the function `key`. Keys should be numbers, strings or symbols.
+
+.examples
+(group-by length '("aap" "noot" "mies" "blablabla"))
+

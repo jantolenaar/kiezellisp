@@ -1,0 +1,12 @@
+.index equal-ci
+.usage builtin-function
+.syntax
+(equal-ci a b)
+
+.description
+Like `equal` but compares strings and characters case-insensitively.
+
+.examples
+(equal "aap" "Aap")
+(equal-ci "aap" "Aap")
+

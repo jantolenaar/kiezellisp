@@ -1,0 +1,15 @@
+.index try
+.usage special-form
+.syntax
+(try &body forms)
+
+.description
+Exception handling.
+
+.examples
+(try
+    (+ 3 hello)
+    (catch (ex)
+        (print-line ex))
+    (finally (print-line 111)))
+

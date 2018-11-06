@@ -1,0 +1,6 @@
+.index return
+.usage special-form
+.syntax
+(return &optional value)
+
+Returns `value` or `null` from a function or a `prog` form, or returns from loading a file.

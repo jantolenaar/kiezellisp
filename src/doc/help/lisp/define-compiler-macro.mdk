@@ -1,0 +1,11 @@
+.index define-compiler-macro
+.usage special-form
+.syntax
+(define-compiler-macro name (arg*) \[doc-string\] form*)
+
+Defines a compiler macro.
+
+.see-also 
+.api
+defmacro about:compile-time-vs-run-time-values
+

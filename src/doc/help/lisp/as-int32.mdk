@@ -1,0 +1,9 @@
+.index as-int32
+.usage builtin-function
+.syntax
+(as-int32 a)
+
+.description
+Converts a number to Int32.
+
+

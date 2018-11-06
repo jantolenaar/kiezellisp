@@ -1,0 +1,14 @@
+.index interpolate-string
+.usage builtin-function
+.syntax
+(interpolate-string str)
+
+.description
+Evaluates lisp code embedded in `str` and returns a new string. String literals 
+in source code are automatically interpolated. And that is why this example is so 
+difficult to type in.
+
+.examples
+(string (string (string (string "aap#{(+ "))) "3 4)}noot")
+(interpolate-string it)
+

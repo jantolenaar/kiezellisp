@@ -1,0 +1,11 @@
+.index bit-not
+.usage builtin-function
+.syntax
+(bit-not number)
+
+.description
+Returns the bitwise not of the given integer number.
+
+.examples
+(bit-not -2)
+

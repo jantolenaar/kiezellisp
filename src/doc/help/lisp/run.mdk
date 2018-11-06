@@ -1,0 +1,9 @@
+.index run
+.usage builtin-function
+.syntax
+(run file)
+
+.description
+Loads `file` and executes the function `user:main` (if it exists).
+
+

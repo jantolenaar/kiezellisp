@@ -1,0 +1,9 @@
+.index get-global-symbols
+.usage builtin-function
+.syntax
+(get-global-symbols)
+
+.description
+Returns a list with all globally defined symbols.
+
+

@@ -1,0 +1,11 @@
+.index fifth
+.usage builtin-function
+.syntax
+(fifth seq)
+
+.description
+Returns the fifth element in a `seq`; or `null` if there is no fifth element.
+
+.examples
+(fifth '(1 2 3 4 5 6))
+

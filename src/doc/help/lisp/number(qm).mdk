@@ -1,0 +1,13 @@
+.index number?
+.usage builtin-function
+.syntax
+(number? expr)
+
+.description
+Returns true if `expr` is a number.
+
+.examples
+(number? 123)
+(number? #c(1 2))
+(number? "123")
+

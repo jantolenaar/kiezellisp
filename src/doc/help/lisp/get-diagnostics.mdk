@@ -1,0 +1,10 @@
+.index get-diagnostics
+.usage builtin-function
+.syntax
+(get-diagnostics exception)
+
+.description
+Returns a string describing `exception` in the current execution environment. Used by
+non-interactive Kiezellisp programs.
+
+

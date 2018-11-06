@@ -1,0 +1,13 @@
+.index as-array
+.usage builtin-function
+.syntax
+(as-array seq type)
+(as-array seq)
+
+.description
+Converts a sequence to an array.
+
+.examples
+(as-array '(1 2 3))
+(as-array '(1 2 3) 'int)
+

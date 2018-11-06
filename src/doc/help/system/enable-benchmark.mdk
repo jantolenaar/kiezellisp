@@ -1,0 +1,9 @@
+.index system:enable-benchmark
+.usage builtin-function
+.syntax
+(system:enable-benchmark flag)
+
+.description
+Internal use.
+
+

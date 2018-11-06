@@ -1,0 +1,9 @@
+.index string:parse-number
+.usage builtin-function
+.syntax
+(string:parse-number str &key base culture)
+
+.see-also
+.api 
+string:try-parse-number
+

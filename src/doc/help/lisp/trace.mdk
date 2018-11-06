@@ -1,0 +1,14 @@
+.index trace
+.usage macro
+.syntax
+(trace expr)
+
+.description
+Conditionally writes the source code of `expr` and its value to `$stdlog`, depending 
+on the value of `$tracing`. `expr` must not have side effects. Trace code is compiled
+away when running in production mode.
+
+.examples
+(do
+    (let $tracing true)
+    (trace (+ 1 2)))

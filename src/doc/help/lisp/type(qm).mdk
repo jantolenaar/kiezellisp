@@ -1,0 +1,11 @@
+.index type?
+.usage builtin-function
+.syntax
+(type? target type)
+
+.description
+Returns true if `target` has type `type`.
+
+.examples
+(type? "abc" 'string)
+

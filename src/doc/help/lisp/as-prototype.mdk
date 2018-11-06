@@ -1,0 +1,15 @@
+.index as-prototype
+.usage builtin-function
+.syntax
+(as-prototype obj)
+
+.description
+Adds the contents of a hashtable, the values of static properties of a type
+or the instance properties of an object to a prototype hashtable.
+
+.examples
+(as-prototype date-time:T)
+:d
+(as-prototype (date-time:now))
+:d
+

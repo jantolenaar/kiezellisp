@@ -1,0 +1,11 @@
+.index car
+.usage builtin-function
+.syntax
+(car list)
+
+.description
+Returns the first element of a list.
+
+.examples
+(car '((1 2) 3 4))
+

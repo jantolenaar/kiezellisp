@@ -1,0 +1,12 @@
+.index complex-from-polar-coordinates
+.usage builtin-function
+.syntax
+(complex-from-polar-coordinates m ph)
+
+.description
+Returns a complex number with magnitude `m` and phase `ph`.
+
+.examples
+(let a (complex-from-polar-coordinates 1 (/ math:PI 4)))
+(* a a)
+

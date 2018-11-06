@@ -1,0 +1,13 @@
+.index xor
+.usage builtin-function
+.syntax
+(xor &rest values)
+
+.description
+Returns the logical XOR of the given `values`.
+
+.examples
+(xor 1)
+(xor 1 2)
+(xor 1 2 3)
+

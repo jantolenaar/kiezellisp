@@ -1,0 +1,12 @@
+.index cycle
+.usage builtin-function
+.syntax
+(cycle seq)
+
+.description
+Returns a lazy sequence of the elements of `seq` followed by the elements of
+`seq` and so on. Returns `null` if `seq` is empty.
+
+.examples
+(take 8 (cycle '(1 2 3)))
+

@@ -1,0 +1,13 @@
+.index function?
+.usage builtin-function
+.syntax
+(function? expr)
+
+.description
+Returns true if `expr` is a function, i.e. a suitable argument to `apply` and
+`funcall`.
+
+.examples
+(function? .length)
+(function? +)
+

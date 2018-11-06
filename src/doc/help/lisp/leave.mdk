@@ -1,0 +1,12 @@
+.index leave
+.usage special-form
+.syntax
+(leave name value)
+(leave name)
+
+.description
+Returns `value` or `null` from a named block.
+
+.see-also
+.api
+block redo

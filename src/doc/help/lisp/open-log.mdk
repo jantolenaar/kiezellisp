@@ -1,0 +1,13 @@
+.index open-log
+.usage builtin-function
+.syntax
+(open-log path)
+
+.description
+Returns a `TextWriter` to write safely to the file `path-yyyy-MM-dd.txt`. Each call to
+the lisp functions `print`, `print-line, `write` and `write-line` results in one
+write to the log file.
+
+.code
+(setf $stdlog (open-log "/temp/my-log"))
+(print-line $stdlog "hello, world")

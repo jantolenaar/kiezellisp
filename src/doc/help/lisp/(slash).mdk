@@ -1,0 +1,14 @@
+.index /
+.usage builtin-function
+.syntax
+(/ &rest args)
+
+.description
+Divides the first number by the other numbers. If only one number
+is given, returns its reciprocal.
+
+.examples
+(/ 16 10)
+(/ 8)
+(/ 8 5.0)
+

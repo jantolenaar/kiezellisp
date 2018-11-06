@@ -1,0 +1,20 @@
+.index typecase
+.usage macro
+.syntax
+(typecase keyform normal-clause* \[otherwise-clause\])
+
+.description
+    normal-clause := '(' type form* ')'
+    otherwise-clause := '(' {true|otherwise} form* ')'
+    type := symbol corresponding to a (imported) class
+
+.examples
+(let s 'aap)
+(typecase s
+    (integer
+         (print-line 1))
+    (symbol
+         (print-line 2))
+    (otherwise
+         (print-line 3)))
+

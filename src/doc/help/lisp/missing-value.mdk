@@ -1,0 +1,19 @@
+.index missing-value
+.usage constant
+.syntax
+missing-value
+
+.description
+Alternative for `null` default arguments.
+
+.examples
+(defmacro some-return (&optional (a missing-value))
+    (if (missing-value? a)
+          `(return)
+        `(return ,a)))
+(macroexpand '(some-return))
+(macroexpand '(some-return null))
+
+.see-also
+.api
+missing-value?

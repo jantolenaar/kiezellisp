@@ -1,0 +1,6 @@
+.index $pprint-left-margin
+.usage special-variable
+.description
+The column number of the current left margin used by `pprint`.
+
+

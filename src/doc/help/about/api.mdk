@@ -1,0 +1,102 @@
+.index about:api
+# CLR
+.api
+import reference add-event-handler
+
+### Explicit interfaces
+
+To call a method on an explicit interface, first import the interface, then call
+the corresponding function in its package.
+
+.examples
+(import "system.collections.ilist")
+(ilist:item (vector 'a 'b 'c) 2)
+
+# Conditionals
+.api
+if when case ecase typecase etypecase cond if-let when-let
+if-match case-match ecase-match when-match
+
+# Math
+.api
+math:conjugate
+
+The package `math` replaces the class `System.Math` and adds support for big
+integers, rationals and complex numbers.
+
+# Functions
+.api
+about:parameter-lists
+defun defun* lambda lambda* defmulti defmethod
+return return-if lambda?
+tail-recursion recur self
+letfun
+
+# Macros
+.api
+about:parameters
+defmacro define-compiler-macro define-symbol-macro
+letmacro let-symbol-macro
+
+# Loops
+.api
+loop foreach while break continue break-if continue-if finish finish-if
+
+# Arrays
+.api
+create-array as-array
+
+# Vectors
+.api
+vector as-vector
+
+# Lists
+.api
+list list* parallel-list as-list as-lazy-list
+car cdr cons caar cadr cdar cddr rest set-car set-cdr first last
+
+# Sequences
+.api
+first second third fourth fifth nth
+map map-indexed parallel-map mapv
+mapcat cat
+filter filterv except remove keep keep-indexed
+reduce reductions sequence transduce eduction 
+sum maximize minimize average
+length count
+first-position index-of
+find-subsequence-position mismatch
+every? not-every? any? not-any?
+zip unzip
+each parallel-each
+as-vector as-list as-lazy-list as-array
+conjoin adjoin append flatten 
+intersect union 
+reverse subseq copy-seq
+repeat series range cycle repeatedly iterate
+distinct dedupe
+sort sort-by merge merge-by shuffle
+take take-nth take-while
+drop drop-while
+split-at split-with
+interleave interpose
+partition-by partition partition-all
+group-by
+
+# Variables
+.api
+def defonce defconstant
+var declare let with-multiple-let
+setq setf set defsetf multiple-setf psetq psetf
+
+# Exception Handling
+.api
+try-and-catch try throw return-or-throw ignore-errors
+using throw-error
+
+# Input/output
+.api
+peek-char read read-all read-all-from-string
+read-char read-delimited-list read-from-string
+unread-char with-input-from-string
+print write write-line write-to-string with-output-to-string

@@ -1,0 +1,78 @@
+
+# Getting Started on Windows
+
+## Prerequisites
+
+The .NET framework v4.5 must be installed on your computer.
+
+## Installation
+
+Unzip the binary distribution in a directory, e.g. `c:\users\bob\`.
+Within the installation folder you should find:
+
+    kiezellisp/bin/kiezellisp-con.exe
+    kiezellisp/bin/kiezellisp-gui.exe
+    kiezellisp/bin/kiezellisp-init.k
+    kiezellisp/bin/kiezellisp-lib.dll
+    kiezellisp/lib/...
+    kiezellisp/app/...
+
+## Terminal and window versions
+
+The program `kiezellisp-con.exe` is designed to run in a terminal, has a REPL and
+allows the use of winforms, gtk# or another graphical framework that has a .NET 
+binding.
+
+The program `kiezellisp-gui.exe` is designed to run outside a terminal and 
+requires the use of winforms, gtk# or another graphical framework that has a .NET 
+binding.
+
+During development you should use `kiezellisp-con.exe`.
+
+## Configuration
+
+The file `kiezellisp-init.k` contains something like this:
+
+    #if unix
+    #if flatpak
+    (set-assembly-path "/app/lib/mono/4.5")
+    #else
+    (set-assembly-path "/usr/lib/mono/4.5")
+    #endif
+    #endif
+
+    #if windows
+    (set-assembly-path "c:/windows/microsoft.net/framework64/v4.0.30319")
+    #endif
+
+    (set-load-path "../lib" "../app")
+    (load "system")
+    (load "shell")
+
+	#if repl
+	(set-debug-level 2)
+	#endif
+
+Create the following executable scripts in a folder on your `path` environment:
+
+* Script `kiezellisp.bat`
+
+    c:\users\bob\kiezellisp\bin\kiezellisp-con.exe "$@"
+
+* Script `kiezellisp-gui.bat`
+
+    c:\users\bob\kiezellisp\bin\kiezellisp-gui.exe "$@"
+
+## Running the REPL
+
+Start Kiezellisp by running your script: `kiezellisp`
+
+You will be greeted by Kiezellisp's Read-Eval-Print-Loop:
+
+    Kiezellisp 4.0 (Build 6427 - 2017-08-06)
+    Copyright (C) Jan Tolenaar 2009-2017
+    Type 'help' for help on top-level commands
+
+    user >
+
+The word `user` is the name of the current package. 

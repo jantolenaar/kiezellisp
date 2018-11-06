@@ -1,0 +1,19 @@
+.index partition
+.usage builtin-function
+.syntax
+(partition size step padding seq)
+(partition size step seq)
+(partition size seq)
+
+.description
+Divides `seq` into subsequences of length `size`. Default `step` equals `size`.
+In order to get the right `size`, the last subsequence may borrow elements
+from the sequence `padding`.
+
+.examples
+(partition 3 (series 10))
+(partition 3 2 (series 10))
+(partition 3 4 (series 10))
+(partition 3 3 '(a b) (series 10))
+(partition 3 3 '(a) (series 10))
+

@@ -1,0 +1,16 @@
+.index union
+.usage builtin-function
+.syntax
+(union seq1 seq2)
+(union test seq1 seq2)
+
+.description
+Returns the union of `seq1` and `seq2`.
+The default equality test is `=`.
+
+.examples
+(union '(1 2 3) '(3 4 5))
+
+.see-also
+.api
+distinct intersect index-of union except dedupe

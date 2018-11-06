@@ -1,0 +1,6 @@
+.index as-enumerable
+.usage builtin-function
+.syntax
+(as-enumerable seq)
+(as-enumerable seq type)
+

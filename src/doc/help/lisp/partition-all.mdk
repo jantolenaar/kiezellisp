@@ -1,0 +1,17 @@
+.index partition-all
+.usage builtin-function
+.syntax
+(partition-all size step seq)
+(partition-all size seq)
+(partition-all size)
+
+.description
+Divides `seq` into subsequences of length `size`. Default `step` equals `size`.
+The last subsequence may contain less elements.
+The third form returns a transducer.
+
+.examples
+(partition-all 3 (series 10))
+(partition-all 3 2 (series 10))
+(partition-all 3 4 (series 10))
+

@@ -1,0 +1,13 @@
+.index array*
+.usage builtin-function
+.syntax
+(array* &rest items)
+
+.description
+Creates a fixed length array of type `object[]` with the given contents. The 
+last item must be a sequence. Works like `list*`.
+
+.examples
+(array* 1 2 '(3 4))
+:d
+

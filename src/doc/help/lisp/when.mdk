@@ -1,0 +1,13 @@
+.index when
+.usage macro
+.syntax
+(when test &body forms)
+
+.description
+If `test` is true, then evaluates `forms` as a `do`-block; else `null`.
+
+.examples
+(when (odd? 123)
+    (print-line "odd")
+    456)
+

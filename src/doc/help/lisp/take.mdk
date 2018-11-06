@@ -1,0 +1,13 @@
+.index take
+.usage builtin-function
+.syntax
+(take count seq)
+(take count)
+
+.description
+Returns the first `count` items in `seq`. The second form returns a 
+transducer.
+
+.examples
+(take 3 (series 10))
+

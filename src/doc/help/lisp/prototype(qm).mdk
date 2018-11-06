@@ -1,0 +1,11 @@
+.index prototype?
+.usage builtin-function
+.syntax
+(prototype? expr)
+
+.description
+Returns true if `expr` is a prototype object.
+
+.examples
+(prototype? (new :color "black"))
+

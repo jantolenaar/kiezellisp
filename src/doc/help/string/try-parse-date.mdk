@@ -1,0 +1,14 @@
+.index string:try-parse-date
+.usage builtin-function
+
+.syntax
+(string:try-parse-date str &key format culture)
+
+.description
+Converts a string to a DateTime.
+
+.examples
+(.try-parse-date "20130104" :format "yyyyMMdd")
+(.try-parse-date "20139904" :format "yyyyMMdd")
+
+

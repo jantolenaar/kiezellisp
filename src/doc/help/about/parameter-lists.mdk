@@ -1,0 +1,53 @@
+.index about:parameter-lists
+.description
+The definition of a function, macro or method has a parameter list. A function
+call, macro call or method call has an argument list. The parameter list defines
+which argument lists are ok and which are not ok.
+
+The general form of a parameter list is as follows:
+
+    paramlist := '(' [required-arg*]
+                     ['&optional' optional-positional-arg*] ')'
+
+    paramlist := '(' [required-arg*]
+                     ['&rest'|'&body'|'&params'|'&vector' symbol] ')'
+
+    paramlist := '(' [required-arg*]
+                     ['&key' optional-named-arg*] ')'
+
+`required-arg` is different for functions, macros and methods.
+
+    optional-positional-arg := symbol | '(' symbol default-value ')'
+    optional-named-arg := symbol | '(' symbol default-value ')'
+
+The `default-value` is compiled when the function is defined and only executed
+when a function call value does not provide a value. It cannot refer to
+parameters on its left. The default of `default-value` is `null`.
+
+`&params` is like `&rest`, but binds the remainder of the argument list as an
+array of objects. `&vector` is like `&rest`, but binds the remainder of the
+argument list as a vector. `&body` is a synonym of `&rest`.
+
+### Function Parameter List
+
+    required-arg := symbol
+
+.api
+defun lambda defun* lambda* letfun
+
+### Method Parameter List
+
+    required-arg := symbol | '(' symbol [type] ')'
+    type := type-symbol | '(' 'eql' value ')'
+
+A `type-symbol` is the name of a type created by `deftype`.
+
+.api
+defmulti defmethod deftype
+
+### Macro Parameter List
+
+    required-arg := symbol | paramlist
+
+.api
+defmacro define-compiler-macro letmacro

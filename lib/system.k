@@ -18,6 +18,3 @@
 (load "core/threading")
 (load "core/pprint")
 
-#if repl
-(load "core/help")
-#endif

@@ -1,0 +1,9 @@
+.index prototype:set-parents
+.usage builtin-function
+.syntax
+(prototype:set-parents object parents)
+
+.description
+Sets the list of the direct parents of `object` to `parents`.
+
+

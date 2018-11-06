@@ -1,0 +1,9 @@
+.index system:get-task-result
+.usage builtin-function
+.syntax
+(system:get-task-result obj)
+
+.description
+Internal use.
+
+

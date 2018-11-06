@@ -1,0 +1,14 @@
+.index unreduced
+.usage builtin-function
+.syntax
+(unreduced obj)
+
+.description
+Returns the value wrapped in `obj` or else `obj` itself.
+
+.see-also
+.api
+reduced unreduced
+
+
+

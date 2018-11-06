@@ -1,0 +1,25 @@
+.index case
+.usage macro
+.syntax
+(case key-form clause*)
+
+.description
+    clause := '(' test-form form* ')'
+    test-form := form | '(' form* ')'
+
+Each `test-form` is a list that starts with an __evaluated__ non-list item or a list of 
+__evaluated__ items. A `clause` matches the `key-form` if the `key-form` is `equal`
+or `=` to one of the items. The value of the `clause` is the value of the implicit
+`do` block consisting of the `rest` of the `clauses`. The non-list items `true`
+and `otherwise` indicate that the `clause` matches anything.
+
+.examples
+(let s 'aap)
+(case s
+    (('teun 'mies)
+         (print-line 1))
+    ('aap
+         (print-line 2))
+    (otherwise
+         (print-line 3)))
+

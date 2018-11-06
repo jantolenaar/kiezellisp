@@ -1,0 +1,9 @@
+.index var
+.usage special-form
+.syntax
+(var sym expr)
+
+.description
+Declares a writable lexical or special variable.
+
+

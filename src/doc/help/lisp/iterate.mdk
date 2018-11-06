@@ -1,0 +1,13 @@
+.index iterate
+.usage builtin-function
+.syntax
+(iterate func initial-value)
+
+.description
+Returns an infinite sequence with `initial-value` as its first element. The next 
+element is the result of calling `func` with the previous element as the argument.
+
+.examples
+(take 10 (iterate inc 1))
+(take 10 (iterate - 1))
+

@@ -1,0 +1,13 @@
+.index $print-vector-with-brackets
+.usage special-variable
+.description
+When true, vectors are printed like `[...]` otherwise like `#v(...)`.
+
+.examples
+(do
+    (let $print-vector-with-brackets true)
+    (write-line (vector 'a 'b 'c)))
+(do
+    (let $print-vector-with-brackets false)
+    (write-line (vector 'a 'b 'c)))
+

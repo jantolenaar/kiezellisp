@@ -1,8 +1,7 @@
 bin/
 obj/
 github.git/
-man/
-help/
+kiezellisp-init.k
 *~
 *.user
 *.suo

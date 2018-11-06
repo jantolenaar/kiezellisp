@@ -1,0 +1,13 @@
+.index equal
+.usage builtin-function
+.syntax
+(equal a b)
+
+.description
+Same as `=`.
+Returns true if `a` and `b` are `eql` or equal after numeric type conversion.
+
+.examples
+(= 1 1.0)
+(= 1 #c(1 0))
+

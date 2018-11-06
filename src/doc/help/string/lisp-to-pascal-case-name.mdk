@@ -1,0 +1,12 @@
+.index string:lisp-to-pascal-case-name
+.usage builtin-function
+
+.syntax
+(string:lisp-to-pascal-case-name name)
+
+.description
+Converts between naming conventions.
+
+.examples
+(.lisp-to-pascal-case-name "een-twee-drie")
+

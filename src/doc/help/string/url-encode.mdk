@@ -1,0 +1,8 @@
+.index string:url-encode
+.usage builtin-function
+
+.syntax
+(string:url-encode str)
+
+.description
+Same as HttpUtility.UrlEncode

@@ -1,0 +1,14 @@
+.index string:trim-end 
+.usage builtin-function
+
+.syntax
+(string:trim-end str)
+(string:trim-end str &rest trim-chars)
+(string:trim-end str trim-chars-str)
+
+.description
+The third form is a Kiezellisp extension. 
+
+.examples
+(.trim-end "abcdefefefef" "fe")
+

@@ -1,0 +1,13 @@
+.index sort
+.usage builtin-function
+.syntax
+(sort seq)
+(sort comparer seq)
+
+.description
+Sorts `seq`. The default comparer is the inbuilt function `compare`.
+
+.examples
+(sort "hello, world")
+(sort '("hello" "goodbye" "doei" "farewell"))
+

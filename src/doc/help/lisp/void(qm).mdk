@@ -1,0 +1,12 @@
+.index void?
+.usage builtin-function
+.syntax
+(void? expr)
+
+.description
+Returns true if `expr` is of class VOID.
+
+.examples
+(void? (void))
+(void? null)
+

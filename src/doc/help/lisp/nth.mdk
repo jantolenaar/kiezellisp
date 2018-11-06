@@ -1,0 +1,15 @@
+.index nth
+.usage builtin-function
+.syntax
+(nth pos seq)
+
+.description
+Returns the element at position `pos` in `seq`, or `null` if there is no 
+element at that position.
+
+.examples
+(nth 0 '(a b c))
+(nth 2 '(a b c))
+(nth 9 '(a b c))
+(nth -1 '(a b c))
+

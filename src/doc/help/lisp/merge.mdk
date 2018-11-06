@@ -1,0 +1,16 @@
+.index merge
+.usage builtin-function
+.syntax
+(merge seq1 seq2)
+(merge comparer seq1 seq2)
+
+.description
+Merges two ordered sequences into one. Used by the function `sort`.
+The default comparer is `compare`.
+
+.examples
+(merge '(1 3 5) '(2 2 4 6))
+
+.see-also
+.api
+merge-by sort sort-by

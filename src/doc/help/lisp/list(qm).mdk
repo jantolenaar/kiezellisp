@@ -1,0 +1,13 @@
+.index list?
+.usage builtin-function
+.syntax
+(list? expr)
+
+.description
+Returns true if `expr` is a list or `null`.
+
+.examples
+(list? '(1 2 3))
+(list? (range 10))
+(list? null)
+

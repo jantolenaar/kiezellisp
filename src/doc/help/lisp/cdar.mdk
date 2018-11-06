@@ -1,0 +1,11 @@
+.index cdar
+.usage builtin-function
+.syntax
+(cdar list)
+
+.description
+Equivalent to `(cdr (car list))`.
+
+.examples
+(cdar '((1 2) 3 4))
+

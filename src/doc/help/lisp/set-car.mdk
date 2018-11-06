@@ -1,0 +1,14 @@
+.index set-car
+.usage builtin-function
+.syntax
+(set-car list item)
+
+.description
+Assigns `item` to the first item of `list`.
+
+.examples
+(let z '(111 2 3))
+(set-car z 111)
+z
+(macroexpand '(setf (car z) 111))
+

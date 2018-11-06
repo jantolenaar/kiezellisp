@@ -1,0 +1,14 @@
+.index remove
+.usage builtin-function
+.syntax
+(remove predicate seq)
+(remove predicate)
+
+.description
+Returns a lazy list containing the elements of `seq` that do not satisfy the function
+`predicate`. The second form returns a transducer.
+
+.examples
+(remove odd? (series 10))
+(filter odd? (series 10))
+

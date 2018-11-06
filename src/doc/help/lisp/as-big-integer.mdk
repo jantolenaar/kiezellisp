@@ -1,0 +1,9 @@
+.index as-big-integer
+.usage builtin-function
+.syntax
+(as-big-integer a)
+
+.description
+Converts a number to BigInteger.
+
+

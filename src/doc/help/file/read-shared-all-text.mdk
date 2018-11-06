@@ -1,0 +1,7 @@
+.index file:read-shared-all-text
+.usage builtin-function
+
+.syntax
+(file:read-shared-all-text path)
+
+Same as `file:read-all-text` but does not require exclusive use.

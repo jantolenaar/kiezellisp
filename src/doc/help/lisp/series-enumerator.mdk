@@ -1,0 +1,9 @@
+.index series-enumerator
+.usage builtin-function
+.syntax
+(series-enumerator start end step)
+
+.description
+Like `series` but returns an IEnumerable. Used by the `loop` macro.
+
+

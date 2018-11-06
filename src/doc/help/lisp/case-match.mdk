@@ -1,0 +1,16 @@
+.index case-match
+.usage macro
+.syntax
+(case-match key-form clause*)
+
+.description
+    clause := '(' test-form form* ')'
+    test-form := true | otherwise | pattern
+
+.see-also
+.api
+ecase-match if-match when-match about:pattern-matching
+
+
+
+

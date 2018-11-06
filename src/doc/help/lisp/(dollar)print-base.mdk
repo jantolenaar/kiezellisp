@@ -1,0 +1,11 @@
+.index $print-base
+.usage special-variable
+.description
+The default value of the parameter `base` of the function `write`. Initially `10`.
+
+.examples
+$print-base
+(do
+    (let $print-base 7)
+    (print-line 13))
+

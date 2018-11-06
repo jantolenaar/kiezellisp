@@ -1,0 +1,9 @@
+.index forced?
+.usage builtin-function
+.syntax
+(forced? expr)
+
+.description
+Returns false if `expr` is a `delay`-ed expression or a list with a unevaluated `cdr`.
+
+

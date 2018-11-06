@@ -1,0 +1,7 @@
+.index $read-eval
+.usage special-variable
+.description
+When false the lisp reader does not support `#.` syntax. When `null`, the lisp
+reader allows `#.` syntax only if it is `load`ing or `requiring` a file.
+
+

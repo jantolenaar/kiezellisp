@@ -1,0 +1,14 @@
+.index pop
+.usage macro
+.syntax
+(pop place)
+
+.description
+Returns the `first` element of the list `place` and updates the `setf`able 
+`place` to the `rest` of the list.
+
+.examples
+(let a '(1 2 3))
+(pop a)
+a
+

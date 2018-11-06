@@ -1,0 +1,17 @@
+.index deftype
+.usage macro
+.syntax
+(deftype name type)
+
+.description
+Gives the name `name` to the prototype or System.Type `type`. The symbol `name`
+may now be used by the function `type?` and by the special form `defmethod`.
+
+.examples
+(deftype a (new :name "mies"))
+
+.see-also
+.api
+set-find-type type? defmethod defmulti
+
+

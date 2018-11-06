@@ -1,0 +1,16 @@
+.index as-lazy-list
+.usage builtin-function
+.syntax
+(as-lazy-list seq)
+
+.description
+Converts a sequence to a lazy list.
+
+.examples
+(let z (as-lazy-list (series 5)))
+(first z)
+(rest z)
+z
+(last z)
+z
+

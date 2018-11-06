@@ -1,0 +1,12 @@
+.index compose
+.usage builtin-function
+.syntax
+(compose func1 &rest funcs)
+
+.description
+Creates a new function that applies the given functions from the right to the left.
+
+.examples
+(let f (compose dec .length))
+(f "hello")
+

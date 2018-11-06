@@ -1,0 +1,12 @@
+.index constantly
+.usage function
+.syntax
+(constantly value)
+
+.description
+Returns a function accepting arbitrary arguments that always returns `value`.
+
+.examples
+(def f12 (constantly 12))
+(f12 3 4 5)
+

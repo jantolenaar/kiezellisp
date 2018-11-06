@@ -1,0 +1,7 @@
+.index $print-force
+.usage special-variable
+.description
+The default value of the parameter `force` of the function `write`.
+The REPL sets this to false. By default: false.
+
+

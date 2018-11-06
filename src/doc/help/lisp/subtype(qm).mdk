@@ -1,0 +1,13 @@
+.index subtype?
+.usage builtin-function
+.syntax
+(subtype? subtype supertype)
+
+Returns true if `subtype` is a subtype of `supertype`.
+
+.examples
+(subtype? 'int 'number)
+(subtype? 'int 'string)
+
+
+

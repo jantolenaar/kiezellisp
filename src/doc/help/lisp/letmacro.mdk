@@ -1,0 +1,13 @@
+.index letmacro
+.usage special-form
+.syntax
+(letmacro name (arg*) \[doc-string\] form*)
+
+.description
+This special form creates a local macro. `name` becomes a lexical variable 
+that is visible at compile-time and invisible (i.e. unusable) at run-time.
+
+.see-also
+.api
+defmacro
+

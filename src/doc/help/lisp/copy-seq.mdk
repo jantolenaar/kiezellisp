@@ -1,0 +1,9 @@
+.index copy-seq
+.usage builtin-function
+.syntax
+(copy-seq seq)
+
+.description
+Returns a copy of `seq`.
+
+

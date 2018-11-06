@@ -1,0 +1,12 @@
+.index $debugging
+.usage special-constant
+.description
+The global value of this symbol can be modified by calling the 
+function `set-debug-level`.
+
+.see-also
+.api
+set-debug-level
+
+
+

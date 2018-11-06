@@ -1,0 +1,12 @@
+.index string:left
+.usage builtin-function
+
+.syntax
+(string:left str count)
+
+.description
+Returns the leftmost `count` characters of `str`.
+
+.examples
+(.left "aap" 2)
+(.left "aap" 22)

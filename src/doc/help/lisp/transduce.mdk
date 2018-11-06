@@ -1,0 +1,16 @@
+.index transduce
+.usage builtin-function
+.syntax
+(transduce xform reducer seq)
+(transduce xform seed reducer seq)
+
+.description
+The first form is equivalent to `(reduce (xform reducer) seq)`.
+The second form is equivalent to `(reduce (xform reducer) seed seq)`.
+
+.see-also
+.api
+reduce eduction sequence
+
+
+

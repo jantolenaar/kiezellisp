@@ -1,0 +1,9 @@
+.index force
+.usage builtin-function
+.syntax
+(force expr)
+
+.description
+Evaluates a lazy list or delayed expression.
+
+

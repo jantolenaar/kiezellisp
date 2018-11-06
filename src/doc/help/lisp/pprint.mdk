@@ -1,0 +1,15 @@
+.index pprint
+.usage function
+.syntax
+(pprint expr &key (left $left) (right $right))
+
+.description
+Called by `write` when its argument `pretty` is true.
+
+.see-also
+.api 
+$pprint-hook
+
+pprint.k
+
+

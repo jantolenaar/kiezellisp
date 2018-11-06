@@ -1,0 +1,12 @@
+.index multi-method?
+.usage builtin-function
+.syntax
+(multi-method? expr)
+
+.description
+Returns true if `expr` is a multi-method.
+
+.examples
+(defmulti f (a b))
+(multi-method? f)
+

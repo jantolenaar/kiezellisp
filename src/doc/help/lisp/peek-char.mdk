@@ -1,0 +1,14 @@
+.index peek-char
+.usage builtin-function
+.syntax
+(peek-char &optional (peek-type null) (stream $stdin) (eof-error? true) (eof-value null))
+
+Peeks at a character from a TextReader stream.
+
+When `peek-type` equals `null` or `false` `peek-char` is equivalent to
+`read-char` followed by `unread-char`. When `peek-type` is `true`, `peek-char`
+ends up peeking at the first non-whitespace character (by really reading the
+whitespace characters). When `peek-type` is a character, `peek-char` ends up
+peeking at that character (by really reading the characters that are not equal).
+
+ 

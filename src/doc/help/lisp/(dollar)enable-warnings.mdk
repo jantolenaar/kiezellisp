@@ -1,0 +1,6 @@
+.index $enable-warnings
+.usage special-variable
+.description
+Enables output by the function `print-warning`.
+
+

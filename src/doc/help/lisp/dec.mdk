@@ -1,0 +1,12 @@
+.index dec
+.usage builtin-function
+.syntax
+(dec number)
+
+.description
+Decrements `number` by `1`.
+
+.examples
+(dec 123)
+(dec int32:MIN-VALUE)
+

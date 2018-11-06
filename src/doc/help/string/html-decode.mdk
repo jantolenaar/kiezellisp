@@ -1,0 +1,10 @@
+.index string:html-decode
+.usage builtin-function
+
+.syntax
+(string:html-decode str)
+
+
+.description
+Same as HttpUtility.HtmlDecode
+

@@ -1,0 +1,11 @@
+.index break-if
+.usage loop clause:w
+
+.syntax
+(break-if test &optional val)
+
+.description
+If `test` is true, breaks out of the current `loop`, `while` or `foreach` loop 
+returning the value of `val`.
+
+

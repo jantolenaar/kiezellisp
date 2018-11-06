@@ -1,0 +1,14 @@
+.index drop
+.usage builtin-function
+.syntax
+(drop count seq)
+(drop count)
+
+.description
+Skips `count` elements of `seq` and returns the remainder, which may be empty.
+The second form returns a transducer.
+
+.examples
+(drop 3 '(a b c d e f))
+(drop 33 '(a b c d e f))
+

@@ -1,0 +1,8 @@
+.index $modules
+.usage special-readonly-variable
+.description
+Returns a list of the files loaded by `require`.
+
+.examples
+$modules
+

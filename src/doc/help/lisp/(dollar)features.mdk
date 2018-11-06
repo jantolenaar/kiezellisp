@@ -1,0 +1,8 @@
+.index $features
+.usage special-variable
+.description
+A list of keywords showing some properties of Kiezellisp running on this computer.
+
+.examples
+$features
+

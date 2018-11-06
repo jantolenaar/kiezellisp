@@ -1,0 +1,8 @@
+.index string:convert-to-external-line-endings
+.usage builtin-function
+
+.syntax
+(string:convert-to-external-line-endings str)
+
+.description
+On Windows, changes LF to CRLF.

@@ -1,0 +1,12 @@
+.index describe
+.usage builtin-function
+.syntax
+(describe obj &optional show-non-public-members)
+
+.description
+Shows some information about `obj`. Called by the REPL command `:d`.
+
+.examples
+(describe "abc")
+(describe "abc" true)
+

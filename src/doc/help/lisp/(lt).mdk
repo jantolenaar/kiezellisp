@@ -1,0 +1,9 @@
+.index <
+.usage builtin-function
+.syntax
+(< &rest args)
+
+.description
+Returns true if `args` is in strictly monotonic increasing order. See `compare`.
+
+

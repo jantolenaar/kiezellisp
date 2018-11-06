@@ -1,0 +1,13 @@
+.index not-every?
+.usage builtin-function
+.syntax
+(not-every? predicate seq)
+
+.description
+Returns true if at least one element of `seq` fails the function `predicate`.
+
+.examples
+(not-every? odd? '(1 2 3 4))
+(not-every? odd? '(2 4))
+(not-every? odd? '(1 3))
+

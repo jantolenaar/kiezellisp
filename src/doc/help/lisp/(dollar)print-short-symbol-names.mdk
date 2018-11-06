@@ -1,0 +1,8 @@
+.index $print-short-symbol-names
+.usage special-variable
+.description
+When true, symbol names are never printed with their package names.
+
+.examples
+$print-short-symbol-names
+

@@ -1,0 +1,11 @@
+.index while
+.usage macro
+.syntax
+(while test &body forms)
+
+.description
+Specialized form of `loop`.
+
+.examples
+(macroexpand-1 '(while test a b c))
+

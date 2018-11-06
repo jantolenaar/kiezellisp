@@ -1,0 +1,18 @@
+.index cond
+.usage macro
+.syntax
+(cond clause*)
+
+.description
+clause := '( test-expr form* ')'
+
+.examples
+(let a 137)
+(cond 
+    ((< a 100)
+         (print-line 'smaller-than-100))
+    ((< a 200)
+         (print-line 'smaller-than-200))
+    (true
+         (print-line 'large)))
+

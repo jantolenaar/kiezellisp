@@ -1,0 +1,9 @@
+.index copy-tree
+.usage builtin-function
+.syntax
+(copy-tree list)
+
+.description
+Returns a recursive copy of `list`.
+
+

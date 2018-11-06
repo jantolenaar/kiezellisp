@@ -1,0 +1,12 @@
+.index list-exported-symbols
+.usage builtin-function
+.syntax
+(list-exported-symbols package-name)
+
+.description
+Returns a list with the symbols exported by package `package-name`.
+
+.examples
+(list-exported-symbols "csv")
+(list-exported-symbols :int)
+

@@ -1,0 +1,13 @@
+.index defpackage
+.usage macro
+.syntax
+(defpackage name &rest options)
+
+.description
+Defines a package.
+
+.see-also
+*   package.k
+*   [Packages](packages.html)
+
+

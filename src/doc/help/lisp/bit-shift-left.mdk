@@ -1,0 +1,11 @@
+.index bit-shift-left
+.usage builtin-function
+.syntax
+(bit-shift-left number1 number2)
+
+.description
+Returns the bitwise left algebraic shift of `number1` by `number2` bits.
+
+.examples
+(bit-shift-left 3 1)
+

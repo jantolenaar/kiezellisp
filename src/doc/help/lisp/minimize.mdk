@@ -1,0 +1,11 @@
+.index minimize
+.usage builtin-function
+.syntax
+(minimize seq)
+
+.description
+Returns the smallest value in `seq`.
+
+.examples
+(minimize '(1 2 4 1 3))
+

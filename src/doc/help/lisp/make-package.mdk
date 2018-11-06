@@ -1,0 +1,11 @@
+.index make-package
+.usage builtin-function
+.syntax
+(make-package package-name)
+
+.description
+Returns an existing package or creates a new one. Called by the macro `defpackage`.
+
+.examples
+(make-package "csv")
+

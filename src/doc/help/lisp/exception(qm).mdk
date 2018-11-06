@@ -1,0 +1,9 @@
+.index exception?
+.usage builtin-function
+.syntax
+(exception? expr)
+
+.description
+Returns true if `expr` has type Exception.
+
+

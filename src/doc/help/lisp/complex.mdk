@@ -1,0 +1,12 @@
+.index complex
+.usage builtin-function
+.syntax
+(complex r i)
+
+.description
+Returns a complex number with real part `r` and imaginary part `i`.
+
+.examples
+(let a (complex 1 1))
+(* a a)
+

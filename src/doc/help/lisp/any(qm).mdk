@@ -1,0 +1,11 @@
+.index any?
+.usage builtin-function
+.syntax
+(any? predicate seq)
+
+.description
+Returns true if some element of `seq` satisfies the function `predicate`.
+
+.examples
+(any? odd? '(2 3 4))
+

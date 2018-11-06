@@ -1,0 +1,11 @@
+.index keep-indexed
+.usage builtin-function
+.syntax
+(keep-indexed func seq)
+(keep-indexed func)
+
+.description
+Is to __keep__ what __map-indexed__ is to __map__.
+The second form returns a transducer.
+
+

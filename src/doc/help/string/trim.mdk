@@ -1,0 +1,13 @@
+.index string:split
+.usage builtin-function
+
+.syntax
+(string:trim str)
+(string:trim str &rest trim-chars)
+(string:trim str trim-chars-str)
+
+.description
+The third form is a Kiezellisp extension. 
+
+.examples
+(.trim "efefabcdefefefef" "fe")

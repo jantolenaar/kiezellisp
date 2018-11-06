@@ -1,0 +1,9 @@
+.index set-macro-character
+.usage builtin-function
+.syntax
+(set-macro-character char handler &key (non-terminating? false) (readtable $readtable))
+
+.description
+TO DO
+
+

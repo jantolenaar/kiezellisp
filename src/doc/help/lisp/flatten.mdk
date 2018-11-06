@@ -1,0 +1,13 @@
+.index flatten
+.usage builtin-function
+.syntax
+(flatten seq &optional (depth int32:MAX-VALUE))
+
+.description
+Returns a lazy sequence with subsequences replaced by their elements up to a
+certain depth.
+
+.examples
+(flatten '(a (b c (d e) f)))
+(flatten '(a (b c (d e) f)) 1)
+

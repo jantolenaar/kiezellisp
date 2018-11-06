@@ -1,0 +1,11 @@
+.index def
+.usage special-form
+.syntax
+(def name value \[doc-string\])
+
+.description
+Defines a global variable `name` in the current package with initial value `value`.
+
+.examples
+(def a 123)
+

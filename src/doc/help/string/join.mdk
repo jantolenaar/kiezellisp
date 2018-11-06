@@ -1,0 +1,13 @@
+.index string:join
+.usage builtin-function
+
+.syntax
+(string:join separator values)
+(string:join separator value start-index count)
+(string:join separator seq)
+
+.description
+The third form is a Kiezellisp extension.
+
+.examples
+(.join ", " '(aap noot mies))

@@ -1,0 +1,97 @@
+.index import
+.usage builtin-function
+.syntax
+(import type-name &key package-name (package-name-prefix $package-name-prefix) extends-package-name type-parameters)
+
+.description
+The function `import` creates a package with symbols for all
+public methods, properties and fields in the class. Symbol names are derived
+from the .NET names by inserting an hyphen before every embedded upper case
+letter and by converting to lower case (sometimes to upper case -- see below).
+`import` also registers the package name as a type name with `deftype`.
+
+If `extends-package-name` is given, adds extension methods from the CLR type 
+`type-name` to the existing import package `extends-package-name`. Otherwise, 
+imports the public fields, properties, events, methods and constructors of the 
+CLR type `type-name` into the package `package-name`.
+
+`package-name` defaults to the concatenation of the string `package-name-prefix` 
+and the rightmost name part of `type-name`.
+
+.examples
+(import "System.String")
+(import "Kiezel.StringExtensions" :extends-package-name "string")
+(import "System.Net.WebRequestMethods+Ftp" :package-name :ftp-methods)
+(import "System.Collections.Generic.List" :type-parameters '(int))
+
+#### Static methods
+
+.examples
+(path:get-extension "readme.txt")
+
+#### Instance methods
+
+.examples
+(string:to-upper "hello")
+(.to-upper "hello")
+
+The expression `.to-upper` is discussed in more detail below.
+
+#### Instance properties
+
+.examples
+(string:length "hello")
+(.length "hello")
+
+#### Literal and static readonly fields
+
+The name is converted to upper case instead of lower case.
+
+.examples
+int32:MAX-VALUE
+
+#### Static properties
+
+.examples
+(encoding:ascii)
+(date-time:now)
+
+#### .members and ?members notation
+
+Instance properties may be accessed by using *getter* and *setter* functions but 
+this requires that the class is `import`ed. A convenient alternative is to use
+`accessor` expressions. This also applies to methods.
+
+.examples
+.length
+(.length "hello")
+(map .length '("ada" "ruby" "python"))
+
+`.length` is a reader macro that expands to `(. "length")`, which 
+evaluates to a generic function that retrieves the `length` property of an 
+object.
+
+It is also possible to chain property accessors:
+
+.examples
+(var a (new :city "leiden"))
+(.city a)
+.city.length
+(.city.length a)
+
+Nullable accessors handle `null` references by returning `null` instead of
+throwing a `NullReference` exception:
+
+.examples
+?length
+(?length "hello")
+(?length null)
+(var a (new :city "leiden"))
+?city.length
+(?city.length a)
+(?kity.length a)
+
+
+.see-also
+.api
+$package-name-prefix reference

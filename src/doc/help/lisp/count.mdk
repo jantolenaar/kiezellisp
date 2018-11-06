@@ -1,0 +1,12 @@
+.index count
+.usage builtin-function
+.syntax
+(count predicate seq)
+
+.description
+Counts the number of elements in `seq` that match the `predicate` function.
+
+.examples
+(count odd? '(1 2 3 4 5))
+(count #(odd? (.length %1)) '("aap" "noot" "mies"))
+

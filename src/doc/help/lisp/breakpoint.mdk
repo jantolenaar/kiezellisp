@@ -1,0 +1,10 @@
+.index breakpoint
+.usage builtin-function
+.syntax
+(breakpoint)
+
+.description
+Inserts a breakpoint in the code. Use the command `:continue` to continue
+from the breakpoint. Use `:abort` to stop the program.
+
+

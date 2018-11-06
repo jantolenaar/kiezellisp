@@ -1,0 +1,13 @@
+.index get-description
+.usage builtin-function
+.syntax
+(get-description obj)
+(get-description obj show-non-public)
+
+.description
+Returns a prototype object describing the given object `obj`. Used by the function
+`describe`.
+
+.examples
+(get-description 'when)
+

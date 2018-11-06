@@ -1,0 +1,12 @@
+.index length
+.usage builtin-function
+.syntax
+(length seq)
+
+.description
+Returns the length of a sequence or string.
+
+.examples
+(length "abc")
+(length (range 10))
+

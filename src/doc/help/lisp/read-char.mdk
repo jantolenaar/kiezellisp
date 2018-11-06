@@ -1,0 +1,6 @@
+.index read-char
+.usage builtin-function
+.syntax
+(read-char &optional (stream $stdin) (eof-error? true) (eof-value null))
+
+Reads a character from a TextReader stream.

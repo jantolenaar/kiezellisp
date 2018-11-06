@@ -1,0 +1,11 @@
+.index rest
+.usage builtin-function
+.syntax
+(rest list)
+
+.description
+Returns the remainder of `list` without the `first` element.
+
+.examples
+(rest '(a b c))
+

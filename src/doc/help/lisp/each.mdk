@@ -1,0 +1,11 @@
+.index each
+.usage builtin-function
+.syntax
+(each action seq)
+
+.description
+Applies the function `action` to each element of `seq`.
+
+.examples
+(each print-line "abc")
+

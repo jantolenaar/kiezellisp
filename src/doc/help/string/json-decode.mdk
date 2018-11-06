@@ -1,0 +1,13 @@
+.index string:json-decode
+.usage builtin-function
+
+.syntax
+(string:json-decode str)
+
+.description
+Decodes a JSON string.
+
+.examples
+(string:json-encode (new :name "mies"))
+(.json-decode it)
+

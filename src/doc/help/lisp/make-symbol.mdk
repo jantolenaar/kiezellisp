@@ -1,0 +1,13 @@
+.index make-symbol
+.usage builtin-function
+.syntax
+(make-symbol &rest args)
+
+.description
+Returns an existing symbol or creates a new one. For use by macros.
+
+.examples
+(let a 'test1)
+(let b (make-symbol "test" 1))
+(eq a b)
+

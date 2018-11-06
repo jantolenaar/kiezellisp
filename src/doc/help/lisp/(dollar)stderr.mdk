@@ -1,0 +1,6 @@
+.index $stderr
+.usage special-variable
+.description
+Error output stream. Default is `true` which means to use whatever `$stdout` uses.
+
+

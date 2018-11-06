@@ -1,0 +1,11 @@
+.index get-version
+.usage builtin-function
+.syntax
+(get-version)
+
+.description
+Returns Kiezellisp's version string.
+
+.examples
+(get-version)
+

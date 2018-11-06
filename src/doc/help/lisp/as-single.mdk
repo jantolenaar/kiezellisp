@@ -1,0 +1,9 @@
+.index as-single
+.usage builtin-function
+.syntax
+(as-single a)
+
+.description
+Converts a number to Single (float).
+
+

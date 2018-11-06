@@ -1,0 +1,13 @@
+.index natural-compare
+.usage builtin-function
+.syntax
+(natural-compare x y &key ignore-white-space compact-whitespace punctuation-is-whitespace culture)
+
+.description
+Compares the strings representations of objects. Defaults are: false, true, true,
+InvariantCulture.
+
+.examples
+(compare "abc11" "abc2")
+(natural-compare "abc11" "abc2")
+

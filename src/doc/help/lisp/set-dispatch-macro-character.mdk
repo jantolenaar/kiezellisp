@@ -1,0 +1,9 @@
+.index set-dispatch-macro-character
+.usage builtin-function
+.syntax
+(set-dispatch-macro-character dispatch-char sub-char handler &key (readtable $readtable))
+
+.description
+TO DO
+
+

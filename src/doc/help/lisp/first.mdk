@@ -1,0 +1,12 @@
+.index first
+.usage builtin-function
+.syntax
+(first seq)
+(first predicate seq)
+
+.description
+Returns the first (matching) element in a `seq`; or `null` if there is no first element.
+
+.examples
+(first '(1 2 3 4 5 6))
+(first even? '(1 2 3 4 5 6))

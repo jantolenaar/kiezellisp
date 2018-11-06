@@ -1,0 +1,10 @@
+.index exit
+.usage builtin-function
+.syntax
+(exit)
+(exit code)
+
+.description
+Terminates the program with exit-code `0` or `code`.
+
+

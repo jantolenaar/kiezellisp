@@ -1,0 +1,9 @@
+.index =
+.usage builtin-function
+.syntax
+(= &rest args)
+
+.description
+Returns true if all arguments are `equal` to each other.
+
+

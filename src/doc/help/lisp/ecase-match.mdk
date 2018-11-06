@@ -1,0 +1,10 @@
+.index ecase-match
+.usage macro
+.syntax
+(ecase-match key-form clause*)
+
+.see-also
+.api
+if-match case-match when-match about:pattern-matching
+
+

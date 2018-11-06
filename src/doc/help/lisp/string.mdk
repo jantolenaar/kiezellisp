@@ -1,0 +1,11 @@
+.index string
+.usage builtin-function
+.syntax
+(string &rest values)
+
+.description
+Returns the concatenation of the pure string representations of each `value`.
+
+.examples
+(string "aap" '(1 2 3) 'noot)
+

@@ -1,0 +1,17 @@
+.index set-debug-level
+.usage builtin-function
+.syntax
+(set-debug-level number)
+
+.description
+Debug level 0 provides no extra diagnostic information after an exception. 
+Debug level 1 provides a lisp function call stack.
+Debug level 2 provides lexical and dynamic variable stack.
+`$debugging` is set to false for levels 0/1 and true for level 2.
+
+.see-also
+.api
+$debugging
+
+
+

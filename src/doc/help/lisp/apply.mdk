@@ -1,0 +1,17 @@
+.index apply
+.usage builtin-function
+.syntax
+(apply func args)
+(apply func)
+
+.description
+The first form calls `func` with an argument list created by the function `list*`.
+The second form returns a function with one argument of type sequence that applies the 
+argument to `func`.
+
+.examples
+(apply + 1 2 '(3 4))
+(apply + '(1 2 3 4))
+(let f (apply +))
+(f '(1 2 3 4))
+

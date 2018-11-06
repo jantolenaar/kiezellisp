@@ -1,0 +1,11 @@
+.index new
+.usage macro
+.syntax
+(new &rest args)
+
+.description
+Equivalent to `prototype:new`.
+
+.see-also
+.api
+prototype:new

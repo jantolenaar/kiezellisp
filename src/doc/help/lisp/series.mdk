@@ -1,0 +1,18 @@
+.index series
+.usage builtin-function
+.syntax
+(series start end step)
+(series start end)
+(series end)
+(series)
+
+.description
+Returns a lazy list of integer numbers. By default a series starts at 1. 
+The upper bound is inclusive and defaults to `int32:MAX-VALUE`.
+
+.examples
+(series 3 10 2)
+(series 3 10)
+(series 10)
+(series 10 3 -1)
+

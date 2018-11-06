@@ -1,0 +1,12 @@
+.index min
+.usage builtin-function
+.syntax
+(min &rest values)
+
+.description
+Returns the smallest value.
+
+.examples
+(min 1 2 4 1 3)
+(reduce min '(1 2 4 1 3))
+

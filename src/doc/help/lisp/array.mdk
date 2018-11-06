@@ -1,0 +1,12 @@
+.index array
+.usage builtin-function
+.syntax
+(array &rest items)
+
+.description
+Creates a fixed length array of type `object[]` with the given contents.
+
+.examples
+(array 1 2 3)
+:d
+

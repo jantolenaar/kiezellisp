@@ -1,0 +1,12 @@
+.index string:json-encode
+.usage builtin-function
+
+.syntax
+(string:json-encode value)
+
+.description
+Encodes a value as a JSON string.
+
+.examples
+(print-line (string:json-encode (new :name "mies")))
+

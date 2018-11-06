@@ -1,0 +1,12 @@
+.index interpose
+.usage builtin-function
+.syntax
+(interpose separator seq)
+(interpose separator)
+
+.description
+Returns a new list with `separator` inserted between the items of `seq`.
+The second form returns a transducer.
+
+.examples
+(interpose '- '(a b c d))

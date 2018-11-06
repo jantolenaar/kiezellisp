@@ -1,0 +1,19 @@
+.index print
+.usage builtin-function
+.syntax
+(print &rest items)
+(print text-writer &rest items)
+
+.description
+Writes each item unescaped to standard output or the given `TextWriter`.
+When printing a list or vector, the elements are separated by spaces.
+
+.examples
+(print "Hello" "," "World")
+(print $stdout '(1 2 3))
+(write "Hello" :escape false)
+(write "Hello" :escape true)
+
+.see-also
+.api
+print-line write write-line say

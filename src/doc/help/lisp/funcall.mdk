@@ -1,0 +1,12 @@
+.index funcall
+.usage builtin-function
+.syntax
+(funcall func &rest args)
+
+.description
+Returns the value of calling `func` with arguments `args`.
+
+.examples
+(+ 3 4)
+(funcall + 3 4)
+

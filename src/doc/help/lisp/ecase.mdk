@@ -1,0 +1,9 @@
+.index ecase
+.usage macro
+.syntax
+(ecase key-form clause*)
+
+.description
+Like `case`, but throws an exception if no case matches.
+
+

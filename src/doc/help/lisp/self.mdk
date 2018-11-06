@@ -1,0 +1,7 @@
+.index self
+.usage readonly-variable
+.description
+A lexical read-only variable bound to the lambda that contains it. Enables 
+recursion of anonymous functions.
+
+

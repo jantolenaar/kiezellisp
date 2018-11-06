@@ -1,0 +1,17 @@
+.index boolean
+.usage builtin-function
+.syntax
+(boolean a)
+
+.description
+Returns `true` if `a` is true, otherwise `false`.
+
+.examples
+(boolean 0)
+(boolean 1)
+(boolean null)
+(boolean "")
+(boolean "aaaa")
+(boolean (vector))
+(boolean (vector 1 2 3))
+

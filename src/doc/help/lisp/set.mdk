@@ -1,0 +1,18 @@
+.index set
+.usage builtin-function
+.syntax
+(set sym value)
+
+.description
+Assigns `value` to the global or dynamic variable named by the value of `sym`. 
+Does not work for lexical variables.
+
+.examples
+(undef 'a137)
+(setq x 'a137)
+:throws
+(set x 1)
+(def a137 2)
+(set x 1)
+a137
+

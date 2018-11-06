@@ -1,0 +1,9 @@
+.index math:conjugate
+.usage builtin-function
+.syntax
+(math:conjugate number)
+
+Returns the conjugate of a complex number.
+
+.examples
+(math:conjugate #c(2 3))

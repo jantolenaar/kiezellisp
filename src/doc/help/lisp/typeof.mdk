@@ -1,0 +1,12 @@
+.index typeof
+.usage builtin-function
+.syntax
+(typeof expr)
+
+.description
+Returns the runtime type of `expr`.
+
+.examples
+(typeof 123)
+(typeof "hello")
+

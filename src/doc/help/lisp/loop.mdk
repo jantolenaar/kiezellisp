@@ -1,0 +1,129 @@
+.index loop
+.usage macro
+.syntax
+(loop &body forms)
+
+.description
+Creates a loop. The `loop` macro is based on the Common Lisp `iterate` macro 
+by Jonathan Amsterdam.
+
+#### Elements of a loop
+
+A loop consists of top-level clauses that drive the loop, such as `for` and 
+`generate`, clauses that may appear at deeper levels than the top level, such 
+as `break`, and ordinary Kiezellisp forms.
+
+Loop driver variables are declared 'outside' the loop and should not be bound
+directly to lambda definitions within the loop.
+
+The value of a `loop` expression is (in this order):
+
++   the `break` value
++   the value of the unnamed accumulator
++   the value of the `finally` block
++   `null`
+
+#### Neverending loop
+
+.code
+(loop
+     (print-line "Hello, world"))
+
+.examples
+(macroexpand '(loop (print-line "Hello, world")))
+
+#### Loop with a counter
+
+.examples
+(loop (with i initially 2 then (inc i)) (finish-if (= i 5)) (print-line i))
+
+#### Loop with a range
+
+.examples
+(loop (for i in (range 2 5)) (print-line i))
+(loop (for i from 2 below 5) (print-line i))
+
+#### Loop over a list
+
+.examples
+(loop (for i in-list '(a b c d e) by cddr) (print-line i))
+(loop (for i on-list '(a b c d e) by cddr) (print-line i))
+
+#### Generate and next clauses
+
+.examples
+(loop (for x in '(a b null c))
+      (generate i from 1)
+      (if x (collecting (list x (next i)))))
+
+#### Loop with an explicit return value
+
+.examples
+(loop (for x in '(a b c d))
+    (break-if (= x 'b) 123))
+
+#### Loop with an unnamed accumulated value
+
+.examples
+(loop (for x in (series 1 50))
+    (summing x))
+
+#### Loop with a named accumulated value
+
+.examples
+(loop (for x in (series 1 50))
+    (summing x into the-sum)
+    (multiplying x into the-product)
+    (finally
+        (list the-sum the-product)))
+
+#### Toplevel loop clauses
+
+.syntax*
+(initially form*)
+(finally form*)
+(with sym :initially expr1 :then expr2)
+(for expr :times)
+(for sym :from expr1 :to expr2 :by expr3)
+(for sym :from expr1 :to expr2)
+(for sym :from expr1 :downto expr2)
+(for sym :from expr1 :above expr2)
+(for sym :from expr1 :below expr2)
+(for sym :from expr1)
+(for sym :in seq)
+(for sym :in-list lst :by sym2)
+(for sym :in-list lst)
+(for sym :on-list lst :by sym2)
+(for sym :on-list lst)
+(generate expr :times)
+(generate sym :from expr1 :to expr2 :by expr3)
+(generate sym :from expr1 :to expr2)
+(generate sym :from expr1 :downto expr2)
+(generate sym :from expr1 :above expr2)
+(generate sym :from expr1 :below expr2)
+(generate sym :from expr1)
+(generate sym :in seq)
+(generate sym :in-list lst :by sym2)
+(generate sym :in-list lst)
+(generate sym :on-list lst :by sym2)
+(generate sym :on-list lst)
+
+
+#### Other loop clauses
+
+.syntax*
+(next sym)
+(collecting expr :into sym)
+(collecting expr)
+(counting expr :into sym)
+(counting expr)
+(summing expr :into sym)
+(summing expr)
+(multiplying expr :into sym)
+(multiplying expr)
+(maximizing expr :into sym)
+(maximizing expr)
+(minimizing expr :into sym)
+(minimizing expr)
+
+

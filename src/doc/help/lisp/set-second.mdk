@@ -1,0 +1,9 @@
+.index set-second
+.usage builtin-function
+.syntax
+(set-second seq item)
+
+.description
+Sets the second element of `seq` to `item`.
+
+

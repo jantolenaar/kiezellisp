@@ -1,0 +1,12 @@
+.index require
+.usage builtin-function
+.syntax
+(require file &key (verbose $load-verbose) (print $load-print))
+
+.description
+Does nothing if `file` is already on the list `$modules`. Otherwise adds `file`
+to `$modules` and calls the function `load`.
+
+.examples
+(require :ftp :print true)
+

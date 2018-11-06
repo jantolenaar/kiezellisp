@@ -1,0 +1,9 @@
+.index as-complex
+.usage builtin-function
+.syntax
+(as-complex a)
+
+.description
+Converts a number to Complex.
+
+

@@ -1,0 +1,9 @@
+.index print-warning
+.usage builtin-function
+.syntax
+(print-warning &rest args)
+
+.description
+Prints a warning message to `$stdlog`. Warning messages are prefixed by `;; warning: `.
+
+

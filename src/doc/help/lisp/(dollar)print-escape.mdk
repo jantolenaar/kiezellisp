@@ -1,0 +1,9 @@
+.index $print-escape
+.usage special-variable
+.description
+The default value of the parameter `escape` of the function `write`. When true, 
+the function `write` prints strings and characters as code instead of data.
+
+.examples
+$print-escape
+

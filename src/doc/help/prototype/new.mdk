@@ -1,0 +1,22 @@
+.index prototype:new
+.usage builtin-constructor
+.syntax
+(prototype:new &rest args)
+
+.description
+Creates a new prototype object.
+When the number of arguments is odd, the first argument must be either a type
+specifier or a list of type specifiers. A type specifier is either a prototype
+object or the name of a type created by `deftype`, `defclass`, `defstruct` or
+`import`. The other arguments are name/value pairs used to initialize the new
+object. Names can be given as strings, symbols and keywords.
+
+.examples
+(let a (new :color "black"
+            :model "0"))
+(new a
+     :model "12")
+
+.see-also
+.api
+new

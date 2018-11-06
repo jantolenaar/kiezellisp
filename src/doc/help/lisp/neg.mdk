@@ -1,0 +1,14 @@
+.index neg
+.usage builtin-function
+.syntax
+(neg number)
+
+Returns the negative of a number.
+
+.examples
+(neg 5)
+(neg #c(2 3))
+
+
+
+

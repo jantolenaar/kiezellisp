@@ -1,0 +1,9 @@
+.index as-double
+.usage builtin-function
+.syntax
+(as-double a)
+
+.description
+Converts a number to Double.
+
+

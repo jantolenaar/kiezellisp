@@ -1,0 +1,12 @@
+.index define-symbol-macro
+.usage special-form
+.syntax
+(define-symbol-macro name form)
+
+Defines a symbol macro.
+
+.see-also 
+.api
+defmacro let-symbol-macro setq
+
+

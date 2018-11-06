@@ -1,0 +1,6 @@
+.index $command-line-script-name
+.usage special-readonly-variable
+.description
+The name of the kiezellisp script supplied on the command line.
+
+

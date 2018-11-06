@@ -1,0 +1,15 @@
+.index get-designated-string
+.usage builtin-function
+.syntax
+(get-designated-string target)
+
+.description
+Returns the string representation of a keyword name, a symbol name or a value type.
+
+.examples
+(get-designated-string 'aap)
+(get-designated-string :aap)
+(get-designated-string "aap")
+:throws
+(get-designated-string 123)
+

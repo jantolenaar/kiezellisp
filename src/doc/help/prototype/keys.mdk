@@ -1,0 +1,14 @@
+.index prototype:keys
+.usage builtin-function
+.syntax
+(prototype:keys object)
+
+.description
+Returns a list of strings.
+
+.examples
+(let z (new "name" "Piet"
+            :city "Amsterdam"))
+(prototype:keys z)
+
+

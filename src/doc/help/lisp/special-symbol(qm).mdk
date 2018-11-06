@@ -1,0 +1,12 @@
+.index special-symbol?
+.usage builtin-function
+.syntax
+(special-symbol? expr)
+
+.description
+Returns true if `expr` is a symbol whose name starts with a $ character.
+
+.examples
+(special-symbol? 'stdout)
+(special-symbol? '$stdout)
+

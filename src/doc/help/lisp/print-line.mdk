@@ -1,0 +1,17 @@
+.index print-line
+.usage builtin-function
+.syntax
+(print-line &rest items)
+(print-line text-writer &rest items)
+
+.description
+As `print` but followed by a newline.
+
+.examples
+(print-line "Hello" ", " "World")
+(write-line "Hello" :escape false)
+(write-line "Hello" :escape true)
+
+.see-also
+.api
+print write write-line

@@ -1,0 +1,10 @@
+.index symbol-macro?
+.usage builtin-function
+.syntax
+(symbol-macro? sym)
+
+.description
+Returns true if the symbol `sym` names a globally defined symbol macro.
+
+
+

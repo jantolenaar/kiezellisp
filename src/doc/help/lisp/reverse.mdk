@@ -1,0 +1,11 @@
+.index reverse
+.usage builtin-function
+.syntax
+(reverse seq)
+
+.description
+Returns a list with the elements of `seq` in reverse order.
+
+.examples
+(reverse (series 1 10))
+

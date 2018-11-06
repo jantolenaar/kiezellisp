@@ -1,0 +1,12 @@
+.index about:null
+.description
+`null` is the null reference and also the empty list. As a conditional
+expression `null` is `false`.
+
+.see-also
+.api
+null null? 
+
+
+
+

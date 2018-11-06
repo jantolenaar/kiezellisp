@@ -1,0 +1,24 @@
+.index prog
+.usage special-form
+.syntax
+(prog (binding*) form*)
+
+.description
+`prog` allows tail recursion with `reprog`. The `binding` defines
+the parameters and initial arguments of the recursion. The `reprog` form
+should be in a tail position. If `reprog` is not used, `prog` is similar to
+Common Lisp's `prog`.
+
+`leave prog` returns from the directly enclosing `prog`.
+
+.examples
+(defun fac (n)
+    (prog ((n n) (a 1))
+        (if (plus? n)
+              (reprog (dec n) (* a n))
+            a)))
+(fac 30)
+
+.see-also
+.api
+reprog

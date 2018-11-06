@@ -1,0 +1,13 @@
+.index sequence?
+.usage builtin-function
+.syntax
+(sequence? expr)
+
+.description
+Returns true if `expr` is a sequence, i.e. `null` or IEnumerable.
+
+.examples
+(sequence? null)
+(sequence? "abc")
+(sequence? '(a b c))
+

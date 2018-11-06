@@ -1,0 +1,12 @@
+.index try-and-catch
+.usage macro
+.syntax
+(try-and-catch &body forms)
+
+.description
+Executes `forms`. Returns an exception object if an exception is thrown.
+
+.examples
+(try-and-catch
+    (+ 3 hello))
+

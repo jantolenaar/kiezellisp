@@ -1,0 +1,13 @@
+.index assert
+.usage macro
+.syntax
+(assert expr)
+
+.description
+Throws an AssertFailedException if `expr` evaluates to false. Generates no code 
+when `$debugging` is false.
+
+.examples
+:throws
+(assert (= 1 2))
+

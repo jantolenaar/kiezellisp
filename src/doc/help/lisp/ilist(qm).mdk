@@ -1,0 +1,11 @@
+.index ilist?
+.usage builtin-function
+.syntax
+(ilist? expr)
+
+.description
+Returns true if `expr` implements the `IList` interface.
+
+
+
+

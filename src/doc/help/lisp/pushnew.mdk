@@ -1,0 +1,14 @@
+.index pushnew
+.usage macro
+.syntax
+(pushnew item place)
+
+.description
+Prepends `item` to the list `place` if `item` is not in in the list and updates 
+the `setf`able `place` to the new list.
+
+.examples
+(let a '(1 2 3))
+(pushnew 4 a)
+(pushnew 3 a)
+

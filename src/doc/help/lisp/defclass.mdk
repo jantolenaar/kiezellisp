@@ -1,0 +1,12 @@
+.index defclass
+.usage macro
+.syntax
+(defclass name \[doc-string\] prototype-object)
+
+Creates predicate, constructor and accessor functions for the given prototype
+object.
+
+.examples
+(macroexpand '(defclass person #s(name "" address "" city "")))
+
+

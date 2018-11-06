@@ -1,0 +1,10 @@
+.index resume
+.usage builtin-function
+.syntax
+(resume ctx)
+
+.description
+Called by the thread that created the generator thread `ctx`. Returns the value 
+`yield`ed by the generator thread.
+
+

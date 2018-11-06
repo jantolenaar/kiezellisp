@@ -1,0 +1,12 @@
+.index when-match
+.usage macro
+.syntax
+(when-match pattern expr &body forms)
+
+.description
+If `expr` matches `pattern`, returns the result of `forms`.
+
+.see-also
+.api
+case-match ecase-match if-match about:pattern-matching
+

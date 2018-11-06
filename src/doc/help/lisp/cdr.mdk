@@ -1,0 +1,11 @@
+.index cdr
+.usage builtin-function
+.syntax
+(cdr list)
+
+.description
+Returns the list without the first element.
+
+.examples
+(cdr '((1 2) 3 4))
+

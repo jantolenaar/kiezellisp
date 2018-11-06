@@ -1,0 +1,12 @@
+.index string:prev
+.usage builtin-function
+
+.syntax
+(string:prev str)
+
+.text
+Returns the string that preceeds `str`.
+
+.examples
+(.prev "abc")
+(.prev "ab0")

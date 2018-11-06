@@ -1,0 +1,16 @@
+.index intersect
+.usage builtin-function
+.syntax
+(intersect seq1 seq2)
+(intersect test seq1 seq2)
+
+.description
+Returns the intersection of two sequences.
+The default equality test is `=`.
+
+.examples
+(intersect '(1 2 3 4) '(2 4 6))
+
+.see-also
+.api
+distinct index-of union except dedupe

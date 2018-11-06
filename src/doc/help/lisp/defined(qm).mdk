@@ -1,0 +1,12 @@
+.index defined?
+.usage builtin-function
+.syntax
+(defined? name)
+
+.description
+Returns true if `name` is a defined global variable.
+
+.examples
+(defined? 'blabla)
+(defined? '$package)
+

@@ -1,0 +1,22 @@
+.index acons
+.usage builtin-function
+.syntax
+(acons key value alist)
+
+.description
+Adds a key/value to an association list.
+
+.examples
+(def seq (acons 'a 1 null))
+seq
+(setf seq (acons 'b 2 seq))
+(assoc 'a seq)
+(assoc 'b seq)
+(assoc 'c seq)
+
+.see-also
+.api
+assoc assoc-if pairlis
+
+
+

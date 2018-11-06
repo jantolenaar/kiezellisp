@@ -1,0 +1,15 @@
+.index setf
+.usage macro
+.syntax
+(setf place value)
+
+.description
+Assigns `value` to `place`. `place` may be transformed by (symbol) macro
+expansion. See the file core/setf.
+
+.examples
+(var a '(1 2 3))
+(setf (second a) 'two)
+a
+(macroexpand '(setf (second a) 'two))
+

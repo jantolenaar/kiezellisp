@@ -1,0 +1,14 @@
+.index csv:read-string-to-grid
+.usage builtin-function
+.syntax
+(csv:read-string-to-grid str &optional options)
+
+.description
+Returns a vector of vectors by parsing the CSV formatted 
+content `str` using the given `options`.
+
+.api
+csv:$options csv:write-grid-to-string
+
+
+

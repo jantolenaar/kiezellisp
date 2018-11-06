@@ -1,0 +1,9 @@
+.index sleep
+.usage builtin-function
+.syntax
+(sleep millisec)
+
+.description
+Lets the current thread sleep for `millisec` milliseconds. -1 means forever.
+
+

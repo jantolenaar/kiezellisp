@@ -1,0 +1,13 @@
+.index let-symbol-macro
+.usage special-form
+.syntax
+(let-symbol-macro name form)
+
+Defines a local symbol macro. `name` becomes a lexical variable visible
+at compile-time and invisible (unusable) at run-time.
+
+.see-also 
+.api
+defmacro define-symbol-macro
+
+

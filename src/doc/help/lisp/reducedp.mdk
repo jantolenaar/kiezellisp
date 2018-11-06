@@ -1,0 +1,15 @@
+.index reduced?
+.usage builtin-function
+.syntax
+(reduced? obj)
+
+.description
+Returns `true` if `obj` was created by `reduced`.
+
+.see-also
+.api
+reduced unreduced
+
+
+
+

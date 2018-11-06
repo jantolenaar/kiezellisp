@@ -1,0 +1,8 @@
+.index completing
+.usage builtin-function
+.syntax
+(completing func)
+
+.description
+TO DO
+

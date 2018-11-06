@@ -1,0 +1,8 @@
+.index $load-path
+.usage special-readonly-variable
+.description
+Returns a list of folder names. See `set-load-path`.
+
+.examples
+$load-path
+

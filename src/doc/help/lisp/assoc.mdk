@@ -1,0 +1,16 @@
+.index assoc
+.usage builtin-function
+.syntax
+(assoc item alist &key key test)
+
+.description
+Returns the first `Cons` item in association list `alist` with a `car` matching 
+`item`.
+
+.examples
+(assoc 'a '((b c) (a d) (e f)))
+(assoc 3 '(("bbb" c) ("a" d) ("e" f)) :key length)
+
+.see-also
+.api
+assoc-if acons pairlis

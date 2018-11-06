@@ -1,0 +1,19 @@
+.index merge-by
+.usage builtin-function
+.syntax
+(merge-by key seq1 seq2)
+(merge-by key comparer seq1 seq2)
+
+.description
+Merges two ordered sequences into one. Used by the function `sort-by`.
+The function `key` produces the values to compare.
+The default comparer is `compare`.
+
+.examples
+(merge-by length '("a" "aaa" "aaaaa") '("bb" "bb" "bbbb" "bbbbbb"))
+
+.see-also
+.api 
+sort-by sort merge
+
+

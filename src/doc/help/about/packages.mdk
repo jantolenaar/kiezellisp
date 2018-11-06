@@ -1,0 +1,25 @@
+.index about:packages
+
+.description
+Kiezellisp packages are almost like Common Lisp packages. The `import` of a .NET
+type creates a package that stores the members of the type.
+
+### Package Alias
+
+The scope of a package alias is the current package.
+
+    (in-package "aaaaaaaaaa")
+    (use-package-alias "cccccc" "c")
+        cccccc:name -> ok
+        c:name      -> ok
+    (in-package "bbbbbbbbbb")
+        cccccc:name -> ok
+        c:name      -> error
+
+### See also
+
+.api
+defpackage use-package unuse-package list-all-packages list-exported-symbols 
+get-package in-package $package delete-package make-package find-package
+export-symbol import-symbol shadow-symbol use-package-alias 
+

@@ -1,0 +1,11 @@
+.index psetf
+.usage macro
+.syntax
+(psetf sym1 value1 sym2 value2...)
+
+.description
+Performs all assignments after evaluating all values.
+
+.examples
+(macroexpand '(psetf v1 (inc v2) v2 (inc v1)))
+

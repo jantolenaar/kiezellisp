@@ -1,0 +1,14 @@
+.index about:booleans
+.description
+The expressions `true` and `false` are not symbols but values.
+In conditional tests, everything that is not `null` or an empty
+sequence (this includes an empty string) counts as `true`.
+
+.examples
+true
+false
+
+.see-also
+.api
+boolean
+

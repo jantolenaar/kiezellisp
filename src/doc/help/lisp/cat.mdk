@@ -1,0 +1,12 @@
+.index cat
+.usage variable
+.syntax
+cat
+
+.description
+Returns a state-less transducer that concatenates its inputs.
+
+.see-also
+.api
+map mapcat
+

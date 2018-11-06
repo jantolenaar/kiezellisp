@@ -1,0 +1,9 @@
+.index $load-print
+.usage special-variable
+.description
+When true, the functions `load` and `require` print the value of every top-level
+expression.
+
+.examples
+$load-print
+

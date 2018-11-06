@@ -1,0 +1,12 @@
+.index mapv
+.usage function
+.syntax
+(mapv func &rest seqs)
+
+.description
+As `map` but returns a vector instead of a lazy list. Equivalent to 
+`(as-vector (apply map func seqs))`.
+
+.examples
+(mapv + '(1 2 3) '(3 4 5))
+

@@ -1,0 +1,11 @@
+.index find-subsequence-position
+.usage builtin-function
+.syntax
+(find-subsequence-position subseq seq &key (test =) (key identity))
+
+.description
+Returns the first occurrence of `subseq` within `seq`.
+
+.examples
+(find-subsequence-position "abc" "pqrabcxyz")
+

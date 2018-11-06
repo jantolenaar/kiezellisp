@@ -1,0 +1,8 @@
+.index string:parse-date
+.usage inbuilt-function
+.syntax
+(string:parse-date str &key format culture)
+
+.see-also
+.api
+string:try-parse-date

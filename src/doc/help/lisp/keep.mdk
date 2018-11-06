@@ -1,0 +1,14 @@
+.index keep
+.usage builtin-function
+.syntax
+(keep func seq)
+(keep func)
+
+.description
+Returns a lazy list containing the non-null values of `func` applied to elements
+of `seq`.
+The second form returns a transducer.
+
+.examples
+(keep #(if (string? %1) (length %1)) '("aap" "noot" 3 4 5 "mies"))
+

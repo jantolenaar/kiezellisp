@@ -1,0 +1,13 @@
+.index parallel-list
+.usage macro
+.syntax
+(parallel-list &rest forms)
+
+.description
+Returns a list like the function `list`. Uses the Task Parallel Library. The example
+is not very instructive.
+
+.examples
+(macroexpand '(parallel-list (inc 1) (inc 2) (inc 3)))
+(parallel-list (inc 1) (inc 2) (inc 3))
+ 

@@ -1,0 +1,12 @@
+.index $package
+.usage special-variable
+.description
+Returns the current package.
+
+.examples
+$package
+
+.see-also
+.api
+in-package
+

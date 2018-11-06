@@ -1,0 +1,15 @@
+.index decf
+.usage macro
+.syntax
+(decf place &optional (delta 1))
+
+.description
+Decrements the variable or any `setf`-able expression by `delta`.
+
+.examples
+(let a 3)
+(decf a)
+a
+(def b '(1 1 3))
+(decf (second b))
+b

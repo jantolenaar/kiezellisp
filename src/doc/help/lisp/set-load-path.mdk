@@ -1,0 +1,12 @@
+.index set-load-path
+.usage builtin-function
+.syntax
+(set-load-path &rest folders)
+
+.description
+Sets the variable `$load-path` to `folders`. 
+
+.see-also
+kiezellisp-init.k
+
+

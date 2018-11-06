@@ -1,0 +1,14 @@
+.index set-symbol-value
+.usage builtin-function
+.syntax
+(set-symbol-value sym value)
+
+.description
+Assigns `value` to the global variable `sym`.
+
+.examples
+(def z 0)
+(set-symbol-value 'z 1)
+(setq z 2)
+(macroexpand '(setf (symbol-value 'z) 1))
+

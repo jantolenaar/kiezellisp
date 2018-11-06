@@ -1,0 +1,13 @@
+.index about:sequences
+.description
+
+.examples
+'(a b c)
+:d
+(list 'a 'b 'c)
+:d
+[ a b c ]
+:d
+(vector 'a 'b 'c)
+
+

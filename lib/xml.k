@@ -28,8 +28,8 @@
     (let attributes (.attributes target))
     (let elements (.elements target))
     (loop
+        (break-if (not args))
         (let item (pop args))
-        (break-if (not item))
         (cond
             ((keyword? item)
                 (let value (pop args))

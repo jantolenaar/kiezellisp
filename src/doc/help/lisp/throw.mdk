@@ -1,0 +1,12 @@
+.index throw
+.usage special-form
+.syntax
+(throw exception)
+
+.description
+Throws an exception.
+
+.examples
+:throws
+(throw (lisp-exception:new "Bad things happened."))
+

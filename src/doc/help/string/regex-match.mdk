@@ -1,0 +1,12 @@
+.index string:regex-match
+.usage builtin-function
+
+.syntax
+(string:regex-match str pattern)
+
+.description
+Compares `str` to the string or Regex `pattern`. Returns null if no match.
+Returns a list of matches otherwise.
+
+.examples
+(.regex-match "hello, world" "(.)rl")

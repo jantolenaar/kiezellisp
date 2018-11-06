@@ -1,0 +1,15 @@
+.index mismatch
+.usage builtin-function
+.syntax
+(mismatch seq1 seq2)
+(mismatch test seq1 seq2)
+
+.description
+Returns the position of the first mismatch of two sequences. Returns `null` if
+the sequences match.
+The default equality test is `=`.
+
+.examples
+(mismatch '(1 2 3 4) '(1 2 3 4))
+(mismatch '(1 2 3 4) '(1 2 x 4))
+

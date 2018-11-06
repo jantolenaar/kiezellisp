@@ -1,0 +1,13 @@
+.index interleave
+.usage builtin-function
+.syntax
+(interleave &rest seqs)
+
+.description
+Returns a new list, taking the first items of each `seqs`, then the second, and so on.
+Stops when the shortest sequence is exhausted.
+
+.examples
+(interleave '(1 2 3) '(4 5 6 7))
+(interleave '(1 2 3) (repeat '-))
+

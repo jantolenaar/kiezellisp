@@ -1,0 +1,15 @@
+.index incf
+.usage macro
+.syntax
+(incf place &optional (delta 1))
+
+.description
+Increments the value of the `setf`able `place` by `delta`.
+
+.examples
+(let x 3)
+(incf x)
+x
+(let a '(1 2 3))
+(incf (second a))
+a

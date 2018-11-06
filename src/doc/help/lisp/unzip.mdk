@@ -1,0 +1,12 @@
+.index unzip
+.usage builtin-function
+.syntax
+(unzip seq)
+
+.description
+Returns a list of the elements at even positions and at odd positions of `seq`.
+
+.examples
+(unzip (series 10))
+(unzip (range 10))
+

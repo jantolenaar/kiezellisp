@@ -1,0 +1,11 @@
+.index even?
+.usage builtin-function
+.syntax
+(even? number)
+
+.description
+Returns true if `number` is even.
+
+.examples
+(even? 222)
+

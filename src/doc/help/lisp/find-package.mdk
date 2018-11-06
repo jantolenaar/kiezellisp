@@ -1,0 +1,12 @@
+.index find-package
+.usage builtin-function
+.syntax
+(find-package name)
+
+.description
+Returns the package corresponding to `name`, or `null` if not found.
+
+.examples
+(find-package "bla-bla")
+(find-package :lisp)
+

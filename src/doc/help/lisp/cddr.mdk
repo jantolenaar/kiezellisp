@@ -1,0 +1,11 @@
+.index cddr
+.usage builtin-function
+.syntax
+(cddr list)
+
+.description
+Equivalent to `(cdr (cdr list))`.
+
+.examples
+(cddr '((1 2) 3 4))
+

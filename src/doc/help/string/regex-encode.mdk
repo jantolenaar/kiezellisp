@@ -1,0 +1,9 @@
+.index string:regex-encode
+.usage inbuilt-function
+
+.syntax
+(string:regex-encode str)
+
+.description
+Same as Regex.Escape.
+

@@ -1,0 +1,16 @@
+.index not
+.usage builtin-function
+.syntax
+(not expr)
+
+.description
+Returns the logical complement of `expr`.
+
+.examples
+(not null)
+(not 1)
+
+.see-also
+.api
+boolean and or xor
+

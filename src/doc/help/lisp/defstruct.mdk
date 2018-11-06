@@ -1,0 +1,12 @@
+.index defstruct
+.usage macro
+.syntax
+(defstruct name \[doc-string\] slot*)
+
+Creates predicate, constructor and accessor functions for a prototype
+with the given slots.
+
+.examples
+(macroexpand '(defstruct person name address city (country "nl")))
+
+

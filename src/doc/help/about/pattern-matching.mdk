@@ -1,0 +1,67 @@
+.index about:pattern-matching
+.see-also
+.api
+if-match when-match case-match ecase-match
+
+.description
+Inspired by the Common Lisp library [optima](https://github.com/m2ym/optima).
+
+The simplest pattern is a constant, such as a `number`, `string` or `'expression`.
+It matches anything that is `equal` to it.
+
+.examples
+(if-match 123 (+ 100 23) true)
+(var expr '(1 2 3))
+(if-match '(1 2 3) expr true)
+
+The `symbol` pattern is usually found as a subpattern of a structural pattern.
+The symbol names a variable that will be declared and bound when the pattern
+matches.
+
+.examples
+(var expr '(1 2 3))
+(if-match (list a b c) expr (print-line "a=${a} b=${b} c=${c}"))
+(if-match (list 1 2 c) expr (print-line "c=${c}"))
+
+Patterns can be combined with `and`, `or` and `not`.
+
+.examples
+(if-match (and (satisfies integer?) (satisfies odd?)) "a" true)
+(if-match (and (satisfies integer?) (satisfies odd?)) 123 true)
+(if-match (and (satisfies integer?) (satisfies odd?) x) 123 x)
+
+The `property` pattern tests one or more properties of a prototype object.
+
+.examples
+(var obj (new :name "teun" :city "leiden" :country "netherlands"))
+(if-match (property :name "teun" :city "leiden") obj true)
+(if-match (property :name (type 'string)) obj true)
+(if-match (property :city (regex "lei") name) obj name)
+
+### Patterns
+
+    literal-expr
+    symbol
+
+    (and pattern*)
+    (or pattern*)
+    (not pattern)
+
+    (satisfies predicate-func)
+
+    (cons left-pattern right-pattern)
+    (vector pattern*)
+    (list pattern*)
+    (sequence pattern*)
+    (enumerable pattern*)
+
+    (quote expr)
+    (eq value)
+    (eql value)
+    (equal value)
+    (= value)
+    (equal-ci value)
+
+    (type type-name)
+    (regex regex-expr)
+    (property property-pattern*)

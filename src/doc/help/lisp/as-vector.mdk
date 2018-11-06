@@ -1,0 +1,12 @@
+.index as-vector
+.usage builtin-function
+.syntax
+(as-vector seq)
+
+.description
+Converts a sequence to a vector.
+
+.examples
+(as-vector (series 5))
+(as-vector "abc")
+

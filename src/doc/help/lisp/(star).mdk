@@ -1,0 +1,11 @@
+.index *
+.usage builtin-function
+.syntax
+(* &rest numbers)
+
+.description
+Returns the product of the numbers.
+
+.examples
+(* 3 4 5)
+

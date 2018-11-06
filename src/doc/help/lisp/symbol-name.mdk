@@ -1,0 +1,11 @@
+.index symbol-name
+.usage builtin-function
+.syntax
+(symbol-name sym)
+
+.description
+Returns the string name of the symbol `target`.
+
+.examples
+(symbol-name 'csv:read-string-to-grid)
+

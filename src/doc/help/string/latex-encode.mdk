@@ -1,0 +1,8 @@
+.index string:latex-encode
+.usage builtin-function
+
+.syntax
+(string:latex-encode str)
+
+.description
+Escapes characters that have a meaning in latex source.

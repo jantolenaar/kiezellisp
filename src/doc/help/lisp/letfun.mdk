@@ -1,0 +1,9 @@
+.index letfun
+.usage special-form
+.syntax
+(letfun sym (arg*) form*)
+
+.description
+Declares a readonly variable whose value is a function.
+
+

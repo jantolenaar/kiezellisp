@@ -1,0 +1,15 @@
+.index task
+.usage macro
+.syntax
+(task &body forms)
+
+.description
+Creates a task that runs `forms`. The return value of `task` is a ThreadContext
+object that exposes the method `GetResult` and the property `IsCompleted`. 
+`GetResult` blocks until `IsCompleted` is true.
+
+.examples
+(let a (task (* 1 2 3 4 5)))
+(.get-result a)
+(.is-completed a)
+

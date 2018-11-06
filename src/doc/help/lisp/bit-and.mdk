@@ -1,0 +1,11 @@
+.index bit-and
+.usage builtin-function
+.syntax
+(bit-and &rest numbers)
+
+.description
+Returns the bitwise and of the given integer numbers.
+
+.examples
+(bit-and 12 34)
+

@@ -1,0 +1,9 @@
+.index plus?
+.usage builtin-function
+.syntax
+(plus? number)
+
+.description
+Return true if `number` is a positive number.
+
+

@@ -1,0 +1,13 @@
+.index string:right
+.usage builtin-function
+
+.syntax
+(string:right str count)
+
+.description
+Returns the rightmost `count` characters of `str`.
+
+.examples
+(.right "aap" 2)
+(.right "aap" 22)
+

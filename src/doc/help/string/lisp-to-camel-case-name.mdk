@@ -1,0 +1,12 @@
+.index string:lisp-to-camel-case-name
+.usage builtin-function
+
+.syntax
+(string:lisp-to-camel-case-name name)
+
+.description
+Converts between naming conventions.
+
+.examples
+(.lisp-to-camel-case-name "een-twee-drie")
+

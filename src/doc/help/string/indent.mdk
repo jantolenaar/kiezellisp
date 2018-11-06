@@ -1,0 +1,13 @@
+.index string:indent
+.usage builtin-function
+
+.syntax
+(string:indent text prefix)
+
+.description
+Adds a prefix string to each line in `text`.
+
+.examples
+(print-line (.indent "aaaa\nbbbb" "---"))
+
+

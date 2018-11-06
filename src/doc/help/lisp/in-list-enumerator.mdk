@@ -1,0 +1,9 @@
+.index in-list-enumerator
+.usage builtin-function
+.syntax
+(in-list-enumerator seq step)
+
+.description
+Internal use.
+
+

@@ -1,0 +1,9 @@
+.index system:get-current-thread
+.usage builtin-function
+.syntax
+(system:get-current-thread)
+
+.description
+Internal use.
+
+

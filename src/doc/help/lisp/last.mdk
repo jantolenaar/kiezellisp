@@ -1,0 +1,15 @@
+.index last
+.usage builtin-function
+.syntax
+(last seq)
+(last count seq)
+
+.description
+Returns the last 1 or `count` cons cells of a list.
+
+.examples
+(last '(1 2 3))
+(last null)
+(last 2 '(1 2 3))
+(last 5 '(1 2 3))
+

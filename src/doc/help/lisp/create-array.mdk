@@ -1,0 +1,12 @@
+.index create-array
+.usage builtin-function
+.syntax
+(create-array type size)
+
+.description
+Creates an array.
+
+.examples
+(let a (create-array 'int64 4))
+:d
+

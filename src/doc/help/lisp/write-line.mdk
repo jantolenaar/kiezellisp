@@ -1,0 +1,15 @@
+.index write-line
+.usage builtin-function
+.syntax
+(write-line item &key stream escape width padding pretty left right force base)
+
+.description
+Same as `write` but also writes a line feed.
+
+.examples
+(write-line 123 :width 8 :padding 0)
+(write-line 123 :base 7 :escape false)
+(write-line 123 :base 7 :escape true)
+(write-line "123" :escape false)
+(write-line "123" :escape true)
+

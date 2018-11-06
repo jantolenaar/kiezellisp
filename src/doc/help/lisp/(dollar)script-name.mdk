@@ -1,0 +1,9 @@
+.index $script-name
+.usage special-readonly-variable
+.description
+Returns the file name of the file that is being `loaded` or `required`.
+Initially `null`.
+
+.examples
+$script-name
+

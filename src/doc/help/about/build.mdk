@@ -1,0 +1,9 @@
+.index about:build
+
+.description
+The solution file `kiezellisp.sln` contains projects to build the Kiezellisp
+console version, the library and an embedded mode example program.
+
+The solution file can be used without modification in `monodevelop` on Linux.
+
+

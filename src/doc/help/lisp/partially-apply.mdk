@@ -1,0 +1,12 @@
+.index partially-apply
+.usage function
+.syntax
+(partially-apply func &rest head-args)
+
+.description
+Creates a new function by partially applying arguments to the given function.
+
+.examples
+(def f (partially-apply string "de "))
+(map f '(aap noot hond))
+

@@ -1,0 +1,9 @@
+.index vector?
+.usage builtin-function
+.syntax
+(vector? expr)
+
+.description
+Returns true if `expr` is a vector.
+
+

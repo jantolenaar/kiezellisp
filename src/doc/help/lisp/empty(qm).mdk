@@ -1,0 +1,13 @@
+.index empty?
+.usage builtin-function
+.syntax
+(empty? seq)
+
+.description
+Returns true if `seq` is `null` or an empty collection.
+
+.examples
+(empty? null)
+(empty? '(a b c))
+(empty? "")
+

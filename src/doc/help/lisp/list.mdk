@@ -1,0 +1,13 @@
+.index list
+.usage builtin-function
+.syntax
+(list &rest items)
+
+.description
+Returns a list containing the given items.
+
+.examples
+(list 1 2 3)
+(list 'a 'b 'c)
+'(a b c)
+

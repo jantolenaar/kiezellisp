@@ -1,0 +1,50 @@
+
+# Kiezellisp
+
+**Kiezellisp** is a lisp compiler/interpreter running on .NET.
+
+Web site generated on: <%= (date-time:today) %>
+
+## Features
+
++   A reasonable startup time of 0.340s on an Intel i7-4790 (mono)
++   Big numbers
++   Futures
++   Multi-methods
++   Import of .NET classes into packages
++   Lazy lists
++   Macros and compiler macros
++   Named and anonymous functions (lambdas)
++   Parallel expressions
++   Prototypes
++   REPL
+    + has history and code completion
+    + uses `System.Console`
++   Symbols and packages
++	Transducers
+
+## Introduction
+
+*   [Getting Started on Windows](getting-started-on-windows.html)
+*   [Getting Started on Linux](getting-started-on-linux.html)
+
+## Documentation
+
+*   [Index of Everything](help/index.html)
+
+## Get Kiezellisp
+
+Current development version: <%= (get-version) %>
+
+This version can be built with Visual Studio on Windows and with MonoDevelop
+on linux.
+
+*   [Change Log](change-log.html)
+*   Source code: [http://github.com/jantolenaar/kiezellisp](http://github.com/jantolenaar/kiezellisp)
+
+## Other lisps
+
+Kiezellisp is not Common Lisp, Scheme or Clojure, but it shares a lot
+of features with other lisps. Functions and packages are similar to Common
+Lisp's functions and packages. Lazy sequences are similar to to Clojure's
+lazy sequences.

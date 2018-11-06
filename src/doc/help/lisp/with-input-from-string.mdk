@@ -1,0 +1,12 @@
+.index with-input-from-string
+.usage macro
+.syntax
+(with-input-from-string (sym text) &body forms)
+
+.description
+Binds `sym` to a lisp reader on the string `text` and executes `forms` as a 
+`do` block.
+
+.examples
+(with-input-from-string ($stdin "aap noot mies") (read) (read-all))
+

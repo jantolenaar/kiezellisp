@@ -1,0 +1,6 @@
+.index $pprint-right-margin
+.usage special-variable
+.description
+The column number of the current right margin used by `pprint`.
+
+

@@ -1,0 +1,19 @@
+.index missing-value?
+.usage builtin-function
+.syntax
+(missing-value? value)
+
+.description
+Returns `true` if `value` equals `missing-value`.
+
+.examples
+(defmacro some-return (&optional (a missing-value))
+    (if (missing-value? a)
+          `(return)
+        `(return ,a)))
+(macroexpand '(some-return))
+(macroexpand '(some-return null))
+
+.see-also
+.api
+missing-value

@@ -1,0 +1,11 @@
+.index char?
+.usage builtin-function
+.syntax
+(char? expr)
+
+.description
+Returns true if `expr` is a character.
+
+.examples
+(char? #\a)
+

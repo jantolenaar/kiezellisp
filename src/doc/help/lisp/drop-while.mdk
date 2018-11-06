@@ -1,0 +1,13 @@
+.index drop-while
+.usage builtin-function
+.syntax
+(drop-while predicate seq)
+(drop-while predicate)
+
+.description
+Skips elements of `seq` while they satisfy the `predicate`.
+The second form returns a transducer.
+
+.examples
+(drop-while odd? '(1 1 2 3 4 5))
+

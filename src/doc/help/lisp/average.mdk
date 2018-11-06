@@ -1,0 +1,12 @@
+.index average
+.usage builtin-function
+.syntax
+(average seq)
+
+.description
+Computes the numeric average of a sequence of numbers.
+
+.examples
+(average '(1 2 3 4))
+(average (map .length '("aap" "noot" "mies")))
+

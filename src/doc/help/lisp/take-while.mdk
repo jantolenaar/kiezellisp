@@ -1,0 +1,13 @@
+.index take-while
+.usage builtin-function
+.syntax
+(take-while predicate seq)
+(take-while predicate)
+
+.description
+Returns items from `seq` while they satisfy the function `predicate`.
+The second form returns a transducer.
+
+.examples
+(take-while #(< %1 3) (series 10))
+

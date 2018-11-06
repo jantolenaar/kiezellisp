@@ -1,0 +1,19 @@
+.index block
+.usage special-form
+.syntax
+(block name form*)
+
+.description
+A named block is similar to a `do` block but it also supports structured jumps by the forms `redo` and `leave`.
+
+.examples
+(block abc
+    (let x 1)
+    (leave abc 2)
+    x)
+
+.see-also
+.api
+redo leave
+
+

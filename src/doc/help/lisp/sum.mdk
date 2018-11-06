@@ -1,0 +1,12 @@
+.index sum
+.usage builtin-function
+.syntax
+(sum seq)
+
+.description
+Returns the sum of elements in `seq`.
+
+.examples
+(sum '(1 2 3 4))
+
+

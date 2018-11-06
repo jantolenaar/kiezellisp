@@ -1,0 +1,14 @@
+.index string:indent-with-line-numbers
+.usage builtin-function
+
+.syntax
+(string:indent-with-line-numbers text line-number width separator)
+
+.description
+Adds a line number and prefix string to each line in `text`.
+
+.examples
+(print-line (.indent-with-line-numbers "aaaa\nbbbb" 12 4 ": "))
+
+
+

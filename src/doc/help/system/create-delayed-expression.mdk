@@ -1,0 +1,9 @@
+.index system:create-delayed-expression
+.usage builtin-function
+.syntax
+(system:create-delayed-expression func)
+
+.description
+Internal use.
+
+

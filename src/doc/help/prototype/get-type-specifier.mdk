@@ -1,0 +1,18 @@
+.index prototype:get-type-specifier
+.usage builtin-function
+.syntax
+(prototype:get-type-specifier obj)
+
+.description
+Returns a type name or a list of the type names of the prototype object `obj`.
+
+.examples
+(deftype a1 (new :city "leiden"))
+(deftype a2 (new :country "netherlands"))
+(def b (new 'a1))
+(prototype:get-type-specifier b)
+(def c (new '(a1 a2)
+            :name "mies"))
+c
+(prototype:get-type-specifier c)
+

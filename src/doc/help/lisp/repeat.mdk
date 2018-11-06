@@ -1,0 +1,13 @@
+.index repeat
+.usage builtin-function
+.syntax
+(repeat count value)
+(repeat value)
+
+.description
+Returns a lazy sequence that yields `value`. The second form yields `value` an 
+infinite number of times.
+
+.examples
+(repeat 10 'a)
+

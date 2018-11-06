@@ -1,0 +1,13 @@
+.index $package-name-prefix
+.usage special-variable
+.description
+
+.examples
+$package-name-prefix
+
+See:
+
+.api
+import
+
+

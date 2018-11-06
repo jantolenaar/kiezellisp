@@ -1,0 +1,11 @@
+.index future
+.usage special-form
+.syntax
+(future sym expr)
+
+.description
+The form `(future a expr)` compiles to `(let a (system:create-task (lambda () expr)))`.
+The task is started immediately. Reading references to `a` are compiled 
+as `(system:get-task-result a)`.
+
+

@@ -1,0 +1,12 @@
+.index $pprint-hook
+.usage special-variable
+.description
+A function. The function `write` use this hook to create prettier output.
+
+.examples
+$pprint-hook
+
+.see-also
+*   pprint.k
+*   system.k
+*   write

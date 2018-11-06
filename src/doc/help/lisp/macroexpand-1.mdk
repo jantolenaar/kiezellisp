@@ -1,0 +1,14 @@
+.index macroexpand-1
+.usage builtin-function
+.syntax
+(macroexpand-1 expr &optional environment)
+
+.description
+Returns a list with the macro expansion of `expr` and a flag indicating that 
+expansion actually occurred.
+
+.examples
+(macroexpand-1 '(setf (car x) 123))
+(macroexpand-1 '(while a b))
+(macroexpand-1 '(if a b))
+

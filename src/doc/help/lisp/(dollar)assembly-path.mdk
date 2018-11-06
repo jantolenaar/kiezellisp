@@ -1,0 +1,11 @@
+.index $assembly-path
+.usage special-readonly-variable
+.description
+Returns a list of folder names. See `set-assembly-path`.
+
+.examples
+$assembly-path
+
+.see-also
+.api
+set-assembly-path reference

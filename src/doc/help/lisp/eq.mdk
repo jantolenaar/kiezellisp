@@ -1,0 +1,13 @@
+.index eq
+.usage builtin-function
+.syntax
+(eq a b)
+
+.description
+Returns true if `a` and `b` are the same object (`object.ReferenceEquals`).
+
+.examples
+(eq 'foo 'foo)
+(eq "foo" "foo")
+(eq 1 1)
+
