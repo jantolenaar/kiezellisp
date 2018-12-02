@@ -793,6 +793,9 @@ namespace Kiezel
 
             var term = terminator[0];
 
+            Cons head = null;
+            Cons tail = null;
+
             while (true)
             {
                 SkipWhitespace();
@@ -803,14 +806,22 @@ namespace Kiezel
                 }
                 if (ch == term)
                 {
-                    return null;
+                    return head;
                 }
                 UnreadChar();
                 var first = MaybeRead();
                 if (first != VOID.Value)
                 {
-                    var rest = (Cons)ReadDelimitedList(terminator);
-                    return Runtime.MakeCons(first, rest);
+                    if (head == null)
+                    {
+                        head = tail = Runtime.MakeCons(first, (Cons)null);
+                    }
+                    else
+                    {
+                        var newTail = Runtime.MakeCons(first, (Cons)null);
+                        tail.Cdr = newTail;
+                        tail = newTail;
+                    }
                 }
             }
         }

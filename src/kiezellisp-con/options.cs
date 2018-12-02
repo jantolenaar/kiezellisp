@@ -15,7 +15,7 @@ namespace Kiezel
         public Cons UserArguments;
         public int ForegroundColor;
         public int BackgroundColor;
-        public bool Mono5;
+        public bool RlWrap;
 
         #endregion Fields
 
@@ -28,7 +28,7 @@ namespace Kiezel
             Repl = true;
             ForegroundColor = -1;
             BackgroundColor = -1;
-            Mono5 = false;
+            RlWrap = false;
         }
 
         #endregion Constructors
@@ -46,7 +46,7 @@ namespace Kiezel
             parser.AddOption("--repl");
             parser.AddOption("--fg number");
             parser.AddOption("--bg number");
-            parser.AddOption("--mono5");
+            parser.AddOption("--rlwrap");
 
             parser.Parse(args);
 
@@ -74,9 +74,9 @@ namespace Kiezel
                 options.Repl = true;
             }
 
-            if (parser.GetOption("mono5") != null)
+            if (parser.GetOption("rlwrap") != null)
             {
-                options.Mono5 = true;
+                options.RlWrap = true;
             }
 
             return options;

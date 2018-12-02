@@ -21,25 +21,7 @@ namespace Kiezel
             Thread.CurrentThread.CurrentCulture = CultureInfo.InvariantCulture;
 
             var options = RuntimeConsole.ParseArgs(args);
-
-            //
-            // Mono5 option is a workaround for a performance problem in the compilation of
-            // linq expressions (https://bugzilla.xamarin.com/show_bug.cgi?id=56240).
-            // 
-            // The problem disappears when not running on the primary thread. Therefore this
-            // workaraound is not a solution for gui programs.
-            //
-
-            if (options.Mono5)
-            {
-                var t = new Thread(() => RuntimeConsole.RunConsoleMode(options));
-                t.Start();
-                t.Join();
-            }
-            else
-            {
-                RuntimeConsole.RunConsoleMode(options);
-            }
+            RuntimeConsole.RunConsoleMode(options);
         }
 
         #endregion Private Methods

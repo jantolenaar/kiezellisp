@@ -119,7 +119,8 @@ namespace Kiezel
                 {
                     command = commandsPrefix[0];
                 }
-                else {
+                else
+                {
                     Runtime.PrintLine(output, "Ambiguous command. Did you mean:");
                     for (var i = 0; i < commandsPrefix.Count; ++i)
                     {
@@ -284,7 +285,8 @@ namespace Kiezel
 
                 }
             }
-            else {
+            else
+            {
                 RunCommand(null, code, smartParens: !leadingSpace);
             }
         }
@@ -379,7 +381,6 @@ namespace Kiezel
 
         public static void Quit()
         {
-            History.Close();
             Environment.Exit(0);
         }
 
@@ -443,6 +444,7 @@ namespace Kiezel
             }
 
             History.Append(data);
+            History.Save();
 
             return data;
         }
@@ -470,7 +472,8 @@ namespace Kiezel
                         var command = ReadCommand(debugging);
                         EvalPrintCommand(command, debugging);
                     }
-                    else {
+                    else
+                    {
                         var scriptFile = commandOptionArgument;
                         commandOptionArgument = "";
                         Runtime.Run(scriptFile, Symbols.LoadPrintKeyword, false, Symbols.LoadVerboseKeyword, false);
@@ -591,7 +594,8 @@ namespace Kiezel
                             Runtime.PrettyPrintLine(output, 4, null, val);
                         }
                     }
-                    else {
+                    else
+                    {
                         func(val);
                     }
                 }
@@ -605,7 +609,8 @@ namespace Kiezel
                     Runtime.PrintTrace(msg);
                 }
             }
-            else {
+            else
+            {
                 func(Runtime.SymbolValue(Symbols.It));
             }
         }

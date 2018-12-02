@@ -28,6 +28,7 @@ namespace Kiezel
         public static Package LispDocPackage;
         public static Package LispPackage;
         public static Missing MissingValue = Missing.Value;
+        public static bool RlWrap;
         public static bool Mono;
         public static string ProgramFeature;
         public static bool ReadDecimalNumbers;
@@ -84,13 +85,29 @@ namespace Kiezel
             Environment.Exit(code);
         }
 
+        public static string GetKiezellispDataFolder()
+        {
+            var folder = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
+            //var folder2 = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
+            return Path.Combine(folder, "kiezellisp");
+        }
+
+        public static string CreateKiezellispDataFolder()
+        {
+            var dir = GetKiezellispDataFolder();
+
+            if (!Directory.Exists(dir))
+            {
+                Directory.CreateDirectory(dir);
+            }
+
+            return dir;
+        }
+
         public static string GetApplicationInitFile()
         {
-            // application config file is same folder as kiezellisp-lib.dll
-            var assembly = Assembly.GetExecutingAssembly();
-            var root = assembly.Location;
-            var dir = Path.GetDirectoryName(root);
-            return PathExtensions.Combine(dir, "kiezellisp-init");
+            var dir = CreateKiezellispDataFolder();
+            return PathExtensions.Combine(dir, "kiezellisp-init.k");
         }
 
         [Lisp("get-program")]
@@ -316,10 +333,17 @@ namespace Kiezel
 
         public static void RestartSettings()
         {
-            if (Type.GetType("Mono.Runtime") != null)
+            var asm = GetFirstAssemblyLocation().ToLower();
+
+            if (asm.IndexOf("mono") != -1)
             {
                 Mono = true;
                 AddFeature("mono");
+            }
+            else if (asm.IndexOf("netcore") != -1)
+            {
+                Mono = false;
+                AddFeature("netcore");
             }
             else
             {

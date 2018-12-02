@@ -28,33 +28,17 @@ namespace Kiezel
             lines = new List<string>();
             histfile = null;
 
-            var app = "kiezellisp";
-            var dir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "kiezellisp");
+            var dir = Runtime.CreateKiezellispDataFolder();
 
-            if (!Directory.Exists(dir))
+            histfile = PathExtensions.Combine(dir, "kiezellisp.history");
+
+            if (File.Exists(histfile))
             {
-                try
+                foreach (var ln in File.ReadAllLines(histfile))
                 {
-                    Directory.CreateDirectory(dir);
+                    lines.Add(ln.Replace("<CRLF>", "\n"));
                 }
-                catch
-                {
-                    app = null;
-                }
-            }
-
-            if (app != null)
-            {
-                histfile = PathExtensions.Combine(dir, app) + ".history";
-
-                if (File.Exists(histfile))
-                {
-                    foreach (var ln in File.ReadAllLines(histfile))
-                    {
-                        lines.Add(ln.Replace("<CRLF>", "\n"));
-                    }
-                    cursor = lines.Count;
-                }
+                cursor = lines.Count;
             }
         }
 
@@ -109,7 +93,7 @@ namespace Kiezel
             cursor = Count;
         }
 
-        public void Close()
+        public void Save()
         {
             if (histfile == null)
             {
@@ -140,7 +124,8 @@ namespace Kiezel
             {
                 return lines[index];
             }
-            else {
+            else
+            {
                 return "";
             }
         }

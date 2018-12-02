@@ -21,7 +21,7 @@ namespace Kiezel
     {
         #region Public Methods
 
-        public static void WriteReverse(string text, bool hasBrackets)
+        public static void WriteReverse (string text, bool hasBrackets)
         {
             var useColor = (Runtime.ForegroundColor != -1 && Runtime.BackgroundColor != -1);
             if (useColor)
@@ -30,28 +30,28 @@ namespace Kiezel
                 var bg = Console.BackgroundColor;
                 Console.ForegroundColor = bg;
                 Console.BackgroundColor = fg;
-                Console.Write(text);
+                Console.Write (text);
                 Console.ForegroundColor = fg;
                 Console.BackgroundColor = bg;
             }
             else if (!hasBrackets)
             {
-                Console.Write("[");
-                Console.Write(text);
-                Console.Write("]");
+                Console.Write ("[");
+                Console.Write (text);
+                Console.Write ("]");
             }
             else
             {
-                Console.Write(text);
+                Console.Write (text);
             }
         }
 
-        [Lisp("more")]
-        public static void More(string text)
+        [Lisp ("more")]
+        public static void More (string text)
         {
             if (Console.IsInputRedirected)
             {
-                Console.Write(text);
+                Console.Write (text);
                 return;
             }
 
@@ -60,42 +60,42 @@ namespace Kiezel
             foreach (var ch in text)
             {
                 var old = Console.CursorLeft;
-                Console.Write(ch);
+                Console.Write (ch);
                 if (Console.CursorLeft <= old)
                 {
                     ++count;
                     if (count == height)
                     {
                         var prompt = "(Press ' ' or ENTER to continue, 'q' or ESC to quit)";
-                        WriteReverse(prompt, true);
+                        WriteReverse (prompt, true);
                         while (true)
                         {
-                            var info = Console.ReadKey(true);
+                            var info = Console.ReadKey (true);
                             if (info.Modifiers == 0)
                             {
                                 if (info.Key == ConsoleKey.Spacebar)
                                 {
-                                    Console.Write("\r");
-                                    Console.Write(new String(' ', prompt.Length));
-                                    Console.Write("\r");
+                                    Console.Write ("\r");
+                                    Console.Write (new String (' ', prompt.Length));
+                                    Console.Write ("\r");
                                     height = Console.WindowHeight - 1;
                                     count = 0;
                                     break;
                                 }
                                 else if (info.Key == ConsoleKey.Enter)
                                 {
-                                    Console.Write("\r");
-                                    Console.Write(new String(' ', prompt.Length));
-                                    Console.Write("\r");
+                                    Console.Write ("\r");
+                                    Console.Write (new String (' ', prompt.Length));
+                                    Console.Write ("\r");
                                     height = 1;
                                     count = 0;
                                     break;
                                 }
                                 else if (info.Key == ConsoleKey.Escape || info.Key == ConsoleKey.Q)
                                 {
-                                    Console.Write("\r");
-                                    Console.Write(new String(' ', prompt.Length));
-                                    Console.Write("\r");
+                                    Console.Write ("\r");
+                                    Console.Write (new String (' ', prompt.Length));
+                                    Console.Write ("\r");
                                     return;
                                 }
                             }
@@ -105,55 +105,55 @@ namespace Kiezel
             }
         }
 
-        [Lisp("read-from-console")]
-        public static string ReadFromConsole()
+        [Lisp ("read-from-console")]
+        public static string ReadFromConsole ()
         {
-            return ReplRead(false, false, false);
+            return ReplRead (false, false, false);
         }
 
-        [Lisp("read-line-from-console")]
-        public static string ReadLineFromConsole()
+        [Lisp ("read-line-from-console")]
+        public static string ReadLineFromConsole ()
         {
-            return ReplRead(false, false, true);
+            return ReplRead (false, false, true);
         }
 
-        public static string ReplRead(bool lispCompletion, bool symbolCompletion, bool crlf)
+        public static string ReplRead (bool lispCompletion, bool symbolCompletion, bool crlf)
         {
             try
             {
-                if (Console.IsInputRedirected)
+                if (Console.IsInputRedirected || Runtime.RlWrap)
                 {
-                    var s = Console.ReadLine();
+                    var s = Console.ReadLine ();
                     if (s == null)
                     {
-                        Runtime.Exit();
+                        Runtime.Exit ();
                     }
                     return s;
                 }
                 else
                 {
-                    var s = ReplReadImp(lispCompletion, symbolCompletion, crlf);
+                    var s = ReplReadImp (lispCompletion, symbolCompletion, crlf);
                     return s;
                 }
             }
             catch (Exception ex)
             {
-                Console.Clear();
-                Console.WriteLine(Runtime.GetDiagnostics(ex));
-                Console.WriteLine("Temporarily lost control due to console display changes. Input aborted.");
-                Console.Write("Press ENTER to continue.");
-                Console.ReadLine();
+                Console.Clear ();
+                Console.WriteLine (Runtime.GetDiagnostics (ex));
+                Console.WriteLine ("Temporarily lost control due to console display changes. Input aborted.");
+                Console.Write ("Press ENTER to continue.");
+                Console.ReadLine ();
                 return "";
             }
         }
 
 
-        public static string ReplReadImp(bool lispCompletion, bool symbolCompletion, bool crlf)
+        public static string ReplReadImp (bool lispCompletion, bool symbolCompletion, bool crlf)
         {
             var top = Console.CursorTop;
             var left = Console.CursorLeft;
             var pos = 0;
-            var buffer = new StringBuilder();
+            var buffer = new StringBuilder ();
             var col = 0;
             var row = 0;
 
@@ -161,7 +161,7 @@ namespace Kiezel
             {
                 var r1 = Console.CursorTop;
                 var c1 = Console.CursorLeft;
-                Console.Write(ch);
+                Console.Write (ch);
                 var r2 = Console.CursorTop;
                 var c2 = Console.CursorLeft;
                 if (r1 == Console.BufferHeight - 1)
@@ -180,13 +180,13 @@ namespace Kiezel
             {
                 foreach (var ch in str)
                 {
-                    writeChar(ch);
+                    writeChar (ch);
                 }
             };
 
             Action cursorReset = () =>
             {
-                Console.SetCursorPosition(left, top);
+                Console.SetCursorPosition (left, top);
                 row = top;
                 col = left;
             };
@@ -197,10 +197,10 @@ namespace Kiezel
                 // update display
                 //
 
-                cursorReset();
+                cursorReset ();
                 for (var i = 0; i < buffer.Length; ++i)
                 {
-                    writeChar(buffer[i]);
+                    writeChar (buffer [i]);
 
                     if (i + 1 == pos)
                     {
@@ -208,7 +208,7 @@ namespace Kiezel
                         col = Console.CursorLeft;
                     }
                 }
-                writeChar(' ');
+                writeChar (' ');
             };
 
             Action erase = () =>
@@ -217,15 +217,15 @@ namespace Kiezel
                 var end = (Console.WindowTop + Console.WindowHeight) * Console.BufferWidth - 1;
                 if (start < end)
                 {
-                    var blanks = new String(' ', end - start);
-                    Console.Write(blanks);
+                    var blanks = new String (' ', end - start);
+                    Console.Write (blanks);
                 }
             };
 
             while (true)
             {
-                paint();
-                erase();
+                paint ();
+                erase ();
 
                 //
                 // get next key
@@ -236,21 +236,21 @@ namespace Kiezel
                 ConsoleModifiers mod;
                 char ch;
 
-                Console.SetCursorPosition(col, row);
+                Console.SetCursorPosition (col, row);
 
             readKeyRetry:
 
-                if (TryReadCommandListener(out ch))
+                if (TryReadCommandListener (out ch))
                 {
-                    keyInfo = new ConsoleKeyInfo(ch, 0, false, false, false);
+                    keyInfo = new ConsoleKeyInfo (ch, 0, false, false, false);
                 }
                 else if (Console.KeyAvailable)
                 {
-                    keyInfo = Console.ReadKey(true);
+                    keyInfo = Console.ReadKey (true);
                 }
                 else
                 {
-                    Runtime.Sleep(10);
+                    Runtime.Sleep (10);
                     goto readKeyRetry;
                 }
 
@@ -262,296 +262,298 @@ namespace Kiezel
 
                 switch (key)
                 {
-                    case ConsoleKey.Backspace:
+                case ConsoleKey.Backspace:
+                    {
+                        if (pos > 0)
                         {
-                            if (pos > 0)
+                            --pos;
+                            buffer.Remove (pos, 1);
+                        }
+                        break;
+                    }
+                case ConsoleKey.Delete:
+                    {
+                        if (pos < buffer.Length)
+                        {
+                            buffer.Remove (pos, 1);
+                        }
+                        break;
+                    }
+                case ConsoleKey.Enter:
+                    {
+                        var s = buffer.ToString ();
+                        if (!lispCompletion || (mod != ConsoleModifiers.Control && IsCompleteSourceCode (s)))
+                        {
+                            pos = buffer.Length;
+                            paint ();
+                            if (crlf)
                             {
-                                --pos;
-                                buffer.Remove(pos, 1);
+                                writeChar ('\n');
                             }
+                            return s;
+                        }
+                        else
+                        {
+                            writeChar ('\n');
+                            buffer.Append ('\n');
+                            ++pos;
+                        }
+                        break;
+                    }
+                case ConsoleKey.Home:
+                    {
+                        pos = 0;
+                        break;
+                    }
+                case ConsoleKey.End:
+                    {
+                        pos = buffer.Length;
+                        break;
+                    }
+                case ConsoleKey.LeftArrow:
+                    {
+                        if (pos > 0)
+                        {
+                            --pos;
+                        }
+                        break;
+                    }
+                case ConsoleKey.RightArrow:
+                    {
+                        if (pos < buffer.Length)
+                        {
+                            ++pos;
+                        }
+                        break;
+                    }
+                case ConsoleKey.UpArrow:
+                    {
+                        if (History != null)
+                        {
+                            var s = History.Previous ();
+                            buffer = new StringBuilder (s);
+                            pos = buffer.Length;
+                        }
+                        break;
+                    }
+                case ConsoleKey.DownArrow:
+                    {
+                        if (History != null)
+                        {
+                            var s = History.Next ();
+                            buffer = new StringBuilder (s);
+                            pos = buffer.Length;
+                        }
+                        break;
+                    }
+                case ConsoleKey.Escape:
+                    {
+                        buffer.Clear ();
+                        pos = buffer.Length;
+                        paint ();
+                        erase ();
+                        Console.SetCursorPosition (col, row);
+                        return null;
+                    }
+                case ConsoleKey.Tab:
+                    {
+                        if (!symbolCompletion)
+                        {
                             break;
                         }
-                    case ConsoleKey.Delete:
+                        var line = buffer.ToString ();
+                        var loc = Runtime.LocateWord (line, pos, true);
+                        var prefix = line.Substring (0, loc.Begin);
+                        var searchTerm = line.Substring (loc.Begin, loc.Span);
+                        var suffix = line.Substring (loc.Begin + loc.Span);
+                        var completions = GetCompletions (searchTerm);
+                        var index = -1;
+                        var done = false;
+                        pos = buffer.Length;
+                        while (!done)
                         {
-                            if (pos < buffer.Length)
+                            var selectedTerm = index == -1 ? searchTerm : completions [index];
+
+                            if (completions.Count < 2)
                             {
-                                buffer.Remove(pos, 1);
+                                if (completions.Count == 1)
+                                {
+                                    buffer = new StringBuilder (prefix + completions [0]);
+                                    buffer.Append (suffix);
+                                }
+                                buffer.Append (' ');
+                                pos = buffer.Length;
+                                break;
                             }
-                            break;
+
+                            cursorReset ();
+                            erase ();
+
+                            cursorReset ();
+
+                            writeStr (prefix);
+                            writeStr (selectedTerm);
+
+                            var col2 = Console.CursorLeft;
+                            var row2 = Console.CursorTop - row;
+
+                            writeStr (suffix);
+                            writeStr ("\n");
+
+                            writeStr ("Completing symbol ");
+                            writeStr (searchTerm);
+                            writeStr ("\n");
+
+                            var useColors = (Runtime.ForegroundColor != -1 && Runtime.BackgroundColor != -1);
+                            var fg = Console.ForegroundColor;
+                            var bg = Console.BackgroundColor;
+
+                            for (var i = 0; i < completions.Count; ++i)
+                            {
+                                if (i == index)
+                                {
+                                    if (!useColors)
+                                    {
+                                        writeStr ("[");
+                                    }
+                                    else
+                                    {
+                                        Console.ForegroundColor = bg;
+                                        Console.BackgroundColor = fg;
+                                    }
+                                }
+                                writeStr (completions [i]);
+                                if (i == index)
+                                {
+                                    if (!useColors)
+                                    {
+                                        writeStr ("]");
+                                    }
+                                    else
+                                    {
+                                        Console.ForegroundColor = fg;
+                                        Console.BackgroundColor = bg;
+                                    }
+                                }
+                                writeChar (' ');
+                            }
+
+                            Console.SetCursorPosition (col2, row + row2);
+
+                            var keyInfo2 = Console.ReadKey (true);
+                            var key2 = keyInfo2.Key;
+                            if (key2 == ConsoleKey.Enter || (key2 == ConsoleKey.Tab && completions.Count == 1))
+                            {
+                                buffer = new StringBuilder (prefix + selectedTerm);
+                                pos = buffer.Length;
+                                buffer.Append (suffix);
+                                done = true;
+                            }
+                            else if (key2 == ConsoleKey.Tab && (keyInfo2.Modifiers & ConsoleModifiers.Shift) != 0)
+                            {
+                                // Stay positive.
+                                index = (index + completions.Count - 1) % completions.Count;
+                            }
+                            else if (key2 == ConsoleKey.Tab)
+                            {
+                                index = (index + 1) % completions.Count;
+                            }
+                            else if (key2 == ConsoleKey.Escape)
+                            {
+                                buffer = new StringBuilder (prefix + searchTerm);
+                                pos = buffer.Length;
+                                buffer.Append (suffix);
+                                done = true;
+                            }
+                            else
+                            {
+                                buffer = new StringBuilder (prefix + selectedTerm);
+                                pos = buffer.Length;
+                                buffer.Append (suffix);
+                                keyInfo = keyInfo2;
+                                paint ();
+                                erase ();
+                                Console.SetCursorPosition (col, row);
+                                goto codeCompletionRetry;
+
+                            }
                         }
-                    case ConsoleKey.Enter:
+                        break;
+                    }
+                default:
+                    {
+                        if (mod == ConsoleModifiers.Control)
                         {
-                            var s = buffer.ToString();
-                            if (!lispCompletion || (mod != ConsoleModifiers.Control && IsCompleteSourceCode(s)))
+#if !NETCOREAPP && !NETSTANDARD
+                            switch (key)
+                            {
+                                case ConsoleKey.V:
+                                    var text = Runtime.GetClipboardData();
+                                    foreach (var ch2 in text)
+                                    {
+                                        var ch3 = (ch2 == '\n' || ch2 >= ' ') ? ch2 : ' ';
+                                        buffer.Insert(pos, ch3);
+                                        ++pos;
+                                    }
+                                    break;
+                                case ConsoleKey.C:
+                                    var text2 = buffer.ToString();
+                                    Runtime.SetClipboardData(text2);
+                                    break;
+                                case ConsoleKey.U:
+                                    var text3 = buffer.ToString(0, pos);
+                                    buffer.Remove(0, pos);
+                                    Runtime.SetClipboardData(text3);
+                                    pos = 0;
+                                    break;
+                                case ConsoleKey.K:
+                                    var text4 = buffer.ToString(pos, buffer.Length - pos);
+                                    buffer.Remove(pos, buffer.Length - pos);
+                                    Runtime.SetClipboardData(text4);
+                                    break;
+                                case ConsoleKey.W:
+                                    var line = buffer.ToString();
+                                    var loc = Runtime.LocateWord(line, pos, true);
+                                    var text5 = buffer.ToString(loc.Begin, pos - loc.Begin);
+                                    buffer.Remove(loc.Begin, pos - loc.Begin);
+                                    pos = loc.Begin;
+                                    Runtime.SetClipboardData(text5);
+                                    break;
+                            }
+#endif
+                        }
+                        else if (ch == '\n')
+                        {
+                            var s = buffer.ToString ();
+                            if (mod != ConsoleModifiers.Control && IsCompleteSourceCode (s))
                             {
                                 pos = buffer.Length;
-                                paint();
+                                paint ();
                                 if (crlf)
                                 {
-                                    writeChar('\n');
+                                    writeChar ('\n');
                                 }
                                 return s;
                             }
                             else
                             {
-                                writeChar('\n');
-                                buffer.Append('\n');
+                                writeChar ('\n');
+                                buffer.Append ('\n');
                                 ++pos;
                             }
-                            break;
                         }
-                    case ConsoleKey.Home:
+                        else //if (ch >= ' ')
                         {
-                            pos = 0;
-                            break;
+                            buffer.Insert (pos, ch);
+                            ++pos;
                         }
-                    case ConsoleKey.End:
-                        {
-                            pos = buffer.Length;
-                            break;
-                        }
-                    case ConsoleKey.LeftArrow:
-                        {
-                            if (pos > 0)
-                            {
-                                --pos;
-                            }
-                            break;
-                        }
-                    case ConsoleKey.RightArrow:
-                        {
-                            if (pos < buffer.Length)
-                            {
-                                ++pos;
-                            }
-                            break;
-                        }
-                    case ConsoleKey.UpArrow:
-                        {
-                            if (History != null)
-                            {
-                                var s = History.Previous();
-                                buffer = new StringBuilder(s);
-                                pos = buffer.Length;
-                            }
-                            break;
-                        }
-                    case ConsoleKey.DownArrow:
-                        {
-                            if (History != null)
-                            {
-                                var s = History.Next();
-                                buffer = new StringBuilder(s);
-                                pos = buffer.Length;
-                            }
-                            break;
-                        }
-                    case ConsoleKey.Escape:
-                        {
-                            buffer.Clear();
-                            pos = buffer.Length;
-                            paint();
-                            erase();
-                            Console.SetCursorPosition(col, row);
-                            return null;
-                        }
-                    case ConsoleKey.Tab:
-                        {
-                            if (!symbolCompletion)
-                            {
-                                break;
-                            }
-                            var line = buffer.ToString();
-                            var loc = Runtime.LocateWord(line, pos, true);
-                            var prefix = line.Substring(0, loc.Begin);
-                            var searchTerm = line.Substring(loc.Begin, loc.Span);
-                            var suffix = line.Substring(loc.Begin + loc.Span);
-                            var completions = GetCompletions(searchTerm);
-                            var index = -1;
-                            var done = false;
-                            pos = buffer.Length;
-                            while (!done)
-                            {
-                                var selectedTerm = index == -1 ? searchTerm : completions[index];
-
-                                if (completions.Count < 2)
-                                {
-                                    if (completions.Count == 1)
-                                    {
-                                        buffer = new StringBuilder(prefix + completions[0]);
-                                        buffer.Append(suffix);
-                                    }
-                                    buffer.Append(' ');
-                                    pos = buffer.Length;
-                                    break;
-                                }
-
-                                cursorReset();
-                                erase();
-
-                                cursorReset();
-
-                                writeStr(prefix);
-                                writeStr(selectedTerm);
-
-                                var col2 = Console.CursorLeft;
-                                var row2 = Console.CursorTop - row;
-
-                                writeStr(suffix);
-                                writeStr("\n");
-
-                                writeStr("Completing symbol ");
-                                writeStr(searchTerm);
-                                writeStr("\n");
-
-                                var useColors = (Runtime.ForegroundColor != -1 && Runtime.BackgroundColor != -1);
-                                var fg = Console.ForegroundColor;
-                                var bg = Console.BackgroundColor;
-
-                                for (var i = 0; i < completions.Count; ++i)
-                                {
-                                    if (i == index)
-                                    {
-                                        if (!useColors)
-                                        {
-                                            writeStr("[");
-                                        }
-                                        else
-                                        {
-                                            Console.ForegroundColor = bg;
-                                            Console.BackgroundColor = fg;
-                                        }
-                                    }
-                                    writeStr(completions[i]);
-                                    if (i == index)
-                                    {
-                                        if (!useColors)
-                                        {
-                                            writeStr("]");
-                                        }
-                                        else
-                                        {
-                                            Console.ForegroundColor = fg;
-                                            Console.BackgroundColor = bg;
-                                        }
-                                    }
-                                    writeChar(' ');
-                                }
-
-                                Console.SetCursorPosition(col2, row + row2);
-
-                                var keyInfo2 = Console.ReadKey(true);
-                                var key2 = keyInfo2.Key;
-                                if (key2 == ConsoleKey.Enter || (key2 == ConsoleKey.Tab && completions.Count == 1))
-                                {
-                                    buffer = new StringBuilder(prefix + selectedTerm);
-                                    pos = buffer.Length;
-                                    buffer.Append(suffix);
-                                    done = true;
-                                }
-                                else if (key2 == ConsoleKey.Tab && (keyInfo2.Modifiers & ConsoleModifiers.Shift) != 0)
-                                {
-                                    // Stay positive.
-                                    index = (index + completions.Count - 1) % completions.Count;
-                                }
-                                else if (key2 == ConsoleKey.Tab)
-                                {
-                                    index = (index + 1) % completions.Count;
-                                }
-                                else if (key2 == ConsoleKey.Escape)
-                                {
-                                    buffer = new StringBuilder(prefix + searchTerm);
-                                    pos = buffer.Length;
-                                    buffer.Append(suffix);
-                                    done = true;
-                                }
-                                else
-                                {
-                                    buffer = new StringBuilder(prefix + selectedTerm);
-                                    pos = buffer.Length;
-                                    buffer.Append(suffix);
-                                    keyInfo = keyInfo2;
-                                    paint();
-                                    erase();
-                                    Console.SetCursorPosition(col, row);
-                                    goto codeCompletionRetry;
-
-                                }
-                            }
-                            break;
-                        }
-                    default:
-                        {
-                            if (mod == ConsoleModifiers.Control)
-                            {
-                                switch (key)
-                                {
-                                    case ConsoleKey.V:
-                                        var text = Runtime.GetClipboardData();
-                                        foreach (var ch2 in text)
-                                        {
-                                            var ch3 = (ch2 == '\n' || ch2 >= ' ') ? ch2 : ' ';
-                                            buffer.Insert(pos, ch3);
-                                            ++pos;
-                                        }
-                                        break;
-                                    case ConsoleKey.C:
-                                        var text2 = buffer.ToString();
-                                        Runtime.SetClipboardData(text2);
-                                        break;
-                                    case ConsoleKey.U:
-                                        var text3 = buffer.ToString(0, pos);
-                                        buffer.Remove(0, pos);
-                                        Runtime.SetClipboardData(text3);
-                                        pos = 0;
-                                        break;
-                                    case ConsoleKey.K:
-                                        var text4 = buffer.ToString(pos, buffer.Length - pos);
-                                        buffer.Remove(pos, buffer.Length - pos);
-                                        Runtime.SetClipboardData(text4);
-                                        break;
-                                    case ConsoleKey.W:
-                                        var line = buffer.ToString();
-                                        var loc = Runtime.LocateWord(line, pos, true);
-                                        var text5 = buffer.ToString(loc.Begin, pos - loc.Begin);
-                                        buffer.Remove(loc.Begin, pos - loc.Begin);
-                                        pos = loc.Begin;
-                                        Runtime.SetClipboardData(text5);
-                                        break;
-                                }
-                            }
-                            else if (ch == '\n')
-                            {
-                                var s = buffer.ToString();
-                                if (mod != ConsoleModifiers.Control && IsCompleteSourceCode(s))
-                                {
-                                    pos = buffer.Length;
-                                    paint();
-                                    if (crlf)
-                                    {
-                                        writeChar('\n');
-                                    }
-                                    return s;
-                                }
-                                else
-                                {
-                                    writeChar('\n');
-                                    buffer.Append('\n');
-                                    ++pos;
-                                }
-                            }
-                            else //if (ch >= ' ')
-                            {
-                                buffer.Insert(pos, ch);
-                                ++pos;
-                            }
-                            break;
-                        }
+                        break;
+                    }
                 }
             }
         }
 
-        public static void RunConsoleMode(CommandLineOptions options)
+        public static void RunConsoleMode (CommandLineOptions options)
         {
 
             Runtime.ProgramFeature = "kiezellisp-con";
@@ -560,16 +562,17 @@ namespace Kiezel
             Runtime.UserArguments = options.UserArguments;
             Runtime.ForegroundColor = options.ForegroundColor;
             Runtime.BackgroundColor = options.BackgroundColor;
+            Runtime.RlWrap = options.RlWrap;
 
             if (options.ScriptName == null)
             {
-                var assembly = Assembly.GetExecutingAssembly();
-                var fileVersion = FileVersionInfo.GetVersionInfo(assembly.Location);
+                var assembly = Assembly.GetExecutingAssembly ();
+                var fileVersion = FileVersionInfo.GetVersionInfo (assembly.Location);
                 if (Runtime.ForegroundColor != -1)
                 {
                     Console.ForegroundColor = (ConsoleColor)Runtime.ForegroundColor;
                 }
-                var term = System.Environment.GetEnvironmentVariable("TERM");
+                var term = System.Environment.GetEnvironmentVariable ("TERM");
                 if (term != "xterm")
                 {
                     if (Runtime.BackgroundColor != -1)
@@ -577,11 +580,11 @@ namespace Kiezel
                         Console.BackgroundColor = (ConsoleColor)Runtime.BackgroundColor;
                     }
                 }
-                Console.Clear();
-                Console.WriteLine(Runtime.GetVersion());
-                Console.WriteLine(fileVersion.LegalCopyright);
+                Console.Clear ();
+                Console.WriteLine (Runtime.GetVersion ());
+                Console.WriteLine (fileVersion.LegalCopyright);
             }
-            ReadEvalPrintLoop(commandOptionArgument: options.ScriptName, initialized: false);
+            ReadEvalPrintLoop (commandOptionArgument: options.ScriptName, initialized: false);
         }
 
         #endregion Public Methods

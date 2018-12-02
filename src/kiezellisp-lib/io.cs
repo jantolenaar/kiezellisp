@@ -143,25 +143,25 @@ namespace Kiezel
 
         public static CharacterRepresentation[] CharacterTable =
         {
-            new CharacterRepresentation('\0', @"\0", "null"),
-            new CharacterRepresentation('\a', @"\a", "alert"),
-            new CharacterRepresentation('\b', @"\b", "backspace"),
-            new CharacterRepresentation(' ', null, "space"),
-            new CharacterRepresentation(':', null, "colon"),
-            new CharacterRepresentation(';', null, "semicolon"),
-            new CharacterRepresentation('\'', null, "single-quote"),
-            new CharacterRepresentation('"', null, "double-quote"),
-            new CharacterRepresentation('(', null, "left-par"),
-            new CharacterRepresentation(')', null, "right-par"),
-            new CharacterRepresentation('/', null, "slash"),
-            new CharacterRepresentation('\f', @"\f", "page"),
-            new CharacterRepresentation('\n', @"\n", "newline"),
-            new CharacterRepresentation('\r', @"\r", "return"),
-            new CharacterRepresentation('\t', @"\t", "tab"),
-            new CharacterRepresentation('\v', @"\v", "vtab"),
-            new CharacterRepresentation('\"', @"\""", null),
-            new CharacterRepresentation('\\', @"\\", "backslash")
-        };
+        new CharacterRepresentation('\0', @"\0", "null"),
+        new CharacterRepresentation('\a', @"\a", "alert"),
+        new CharacterRepresentation('\b', @"\b", "backspace"),
+        new CharacterRepresentation(' ', null, "space"),
+        new CharacterRepresentation(':', null, "colon"),
+        new CharacterRepresentation(';', null, "semicolon"),
+        new CharacterRepresentation('\'', null, "single-quote"),
+        new CharacterRepresentation('"', null, "double-quote"),
+        new CharacterRepresentation('(', null, "left-par"),
+        new CharacterRepresentation(')', null, "right-par"),
+        new CharacterRepresentation('/', null, "slash"),
+        new CharacterRepresentation('\f', @"\f", "page"),
+        new CharacterRepresentation('\n', @"\n", "newline"),
+        new CharacterRepresentation('\r', @"\r", "return"),
+        new CharacterRepresentation('\t', @"\t", "tab"),
+        new CharacterRepresentation('\v', @"\v", "vtab"),
+        new CharacterRepresentation('\"', @"\""", null),
+        new CharacterRepresentation('\\', @"\\", "backslash")
+    };
         public static ConditionalWeakTable<TextReader, LispReader> ReaderCache = new ConditionalWeakTable<TextReader, LispReader>();
 
         #endregion Static Fields
@@ -199,7 +199,8 @@ namespace Kiezel
                         yield return form;
                     }
                 }
-                else {
+                else
+                {
                     yield return expr;
                 }
             }
@@ -229,7 +230,8 @@ namespace Kiezel
             {
                 return TextWriter.Null;
             }
-            else {
+            else
+            {
                 return stream;
             }
         }
@@ -254,7 +256,8 @@ namespace Kiezel
             {
                 return token[0];
             }
-            else {
+            else
+            {
                 foreach (var rep in CharacterTable)
                 {
                     if (rep.Name == token)
@@ -319,7 +322,8 @@ namespace Kiezel
                         return NormalizePath(file);
                     }
                 }
-                else {
+                else
+                {
                     names2.Add(file);
                 }
             }
@@ -366,14 +370,15 @@ namespace Kiezel
                 var basename = Path.GetFileNameWithoutExtension(file);
                 candidates = new string[]
                 { file + ".k",
-                    file + ".kiezel",
-                    file + "/" + basename + ".k",
-                    file + "/" + basename + ".kiezel",
-                    file + "/main.k",
-                    file + "/main.kiezel"
+            file + ".kiezel",
+            file + "/" + basename + ".k",
+            file + "/" + basename + ".kiezel",
+            file + "/main.k",
+            file + "/main.kiezel"
                 };
             }
-            else {
+            else
+            {
                 candidates = new string[] { file };
             }
 
@@ -382,12 +387,14 @@ namespace Kiezel
             return path;
         }
 
+#if !NETCOREAPP && !NETSTANDARD
         [Lisp("get-clipboard")]
         public static string GetClipboardData()
         {
             string str = System.Windows.Forms.Clipboard.GetText();
             return str;
         }
+#endif
 
         [Lisp("load")]
         public static void Load(object filespec, params object[] args)
@@ -400,6 +407,7 @@ namespace Kiezel
             }
         }
 
+#if !NETCOREAPP && !NETSTANDARD
         [Lisp("load-clipboard")]
         public static void LoadClipboardData()
         {
@@ -409,6 +417,7 @@ namespace Kiezel
                 TryLoadText(stream, null, null, false, false);
             }
         }
+#endif
 
         public static string NormalizePath(string path)
         {
@@ -459,7 +468,8 @@ namespace Kiezel
                 }
                 return eofValue;
             }
-            else {
+            else
+            {
                 return value;
             }
         }
@@ -554,7 +564,8 @@ namespace Kiezel
                 }
                 return eofValue;
             }
-            else {
+            else
+            {
                 return value;
             }
         }
@@ -613,7 +624,8 @@ namespace Kiezel
                 }
                 return eofValue;
             }
-            else {
+            else
+            {
                 return value;
             }
         }
@@ -659,7 +671,8 @@ namespace Kiezel
                     }
                     return eofValue;
                 }
-                else {
+                else
+                {
                     return value;
                 }
             }
@@ -697,7 +710,8 @@ namespace Kiezel
                 }
                 return eofValue;
             }
-            else {
+            else
+            {
                 return value;
             }
         }
@@ -740,7 +754,8 @@ namespace Kiezel
             }
         }
 
-        [Lisp("run-clipboard")]
+#if CLIPBOARD
+[Lisp("run-clipboard")]
         public static void RunClipboardData()
         {
             var code = GetClipboardData();
@@ -754,6 +769,7 @@ namespace Kiezel
                 }
             }
         }
+#endif
 
         [Lisp("say")]
         public static void Say(params object[] items)
@@ -769,6 +785,7 @@ namespace Kiezel
             return paths;
         }
 
+#if !NETCOREAPP && !NETSTANDARD
         [Lisp("set-clipboard")]
         public static void SetClipboardData(string str)
         {
@@ -776,10 +793,12 @@ namespace Kiezel
             {
                 System.Windows.Forms.Clipboard.Clear();
             }
-            else {
+            else
+            {
                 System.Windows.Forms.Clipboard.SetText(str);
             }
         }
+#endif
 
         [Lisp("set-load-path")]
         public static Cons SetLoadPath(params string[] folders)
@@ -797,7 +816,8 @@ namespace Kiezel
                 {
                     return "";
                 }
-                else {
+                else
+                {
                     return "null";
                 }
             }
@@ -807,7 +827,8 @@ namespace Kiezel
                 {
                     return @"#\" + EncodeCharacterName((char)obj);
                 }
-                else {
+                else
+                {
                     return obj.ToString();
                 }
             }
@@ -821,7 +842,8 @@ namespace Kiezel
                 {
                     return "\"" + EscapeCharacterString(obj.ToString()) + "\"";
                 }
-                else {
+                else
+                {
                     return obj.ToString();
                 }
             }
@@ -838,7 +860,8 @@ namespace Kiezel
                     + ((rx.Options & RegexOptions.Multiline) != 0 ? "m" : "")
                     + ((rx.Options & RegexOptions.Singleline) != 0 ? "s" : "");
                 }
-                else {
+                else
+                {
                     return rx.ToString();
                 }
             }
@@ -850,7 +873,8 @@ namespace Kiezel
                 {
                     s = dt.ToString("yyyy-dd-MM");
                 }
-                else {
+                else
+                {
                     s = dt.ToString("yyyy-MM-dd HH:mm:ss");
                 }
 
@@ -858,7 +882,8 @@ namespace Kiezel
                 {
                     return "\"" + s + "\"";
                 }
-                else {
+                else
+                {
                     return s;
                 }
             }
@@ -979,7 +1004,8 @@ namespace Kiezel
             {
                 return "#<type " + obj + ">";
             }
-            else {
+            else
+            {
                 return "#<" + obj + ">";
             }
         }
@@ -1052,7 +1078,8 @@ namespace Kiezel
                     {
                         // compile-time expression, e.g. (module xyz)
                     }
-                    else {
+                    else
+                    {
                         var result = Execute(code);
                         if (loadPrint)
                         {
@@ -1119,8 +1146,8 @@ namespace Kiezel
         public static void Write(object item, bool crlf, params object[] kwargs)
         {
             var args = ParseKwargs(true, kwargs, new string[] { "escape", "width", "stream", "padding", "pretty", "left", "right", "base", "force", "format" },
-                           GetDynamic(Symbols.PrintEscape), 0, MissingValue, " ", false, null, null, -1,
-                           GetDynamic(Symbols.PrintForce), null);
+                       GetDynamic(Symbols.PrintEscape), 0, MissingValue, " ", false, null, null, -1,
+                       GetDynamic(Symbols.PrintForce), null);
 
             var outputstream = args[2];
             var stream = ConvertToTextWriter(outputstream);
@@ -1174,7 +1201,8 @@ namespace Kiezel
 
                     RestoreStackAndFrame(saved);
                 }
-                else {
+                else
+                {
                     WriteImp(item, stream, escape, width, padding, radix, crlf, format);
                 }
             }
@@ -1203,7 +1231,8 @@ namespace Kiezel
             {
                 stream.Write(@"\x{0:x2}", (int)ch);
             }
-            else {
+            else
+            {
                 stream.Write(ch);
             }
         }
@@ -1218,7 +1247,8 @@ namespace Kiezel
             {
                 s = ToPrintString(item, escape: escape, radix: radix);
             }
-            else {
+            else
+            {
                 s = string.Format("{0:" + format + "}", item);
             }
 
@@ -1234,7 +1264,8 @@ namespace Kiezel
                 {
                     s = s.PadLeft(w, string.IsNullOrEmpty(padding) ? ' ' : padding[0]);
                 }
-                else {
+                else
+                {
                     s = s.PadRight(w, string.IsNullOrEmpty(padding) ? ' ' : padding[0]);
                 }
             }
@@ -1243,7 +1274,8 @@ namespace Kiezel
             {
                 stream.WriteLine(s.ConvertToExternalLineEndings());
             }
-            else {
+            else
+            {
                 stream.Write(s.ConvertToExternalLineEndings());
             }
         }

@@ -136,6 +136,12 @@ namespace Kiezel
             }
         }
 
+        public static string GetFirstAssemblyLocation()
+        {
+            var asm = AppDomain.CurrentDomain.GetAssemblies().First();
+            return asm.Location;
+        }
+
         [Lisp("list-assemblies")]
         public static void ListAssemblies()
         {

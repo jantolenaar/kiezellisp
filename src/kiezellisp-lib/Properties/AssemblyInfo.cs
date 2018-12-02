@@ -2,9 +2,6 @@ using System;
 using System.Reflection;
 using System.Runtime.InteropServices;
 
-// due to BigRational
-[assembly: CLSCompliant(false)]
-
 // General Information about an assembly is controlled through the following
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.

@@ -5,7 +5,7 @@
 ;;; kiezellisp-init-sample.k
 ;;;
 
-;;; Make a copy of this file to kiezellisp-init.k
+;;; Make a copy of this file to your-application-data/kiezellisp/kiezellisp-init.k
 ;;; Use this copy to customize the kiezellisp runtime environment.
 
 #if unix

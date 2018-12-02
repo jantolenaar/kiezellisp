@@ -1,8 +1,13 @@
 # Change Log
 
-### 2018/11/17
+### 2018/12/1
 
-*   Moved `kiezellisp-init.k` to application data folder of `kiezellisp`.
+*   Moved `kiezellisp-init.k` to application data folder.
+*   Moved history to application data folder.
+*   Save history immediately after entering a line.
+*   Checked solution to use Microsoft Visual Studio document 
+    formatting.
+*   Fixed recursion problem in `ReadDelimitedList`.
 
 ### 2018/11/6
 
