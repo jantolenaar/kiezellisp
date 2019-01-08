@@ -1,6 +1,7 @@
 # Kiezellisp
 
-**Kiezellisp** is a lisp compiler/interpreter running on .NET.
+**Kiezellisp** is a lisp compiler/interpreter that runs on .NET Framework
+and Mono. 
 
 ## Some features:
 
@@ -11,9 +12,9 @@
 +   Import of .NET classes into packages
 +   Lazy lists
 +   Macros and compiler macros
-+   Named and anonymous functions (lambdas)
++   Named and anonymous functions
 +   Parallel expressions
-+   Prototypes
++   Object model based on prototypes
 +   REPL
     + has history and code completion
     + uses `System.Console`
