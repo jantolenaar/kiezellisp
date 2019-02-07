@@ -6,7 +6,7 @@
 
 .description
 Compares `str` to the string or Regex `pattern`. Returns null if no match.
-Returns a list of matches otherwise.
+Returns the first match otherwise.
 
 .examples
 (.regex-match "hello, world" "(.)rl")

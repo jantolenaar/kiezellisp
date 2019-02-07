@@ -1,7 +1,7 @@
 .index .
 .usage builtin-function
 .syntax
-(. members)
+(. member)
 
 .description
 Returns a function to access a member of an arbitrary object,
@@ -10,9 +10,8 @@ expanded by the lisp reader to the former expression.
 
 .examples
 (.to-upper "hello")
-(.to-upper "hello")
 (let obj (new :name "piet"))
-(.name.to-upper obj)
+(.to-upper (.name obj))
 :throws
-(.city.to-upper obj)
+(.to-upper (.city obj))
 

@@ -488,7 +488,7 @@ namespace Kiezel
             {
                 return AsLazyList((IEnumerable)a1) != null;
             }
-            else if (a1 is VOID)
+            else if (MissingValuep(a1))
             {
                 return false;
             }
@@ -511,13 +511,6 @@ namespace Kiezel
         public static bool Vectorp(object expr)
         {
             return expr is Vector;
-        }
-
-        [Pure,
-        Lisp("void?")]
-        public static bool Voidp(object expr)
-        {
-            return expr is VOID;
         }
 
         [Pure,

@@ -290,12 +290,12 @@ namespace Kiezel
             }
             else if (token.Length > 1 && token[0] == '.')
             {
-                // .a.b.c maps to ( . "a" "b" "c" )
+                // .a maps to ( . "a" )
                 return Runtime.MakeList(Symbols.Dot, token.Substring(1));
             }
             else if (token.Length > 1 && token[0] == '?')
             {
-                // ?a.b.c maps to ( ? "a" "b" "c" )
+                // ?a maps to ( ? "a" )
                 return Runtime.MakeList(Symbols.NullableDot, token.Substring(1));
             }
             else

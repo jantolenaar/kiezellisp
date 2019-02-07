@@ -1,9 +1,10 @@
 .index about:api
+
 # CLR
 .api
 import reference add-event-handler
 
-## Explicit interfaces
+### Explicit interfaces
 
 To call a method on an explicit interface, first import the interface, then call
 the corresponding function in its package.
@@ -19,17 +20,23 @@ if-match case-match ecase-match when-match
 
 # Math
 .api
-math:conjugate
+math:conjugate 
+math:round math:truncate math:floor math:ceiling 
+math:rem math:mod
 
 The package `math` replaces the class `System.Math` and adds support for big
 integers, rationals and complex numbers.
+
+# Blocks
+.api
+block leave redo do
 
 # Functions
 .api
 about:parameter-lists
 defun defun* lambda lambda* defmulti defmethod
 return return-if lambda?
-tail-recursion recur self
+prog reprog self
 letfun
 
 # Macros
@@ -64,7 +71,7 @@ filter filterv except remove keep keep-indexed
 reduce reductions sequence transduce eduction 
 sum maximize minimize average
 length count
-first-position index-of
+find index-of
 find-subsequence-position mismatch
 every? not-every? any? not-any?
 zip unzip

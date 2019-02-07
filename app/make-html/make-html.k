@@ -22,9 +22,6 @@
 (require "html")
 (use-package "html-elements")
 
-;; for examples
-(require "csv")
-
 (def home shell:$home)
 (def projects "${home}/projects")
 
@@ -37,28 +34,33 @@
 (import "System.IO.Path")
 (import "System.IO.File")
 
-(defun time-stamp ()
-    (let span (.subtract (date-time:now) (date-time:new 2000 1 1)))
+(defun time-stamp (now)
+    (let span (.subtract now (date-time:new 2000 1 1)))
     (as-long (.total-seconds span)))
 
 (def $input-dir null)
 (def $output-dir null)
 (def $master-index null)
-(def $style-sheet "styles.css?v=<%=(time-stamp)%>")
-
+;(def $style-sheet "styles.css?v=<%=(time-stamp)%>")
+(def $style-sheet "styles.css")
+(def $style-sheet-version null)
+(def $site-name null)
 
 (defun make-kiezellisp-html()
+    (let $site-name "jan&nbsp;tolenaar&nbsp;/&nbsp;<span style='color:yellow'>kiezel</span>lisp")
     (let $input-dir "${projects}/kiezellisp/src/doc")
     (let $output-dir "${home}/www/local/jantolenaar/kiezellisp")
     ;; Mdk files containing an index directive are added to the 
     ;; master index of the public api. If $master-index is null no 
     ;; master index is created.
     (let $master-index (vector))
-    ;;(copy-change-log)
     (rewrite-md-change-log)
     (make-html))
 
 (defun make-html ()
+    ;; styles.css must be present in $input-dir
+    (let info (file-info:new (path:combine $input-dir $style-sheet)))
+    (let $style-sheet-version (time-stamp (.last-write-time info)))
     ;; used when wrapping api links and pretty printing examples
     ;; width of <pre> in html
     (let $right 66)
@@ -71,6 +73,19 @@
                "${$input-dir}/change-log.mdk"
                true))
 
+(defun equal-files? (path1 path2)
+    (let info1 (file-info:new path1))
+    (let info2 (file-info:new path2))
+    (and (file:exists path1)
+         (file:exists path2)
+         (= (.length info1) (.length info2))
+         (= (.last-write-time info1) (.last-write-time info2))))
+
+(defun unchanged-file? (new-content old-path)
+    (when (file:exists old-path)
+        (let old-html-text (file:read-all-text old-path))
+        (string:equals old-html-text new-content)))
+
 (defun get-files ()
     (let prefix-length (inc (.length $input-dir)))
     (letfun get-base-name (path)
@@ -81,6 +96,7 @@
     (each rewrite-file (get-files)))
 
 (defun rewrite-file (name)
+    ;(say name)
     (cond
         ((.ends-with name ".mdk")
             (rewrite-mdk-file name))
@@ -92,7 +108,9 @@
     (let input-file (path:combine $input-dir name))
     (let output-file (path:combine $output-dir name))
     (directory:create-directory (path:get-directory-name output-file))
-    (file:copy input-file output-file true))
+    (when (not (equal-files? input-file output-file))
+        (say output-file)
+        (file:copy input-file output-file true)))
 
 (defun rewrite-mdk-file (name)
     (let item (get-rewrite-data name))
@@ -134,7 +152,7 @@
         (<title> name)
         (<link> :rel "StyleSheet"
                 :type "text/css"
-                :href (string root $style-sheet))
+                :href (string root $style-sheet "?v=" $style-sheet-version))
         (if math
             (<script> :type "text/x-mathjax-config" mathjax-config))
         (if math
@@ -146,7 +164,7 @@
     (let root (.repeat "../" depth))
     (let content-id (if wide "wide-content" "content"))
     (<body>        
-        (<a> :class "kiezel banner" :href "${root}index.html" "www.<span style='color:yellow'>kiezel</span>lisp.nl")
+        (<a> :class "banner" :href "${root}index.html" $site-name)
         "&nbsp;"
         "&nbsp;"
         "&nbsp;"
@@ -154,7 +172,7 @@
         "&nbsp;"
         "&nbsp;"
         (if (and anchor (vector? $master-index))
-            (<a> :class "kiezel banner" :href "${root}help/index.html" "Index of Everything"))
+            (<a> :class "banner" :href "${root}help/index.html" "index of everything"))
         (<div> :id content-id content)))
 
 (defun render-html(name body &key anchor wide)
@@ -171,7 +189,9 @@
     (let output-file (path:change-extension path ".html"))
     (let folder (path:get-directory-name output-file))
     (directory:create-directory folder)
-    (file:write-all-text output-file html-text))
+    (when (not (unchanged-file? html-text output-file))
+        (say output-file) 
+        (file:write-all-text output-file html-text)))
 
 (defun write-master-index ()
     (let lisp-package (find-package "lisp"))
@@ -187,24 +207,21 @@
         (not (or (is-not-alnum item)
                  (is-lisp-alnum item))))
 
-    (let not-alnum-items (filter is-not-alnum $master-index))
-    (let lisp-alnum-items (filter is-lisp-alnum $master-index))
-    (let other-items (filter is-other $master-index))
-
-    (let set1 (make-links (append other-items not-alnum-items)
+    (let not-alnum-items (sort-by .anchor (filter is-not-alnum $master-index)))
+    (let lisp-alnum-items (sort-by .anchor (filter is-lisp-alnum $master-index)))
+    (let other-items (sort-by .anchor (filter is-other $master-index)))
+    (let set1 (make-links (append not-alnum-items other-items)
                             #(symbol-package (.anchor %1))))
     (let set2 (make-links lisp-alnum-items
                             #(elt (symbol-name (.anchor %1)) 0)))
 
     (let md-text (with-output-to-string ($stdout)
-        (print-line "# Index of Everything")
-        (print-line)
-    	(print-line "<div class=indexofeverything>")
-        (print-line set1 "</br></br>" set2)
+    	(print-line "<br/><div class=indexofeverything>")
+        (print-line set1 "<br/><br/>" set2)
     	(print-line "</div>")))
 
     (let name "help/index.html")
-    (let html-text (render-html name (md:convert-to-html md-text) :wide true))
+    (let html-text (render-html name md-text :anchor "index" :wide true))
     (save-html-file name html-text))
 
 (defun* make-links
@@ -216,6 +233,7 @@
             (let anchor (.anchor item))
             (let file1 (path:change-extension (.file item) ".html"))
             (let file2 (.substring file1 (length "help/")))
+            ;;; code is not safe for all anchors
             (string "<a href='" file2 "'>" anchor "</a>"))
         (string:join "<br/>\n" (map make-link items))))
 
@@ -244,7 +262,8 @@
                     (setf anchor (make-symbol text))
                     (setf index text)
                     (collecting "## Name")
-                    (collecting (.html-encode text)))
+                    ;;;; surround with <p></p> to prevent mark down interpretation of some special characters
+                    (collecting "<p>${(.html-encode text)}</p>"))
                 ((.starts-with line ".usage")
                     (let text (.trim (.substring line (.length ".usage"))))
                     (setf usage text)
@@ -276,8 +295,6 @@
             (finally
                 (when (string? terminator-line)
                     (collecting terminator-line)))))
-    ;(if index
-    ;    (setf result (cons "<code>${usage}</code> <big><b>${index}</b></big>" result)))
     (let data (evaluate result))
     (new :anchor anchor :file name :data data))
 
@@ -316,14 +333,19 @@
 (defun transform-topic-to-path-name (topic)
     (chain (~)
         (.long-name topic)
+        (.replace ~ "%" "(perc)")
         (.replace ~ "$" "(dollar)")
         (.replace ~ "?" "(qm)")
         (.replace ~ "." "(dot)")
+        (.replace ~ ">=" "(ge)")
+        (.replace ~ "<=" "(le)")
         (.replace ~ ">" "(gt)")
         (.replace ~ "<" "(lt)")
         (.replace ~ "/" "(slash)")
         (.replace ~ "*" "(star)")
-        (.replace ~ ":" "/")))
+        (.replace ~ ":" "/")
+        (.replace ~ "=" "(eq)")
+        (.replace ~ "+" "(plus)")))
 
 (defun make-api-link (name)
     (let ref (string "../" (transform-topic-to-path-name name) ".html"))
@@ -392,11 +414,6 @@
 (defun small (&rest args)
     (string:join " " args))
 
-(defun with-period (str)
-    (if (.ends-with str ".")
-          str
-        (string str ".")))
-
 (defun do-indent (text)
     (print-line "~~~")
     (if (.ends-with text "\n")
@@ -439,6 +456,7 @@
     (let env (make-extended-environment))
     (var dbglevel 0)
     (var catch-exceptions false)
+    (gensym-reset)
     (with-output-to-string ($stdout)
         (loop
             (for example :in examples)
@@ -460,28 +478,28 @@
                 (":d"
                     (describe it))
                 (true
-                    (let result (do
-                                    (let $enable-warnings false)
-                                    (let $stderr $stdout)
-                                    (let $stdlog $stdout)
-                                    (if catch-exceptions
-                                          (try-and-catch
-		                                      (let code (visit-example (force example-code)))
-                                              (force (eval code env)))
-                                          (do
-                                              (let code (visit-example (force example-code)))
-		                                      (force (eval code env))))))
+                    (let result 
+                            (do
+                                (let $enable-warnings false)
+                                (let $stderr $stdout)
+                                (let $stdlog $stdout)
+                                (if catch-exceptions
+                                      (try-and-catch
+	                                      (let code (visit-example (force example-code)))
+                                          (force (eval code env)))
+                                      (do
+                                          (let code (visit-example (force example-code)))
+	                                      (force (eval code env))))))
                     (cond
+                        ((missing-value? result)
+                            #;(print nothing))
                         ((exception? result)
                             (print (.message result))
                             (incf dbglevel))
-                        ((= result (void))
-                            #;(print nothing))
                         (true
                             (setf it result)
                             (print "it: ")
-                            (pprint result :left 4))))
-                )
+                            (pprint result :left 4)))))
             (setf catch-exceptions false)
             (print-line))))
 

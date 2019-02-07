@@ -1,0 +1,18 @@
+.index math:rem 
+.usage builtin-function
+.syntax
+(math:rem number1 number2)
+
+.description
+Same as `%`. Returns the remainder of the division of two numbers, i. e. the
+value of `(- a (* (math:truncate (/ a b)) b))`.
+
+.examples
+(math:rem 7 3)
+(math:rem -7 3)
+(math:rem 7 -3)
+(math:rem -7 -3)
+
+.see-also
+.api
+math:truncate math:mod %

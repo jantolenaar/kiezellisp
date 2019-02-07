@@ -49,6 +49,10 @@ namespace Kiezel
             {
                 return BigRational.Abs((BigRational)a);
             }
+            else if (a is float)
+            {
+                return Math.Abs((float)a);
+            }
             else
             {
                 return Complex.Abs(AsComplex(a));
@@ -108,6 +112,24 @@ namespace Kiezel
             else if (Integerp(a))
             {
                 return a;
+            }
+            else if (a is BigRational)
+            {
+                var r = (BigRational)a;
+                var w = r.GetWholePart();
+                var f = r.GetFractionPart();
+                if (f == 0)
+                {
+                    return w;
+                }
+                else if (f < 0)
+                {
+                    return w;
+                }
+                else
+                {
+                    return w + 1;
+                }
             }
             else
             {
@@ -190,6 +212,24 @@ namespace Kiezel
             {
                 return a;
             }
+            else if (a is BigRational)
+            {
+                var r = (BigRational)a;
+                var w = r.GetWholePart();
+                var f = r.GetFractionPart();
+                if (f == 0)
+                {
+                    return w;
+                }
+                else if (f < 0)
+                {
+                    return w - 1;
+                }
+                else
+                {
+                    return w;
+                }
+            }
             else
             {
                 return Math.Floor(AsDecimal(a));
@@ -236,6 +276,13 @@ namespace Kiezel
             {
                 return Math.Log10(AsDouble(a));
             }
+        }
+
+        [Pure,
+        Lisp("math:mod")]
+        public static object Mod(object a, object b)
+        {
+            return Runtime.Sub(a, Runtime.Mul(Floor(Runtime.Div(a, b)), b));
         }
 
         [Pure,
@@ -303,6 +350,13 @@ namespace Kiezel
         public static double RandomDouble()
         {
             return RandomNumbers.NextDouble();
+        }
+
+        [Pure,
+        Lisp("math:rem")]
+        public static object Rem(object a, object b)
+        {
+            return Runtime.Sub(a, Runtime.Mul(Truncate(Runtime.Div(a, b)), b));
         }
 
         [Pure,
@@ -462,6 +516,11 @@ namespace Kiezel
             else if (Integerp(a))
             {
                 return a;
+            }
+            else if (a is BigRational)
+            {
+                var r = (BigRational)a;
+                return r.GetWholePart();
             }
             else
             {

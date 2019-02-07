@@ -14,5 +14,5 @@ referenced by the next form.
     (.split ~)
     (map .length ~)
     (sum ~))
-(sum (map .length (.split "een twee   drie vier vijf zes zeven")))
+(sum (map .length (.split "een twee drie vier vijf zes zeven")))
 

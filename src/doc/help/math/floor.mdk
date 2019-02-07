@@ -1,0 +1,16 @@
+.index math:floor
+.usage builtin-function
+.syntax
+(math:floor number)
+
+.description
+Returns the nearest integer in the direction of negative infinity.
+
+.examples
+(math:floor 6.99)
+(math:floor 14/3)
+(math:floor -14.3)
+
+.see-also
+.api
+math:mod math:rem math:ceiling math:round math:truncate

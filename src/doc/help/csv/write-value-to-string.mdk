@@ -1,9 +1,0 @@
-.index csv:write-value-to-string
-.usage builtin-function
-.syntax
-(csv:write-value-to-string value culture)
-
-.description
-TO DO
-
-

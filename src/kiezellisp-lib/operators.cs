@@ -580,80 +580,6 @@ namespace Kiezel
         }
 
         [Pure,
-        Lisp("divrem")]
-        public static Cons Divrem(object a1)
-        {
-            return Divrem(1, a1);
-        }
-
-        [Pure,
-        Lisp("divrem")]
-        public static Cons Divrem(object a1, object a2)
-        {
-            // commonest case first
-            if (a1 is int && a2 is int)
-            {
-                var d1 = (int)a1;
-                var d2 = (int)a2;
-                var rem = d1 % d2;
-                var quo = (d1 - rem) / d2;
-                return MakeList(quo, rem);
-            }
-            else if (a1 is double || a2 is double)
-            {
-                var d1 = AsDouble(a1);
-                var d2 = AsDouble(a2);
-                var rem = d1 % d2;
-                var quo = (d1 - rem) / d2;
-                return MakeList(quo, rem);
-            }
-            else if (a1 is decimal || a2 is decimal)
-            {
-                var d1 = AsDecimal(a1);
-                var d2 = AsDecimal(a2);
-                var rem = d1 % d2;
-                var quo = (d1 - rem) / d2;
-                return MakeList(quo, rem);
-            }
-            else if (a1 is BigRational || a2 is BigRational)
-            {
-                var d1 = AsBigRational(a1);
-                var d2 = AsBigRational(a2);
-                var rem = d1 % d2;
-                var quo = (d1 - rem) / d2;
-                return MakeList(Number.Shrink(quo), Number.Shrink(rem));
-            }
-            else if (a1 is float || a2 is float)
-            {
-                var d1 = AsSingle(a1);
-                var d2 = AsSingle(a2);
-                var rem = d1 % d2;
-                var quo = (d1 - rem) / d2;
-                return MakeList(quo, rem);
-            }
-            else if (a1 is BigInteger || a2 is BigInteger)
-            {
-                var d1 = AsBigInteger(a1);
-                var d2 = AsBigInteger(a2);
-                var rem = d1 % d2;
-                var quo = (d1 - rem) / d2;
-                return MakeList(Number.Shrink(quo), Number.Shrink(rem));
-            }
-            else if (a1 is long || a2 is long)
-            {
-                long d1 = Convert.ToInt64(a1);
-                long d2 = Convert.ToInt64(a2);
-                var rem = d1 % d2;
-                var quo = (d1 - rem) / d2;
-                return MakeList(Number.Shrink(quo), Number.Shrink(rem));
-            }
-            else
-            {
-                return Divrem(Convert.ToInt32(a1), Convert.ToInt32(a2));
-            }
-        }
-
-        [Pure,
         Lisp("eq")]
         public static bool Eq(object a, object b)
         {
@@ -1403,10 +1329,9 @@ namespace Kiezel
 
         [Pure,
         Lisp("%")]
-        public static object Rem(object a1, object a2)
+        public static object RemOp(object a1, object a2)
         {
-            var m = Divrem(a1, a2);
-            return Second(m);
+            return Rem(a1, a2);
         }
 
         [Pure,
@@ -1519,6 +1444,10 @@ namespace Kiezel
             else if (a1 is float || a2 is float)
             {
                 return AsSingle(a1) - AsSingle(a2);
+            }
+            else if (a1 is BigRational || a2 is BigRational)
+            {
+                return Number.Shrink(AsBigRational(a1) - AsBigRational(a2));
             }
             else if (a1 is BigInteger || a2 is BigInteger)
             {

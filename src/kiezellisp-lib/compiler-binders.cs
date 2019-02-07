@@ -325,7 +325,7 @@ namespace Kiezel
             if (target.Value == null)
             {
                 return Runtime.CheckTargetNullReference(target,
-                    "Cannot invoke a method on a null reference:"
+                    "Cannot invoke a method on a null reference: "
                     + limitType.FullName + "." + name + Runtime.CollectParameterInfo(target, args));
             }
 

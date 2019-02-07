@@ -1,4 +1,4 @@
-.index string:split
+.index string:trim
 .usage builtin-function
 
 .syntax

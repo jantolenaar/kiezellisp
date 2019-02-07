@@ -208,22 +208,6 @@ namespace Kiezel
             return context;
         }
 
-        [Lisp("system:enable-benchmark")]
-        public static void EnableBenchmark(bool flag)
-        {
-            if (flag)
-            {
-                Process.GetCurrentProcess().ProcessorAffinity = new IntPtr(1);
-                Process.GetCurrentProcess().PriorityClass = ProcessPriorityClass.High;
-                Thread.CurrentThread.Priority = ThreadPriority.Highest;
-            }
-            else {
-                Process.GetCurrentProcess().ProcessorAffinity = new IntPtr(0);
-                Process.GetCurrentProcess().PriorityClass = ProcessPriorityClass.Normal;
-                Thread.CurrentThread.Priority = ThreadPriority.Normal;
-            }
-        }
-
         [Lisp("system:get-current-thread")]
         public static ThreadContext GetCurrentThread()
         {
@@ -235,7 +219,6 @@ namespace Kiezel
         {
             return task.GetResult();
         }
-
 
         [Lisp("resume")]
         public static object Resume(ThreadContext ctx)
@@ -327,7 +310,8 @@ namespace Kiezel
             {
                 return null;
             }
-            else {
+            else
+            {
                 return new SpecialVariables(var.Sym, var.Constant, var.Value, Clone(var.Link));
             }
         }
@@ -385,7 +369,8 @@ namespace Kiezel
                 {
                     return Task.IsCompleted;
                 }
-                else {
+                else
+                {
                     return Thread.ThreadState == System.Threading.ThreadState.Stopped;
                 }
             }
@@ -402,7 +387,8 @@ namespace Kiezel
             {
                 return Task.Result;
             }
-            else {
+            else
+            {
                 Thread.Join();
                 return ThreadResult;
             }
@@ -466,7 +452,8 @@ namespace Kiezel
                     }
                 }
             }
-            else {
+            else
+            {
                 if (Thread.ThreadState == System.Threading.ThreadState.Unstarted)
                 {
                     try

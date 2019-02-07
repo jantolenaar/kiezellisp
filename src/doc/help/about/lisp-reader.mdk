@@ -128,7 +128,7 @@ prototype which will become the parent of the constructed prototype.
 
 ## Read tables
 
-TO DO
+Kiezellisp readtables are similar to Common Lisp readtables.
 
 ## See also
 

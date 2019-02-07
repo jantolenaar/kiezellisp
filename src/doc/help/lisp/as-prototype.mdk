@@ -8,8 +8,8 @@ Adds the contents of a hashtable, the values of static properties of a type
 or the instance properties of an object to a prototype hashtable.
 
 .examples
-(as-prototype date-time:T)
+(as-prototype 3/4)
 :d
-(as-prototype (date-time:now))
+(as-prototype #/a3/i)
 :d
 

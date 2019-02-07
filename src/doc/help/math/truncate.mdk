@@ -1,0 +1,16 @@
+.index math:truncate
+.usage builtin-function
+.syntax
+(math:truncate number)
+
+.description
+Returns the nearest integer in the direction of zero.
+
+.examples
+(math:truncate 6.99)
+(math:truncate 14/3)
+(math:truncate -14.3)
+
+.see-also
+.api
+math:mod math:rem math:floor math:ceiling math:round

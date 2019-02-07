@@ -29,14 +29,16 @@ namespace Kiezel
         public static object DefDynamic(Symbol sym, object value)
         {
             // used by compiler generated code
-            CurrentThreadContext.SpecialStack = new SpecialVariables(sym, false, value, CurrentThreadContext.SpecialStack);
+            var context = CurrentThreadContext;
+            context.SpecialStack = new SpecialVariables(sym, false, value, context.SpecialStack);
             return value;
         }
 
         public static object DefDynamicConst(Symbol sym, object value)
         {
             // used by compiler generated code
-            CurrentThreadContext.SpecialStack = new SpecialVariables(sym, true, value, CurrentThreadContext.SpecialStack);
+            var context = CurrentThreadContext;
+            context.SpecialStack = new SpecialVariables(sym, true, value, context.SpecialStack);
             return value;
         }
 
@@ -228,17 +230,20 @@ namespace Kiezel
                 {
                     return null;
                 }
-                else {
+                else
+                {
                     return field.GetValue(null);
                 }
             }
-            else {
+            else
+            {
                 var i = Convert.ToInt32(value);
                 if (enumType.IsEnumDefined(i))
                 {
                     return i;
                 }
-                else {
+                else
+                {
                     return null;
                 }
             }

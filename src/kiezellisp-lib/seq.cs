@@ -29,7 +29,8 @@ namespace Kiezel
             {
                 return MakeCons(item, seq2);
             }
-            else {
+            else
+            {
                 return seq2;
             }
         }
@@ -80,7 +81,8 @@ namespace Kiezel
                 }
                 return seq;
             }
-            else {
+            else
+            {
                 throw new NotImplementedException();
             }
         }
@@ -250,8 +252,8 @@ namespace Kiezel
             return null;
         }
 
-        [Lisp("first-position")]
-        public static object FirstPosition(IApply predicate, IEnumerable seq)
+        [Lisp("find")]
+        public static object Find(IApply predicate, IEnumerable seq)
         {
             var i = -1;
             foreach (object x in ToIter(seq))
@@ -260,7 +262,7 @@ namespace Kiezel
 
                 if (FuncallBool(predicate, x))
                 {
-                    return i;
+                    return MakeList(x, i);
                 }
             }
             return null;
@@ -397,7 +399,8 @@ namespace Kiezel
                 }
                 return len;
             }
-            else {
+            else
+            {
                 throw new NotImplementedException();
             }
         }
@@ -864,7 +867,8 @@ namespace Kiezel
                 {
                     v1.Add(item);
                 }
-                else {
+                else
+                {
                     v2.Add(item);
                 }
 

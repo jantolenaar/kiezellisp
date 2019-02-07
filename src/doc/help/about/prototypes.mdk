@@ -19,7 +19,7 @@ symbol or string. The key's string representation is the real key.
 (.city a)
 (.telephone a)
 (var x "mies")
-(var c (new :name x :city "amsterdam"))
+(var c (new :name x :city "amsterdam" :telephone null))
 (.name c)
 (.city c)
 (.telephone c)

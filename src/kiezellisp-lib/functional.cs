@@ -43,7 +43,8 @@ namespace Kiezel
         {
             Func<object[], object> c = args =>
             {
-                return !ToBool(Apply(func, args));
+                var result = Apply(func, args);
+                return !ToBool(result);
             };
             return new ApplyWrapper2(c);
         }

@@ -20,8 +20,8 @@ matches.
 
 .examples
 (var expr '(1 2 3))
-(if-match (list a b c) expr (print-line "a=${a} b=${b} c=${c}"))
-(if-match (list 1 2 c) expr (print-line "c=${c}"))
+(if-match (list a b c) expr "a=${a} b=${b} c=${c}")
+(if-match (list 1 2 c) expr "c=${c}")
 
 Patterns can be combined with `and`, `or` and `not`.
 

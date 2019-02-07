@@ -54,7 +54,6 @@ int32:MAX-VALUE
 
 .examples
 (encoding:ascii)
-(date-time:now)
 
 ### .members and ?members notation
 
@@ -66,18 +65,13 @@ this requires that the class is `import`ed. A convenient alternative is to use
 .length
 (.length "hello")
 (map .length '("ada" "ruby" "python"))
+(def obj (new :city "leiden"))
+(.city obj)
+(.country obj)
 
 `.length` is a reader macro that expands to `(. "length")`, which 
 evaluates to a generic function that retrieves the `length` property of an 
 object.
-
-It is also possible to chain property accessors:
-
-.examples
-(var a (new :city "leiden"))
-(.city a)
-.city.length
-(.city.length a)
 
 Nullable accessors handle `null` references by returning `null` instead of
 throwing a `NullReference` exception:
@@ -86,11 +80,6 @@ throwing a `NullReference` exception:
 ?length
 (?length "hello")
 (?length null)
-(var a (new :city "leiden"))
-?city.length
-(?city.length a)
-(?kity.length a)
-
 
 .see-also
 .api

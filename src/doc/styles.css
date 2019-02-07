@@ -23,16 +23,16 @@ font-variant: small-caps;
 }
 
 a.banner {
-padding: 5px;
+padding-top: 5px;
+padding-bottom: 5px;
+padding-left: 10px;
+padding-right: 10px;
 border-radius: 10px;
 text-decoration: none;
 font-weight: bold;
 font-size: 200%;
+background-color: gray;
 color: white;
-}
-
-a.kiezel {
-background-image: url("kiezelsteen.jpg");
 }
 
 #wide-content {

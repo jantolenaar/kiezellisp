@@ -9,7 +9,9 @@ the parameters and initial arguments of the recursion. The `reprog` form
 should be in a tail position. If `reprog` is not used, `prog` is similar to
 Common Lisp's `prog`.
 
-`leave prog` returns from the directly enclosing `prog`.
+The code of a `prog` is contained in a `block prog`, Therefore 
+`leave prog` returns from the directly enclosing `prog`. The special 
+form `reprog` is implemented with `redo prog`.
 
 .examples
 (defun fac (n)

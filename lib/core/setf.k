@@ -43,10 +43,11 @@
                       (string? (second head)))
                     (let member (second head))
                     (let vars (list (gentemp)))
-                    (let vals (list (second place)))
+                    (let vals tail)
+                    (let args (rest vals))
                     (let store-var (gentemp "new"))
                     (let reader-form `(attr ,(first vars) ,member))
-                    (let writer-form `(set-attr ,(first vars) ,member ,store-var))
+                    (let writer-form `(set-attr ,(first vars) ,member ,@args ,store-var))
                     (list vars vals store-var reader-form writer-form))
 
                 (true
@@ -79,7 +80,10 @@
                 ;; next part handles (setf (.name obj) x) which is (setf ((. name) obj) x)
                 ((and (list? (first place))
                       (= '. (first (first place))))
-                    `(set-attr ,(second place) ,(second (first place)) ,value))
+                    (let target (second place))
+                    (let member (second (first place)))
+                    (let args (rest (rest place)))
+                    `(set-attr ,target ,member ,@args ,value))
                 ;; otherwise error
                 (true (throw-error "setf: no setf expander for: " (write-to-string (first place))))))
         (true

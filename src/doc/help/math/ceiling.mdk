@@ -1,0 +1,16 @@
+.index math:ceiling
+.usage builtin-function
+.syntax
+(math:ceiling number)
+
+.description
+Returns the nearest integer in the direction of positive infinity.
+
+.examples
+(math:ceiling 6.99)
+(math:ceiling 14/3)
+(math:ceiling -14.3)
+
+.see-also
+.api
+math:mod math:rem math:floor math:truncate math:round

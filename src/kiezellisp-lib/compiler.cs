@@ -478,8 +478,8 @@ namespace Kiezel
 
             // Initializer must be compiled before adding the variable
             // since it may already exist. Works like nested LET forms.
-            var flags = (ScopeFlags)0;
-            var val = CompileLiteral(null);
+            ScopeFlags flags;
+            Expression val;
 
             if (Length(form) == 2)
             {
@@ -487,10 +487,12 @@ namespace Kiezel
                 {
                     throw new LispException("Constant variable must have an initializer: {0}", sym);
                 }
+                flags = 0;
+                val = CompileLiteral(null);
             }
             else
             {
-                flags |= ScopeFlags.Initialized | (constant ? ScopeFlags.Constant : 0);
+                flags = ScopeFlags.Initialized | (constant ? ScopeFlags.Constant : 0);
                 val = Compile(Third(form), scope);
             }
 
@@ -672,15 +674,17 @@ namespace Kiezel
 
             if (member != null && First(member) == Symbols.Dot)
             {
-                var names = (string)Second(member);
+                // (.name args) or ((. "name") args)
+                var name = (string)Second(member);
                 var args = ToIter(formArgs).Cast<object>().Select(x => Compile(x, scope)).ToArray();
-                return AccessorLambdaMetaObject.MakeExpression(false, names, args);
+                return AccessorLambdaMetaObject.MakeExpression(false, name, args);
             }
             else if (member != null && First(member) == Symbols.NullableDot)
             {
-                var names = (string)Second(member);
+                // (.name args) or ((. "name") args)
+                var name = (string)Second(member);
                 var args = ToIter(formArgs).Cast<object>().Select(x => Compile(x, scope)).ToArray();
-                return AccessorLambdaMetaObject.MakeExpression(true, names, args);
+                return AccessorLambdaMetaObject.MakeExpression(true, name, args);
             }
             else
             {
@@ -719,25 +723,47 @@ namespace Kiezel
             return CompileDynamicExpression(binder, typeof(object), args);
         }
 
+        public static Expression[] CompileArgs(Cons args, AnalysisScope scope)
+        {
+            var args2 = ToIter(args).Cast<object>().Select(x => Compile(x, scope)).ToArray();
+            return args2;
+        }
+
+        public static Expression[] CompileConstantArgs(object[] args)
+        {
+            var args2 = args.Cast<object>().Select(x => CompileLiteral(x)).ToArray();
+            return args2;
+        }
+
+        public static Expression[] CompileConstantTargetArgs(object target, object[] args)
+        {
+            var args1 = CompileLiteral(target);
+            var args2 = args.Cast<object>().Select(x => CompileLiteral(x)).ToList();
+            args2.Insert(0, args1);
+            return args2.ToArray();
+        }
+
         public static Expression CompileGetMember(Cons form, AnalysisScope scope)
         {
-            // (attr target property)
-            CheckLength(form, 3);
+            // (attr target property arg...)
+            CheckMinLength(form, 3);
+            var target = Second(form);
             var member = Third(form);
+            var args = Cdr(Cdr(Cdr(form)));
 
             if (member is string || Keywordp(member))
             {
                 var name = GetDesignatedString(member);
-                var target = Compile(Second(form), scope);
-                var binder = GetGetMemberBinder(name);
-                return CompileDynamicExpression(binder, typeof(object), new Expression[] { target });
+                var args2 = CompileArgs(MakeCons(target, args), scope);
+                var expr = AccessorLambdaMetaObject.MakeExpression(false, name, args2);
+                return expr;
             }
             else if (member is Cons && First(member) == Symbols.Quote && Second(member) is Symbol)
             {
                 var name = ((Symbol)Second(member)).Name;
-                var target = Compile(Second(form), scope);
-                var binder = GetGetMemberBinder(name);
-                return CompileDynamicExpression(binder, typeof(object), new Expression[] { target });
+                var args2 = CompileArgs(MakeCons(target, args), scope);
+                var expr = AccessorLambdaMetaObject.MakeExpression(false, name, args2);
+                return expr;
             }
             else
             {

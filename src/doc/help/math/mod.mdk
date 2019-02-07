@@ -1,0 +1,18 @@
+.index math:mod 
+.usage builtin-function
+.syntax
+(math:mod a b)
+
+.description
+Returns the remainder of the division of two numbers, i. e. the
+value of `(- a (* (math:floor (/ a b)) b))`.
+
+.examples
+(math:mod 7 3)
+(math:mod -7 3)
+(math:mod 7 -3)
+(math:mod -7 -3)
+
+.see-also
+.api
+math:floor math:rem

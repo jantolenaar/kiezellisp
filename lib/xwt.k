@@ -353,7 +353,7 @@
 	(import-namespace "Xwt.*" :package-name-prefix "xwt-")
 	(let xform (compose
 					(filter #(.starts-with %1 "xwt-"))
-					(map #(.imported-type.full-name (get-package %1)))
+					(map #(.full-name (.imported-type (get-package %1))))
 					(remove #(.starts-with %1 "Xwt.Backends"))
 					(remove #(.contains %1 "<"))
 					(map #(string "    \"" %1 "\""))))
@@ -367,7 +367,7 @@
 	(let menu (xwt-menu:new))
 	(loop 
 		(for item in items)
-		(.items.add menu (xwt-menu-item:generate item)))
+		(.add (.items menu) (xwt-menu-item:generate item)))
 	menu)
 
 (defun xwt-menu-item:generate (item)

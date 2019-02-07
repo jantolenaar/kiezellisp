@@ -194,7 +194,7 @@ namespace Kiezel
                                 val = Runtime.Force(val);
                             }
                             Runtime.SetSymbolValue(Symbols.It, val);
-                            if (val != VOID.Value)
+                            if (val != Runtime.MissingValue)
                             {
                                 Runtime.PrintStream(output, "", "it: ");
                                 Runtime.PrettyPrintLine(output, 4, null, val);
@@ -581,14 +581,17 @@ namespace Kiezel
                 foreach (var expr in lispCode)
                 {
                     var val = EvalCommand(expr, 0);
-                    if (Runtime.ToBool(Runtime.GetDynamic(Symbols.ReplForceIt)))
+                    var forcing = Runtime.ToBool(Runtime.GetDynamic(Symbols.ReplForceIt));
+
+                    if (forcing)
                     {
                         val = Runtime.Force(val);
                     }
+
                     if (func == null)
                     {
                         Runtime.SetSymbolValue(Symbols.It, val);
-                        if (val != VOID.Value)
+                        if (val != Runtime.MissingValue)
                         {
                             Runtime.PrintStream(output, "", "it: ");
                             Runtime.PrettyPrintLine(output, 4, null, val);

@@ -1,0 +1,15 @@
+.index % 
+.usage builtin-function
+.syntax
+(% number1 number2)
+
+.description
+Same a `math:rem`. Returns the remainder of the division of two numbers.
+
+.examples
+(% 7 3)
+(% -7 3)
+
+.see-also
+.api
+math:truncate math:mod math:rem

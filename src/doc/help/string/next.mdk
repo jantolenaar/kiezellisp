@@ -10,3 +10,7 @@ Returns the string that succeeds `str`.
 .examples
 (.next "abc")
 (.next "abz")
+
+.see-also
+.api
+string:prev

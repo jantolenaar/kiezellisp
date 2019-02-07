@@ -1,5 +1,25 @@
 # Change Log
 
+### 2019/02/07
+
+*   Removed multiple value features due to implementation issues.
+*   Modified `find`, `math:floor` etc to return a single value again.
+
+### 2018/12/31
+
+*   Removed support for chained properties as in `(.name.to-upper obj)`
+    due to compilation complexity.
+*   Renamed `first-position` to `find`.
+*   `find` returns a multiple value (item, index, flag).
+
+### 2018/12/12
+
+*   Added `values`, `values-list`, `multiple-value-list`, 
+*   Modified `math:floor` and its look-alikes to use multiple values.
+*   Removed `divrem` and `rem`.
+*   Added `math:rem` and `math:mod`.
+
+
 ### 2018/12/1
 
 *   Moved `kiezellisp-init.k` to application data folder.
@@ -12,7 +32,7 @@
 ### 2018/11/6
 
 *   Added source of documentation and build scripts.
-*   Restricted documentation to html.
+*   Restricted documentation build to html.
 
 ### 2018/08/29
 

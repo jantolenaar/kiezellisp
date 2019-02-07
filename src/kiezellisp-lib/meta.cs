@@ -67,7 +67,8 @@ namespace Kiezel
                                     env.DefineVariable((Symbol)sym, ScopeFlags.All);
                                 }
                             }
-                            else {
+                            else
+                            {
                                 env.DefineVariable((Symbol)variables, ScopeFlags.All);
                             }
                             break;
@@ -115,7 +116,8 @@ namespace Kiezel
                         }
                 }
             }
-            else {
+            else
+            {
                 forms = CodeWalkListAt(0, forms, transform, env);
             }
 
@@ -150,7 +152,8 @@ namespace Kiezel
             {
                 return MakeCons(forms.Car, CodeWalkListAt(pos - 1, forms.Cdr, transform, env));
             }
-            else {
+            else
+            {
                 return MakeCons(CodeWalk(forms.Car, transform, env), CodeWalkListAt(0, forms.Cdr, transform, env));
             }
         }
@@ -161,7 +164,8 @@ namespace Kiezel
             {
                 return null;
             }
-            else {
+            else
+            {
                 object result;
                 if (forms.Car is Cons)
                 {
@@ -177,11 +181,13 @@ namespace Kiezel
                         // finally expr...
                         result = CodeWalkListAt(1, list, transform, env);
                     }
-                    else {
+                    else
+                    {
                         result = CodeWalk(list, transform, env);
                     }
                 }
-                else {
+                else
+                {
                     result = CodeWalk(forms.Car, transform, env);
                 }
 
@@ -235,6 +241,12 @@ namespace Kiezel
             var name = string.Format("temp:{0}-{1}", GetDesignatedString(prefix), count);
             var sym = FindSymbol(name);
             return sym;
+        }
+
+        [Lisp("gensym-reset")]
+        public static void GenTempReset()
+        {
+            GentempCounter = 0;
         }
 
         [Lisp("interpolate-string")]
@@ -324,7 +336,8 @@ namespace Kiezel
                     var hook = (IApply)GetDynamic(Symbols.MacroexpandHook);
                     return Funcall(hook, macro, form, new AnalysisScope(env));
                 }
-                else {
+                else
+                {
                     return expr;
                 }
             }

@@ -49,7 +49,8 @@ namespace Kiezel
                 {
                     throw new LispException("Cannot set car of empty list");
                 }
-                else {
+                else
+                {
                     car = value;
                 }
             }
@@ -81,7 +82,8 @@ namespace Kiezel
                 {
                     throw new LispException("Cannot set cdr of empty list");
                 }
-                else {
+                else
+                {
                     cdr = value;
                 }
             }
@@ -136,7 +138,8 @@ namespace Kiezel
                 {
                     return null;
                 }
-                else {
+                else
+                {
                     return list.Car;
                 }
             }
@@ -165,7 +168,8 @@ namespace Kiezel
                 {
                     throw new IndexOutOfRangeException();
                 }
-                else {
+                else
+                {
                     list.Car = value;
                 }
             }
@@ -315,12 +319,14 @@ namespace Kiezel
                     {
                         return false;
                     }
-                    else {
+                    else
+                    {
                         list = list.Cdr;
                         return list != null;
                     }
                 }
-                else {
+                else
+                {
                     initialized = true;
                     return list != null;
                 }
@@ -349,7 +355,8 @@ namespace Kiezel
                 var tree = (Cons)a;
                 return MakeCons(CopyTree(tree.Car), (Cons)CopyTree(tree.Cdr));
             }
-            else {
+            else
+            {
                 return a;
             }
         }
@@ -377,7 +384,8 @@ namespace Kiezel
             {
                 return new Cons(seq.Current, seq);
             }
-            else {
+            else
+            {
                 return null;
             }
         }

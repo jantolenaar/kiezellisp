@@ -16,9 +16,12 @@ functions.
 (def g (adder 2))
 (g 3)
 
+The code of a `lambda` is contained within a `block lambda`. Therefore
+`return` is equivalent to `leave lambda`.
+
 .see-also
 .api
-about:parameters defun defun* lambda lambda*
+about:parameters defun defun* lambda lambda* return
 
 
 

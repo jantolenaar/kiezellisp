@@ -1,8 +1,8 @@
 .index $stdout
 .usage special-variable
 .description
-Standard output stream, i.e. an instance `TextWriter` or a special value: default 
-is `true` which is console output. When `null`, output is discarded. When a string, 
+Standard output stream, i.e. an instance `TextWriter` or a special value. 
+When `true` (default) output goes to the console. When `null`, output is discarded. When a string, 
 a write will go to the file named by the string with the current date appended. 
 After the write the file will be closed.
 

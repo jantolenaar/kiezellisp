@@ -82,7 +82,16 @@ namespace Kiezel
         {
             get
             {
-                return GetValue(index);
+                var name = GetKey(index);
+                object result;
+                if (this.TryGetValue(name, out result))
+                {
+                    return result;
+                }
+                else
+                {
+                    return null;
+                }
             }
             set
             {
@@ -103,7 +112,7 @@ namespace Kiezel
             }
             else
             {
-                return GetValue(arg);
+                return this[arg];
             }
         }
 
@@ -266,29 +275,34 @@ namespace Kiezel
 
         public object GetValue(object ident)
         {
-            return GetValueFor(this, ident);
+            object result;
+            TryGetValue(GetKey(ident), out result);
+            return result;
         }
 
-        public object GetValueFor(Prototype target, object ident)
+        public object GetMultipleValue(object ident)
         {
-            var name = GetKey(ident);
-            object result = null;
+            return this[ident];
+        }
+
+        public bool TryGetValue(object name, out object result)
+        {
+            result = null;
 
             if (Dict.TryGetValue(name, out result))
             {
-                return result;
+                return true;
             }
 
             foreach (var parent in Parents)
             {
-                result = parent.GetValueFor(target, ident);
-                if (result != null)
+                if (parent.TryGetValue(name, out result))
                 {
-                    return result;
+                    return true;
                 }
             }
 
-            return null;
+            return false;
         }
 
         public bool HasInheritedProperty(object ident)
@@ -456,7 +470,7 @@ namespace Kiezel
         public override DynamicMetaObject BindGetMember(GetMemberBinder binder)
         {
             // Handles (attr obj 'member)
-            MethodInfo method = typeof(Prototype).GetMethod("GetValue");
+            MethodInfo method = typeof(Prototype).GetMethod("GetMultipleValue");
             var index = Expression.Constant(binder.Name);
             var expr = Expression.Call(Expression.Convert(this.Expression, typeof(Prototype)), method, index);
             var restrictions = BindingRestrictions.GetTypeRestriction(this.Expression, typeof(Prototype));
@@ -466,7 +480,7 @@ namespace Kiezel
         public override DynamicMetaObject BindInvokeMember(InvokeMemberBinder binder, DynamicMetaObject[] args)
         {
             // Handles (.member obj)
-            MethodInfo method = typeof(Prototype).GetMethod("GetValue");
+            MethodInfo method = typeof(Prototype).GetMethod("GetMultipleValue");
             var index = Expression.Constant(binder.Name);
             var expr = Expression.Call(Expression.Convert(this.Expression, typeof(Prototype)), method, index);
             var restrictions = BindingRestrictions.GetTypeRestriction(this.Expression, typeof(Prototype));

@@ -4,9 +4,13 @@
 .syntax
 (string:prev str)
 
-.text
+.description
 Returns the string that preceeds `str`.
 
 .examples
 (.prev "abc")
 (.prev "ab0")
+
+.see-also
+.api
+string:next

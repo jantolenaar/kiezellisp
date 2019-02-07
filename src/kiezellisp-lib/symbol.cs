@@ -773,7 +773,6 @@ namespace Kiezel
         public static Symbol Underscore;
         public static Symbol Unquote;
         public static Symbol UnquoteSplicing;
-        public static Symbol Values;
         public static Symbol Var;
         public static Symbol Variable;
         public static Symbol Vector;
@@ -968,7 +967,6 @@ namespace Kiezel
             Underscore = MakeSymbol("_");
             Unquote = MakeSymbol("system:unquote");
             UnquoteSplicing = MakeSymbol("system:unquote-splicing");
-            Values = MakeSymbol("values");
             Var = MakeSymbol("var");
             Variable = MakeSymbol("variable");
             Vector = MakeSymbol("&vector");

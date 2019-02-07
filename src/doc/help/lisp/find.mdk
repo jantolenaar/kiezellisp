@@ -1,0 +1,14 @@
+.index find
+.usage builtin-function
+.syntax
+(find predicate seq)
+
+.description
+Returns a list with the value and position of the first 
+item in `seq` that satisfies the function `predicate`.
+Returns `null` if not found.
+
+.examples
+(find odd? '(2 3 4))
+(find odd? '(2 4))
+

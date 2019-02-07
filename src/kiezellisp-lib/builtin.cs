@@ -18,7 +18,7 @@ namespace Kiezel
     {
         #region Fields
 
-        public string Members;
+        public string Member;
         public bool Nullable;
         public Func<object> Proc0;
         public Func<object, object> Proc1;
@@ -32,9 +32,9 @@ namespace Kiezel
 
         #region Constructors
 
-        public AccessorLambda(bool nullable, string members)
+        public AccessorLambda(bool nullable, string member)
         {
-            Members = members;
+            Member = member;
             Nullable = nullable;
         }
 
@@ -47,12 +47,13 @@ namespace Kiezel
             if (args.Length > 6)
             {
                 var args2 = args.Select(x => (Expression)Expression.Constant(x)).ToArray();
-                var expr = AccessorLambdaMetaObject.MakeExpression(Nullable, Members, args2);
+                var expr = AccessorLambdaMetaObject.MakeExpression(Nullable, Member, args2);
                 var proc = Runtime.CompileToFunction(expr);
                 var val = proc();
                 return val;
             }
-            else {
+            else
+            {
                 switch (args.Length)
                 {
                     case 0:
@@ -99,7 +100,7 @@ namespace Kiezel
                         {
                             if (Proc5 == null)
                             {
-                                Proc5 = (Func<object, object, object, object, object, object>)MakeExpressionProc(1);
+                                Proc5 = (Func<object, object, object, object, object, object>)MakeExpressionProc(5);
                             }
                             return Proc5(args[0], args[1], args[2], args[3], args[4]);
                         }
@@ -135,14 +136,14 @@ namespace Kiezel
             {
                 args[i] = Expression.Parameter(typeof(object));
             }
-            var code = AccessorLambdaMetaObject.MakeExpression(Nullable, Members, args);
+            var code = AccessorLambdaMetaObject.MakeExpression(Nullable, Member, args);
             var proc = Runtime.CompileToDelegate(code, args);
             return proc;
         }
 
         public override string ToString()
         {
-            return string.Format("AccessorLambda Name=\"{0}\" Nullable=\"{1}\"", Members, Nullable);
+            return string.Format("AccessorLambda Name=\"{0}\" Nullable=\"{1}\"", Member, Nullable);
         }
 
         #endregion Public Methods
@@ -171,91 +172,36 @@ namespace Kiezel
         public override DynamicMetaObject BindInvoke(InvokeBinder binder, DynamicMetaObject[] args)
         {
             var args2 = args.Select(x => x.Expression).ToArray();
-            var code = MakeExpression(false, Lambda.Members, args2);
+            var code = MakeExpression(false, Lambda.Member, args2);
             var restrictions = BindingRestrictions.GetInstanceRestriction(Expression, Value);
             return new DynamicMetaObject(code, restrictions);
         }
 
-        public static Expression MakeExpression(bool nullable, string members, Expression[] args)
+        public static Expression MakeExpression(bool nullable, string member, Expression[] args)
         {
-            // Warning: modifies args
-            // args[0] is replaced after executing the next member.
-            // The last member gets the args array, the others only args[0].
-
             if (args.Length == 0)
             {
-                throw new LispException("Member accessor invoked without a target: {0}", members);
+                throw new LispException("Member accessor invoked without a target: {0}", member);
             }
-
-            var names = Runtime.AsList(members.Split(new char[] { '.' }, StringSplitOptions.RemoveEmptyEntries));
 
             if (nullable)
             {
                 var temp = Expression.Parameter(typeof(object), "temp");
-                var code = MakeNullableExpression(temp, names, args);
-                var block = Expression.Block(typeof(object), new ParameterExpression[] { temp }, code);
-                return block;
-            }
-            else {
-                return MakeExpression(names, args);
-            }
-
-        }
-
-        public static Expression MakeExpression(Cons members, Expression[] args)
-        {
-            //
-            // members must contain at least one member.
-            //
-
-            if (members.Cdr == null)
-            {
-                // last
-                var member = (string)members.Car;
-                var binder = Runtime.GetInvokeMemberBinder(new InvokeMemberBinderKey(member, args.Length - 1));
-                var code = Runtime.CompileDynamicExpression(binder, typeof(object), args);
-                return code;
-            }
-            else
-            {
-                // not last
-                var member = (string)members.Car;
-                var binder = Runtime.GetInvokeMemberBinder(new InvokeMemberBinderKey(member, 0));
-                var code = Runtime.CompileDynamicExpression(binder, typeof(object), new Expression[] { args[0] });
-                args[0] = code;
-                return MakeExpression(members.Cdr, args);
-            }
-        }
-
-        public static Expression MakeNullableExpression(ParameterExpression temp, Cons members, Expression[] args)
-        {
-            //
-            // members must contain at least one member.
-            //
-
-            if (members.Cdr == null)
-            {
-                // last
-                var member = (string)members.Car;
                 var binder = Runtime.GetInvokeMemberBinder(new InvokeMemberBinderKey(member, args.Length - 1));
                 var target = args[0];
                 args[0] = temp;
                 var body = Runtime.CompileDynamicExpression(binder, typeof(object), args);
                 var code = Expression.Condition(Runtime.WrapBooleanTest(Expression.Assign(temp, target)), body, Expression.Constant(null));
-                return code;
+                var block = Expression.Block(typeof(object), new ParameterExpression[] { temp }, code);
+                return block;
             }
             else
             {
-                // not last
-                var member = (string)members.Car;
-                var binder = Runtime.GetInvokeMemberBinder(new InvokeMemberBinderKey(member, 0));
-                var target = args[0];
-                args[0] = temp;
-                var body = Runtime.CompileDynamicExpression(binder, typeof(object), new Expression[] { args[0] });
-                var code = Expression.Condition(Runtime.WrapBooleanTest(Expression.Assign(temp, target)), body, Expression.Constant(null));
-                args[0] = code;
-                return MakeNullableExpression(temp, members.Cdr, args);
+                var binder = Runtime.GetInvokeMemberBinder(new InvokeMemberBinderKey(member, args.Length - 1));
+                var code = Runtime.CompileDynamicExpression(binder, typeof(object), args);
+                return code;
             }
+
         }
 
         #endregion Public Methods
@@ -340,7 +286,8 @@ namespace Kiezel
                 var proc = Runtime.CompileToFunction(code);
                 return proc();
             }
-            else {
+            else
+            {
                 switch (args.Length)
                 {
                     case 0:
@@ -565,7 +512,8 @@ namespace Kiezel
                 var proc = Runtime.CompileToFunction(code);
                 return proc();
             }
-            else {
+            else
+            {
                 switch (args.Length)
                 {
                     case 0:
@@ -714,7 +662,8 @@ namespace Kiezel
                         Runtime.InsertInMostSpecificOrder(candidates, m, createdParamArray);
                     }
                 }
-                else {
+                else
+                {
                     if (argsRest == null)
                     {
                         Runtime.SplitCombinedTargetArgs(args, out argsFirst, out argsRest);
@@ -743,7 +692,8 @@ namespace Kiezel
                             Runtime.InsertInMostSpecificOrder(candidates, m, createdParamArray);
                         }
                     }
-                    else {
+                    else
+                    {
                         if (argsRest == null)
                         {
                             Runtime.SplitCombinedTargetArgs(args, out argsFirst, out argsRest);
@@ -773,7 +723,8 @@ namespace Kiezel
                             Runtime.InsertInMostSpecificOrder(candidates, m, createdParamArray);
                         }
                     }
-                    else {
+                    else
+                    {
                         if (argsRest == null)
                         {
                             Runtime.SplitCombinedTargetArgs(args, out argsFirst, out argsRest);
@@ -801,7 +752,8 @@ namespace Kiezel
                 var callArgs = Runtime.ConvertArguments(args, method.GetParameters());
                 result = new DynamicMetaObject(Runtime.EnsureObjectResult(Expression.Call(method, callArgs)), restrictions);
             }
-            else {
+            else
+            {
                 if (argsRest == null)
                 {
                     Runtime.SplitCombinedTargetArgs(args, out argsFirst, out argsRest);

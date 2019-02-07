@@ -109,7 +109,8 @@ namespace Kiezel
                 {
                     return s[pos];
                 }
-                else {
+                else
+                {
                     return null;
                 }
             }
@@ -120,7 +121,8 @@ namespace Kiezel
                 {
                     return ((IList)seq)[pos];
                 }
-                else {
+                else
+                {
                     return null;
                 }
             }
@@ -136,7 +138,8 @@ namespace Kiezel
 
                 return null;
             }
-            else {
+            else
+            {
                 throw new LispException("Cannot cast as IEnumerable: {0}", ToPrintString(seq));
             }
         }

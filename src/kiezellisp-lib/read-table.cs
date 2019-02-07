@@ -379,9 +379,9 @@ namespace Kiezel
         }
 
         [Lisp("void")]
-        public static VOID Void()
+        public static object Void()
         {
-            return VOID.Value;
+            return MissingValue;
         }
 
         #endregion Public Methods

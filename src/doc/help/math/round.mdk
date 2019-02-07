@@ -1,0 +1,21 @@
+.index math:round
+.usage builtin-function
+.syntax
+(math:round number)
+(math:round number decimals)
+
+.description
+The first form returns the nearest integer and the nearest even integer when 
+the nearest integers are exactly half an integer away.
+The second form rounds the number to the specified number of decimal digits
+in a similar way as the first form.
+
+.examples
+(math:round 6.88)
+(math:round 6.88 1)
+(math:round 14/3)
+(math:round -14.3 2)
+
+.see-also
+.api
+math:mod math:rem math:floor math:ceiling math:truncate

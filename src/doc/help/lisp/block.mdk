@@ -4,7 +4,8 @@
 (block name form*)
 
 .description
-A named block is similar to a `do` block but it also supports structured jumps by the forms `redo` and `leave`.
+A named block is similar to a `do` block but it also supports structured 
+jumps by the forms `redo` and `leave`.
 
 .examples
 (block abc
@@ -14,6 +15,6 @@ A named block is similar to a `do` block but it also supports structured jumps b
 
 .see-also
 .api
-redo leave
+do redo leave lambda prog
 
 
