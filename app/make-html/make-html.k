@@ -144,31 +144,33 @@
 (defun render-header (name &key etag math)
     (let depth (count #(= %1 #\/) name))
     (let root (.repeat "../" depth))
-    (<head>
-        (<meta> :name "copyright"
-                :content "Jan Tolenaar (c) 2009-2018")
-        (<meta> :http-equiv "Content-Type"
-                :content "text/html; charset=utf-8")
-        (when etag
-            (<etag> etag))
-        #ignore 
-        (<meta> :http-equiv "Pragma”"
-                :content "no-cache")
-        #ignore 
-        (<meta> :http-equiv "Expires"
-                :content "-1")
-        #ignore 
-        (<meta> :http-equiv "CACHE-CONTROL"
-                :content "NO-CACHE")
-        (<title> name)
-        (<link> :rel "StyleSheet"
-                :type "text/css"
-                :href (string root $style-sheet "?v=" $style-sheet-version))
-        (if math
-            (<script> :type "text/x-mathjax-config" mathjax-config))
-        (if math
-            (<script> :type "text/javascript" :src mathjax-url-2))
-        ))
+    (let head
+        (<head>
+            (<meta> :name "copyright"
+                    :content "Jan Tolenaar (c) 2009-2018")
+            (<meta> :http-equiv "Content-Type"
+                    :content "text/html; charset=utf-8")
+            #ignore 
+            (<meta> :http-equiv "Pragma”"
+                    :content "no-cache")
+            #ignore 
+            (<meta> :http-equiv "Expires"
+                    :content "-1")
+            #ignore 
+            (<meta> :http-equiv "CACHE-CONTROL"
+                    :content "NO-CACHE")
+            (<title> name)
+            (<link> :rel "StyleSheet"
+                    :type "text/css"
+                    :href (string root $style-sheet "?v=" $style-sheet-version))
+            (if math
+                (<script> :type "text/x-mathjax-config" mathjax-config))
+            (if math
+                (<script> :type "text/javascript" :src mathjax-url-2))
+            ))
+    (when etag
+        (xml:add head :etag etag))
+    head)
 
 (defun render-body (name content &key anchor wide)
     (let depth (count #(= %1 #\/) name))
@@ -195,7 +197,7 @@
         ))))
 
 (defun make-etag (content)
-    (string (make-md5sum content) "-" (make-md5sum $style-sheet-version)))
+    (make-md5sum (string content "-" $style-sheet-version)))
 
 (defun render-html(name body &key anchor wide)
     (let etag (make-etag body))
