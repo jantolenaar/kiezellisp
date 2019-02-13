@@ -196,18 +196,22 @@
                 (print (.to-string byte "x2"))
         ))))
 
-(defun make-etag (content)
+(defun get-etag (content)
     (make-md5sum (string content "-" $style-sheet-version)))
 
+(defun get-math-flag (content)
+    (and false (string? content)
+         (or (/= (.index-of content "$") -1)
+             (/= (.index-of content @"\(") -1))))
+
 (defun render-html(name body &key anchor wide)
-    (let etag (make-etag body))
+    (let etag (get-etag body))
+    (let math (get-math-flag body))
     (html:to-string
         (<html>
             :lang "en"
             (render-header name :etag etag
-                                :math (and (string? body)
-                                    (or (/= (.index-of body "$") -1)
-                                    (/= (.index-of body @"\(") -1))))
+                                :math math)
             (render-body name body :anchor anchor :wide wide))))
 
 (defun save-html-file (name html-text)
