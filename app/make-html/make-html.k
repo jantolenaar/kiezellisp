@@ -18,6 +18,8 @@
 (require "common-mark")
 (use-package-alias "common-mark" "md")
 
+(import "System.Security.Cryptography.MD5")
+
 (require "xml")
 (require "html")
 (use-package "html-elements")
@@ -54,16 +56,20 @@
     ;; master index of the public api. If $master-index is null no 
     ;; master index is created.
     (let $master-index (vector))
+    ;; this code is duplicated in make-html
+    ;; styles.css must be present in $input-dir
+    (let info (file-info:new (path:combine $input-dir $style-sheet)))
+    (let $style-sheet-version (string (time-stamp (.last-write-time info))))
     (rewrite-md-change-log)
     (make-html))
 
 (defun make-html ()
-    ;; styles.css must be present in $input-dir
-    (let info (file-info:new (path:combine $input-dir $style-sheet)))
-    (let $style-sheet-version (time-stamp (.last-write-time info)))
     ;; used when wrapping api links and pretty printing examples
     ;; width of <pre> in html
     (let $right 66)
+    ;; styles.css must be present in $input-dir
+    (let info (file-info:new (path:combine $input-dir $style-sheet)))
+    (let $style-sheet-version (string (time-stamp (.last-write-time info))))
     (rewrite-files)
     (if (vector? $master-index)
         (write-master-index)))
@@ -135,7 +141,7 @@
     (let html-text (render-html "change-log" (md:convert-to-html md-text)))
     (save-html-file "change-log" html-text))
 
-(defun render-header (name &key math)
+(defun render-header (name &key etag math)
     (let depth (count #(= %1 #\/) name))
     (let root (.repeat "../" depth))
     (<head>
@@ -143,10 +149,15 @@
                 :content "Jan Tolenaar (c) 2009-2018")
         (<meta> :http-equiv "Content-Type"
                 :content "text/html; charset=utf-8")
+        (when etag
+            (<etag> etag))
+        #ignore 
         (<meta> :http-equiv "Pragma”"
                 :content "no-cache")
+        #ignore 
         (<meta> :http-equiv "Expires"
                 :content "-1")
+        #ignore 
         (<meta> :http-equiv "CACHE-CONTROL"
                 :content "NO-CACHE")
         (<title> name)
@@ -175,11 +186,24 @@
             (<a> :class "banner" :href "${root}help/index.html" "index of everything"))
         (<div> :id content-id content)))
 
+(defun make-md5sum (content)
+    (using (md5 (md5:create))
+        (let hash (.compute-hash md5 (.get-bytes (encoding:utf8) content)))
+        (with-output-to-string ($stdout)
+            (foreach (byte hash)
+                (print (.to-string byte "x2"))
+        ))))
+
+(defun make-etag (content)
+    (string (make-md5sum content) "-" (make-md5sum $style-sheet-version)))
+
 (defun render-html(name body &key anchor wide)
+    (let etag (make-etag body))
     (html:to-string
         (<html>
             :lang "en"
-            (render-header name :math (and (string? body)
+            (render-header name :etag etag
+                                :math (and (string? body)
                                     (or (/= (.index-of body "$") -1)
                                     (/= (.index-of body @"\(") -1))))
             (render-body name body :anchor anchor :wide wide))))

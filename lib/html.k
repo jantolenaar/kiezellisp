@@ -5,7 +5,7 @@
 (defpackage "html-elements")
 (in-package "html-elements")
 
-(def tags '(html head title meta link style body script
+(def tags '(html head title etag meta link style body script
             div span form input button textarea center
             h1 h2 h3 h4 h5 h6
             a p i b code pre img samp big small
