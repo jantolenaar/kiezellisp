@@ -3,7 +3,7 @@
 " Maintainer:  Jan Tolenaar
 " Last Change: July 31, 2018
 " Version:     7
-" URL:	       http://www.kiezellisp.nl
+" URL:	       http://www.jantolenaar.nl
 "
 
 " ---------------------------------------------------------------------
@@ -39,7 +39,7 @@ syn keyword lispForm contained parallel-foreach parallel-list
 syn keyword lispForm contained set setf setq psetq psetf
 syn keyword lispForm contained with-multiple-let with-multiple-var multiple-setf defsetf
 
-syn keyword lispDebug contained trace breakpoint assert assert-throws-exception assert-throws-no-exception
+syn keyword lispDebug contained throw-error trace breakpoint assert assert-throws-exception assert-throws-no-exception
 
 syn match lispKeyword 	"\<:\k\+\>"
 
@@ -107,4 +107,4 @@ hi lispkeyword 		guifg=#da70d6 ctermfg=177
 hi lispampersand 	guifg=#228b22 ctermfg=28
 hi lispstring 		guifg=#bc8f8f ctermfg=174
 hi lispconditional  guifg=#b22222 gui=bold ctermfg=124 cterm=bold
-hi lispdebug        guifg=#b22222 gui=bold ctermfg=124 cterm=bold
+hi lispdebug        guifg=#b22222 ctermfg=124
