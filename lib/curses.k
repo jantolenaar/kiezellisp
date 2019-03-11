@@ -9,6 +9,10 @@
 ;;;;     git clone https://github.com/sushihangover/CursesSharp
 ;;;;
 
+#if rlwrap
+(throw-error "rlwrap not compatible with cursesSharp")
+#endif
+
 (reference "CursesSharp")
 
 (import "CursesSharp.Curses")
@@ -23,9 +27,10 @@
 (import "CursesSharp.Keys")
 (import "CursesSharp.MouseState")
 
-#ignore
+
+;#ignore
 (defun curses-demo1 ()
-	(curses:init-scr)
+    (stdscr:clear)
 	(stdscr:add "Hello World !!!")
 	(stdscr:refresh)
 	(stdscr:get-char)
@@ -54,9 +59,12 @@
 (import "CursesSharp.Gui.MessageBox")
 (import "CursesSharp.Gui.Terminal")
 
-#ignore
+;(curses:init-scr)
+(terminal:init false)
+
+;#ignore
 (defun curses-demo2 ()
-	(terminal:init false)
+    (stdscr:clear)
 	(let demo (container:new 0 0 (terminal:cols) (terminal:lines)))
 	(.add demo (label:new 10 10 "Hello"))
 	(.add demo (entry:new 16 10 20 "World"))

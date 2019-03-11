@@ -1,5 +1,9 @@
 # Change Log
 
+### 2019/03/10
+
+*   Improved code completion.
+
 ### 2019/02/07
 
 *   Removed multiple value features due to implementation issues.

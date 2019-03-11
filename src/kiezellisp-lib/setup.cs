@@ -409,6 +409,11 @@ namespace Kiezel
                 AddFeature("repl");
             }
 
+            if (RlWrap)
+            {
+                AddFeature("rlwrap");
+            }
+
             Symbols.Features.VariableValue = AsList(Sort((Cons)Symbols.Features.Value));
         }
 

@@ -283,13 +283,6 @@ namespace Kiezel
             return table;
         }
 
-        public static string GetWordFromString(string text, int index, Func<char, bool> wordCharTest)
-        {
-            var loc = LocateWord(text, index, false, wordCharTest);
-            var word = text.Substring(loc.Begin, loc.Span);
-            return word;
-        }
-
         public static bool IsLispWordChar(char ch)
         {
             return ch != '.' && IsWordChar(ch);
