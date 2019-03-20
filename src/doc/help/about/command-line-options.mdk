@@ -8,15 +8,9 @@ Kiezellisp has the following command line:
 con `options` are:
 
     --repl                        Show REPL after running `file`.
-    --fg number                   Terminal palette color index of text (1-16)
-    --bg number                   Terminal palette color index of background (1-16)
-    --rlwrap                      To indicate kiezellisp runs under control of rlwrap.                       
 
 `file` is the name of the kiezellisp source file to run and
 `user-args` are arguments to the source code file.
-
-The options `fg` and `bg` are required to enable the display of text in 
-reverse colors, for example during symbol expansion by the TAB key.
 
 Starting `kiezellisp-con` without a `file` implies `repl`.
 Starting `kiezellisp-con` with a `file` implies no `repl`.

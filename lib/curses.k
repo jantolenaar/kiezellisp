@@ -9,10 +9,6 @@
 ;;;;     git clone https://github.com/sushihangover/CursesSharp
 ;;;;
 
-#if rlwrap
-(throw-error "rlwrap not compatible with cursesSharp")
-#endif
-
 (reference "CursesSharp")
 
 (import "CursesSharp.Curses")

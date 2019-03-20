@@ -2,14 +2,19 @@ using System;
 using System.Reflection;
 using System.Runtime.InteropServices;
 
+// This file is shared by all framework and netcore assemblies of Kiezellisp.
+
 // General Information about an assembly is controlled through the following
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
-[assembly: AssemblyTitle("Kiezellisp Library")]
-[assembly: AssemblyDescription("")]
-[assembly: AssemblyConfiguration("")]
+[assembly: AssemblyTitle("Kiezellisp")]
+#if DEBUG
+[assembly: AssemblyDescription("Debug Build")]
+#else
+[assembly: AssemblyDescription("Release Build")]
+#endif
 [assembly: AssemblyCompany("Tolenaar IT Services")]
-[assembly: AssemblyProduct("Kiezellisp Library")]
+[assembly: AssemblyProduct("Kiezellisp")]
 [assembly: AssemblyCopyright("Copyright \u00a9 Jan Tolenaar 2009-2019")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
@@ -31,5 +36,8 @@ using System.Runtime.InteropServices;
 //
 // You can specify all the values or you can default the Build and Revision Numbers
 // by using the '*' as shown below:
+//
+// In framework, the build numbers are inserted in the file version and the product version.
+// In net core, the build numbers are inserted in the product version only.
+
 [assembly: AssemblyVersion("4.0.*")]
-[assembly: AssemblyInformationalVersion("4.0")]

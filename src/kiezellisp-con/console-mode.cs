@@ -21,24 +21,22 @@ namespace Kiezel
     {
         #region Public Methods
 
-        public static void WriteReverse(string text, bool hasBrackets)
+        public static void WriteReverse(string text, bool reverse)
         {
-            var useColor = (Runtime.ForegroundColor != -1 && Runtime.BackgroundColor != -1);
-            if (useColor)
+            if (reverse)
             {
-                var fg = Console.ForegroundColor;
-                var bg = Console.BackgroundColor;
-                Console.ForegroundColor = bg;
-                Console.BackgroundColor = fg;
-                Console.Write(text);
-                Console.ForegroundColor = fg;
-                Console.BackgroundColor = bg;
-            }
-            else if (!hasBrackets)
-            {
-                Console.Write("[");
-                Console.Write(text);
-                Console.Write("]");
+                if (Runtime.HasFeature("ansi-terminal"))
+                {
+                    Console.Write("\x1b[7m");
+                    Console.Write(text);
+                    Console.Write("\x1b[27m");
+                }
+                else
+                {
+                    Console.Write("[");
+                    Console.Write(text);
+                    Console.Write("]");
+                }
             }
             else
             {
@@ -121,7 +119,7 @@ namespace Kiezel
         {
             try
             {
-                if (Console.IsInputRedirected || Runtime.RlWrap)
+                if (Console.IsInputRedirected)
                 {
                     var s = Console.ReadLine();
                     if (s == null)
@@ -260,6 +258,13 @@ namespace Kiezel
                 mod = keyInfo.Modifiers;
                 ch = keyInfo.KeyChar;
 
+#if NETCOREAPP || NETSTANDARD
+                if (ch == 8 && key == 0)
+                {
+                    // ^H
+                    key = ConsoleKey.Backspace;
+                }
+#endif
                 switch (key)
                 {
                     case ConsoleKey.Backspace:
@@ -407,37 +412,9 @@ namespace Kiezel
                                 writeStr(searchTerm);
                                 writeStr("\n");
 
-                                var useColors = (Runtime.ForegroundColor != -1 && Runtime.BackgroundColor != -1);
-                                var fg = Console.ForegroundColor;
-                                var bg = Console.BackgroundColor;
-
                                 for (var i = 0; i < completions.Count; ++i)
                                 {
-                                    if (i == index)
-                                    {
-                                        if (!useColors)
-                                        {
-                                            writeStr("[");
-                                        }
-                                        else
-                                        {
-                                            Console.ForegroundColor = bg;
-                                            Console.BackgroundColor = fg;
-                                        }
-                                    }
-                                    writeStr(completions[i]);
-                                    if (i == index)
-                                    {
-                                        if (!useColors)
-                                        {
-                                            writeStr("]");
-                                        }
-                                        else
-                                        {
-                                            Console.ForegroundColor = fg;
-                                            Console.BackgroundColor = bg;
-                                        }
-                                    }
+                                    WriteReverse(completions[i], i == index);
                                     writeChar(' ');
                                 }
 
@@ -591,34 +568,15 @@ namespace Kiezel
 
         public static void RunConsoleMode(CommandLineOptions options)
         {
-
             Runtime.ProgramFeature = "kiezellisp-con";
             Runtime.Repl = options.Repl;
             Runtime.ScriptName = options.ScriptName;
             Runtime.UserArguments = options.UserArguments;
-            Runtime.ForegroundColor = options.ForegroundColor;
-            Runtime.BackgroundColor = options.BackgroundColor;
-            Runtime.RlWrap = options.RlWrap;
 
             if (options.ScriptName == null)
             {
-                var assembly = Assembly.GetExecutingAssembly();
-                var fileVersion = FileVersionInfo.GetVersionInfo(assembly.Location);
-                if (Runtime.ForegroundColor != -1)
-                {
-                    Console.ForegroundColor = (ConsoleColor)Runtime.ForegroundColor;
-                }
-                var term = System.Environment.GetEnvironmentVariable("TERM");
-                if (term != "xterm")
-                {
-                    if (Runtime.BackgroundColor != -1)
-                    {
-                        Console.BackgroundColor = (ConsoleColor)Runtime.BackgroundColor;
-                    }
-                }
                 Console.Clear();
-                Console.WriteLine(Runtime.GetVersion());
-                Console.WriteLine(fileVersion.LegalCopyright);
+                Console.WriteLine(Runtime.GetVersionString());
             }
             ReadEvalPrintLoop(commandOptionArgument: options.ScriptName, initialized: false);
         }

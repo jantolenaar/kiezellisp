@@ -1,5 +1,10 @@
 # Change Log
 
+### 2019/03/16
+
+*   Removed command line options for foreground and background color.
+*   Added :ansi-terminal feature.
+
 ### 2019/03/10
 
 *   Improved code completion.

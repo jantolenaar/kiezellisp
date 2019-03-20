@@ -50,7 +50,7 @@
 
 (defun make-kiezellisp-html()
     (let $site-name "jan&nbsp;tolenaar&nbsp;/&nbsp;<span style='color:yellow'>kiezel</span>lisp")
-    (let $input-dir "${projects}/kiezellisp/src/doc")
+    (let $input-dir "${projects}/kiezellisp/public/src/doc")
     (let $output-dir "${home}/www/local/jantolenaar/kiezellisp")
     ;; Mdk files containing an index directive are added to the 
     ;; master index of the public api. If $master-index is null no 
@@ -75,7 +75,7 @@
         (write-master-index)))
 
 (defun copy-change-log ()
-    (file:copy "${projects}/kiezellisp/change-log.md"
+    (file:copy "${projects}/kiezellisp/public/change-log.md"
                "${$input-dir}/change-log.mdk"
                true))
 
@@ -147,7 +147,7 @@
     (let head
         (<head>
             (<meta> :name "copyright"
-                    :content "Jan Tolenaar (c) 2009-2018")
+                    :content "Jan Tolenaar (c) 2009-2019")
             (<meta> :http-equiv "Content-Type"
                     :content "text/html; charset=utf-8")
             #ignore 

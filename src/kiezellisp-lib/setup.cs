@@ -28,13 +28,10 @@ namespace Kiezel
         public static Package LispDocPackage;
         public static Package LispPackage;
         public static Missing MissingValue = Missing.Value;
-        public static bool RlWrap;
         public static bool Mono;
         public static string ProgramFeature;
         public static bool ReadDecimalNumbers;
         public static bool Repl;
-        public static int ForegroundColor;
-        public static int BackgroundColor;
         public static string ScriptName;
         public static bool SetupMode;
         public static Package TempPackage;
@@ -110,7 +107,7 @@ namespace Kiezel
             return PathExtensions.Combine(dir, "kiezellisp-init.k");
         }
 
-        [Lisp("get-program")]
+        [Lisp("get-library-name")]
         public static string GetLibraryName()
         {
             var assembly = Assembly.GetExecutingAssembly();
@@ -126,7 +123,14 @@ namespace Kiezel
             return v;
         }
 
-        [Lisp("get-program")]
+        [Lisp("get-version")]
+        public static object GetVersion()
+        {
+            var v = FileVersionInfo.GetVersionInfo(Assembly.GetExecutingAssembly().Location);
+            return v;
+        }
+
+        [Lisp("get-program-name")]
         public static string GetProgramName()
         {
             var assembly = Assembly.GetEntryAssembly();
@@ -135,17 +139,22 @@ namespace Kiezel
             return fileName;
         }
 
-        [Lisp("get-version")]
-        public static string GetVersion()
+        [Lisp("get-version-string")]
+        public static string GetVersionString()
         {
-            var assembly = Assembly.GetEntryAssembly();
-            var fileVersion = FileVersionInfo.GetVersionInfo(assembly.Location);
-            var date = new DateTime(2000, 1, 1).AddDays(fileVersion.FileBuildPart);
-#if DEBUG
-            return String.Format("{0} {1}.{2} (Debug Build {3} - {4:yyyy-MM-dd})", fileVersion.ProductName, fileVersion.FileMajorPart, fileVersion.FileMinorPart, fileVersion.FileBuildPart, date);
-#else
-            return string.Format("{0} {1}.{2} (Release Build {3} - {4:yyyy-MM-dd})", fileVersion.ProductName, fileVersion.FileMajorPart, fileVersion.FileMinorPart, fileVersion.FileBuildPart, date);
-#endif
+            // all assemblies share one assemblyinfo file.
+            var assembly = Assembly.GetExecutingAssembly();
+            var ver = FileVersionInfo.GetVersionInfo(assembly.Location);
+            var name = ver.ProductName;
+            var major = ver.ProductMajorPart;
+            var minor = ver.ProductMinorPart;
+            var buildnum = ver.ProductBuildPart;
+            var builddate = new DateTime(2000, 1, 1).AddDays(buildnum).ToString("yyyy-MM-dd");
+            var build = ver.Comments;
+            var copyright = ver.LegalCopyright;
+            return String.Format("{0} {1}.{2}.{3} ({4} {5})\n{6}",
+                            name, major, minor, buildnum, build, builddate, copyright);
+
         }
 
         public static bool HasFeature(string feature)
@@ -339,6 +348,7 @@ namespace Kiezel
             {
                 Mono = true;
                 AddFeature("mono");
+
             }
             else if (asm.IndexOf("netcore") != -1)
             {
@@ -407,11 +417,10 @@ namespace Kiezel
             if (Repl)
             {
                 AddFeature("repl");
-            }
-
-            if (RlWrap)
-            {
-                AddFeature("rlwrap");
+                if (!HasFeature("windows"))
+                {
+                    AddFeature("ansi-terminal");
+                }
             }
 
             Symbols.Features.VariableValue = AsList(Sort((Cons)Symbols.Features.Value));

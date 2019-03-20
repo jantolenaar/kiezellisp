@@ -13,9 +13,6 @@ namespace Kiezel
         public bool Repl;
         public string ScriptName;
         public Cons UserArguments;
-        public int ForegroundColor;
-        public int BackgroundColor;
-        public bool RlWrap;
 
         #endregion Fields
 
@@ -26,9 +23,6 @@ namespace Kiezel
             ScriptName = null;
             UserArguments = null;
             Repl = true;
-            ForegroundColor = -1;
-            BackgroundColor = -1;
-            RlWrap = false;
         }
 
         #endregion Constructors
@@ -44,9 +38,6 @@ namespace Kiezel
             var options = new CommandLineOptions();
 
             parser.AddOption("--repl");
-            parser.AddOption("--fg number");
-            parser.AddOption("--bg number");
-            parser.AddOption("--rlwrap");
 
             parser.Parse(args);
 
@@ -59,24 +50,9 @@ namespace Kiezel
                 options.UserArguments = Runtime.AsList(parser.GetArgumentArray(1));
             }
 
-            if (parser.GetOption("fg") != null)
-            {
-                options.ForegroundColor = -1 + Number.ParseNumberBase(parser.GetOption("fg"), 10);
-            }
-
-            if (parser.GetOption("bg") != null)
-            {
-                options.BackgroundColor = -1 + Number.ParseNumberBase(parser.GetOption("bg"), 10);
-            }
-
             if (parser.GetOption("repl") != null)
             {
                 options.Repl = true;
-            }
-
-            if (parser.GetOption("rlwrap") != null)
-            {
-                options.RlWrap = true;
             }
 
             return options;
