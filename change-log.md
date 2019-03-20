@@ -1,5 +1,9 @@
 # Change Log
 
+### 2019/03/20
+
+*   Fixed version/copyright strings.
+
 ### 2019/03/16
 
 *   Removed command line options for foreground and background color.

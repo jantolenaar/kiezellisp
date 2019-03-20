@@ -152,9 +152,18 @@ namespace Kiezel
             var builddate = new DateTime(2000, 1, 1).AddDays(buildnum).ToString("yyyy-MM-dd");
             var build = ver.Comments;
             var copyright = ver.LegalCopyright;
-            return String.Format("{0} {1}.{2}.{3} ({4} {5})\n{6}",
-                            name, major, minor, buildnum, build, builddate, copyright);
+            return String.Format("{0} {1}.{2}.{3} ({4} {5})",
+                            name, major, minor, buildnum, build, builddate);
 
+        }
+
+        [Lisp("get-copyright-string")]
+        public static string GetCopyrightString()
+        {
+            // all assemblies share one assemblyinfo file.
+            var assembly = Assembly.GetExecutingAssembly();
+            var ver = FileVersionInfo.GetVersionInfo(assembly.Location);
+            return ver.LegalCopyright;
         }
 
         public static bool HasFeature(string feature)

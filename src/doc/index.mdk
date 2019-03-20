@@ -38,7 +38,7 @@ Web site generated on: <%= (date-time:today) %>
 
 ## Get Kiezellisp
 
-Current development version: <%= (get-version) %>
+Current development version: <%= (get-version-string) %>
 
 This version can be built with Visual Studio on Windows and with MonoDevelop
 on linux.

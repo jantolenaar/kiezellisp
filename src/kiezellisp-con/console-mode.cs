@@ -577,6 +577,7 @@ namespace Kiezel
             {
                 Console.Clear();
                 Console.WriteLine(Runtime.GetVersionString());
+                Console.WriteLine(Runtime.GetCopyrightString());
             }
             ReadEvalPrintLoop(commandOptionArgument: options.ScriptName, initialized: false);
         }
