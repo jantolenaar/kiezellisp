@@ -3,6 +3,7 @@
 ### 2019/03/21
 
 *   Added `$repl-optional-parentheses` setting.
+*   Fixed cache control header.
 
 ### 2019/03/20
 

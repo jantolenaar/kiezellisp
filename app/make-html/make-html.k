@@ -150,13 +150,6 @@
                     :content "Jan Tolenaar (c) 2009-2019")
             (<meta> :http-equiv "Content-Type"
                     :content "text/html; charset=utf-8")
-            #ignore 
-            (<meta> :http-equiv "Pragma”"
-                    :content "no-cache")
-            #ignore 
-            (<meta> :http-equiv "Expires"
-                    :content "-1")
-            #ignore 
             (<meta> :http-equiv "CACHE-CONTROL"
                     :content "NO-CACHE")
             (<title> name)
