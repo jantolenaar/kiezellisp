@@ -286,8 +286,13 @@ namespace Kiezel
                 }
             }
             else
+            if (leadingSpace || !Runtime.ToBool(Symbols.ReplOptionalParentheses.Value))
             {
-                RunCommand(null, code, smartParens: !leadingSpace);
+                RunCommand(null, code, smartParens: false);
+            }
+            else
+            {
+                RunCommand(null, code, smartParens: true);
             }
         }
 

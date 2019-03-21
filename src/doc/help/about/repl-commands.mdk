@@ -34,10 +34,10 @@ variable with the `:modify` command.
 
 Lisp expressions:
 
-If the line has no leading whitespace and the first term is a symbol that names
-a function, special form or macro, the line will be enclosed in parentheses and
-executed. Add a leading space to prevent this.
+If the variable `$repl-optional-parentheses` is true and if the line has no leading
+whitespace and the first term is a symbol that names a function, special form or macro, 
+then the line will be enclosed in parentheses and executed.
 
 .see-also
 .api
-$repl-force-it
+$repl-force-it $repl-optional-parentheses

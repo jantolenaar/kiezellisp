@@ -62,7 +62,10 @@
 (require "shell")
 (require "unit-test")
 (require "diagnostics")
+
 (setq $repl-force-it true)
+(setq $repl-optional-parentheses false)
+
 (set-debug-level 2)
 
 #endif

@@ -1,5 +1,9 @@
 # Change Log
 
+### 2019/03/21
+
+*   Added `$repl-optional-parentheses` setting.
+
 ### 2019/03/20
 
 *   Fixed version/copyright strings.
@@ -7,7 +11,7 @@
 ### 2019/03/16
 
 *   Removed command line options for foreground and background color.
-*   Added :ansi-terminal feature.
+*   Added `:ansi-terminal` feature.
 
 ### 2019/03/10
 

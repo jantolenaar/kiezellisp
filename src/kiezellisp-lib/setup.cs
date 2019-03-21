@@ -454,6 +454,7 @@ namespace Kiezel
             Symbols.CommandLineScriptName.ReadonlyValue = ScriptName;
             Symbols.Debugging.ConstantValue = false;
             Symbols.E.ConstantValue = Math.E;
+            Symbols.ReplOptionalParentheses.VariableValue = true;
             Symbols.EnableWarnings.VariableValue = true;
             Symbols.Exception.ReadonlyValue = null;
             Symbols.Features.VariableValue = null;

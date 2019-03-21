@@ -634,7 +634,6 @@ namespace Kiezel
         public static Symbol Dynamic;
         public static Symbol[] DynamicVariables;
         public static Symbol E;
-        public static Symbol EnableExternalDocumentation;
         public static Symbol EnableWarnings;
         public static Symbol Environment;
         public static Symbol Equality;
@@ -734,6 +733,7 @@ namespace Kiezel
         public static Symbol Redo;
         public static Symbol ReplForceIt;
         public static Symbol ReplListenerPort;
+        public static Symbol ReplOptionalParentheses;
         public static Symbol[] ReservedVariables;
         public static Symbol Rest;
         public static Symbol Return;
@@ -832,7 +832,6 @@ namespace Kiezel
             Dot = MakeSymbol(".");
             Dynamic = MakeSymbol("dynamic");
             E = MakeSymbol("math:E");
-            EnableExternalDocumentation = MakeSymbol("$enable-external-documentation");
             EnableWarnings = MakeSymbol("$enable-warnings");
             Environment = MakeSymbol("&environment");
             Equality = MakeSymbol("=");
@@ -930,6 +929,7 @@ namespace Kiezel
             Redo = MakeSymbol("redo");
             ReplForceIt = MakeSymbol("$repl-force-it");
             ReplListenerPort = MakeSymbol("$repl-listener-port");
+            ReplOptionalParentheses = MakeSymbol("$repl-optional-parentheses");
             Rest = MakeSymbol("&rest");
             Return = MakeSymbol("return");
             ReturnFrom = MakeSymbol("return-from");
