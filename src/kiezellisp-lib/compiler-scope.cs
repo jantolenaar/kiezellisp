@@ -35,7 +35,6 @@ namespace Kiezel
     {
         #region Fields
 
-        public bool AnyLabelsCreated;
         public bool IsBlockScope;
         public bool IsFileScope;
         public Symbol Name;

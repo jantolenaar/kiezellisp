@@ -466,11 +466,6 @@ namespace Kiezel
                 throw new LispException("Statement requires block or file scope: {0}", form);
             }
 
-            if (scope.AnyLabelsCreated)
-            {
-                throw new LispException("Statement not allowed when labels are already declared: {0}", form);
-            }
-
             if (lazy || future)
             {
                 throw new LispException("Cannot use a dynamic variable as a future or lazy variable: {0}", form);

@@ -1,5 +1,9 @@
 # Change Log
 
+### 2019/04/03
+
+*   c# void functions now return `(void)` instead of `null`.
+
 ### 2019/03/31
 
 *   Fixed bug in `except`.

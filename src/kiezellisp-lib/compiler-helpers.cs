@@ -411,7 +411,7 @@ namespace Kiezel
             }
             else if (expr.Type == typeof(void))
             {
-                return Expression.Block(expr, Expression.Constant(null, typeof(object)));
+                return Expression.Block(expr, Expression.Constant(Void(), typeof(object)));
             }
             else
             {
