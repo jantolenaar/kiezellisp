@@ -1,0 +1,16 @@
+.index shell:exec
+.usage builtin-function
+.syntax
+(shell:exec input prog &rest args)
+
+.description
+Executes the program `prog` with arguments `args`.
+If the string `input` is not `null`, it is used as standard input.
+Returns the standard output as a string.
+
+.examples
+(shell:exec null "uname" "-a")
+
+.see-also
+.api
+shell:exec-detached shell:run

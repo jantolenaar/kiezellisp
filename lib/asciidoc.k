@@ -11,9 +11,11 @@
 
 (in-package "asciidoc")
 
-(defun convert-to-html (str &key output)
-    (let flag (not output))
-    (let options (list "-o" (or output "-") "-s" "-"))
-    (shell:exec "asciidoc" :stdin str :return-stdout flag :args options))
-        
+(defun convert-to-html (str &key print-output)
+    (let html (shell:exec str "asciidoc" "-o" (or print-output "-") "-s" "-"))
+    (if print-output
+        (print html)
+        html))
+
+         
 

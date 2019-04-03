@@ -28,7 +28,6 @@ namespace Kiezel
         public static Package LispDocPackage;
         public static Package LispPackage;
         public static Missing MissingValue = Missing.Value;
-        public static bool Mono;
         public static string ProgramFeature;
         public static bool ReadDecimalNumbers;
         public static bool Repl;
@@ -117,14 +116,14 @@ namespace Kiezel
         }
 
         [Lisp("get-mscorlib-version")]
-        public static object GetMsCorLibVersion()
+        public static FileVersionInfo GetMsCorLibVersion()
         {
             var v = FileVersionInfo.GetVersionInfo(typeof(int).Assembly.Location);
             return v;
         }
 
         [Lisp("get-version")]
-        public static object GetVersion()
+        public static FileVersionInfo GetVersion()
         {
             var v = FileVersionInfo.GetVersionInfo(Assembly.GetExecutingAssembly().Location);
             return v;
@@ -143,6 +142,9 @@ namespace Kiezel
         public static string GetVersionString()
         {
             // all assemblies share one assemblyinfo file.
+            var mscor = GetMsCorLibVersion();
+            var netcore = mscor.FileDescription.IndexOf("CoreLib") != -1;
+            var env = netcore ? ".Net Core" : ".Net Framework";
             var assembly = Assembly.GetExecutingAssembly();
             var ver = FileVersionInfo.GetVersionInfo(assembly.Location);
             var name = ver.ProductName;
@@ -152,8 +154,8 @@ namespace Kiezel
             var builddate = new DateTime(2000, 1, 1).AddDays(buildnum).ToString("yyyy-MM-dd");
             var build = ver.Comments;
             var copyright = ver.LegalCopyright;
-            return String.Format("{0} {1}.{2}.{3} ({4} {5})",
-                            name, major, minor, buildnum, build, builddate);
+            return String.Format("{0} {1}.{2}.{3} ({4} {5} {6})",
+                            name, major, minor, buildnum, env, build, builddate);
 
         }
 
@@ -319,7 +321,7 @@ namespace Kiezel
         }
 
         [Lisp("shell:exec")]
-        public static string Exec(string program, string input, string arguments)
+        public static string ShellExec(string input, string program, params string[] arguments)
         {
             using (var proc = new Process())
             {
@@ -329,7 +331,10 @@ namespace Kiezel
                 info.RedirectStandardInput = true;
                 info.RedirectStandardOutput = true;
                 info.UseShellExecute = false;
-                info.Arguments = arguments;
+                if (arguments != null)
+                {
+                    info.Arguments = String.Join(" ", arguments.Select(SafeArgument));
+                }
                 proc.Start();
                 using (var inp = proc.StandardInput)
                 using (var outp = proc.StandardOutput)
@@ -349,24 +354,58 @@ namespace Kiezel
             }
         }
 
+        [Lisp("shell:run")]
+        public static void ShellRun(string program, params string[] arguments)
+        {
+            Say(ShellExec(null, program, arguments));
+        }
+
+        [Lisp("shell:exec-detached")]
+        public static void ShellExecDetached(string program, params string[] arguments)
+        {
+            using (var proc = new Process())
+            {
+                var info = proc.StartInfo;
+                info.FileName = program;
+                info.RedirectStandardError = false;
+                info.RedirectStandardInput = false;
+                info.RedirectStandardOutput = false;
+                info.UseShellExecute = true;
+                if (arguments != null)
+                {
+                    info.Arguments = String.Join(" ", arguments.Select(SafeArgument));
+                }
+                proc.Start();
+            }
+        }
+
+        public static string SafeArgument(string arg)
+        {
+            if (arg == null)
+            {
+                return "\"\"";
+            }
+            else
+            {
+                return "\"" + arg.Replace("\"", "\\\"") + "\"";
+            }
+        }
+
         public static void RestartSettings()
         {
             var asm = GetFirstAssemblyLocation().ToLower();
 
             if (asm.IndexOf("mono") != -1)
             {
-                Mono = true;
                 AddFeature("mono");
 
             }
             else if (asm.IndexOf("netcore") != -1)
             {
-                Mono = false;
                 AddFeature("netcore");
             }
             else
             {
-                Mono = false;
                 AddFeature("microsoft");
             }
 
@@ -386,7 +425,7 @@ namespace Kiezel
                     AddFeature("windows");
                     break;
                 case PlatformID.Unix:
-                    var platform = Exec("uname", null, "-s");
+                    var platform = ShellExec(null, "uname", "-s");
                     if (platform != null)
                     {
                         if (platform.ToLower().IndexOf("linux") != -1)
@@ -458,7 +497,7 @@ namespace Kiezel
             Symbols.EnableWarnings.VariableValue = true;
             Symbols.Exception.ReadonlyValue = null;
             Symbols.Features.VariableValue = null;
-            Symbols.HelpHook.VariableValue = null;
+            Symbols.GetClipboardTextHook.VariableValue = null;
             Symbols.I.ConstantValue = Complex.ImaginaryOne;
             Symbols.It.VariableValue = null;
             Symbols.LazyImport.VariableValue = true;
@@ -482,7 +521,6 @@ namespace Kiezel
             Symbols.Readtable.VariableValue = GetStandardReadtable();
             Symbols.Self.ReadonlyValue = null;
             Symbols.ReplForceIt.VariableValue = false;
-            Symbols.ReplListenerPort.VariableValue = 8080;
             Symbols.ScriptDirectory.ReadonlyValue = NormalizePath(HomeDirectory);
             Symbols.ScriptName.ReadonlyValue = null;
             Symbols.StdErr.VariableValue = null;

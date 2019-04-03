@@ -163,7 +163,7 @@ namespace Kiezel
                 {
                     var mv = IndexOf(item, test, v2);
 
-                    if (mv.Index != -1)
+                    if (mv.Index == -1)
                     {
                         yield return item;
                     }

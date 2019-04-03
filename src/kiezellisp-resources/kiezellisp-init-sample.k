@@ -50,10 +50,10 @@
         (string project-path x)))
 
 (apply set-load-path (map make-path (list
-                "kiezellisp-private/lib"
-                "kiezellisp-private/app"
-                "kiezellisp/lib"
-                "kiezellisp/app" )))
+                "kiezellisp/private/lib"
+                "kiezellisp/private/app"
+                "kiezellisp/public/lib"
+                "kiezellisp/public/app" )))
 
 (require "system")
 
@@ -62,6 +62,10 @@
 (require "shell")
 (require "unit-test")
 (require "diagnostics")
+
+#if unix
+(setq $get-clipboard-text-hook #(shell:exec null "xsel" "-o" "-b"))
+#endif
 
 (setq $repl-force-it true)
 (setq $repl-optional-parentheses false)

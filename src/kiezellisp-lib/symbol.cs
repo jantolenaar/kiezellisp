@@ -652,11 +652,11 @@ namespace Kiezel
         public static Symbol GenericFunction;
         public static Symbol GetArgumentOrDefault;
         public static Symbol GetAttr;
+        public static Symbol GetClipboardTextHook;
         public static Symbol GetElt;
         public static Symbol HashElif;
         public static Symbol HashElse;
         public static Symbol HashEndif;
-        public static Symbol HelpHook;
         public static Symbol HoistedArgs;
         public static Symbol I;
         public static Symbol Identity;
@@ -732,7 +732,6 @@ namespace Kiezel
         public static Symbol ProgArgs;
         public static Symbol Redo;
         public static Symbol ReplForceIt;
-        public static Symbol ReplListenerPort;
         public static Symbol ReplOptionalParentheses;
         public static Symbol[] ReservedVariables;
         public static Symbol Rest;
@@ -850,11 +849,11 @@ namespace Kiezel
             GenericFunction = MakeSymbol("generic-function");
             GetArgumentOrDefault = MakeSymbol("get-argument-or-default");
             GetAttr = MakeSymbol("attr");
+            GetClipboardTextHook = MakeSymbol("$get-clipboard-text-hook");
             GetElt = MakeSymbol("elt");
             HashElif = MakeSymbol("#elif");
             HashElse = MakeSymbol("#else");
             HashEndif = MakeSymbol("#endif");
-            HelpHook = MakeSymbol("$help-hook");
             HoistedArgs = MakeSymbol("%hoisted-args");
             I = MakeSymbol("math:I");
             Identity = MakeSymbol("identity");
@@ -928,7 +927,6 @@ namespace Kiezel
             ProgArgs = MakeSymbol("%prog-args");
             Redo = MakeSymbol("redo");
             ReplForceIt = MakeSymbol("$repl-force-it");
-            ReplListenerPort = MakeSymbol("$repl-listener-port");
             ReplOptionalParentheses = MakeSymbol("$repl-optional-parentheses");
             Rest = MakeSymbol("&rest");
             Return = MakeSymbol("return");

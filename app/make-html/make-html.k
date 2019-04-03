@@ -547,5 +547,5 @@
     (string prompt str2))
 
 (defun reformat-line (text width)
-    (shell:exec "par" :stdin text :return-stdout true :args (list "-w${width}")))
+    (shell:exec text "par" "-w${width}"))
 

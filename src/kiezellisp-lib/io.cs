@@ -387,14 +387,19 @@ namespace Kiezel
             return path;
         }
 
-#if !NETCOREAPP && !NETSTANDARD
-        [Lisp("get-clipboard")]
         public static string GetClipboardData()
         {
-            string str = System.Windows.Forms.Clipboard.GetText();
-            return str;
+            var prog = (IApply)Symbols.GetClipboardTextHook.Value;
+            if (prog == null)
+            {
+                return null;
+            }
+            else
+            {
+                var str = MakeString(Funcall(prog));
+                return str;
+            }
         }
-#endif
 
         [Lisp("load")]
         public static void Load(object filespec, params object[] args)
@@ -406,18 +411,6 @@ namespace Kiezel
                 throw new LispException("File not loaded: {0}", file);
             }
         }
-
-#if !NETCOREAPP && !NETSTANDARD
-        [Lisp("load-clipboard")]
-        public static void LoadClipboardData()
-        {
-            var code = GetClipboardData();
-            using (var stream = new StringReader(code))
-            {
-                TryLoadText(stream, null, null, false, false);
-            }
-        }
-#endif
 
         public static string NormalizePath(string path)
         {
@@ -754,23 +747,6 @@ namespace Kiezel
             }
         }
 
-#if CLIPBOARD
-[Lisp("run-clipboard")]
-        public static void RunClipboardData()
-        {
-            var code = GetClipboardData();
-            using (var stream = new StringReader(code))
-            {
-                TryLoadText(stream, null, null, false, false);
-                var main = Symbols.Main.Value as IApply;
-                if (main != null)
-                {
-                    Funcall(main);
-                }
-            }
-        }
-#endif
-
         [Lisp("say")]
         public static void Say(params object[] items)
         {
@@ -784,21 +760,6 @@ namespace Kiezel
             Symbols.AssemblyPath.ReadonlyValue = paths;
             return paths;
         }
-
-#if !NETCOREAPP && !NETSTANDARD
-        [Lisp("set-clipboard")]
-        public static void SetClipboardData(string str)
-        {
-            if (string.IsNullOrEmpty(str))
-            {
-                System.Windows.Forms.Clipboard.Clear();
-            }
-            else
-            {
-                System.Windows.Forms.Clipboard.SetText(str);
-            }
-        }
-#endif
 
         [Lisp("set-load-path")]
         public static Cons SetLoadPath(params string[] folders)

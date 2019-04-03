@@ -17,7 +17,6 @@
         "cd"
         "dir"
         "env"
-        "exec"
         "expand-path-name"
         "get-special-folder"
         "here"
@@ -25,28 +24,27 @@
         "path"
         "pwd"
         "robocopy-mirror"
-        "run"
-        "run-windows-command"
         "with-directory"
+        ; already defined internally
+        "exec"
+        "exec-detached"
+        "run"
     )
     (:shadow
         "path"
-        "run"
     ))
 
 
 (in-package "shell")
 
 (defun pwd ()
-    (print-line (here))
-    (void))
+    (say (here)))
 
 (defun here ()
     (path:get-unix-name (environment:current-directory)))
 
 (defun cd (path)
-    (environment:set-current-directory path)
-    (void))
+    (environment:set-current-directory path))
 
 (defmacro with-directory ((path) &body forms)
     `(do
@@ -59,14 +57,12 @@
 #if windows
 
 (defun dir ()
-    (run "cmd.exe" "/c" "dir")
-    (void))
+    (run "cmd.exe" "/c" "dir"))
 
 #elif unix
 
 (defun dir ()
-    (run "ls")
-    (void))
+    (run "ls"))
 
 #endif
 
@@ -105,63 +101,9 @@
 (def $my-documents
     (get-special-folder :my-documents))
 
-(defun run-windows-command (cmd &rest arguments)
-    (using (proc (process:new))
-        (let info (.start-info proc))
-        (setf (.file-name info) cmd)
-        (setf (.redirect-standard-output info) false)
-        (setf (.redirect-standard-error info) false)
-        (setf (.redirect-standard-input info) false)
-        (setf (.use-shell-execute info) true)
-        (setf (.arguments info) (make-safe-argument-string arguments))
-        (.start proc)
-        (void)))
-
-(defun enclose-in-quotes (arg)
-    (cond
-        ((null? arg)
-            "")
-        ((index-of #\double-quote arg)
-            (string "\"" arg "\""))
-        ((index-of #\space arg)
-            (string "\"" arg "\""))
-        (true
-            arg)))
-
-(defun make-safe-argument-string (args)
-    (string:join " " (map enclose-in-quotes args)))
-
-(defun run (program &rest arguments)
-    (exec program :stdin null :return-stdout false :args arguments))
-
-(defun exec (program &key stdin return-stdout args)
-    (using (proc (process:new))
-        (let info (.start-info proc))
-        (setf (.file-name info) program)
-        (setf (.redirect-standard-output info) true)
-        (setf (.redirect-standard-error info) true)
-        (setf (.redirect-standard-input info) true)
-        (setf (.use-shell-execute info) false)
-        (setf (.arguments info) (make-safe-argument-string args))
-        (.start proc)
-        (using (in (.standard-input proc))
-        (using (out (.standard-output proc))
-        (using (err (.standard-error proc))
-            (when stdin
-                (.write in stdin))
-            (.close in)
-            (let result (.read-to-end out))
-            (.close out)
-            (.wait-for-exit proc)
-            (let ok (zero? (.exit-code proc)))
-            (if return-stdout 
-                (if ok result)
-              (if ok (do (print result) true))))))))
-
 #if windows
 
 (defun robocopy-mirror (source destination)
-    ;(let $stdout null)
     (let source (path:get-windows-name source))
     (let destination (path:get-windows-name destination))
     (run "robocopy.exe" source destination "/MIR" "/MT" "/NS" "/NC" "/NDL" "/NP" "/NJH" "/NJS"))

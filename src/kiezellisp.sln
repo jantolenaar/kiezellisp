@@ -10,6 +10,11 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "kiezellisp-con", "kiezellisp-con\kiezellisp-con.csproj", "{19D57ABB-ED62-4B6F-8C4C-FD5A5EADDCC8}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{ADE3A993-1872-4B02-A4A6-5B3E65C2E4B2}"
+	ProjectSection(SolutionItems) = preProject
+		kiezellisp-resources\kiezellisp-init-sample.k = kiezellisp-resources\kiezellisp-init-sample.k
+		kiezellisp-resources\lisp-icon.bmp = kiezellisp-resources\lisp-icon.bmp
+		kiezellisp-resources\lisp-icon.ico = kiezellisp-resources\lisp-icon.ico
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

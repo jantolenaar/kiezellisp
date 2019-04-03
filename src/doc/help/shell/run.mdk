@@ -1,0 +1,14 @@
+.index shell:run
+.usage builtin-function
+.syntax
+(shell:run prog &rest args)
+
+.description
+Executes the program `prog` with arguments `args`.
+
+.examples
+(shell:run "date" "-R")
+
+.see-also
+.api
+shell:exec-detached shell:exec

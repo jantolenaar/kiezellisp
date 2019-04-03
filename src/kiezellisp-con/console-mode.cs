@@ -68,7 +68,7 @@ namespace Kiezel
                         WriteReverse(prompt, true);
                         while (true)
                         {
-                            var info = Console.ReadKey(true);
+                            var info = ReplReadKey();
                             if (info.Modifiers == 0)
                             {
                                 if (info.Key == ConsoleKey.Spacebar)
@@ -145,9 +145,25 @@ namespace Kiezel
             }
         }
 
+        public static ConsoleKeyInfo ReplReadKey()
+        {
+            var keyInfo = Console.ReadKey(true);
+            return keyInfo;
+        }
+
+        public static void ReplReadTest()
+        {
+            while (true)
+            {
+                var i = ReplReadKey();
+                Console.WriteLine("{0} {1} {2}", i.Key, i.Modifiers, (int)i.KeyChar);
+            }
+        }
 
         public static string ReplReadImp(bool lispCompletion, bool symbolCompletion, bool crlf)
         {
+            //ReplReadTest ();
+
             var top = Console.CursorTop;
             var left = Console.CursorLeft;
             var pos = 0;
@@ -236,21 +252,7 @@ namespace Kiezel
 
                 Console.SetCursorPosition(col, row);
 
-            readKeyRetry:
-
-                if (TryReadCommandListener(out ch))
-                {
-                    keyInfo = new ConsoleKeyInfo(ch, 0, false, false, false);
-                }
-                else if (Console.KeyAvailable)
-                {
-                    keyInfo = Console.ReadKey(true);
-                }
-                else
-                {
-                    Runtime.Sleep(10);
-                    goto readKeyRetry;
-                }
+                keyInfo = ReplReadKey();
 
             codeCompletionRetry:
 
@@ -258,13 +260,6 @@ namespace Kiezel
                 mod = keyInfo.Modifiers;
                 ch = keyInfo.KeyChar;
 
-#if NETCOREAPP || NETSTANDARD
-                if (ch == 8 && key == 0)
-                {
-                    // ^H
-                    key = ConsoleKey.Backspace;
-                }
-#endif
                 switch (key)
                 {
                     case ConsoleKey.Backspace:
@@ -420,7 +415,7 @@ namespace Kiezel
 
                                 Console.SetCursorPosition(col2, row + row2);
 
-                                var keyInfo2 = Console.ReadKey(true);
+                                var keyInfo2 = ReplReadKey();
                                 var key2 = keyInfo2.Key;
                                 if (key2 == ConsoleKey.Enter)
                                 {
@@ -464,7 +459,6 @@ namespace Kiezel
                         {
                             if (mod == ConsoleModifiers.Control)
                             {
-#if !NETCOREAPP && !NETSTANDARD
                                 switch (key)
                                 {
                                     case ConsoleKey.V:
@@ -476,20 +470,14 @@ namespace Kiezel
                                             ++pos;
                                         }
                                         break;
-                                    case ConsoleKey.C:
-                                        var text2 = buffer.ToString();
-                                        Runtime.SetClipboardData(text2);
-                                        break;
                                     case ConsoleKey.U:
                                         var text3 = buffer.ToString(0, pos);
                                         buffer.Remove(0, pos);
-                                        Runtime.SetClipboardData(text3);
                                         pos = 0;
                                         break;
                                     case ConsoleKey.K:
                                         var text4 = buffer.ToString(pos, buffer.Length - pos);
                                         buffer.Remove(pos, buffer.Length - pos);
-                                        Runtime.SetClipboardData(text4);
                                         break;
                                     case ConsoleKey.W:
                                         var line = buffer.ToString();
@@ -497,10 +485,8 @@ namespace Kiezel
                                         var text5 = buffer.ToString(loc.Begin, pos - loc.Begin);
                                         buffer.Remove(loc.Begin, pos - loc.Begin);
                                         pos = loc.Begin;
-                                        Runtime.SetClipboardData(text5);
                                         break;
                                 }
-#endif
                             }
                             else if (ch == '\n')
                             {

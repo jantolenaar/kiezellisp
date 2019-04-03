@@ -13,7 +13,6 @@ Non-trivial Editor Keys:
     ESC             Cancel input or code completion.
     UP              Move up in history.
     DOWN            Move down in history.
-    CTRL+C          Copy the selection to the clipboard.
     CTRL+V          Paste source code from the clipboard into the REPL.
     CTRL+W          Delete word before the cursor.
     CTRL+U          Erase to the begin of the line.

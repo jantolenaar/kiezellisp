@@ -1,0 +1,27 @@
+
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 15
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "kiezellisp-nc-con", "kiezellisp-nc-con\kiezellisp-nc-con.csproj", "{2842EDDF-A51B-4AA5-8829-19D9BA3FF9FA}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "kiezellisp-nc-lib", "kiezellisp-nc-lib\kiezellisp-nc-lib.csproj", "{835CC450-7473-4E6C-AC68-8E0E4AEE1422}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{9EBC2FBB-6F7C-48BA-8A98-A77A6F00C518}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{9EBC2FBB-6F7C-48BA-8A98-A77A6F00C518}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{9EBC2FBB-6F7C-48BA-8A98-A77A6F00C518}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{9EBC2FBB-6F7C-48BA-8A98-A77A6F00C518}.Release|Any CPU.Build.0 = Release|Any CPU
+		{2842EDDF-A51B-4AA5-8829-19D9BA3FF9FA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{2842EDDF-A51B-4AA5-8829-19D9BA3FF9FA}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{2842EDDF-A51B-4AA5-8829-19D9BA3FF9FA}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{2842EDDF-A51B-4AA5-8829-19D9BA3FF9FA}.Release|Any CPU.Build.0 = Release|Any CPU
+		{835CC450-7473-4E6C-AC68-8E0E4AEE1422}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{835CC450-7473-4E6C-AC68-8E0E4AEE1422}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{835CC450-7473-4E6C-AC68-8E0E4AEE1422}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{835CC450-7473-4E6C-AC68-8E0E4AEE1422}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+EndGlobal

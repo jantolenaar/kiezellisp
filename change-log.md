@@ -1,5 +1,19 @@
 # Change Log
 
+### 2019/03/31
+
+*   Fixed bug in `except`.
+
+### 2019/03/29
+
+*   Added kiezellisp-nc.sln for .Net Core
+*   Redesigned functions `shell:exec`, `shell:run`.
+*   Added `$get-clipboard-text-hook`.
+
+### 2019/03/26
+
+*   Removed listener (incompatible with net core - needs rewrite).
+
 ### 2019/03/21
 
 *   Added `$repl-optional-parentheses` setting.

@@ -1,0 +1,47 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>netcoreapp2.2</TargetFramework>
+    <RootNamespace>Kiezel</RootNamespace>
+    <PackageVersion>4.0</PackageVersion>
+  </PropertyGroup>
+<PropertyGroup>
+   <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+   <Deterministic>false</Deterministic>
+</PropertyGroup> 
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <DebugType></DebugType>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\kiezellisp-nc-lib\kiezellisp-nc-lib.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="..\kiezellisp-con\console-base.cs">
+      <Link>console-base.cs</Link>
+    </Compile>
+    <Compile Include="..\kiezellisp-con\console-mode.cs">
+      <Link>console-mode.cs</Link>
+    </Compile>
+    <Compile Include="..\kiezellisp-con\options.cs">
+      <Link>options.cs</Link>
+    </Compile>
+    <Compile Include="..\kiezellisp-con\Program.cs">
+      <Link>Program.cs</Link>
+    </Compile>
+    <Compile Include="..\kiezellisp-con\repl-history.cs">
+      <Link>repl-history.cs</Link>
+    </Compile>
+    <Compile Include="..\kiezellisp-lib\Properties\AssemblyInfo.cs">
+      <Link>Properties\AssemblyInfo.cs</Link>
+    </Compile>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\kiezellisp-con\lisp-icon.ico">
+      <Link>lisp-icon.ico</Link>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="Properties\" />
+  </ItemGroup>
+</Project>
