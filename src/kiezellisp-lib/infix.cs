@@ -577,7 +577,7 @@ namespace Kiezel
                     var number = infix.Substring(pos, index - pos);
                     v.Add(number.ParseNumber());
                 }
-                else if (Char.IsLetter(ch) || ch == '_')
+                else if (Char.IsLetter(ch) || ch == '_' || ch == ':')
                 {
                     // ident
 
@@ -585,7 +585,7 @@ namespace Kiezel
                     {
                         ch = infix[index];
 
-                        if (!(Char.IsLetterOrDigit(ch) || ch == '_'))
+                        if (!(Char.IsLetterOrDigit(ch) || ch == '_' || ch == ':'))
                         {
                             break;
                         }

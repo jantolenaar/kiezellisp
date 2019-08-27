@@ -1,6 +1,21 @@
 # Change Log
 
-### 2019/04/03
+### 2019/08/27
+
+*   Documentation changes mostly related to .NET Core.
+
+### 2019/04/20
+
+*   Added `"\e"` and `\#escape` character.
+*   Refactored autocomplete to work as bash autocomplete.
+
+### 2019/04/13
+
+*   Added `unuse-package` and `unexport-symbol`.
+*   Added `list-symbols`, `list-external-symbols` and `list-internal-symbols`.
+*   Refactored package and symbol code.
+
+### 2019/04/06
 
 *   c# void functions now return `(void)` instead of `null`.
 

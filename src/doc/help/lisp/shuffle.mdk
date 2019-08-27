@@ -7,5 +7,6 @@
 Returns a random reordering of `seq`.
 
 .examples
-(shuffle (range 10))
+:fake-it "it: (6 1 2 3 5 4)"
+(shuffle (series 6))
 

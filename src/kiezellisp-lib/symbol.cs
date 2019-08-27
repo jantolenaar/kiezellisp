@@ -610,6 +610,7 @@ namespace Kiezel
         public static Symbol Case;
         public static Symbol Cat;
         public static Symbol Catch;
+        public static Symbol[] CodegenVariables;
         public static Symbol CommandLineArguments;
         public static Symbol CommandLineScriptName;
         public static Symbol CompilerMacro;
@@ -1033,6 +1034,16 @@ namespace Kiezel
                 MakeSymbol("%8"),
                 MakeSymbol("%9")
             };
+
+            CodegenVariables = new Symbol[]
+                {
+                MakeSymbol("%%1"),
+                MakeSymbol("%%2"),
+                MakeSymbol("%%3"),
+                MakeSymbol("%%4"),
+                MakeSymbol("%%5")
+
+                };
         }
 
         public static Symbol MakeSymbol(string name)

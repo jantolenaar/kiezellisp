@@ -107,3 +107,12 @@ peek-char read read-all read-all-from-string
 read-char read-delimited-list read-from-string
 unread-char with-input-from-string
 print write write-line write-to-string with-output-to-string
+
+# Packages
+.api
+in-package defpackage make-package delete-package
+find-package get-package
+use-package unuse-package use-package-alias
+list-all-packages list-symbols list-internal-symbols list-external-symbols
+import-symbol export-symbol unexport-symbol
+make-symbol shadow-symbol

@@ -2,6 +2,7 @@
 .usage builtin-function
 .syntax
 (export-symbol name)
+(export-symbols &rest names)
 
 .description
 Exports the symbol with the given `name` from the current package. This function

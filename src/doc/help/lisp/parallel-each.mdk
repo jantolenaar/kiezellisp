@@ -8,5 +8,6 @@ Applies the function `action` to each element of `seq`. Uses the Task Parallel
 Library.
 
 .examples
-(parallel-each print-line (series 15))
+:fake-it "1\n2\n5\n\6\n3\n4"
+(parallel-each print-line (series 6))
 

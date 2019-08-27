@@ -200,6 +200,18 @@ namespace Kiezel
                 z["name"] = sym.Name;
                 z["package"] = sym.Package == null ? null : sym.Package.Name;
 
+                if (sym.Package != null)
+                {
+                    if (sym.Package.IsExported(sym.Name))
+                    {
+                        z["exported"] = true;
+                    }
+                    else
+                    {
+                        z["exported"] = false;
+                    }
+                }
+
                 switch (sym.CompilerUsage)
                 {
                     case SymbolUsage.CompilerMacro:

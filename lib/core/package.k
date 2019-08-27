@@ -6,8 +6,6 @@
 
 (in-package "lisp")
 
-(export-symbol "defpackage")
-
 (defmacro defpackage (name &rest options)
     `(defpackage-imp ,name ',options))
 
@@ -25,4 +23,19 @@
     (each export-symbol (flatten (get-option :export options)))
     $package)
 
+(defun export-symbols (&rest names)
+    (each export-symbol names))
 
+(defun import-symbols (&rest names)
+    (each import-symbol names))
+
+(defun shadow-symbols (&rest names)
+    (each shadow-symbol names))
+
+(export-symbols 
+    "defpackage"
+    "export-symbols"
+    "import-symbols"
+    "shadow-symbols")
+
+ 

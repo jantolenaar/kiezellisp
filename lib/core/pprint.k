@@ -170,7 +170,6 @@ $print-escape and $print-base.
     (let a (first expr))
     (let b (second expr))
     (let c (third expr))
-    (let d (fourth expr))
 
     (when (eq a 'quote)
         (print "'")
@@ -194,18 +193,6 @@ $print-escape and $print-base.
         (print ",@")
         (with-indent (2)
             (pprint-expr b))
-        (return true))
-
-    (when (eq a 'system:pretty-reader)
-        (case b
-            (("#+" "#-")
-                (print b)
-                (print c)
-                (print-line)
-                (pprint d))
-            (("literally" "line-comment" "block-comment" "string")
-                (print c))
-        )
         (return true))
 
     (when (and (eq a '.)
@@ -347,13 +334,17 @@ $print-escape and $print-base.
     (var left $pprint-left-margin)
     (loop
         (for i :in (series num-items))
-        (print " ")
-        (if (= i num-items)
-            (pprint (first tail) :left (inc left))
-          (do
-            (let text (write-to-string (first tail)))
-            (write text :escape false)
-            (setf left (+ left 1 (.length text)))))
+        (cond
+            ((null? tail)
+                null)
+            ((= i num-items)
+                (print " ")
+                (pprint (first tail) :left (inc left)))
+            (true
+                (let text (write-to-string (first tail)))
+                (print " ")
+                (write text :escape false)
+                (setf left (+ left 1 (.length text)))))
         (setf tail (rest tail)))
     (pprint-items-vertically tail true)
     (print ")"))

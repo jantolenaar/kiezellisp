@@ -248,13 +248,13 @@ namespace Kiezel
                     else
                     {
                         Packages.Remove(packageName);
-                        package = MakePackage(packageName);
+                        package = MakePackage3(packageName, useLisp: false);
                         ImportIntoPackage(package, type);
                     }
                 }
                 else
                 {
-                    package = MakePackage(packageName);
+                    package = MakePackage3(packageName, useLisp: false);
                     ImportIntoPackage(package, type);
                 }
 
@@ -267,7 +267,7 @@ namespace Kiezel
 
         public static void ImportExtensionMethodsIntoPackage(Package package, Type type)
         {
-            VerifyNoMissingSymbols(package);
+            package.VerifyNoMissingSymbols();
 
             var isbuiltin = type.Assembly == Assembly.GetExecutingAssembly();
             var extendedType = (Type)package.Dict["T"].CheckedValue;
@@ -333,7 +333,7 @@ namespace Kiezel
 
             if (!ToBool(Symbols.LazyImport.Value))
             {
-                VerifyNoMissingSymbols(package);
+                package.VerifyNoMissingSymbols();
             }
         }
 
@@ -568,18 +568,6 @@ namespace Kiezel
             }
         }
 
-        public static void VerifyNoMissingSymbols(Package package)
-        {
-            if (package.ImportedType != null && !package.ImportMissingDone)
-            {
-                package.ImportMissingDone = true;
-                var names = package.ImportedType.GetMembers(ImportBindingFlags).Select(x => x.Name).Distinct().ToArray();
-                foreach (var name in names)
-                {
-                    ImportMissingSymbol(name, package);
-                }
-            }
-        }
 
         #endregion Public Methods
     }

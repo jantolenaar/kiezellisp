@@ -43,23 +43,42 @@
 (def $input-dir null)
 (def $output-dir null)
 (def $master-index null)
-;(def $style-sheet "styles.css?v=<%=(time-stamp)%>")
-(def $style-sheet "styles.css")
-(def $style-sheet-version null)
-(def $site-name null)
+(def $crumbs null)
+
+(def $styles """
+
+div.narrow {
+max-width: 50em;
+margin: auto;
+}
+
+div.indexofeverything {
+column-width:18em;
+}
+
+pre {
+margin-left: 2em;
+white-space: pre-wrap;
+}
+
+p {
+max-width: 50em;
+margin-left: 1em;
+}
+
+    """)
+
 
 (defun make-kiezellisp-html()
-    (let $site-name "jan&nbsp;tolenaar&nbsp;/&nbsp;<span style='color:yellow'>kiezel</span>lisp")
+    (let $crumbs '(("jan tolenaar" "index.html")
+                   ("kiezellisp" "kiezellisp/index.html")
+                   ("index-of-everything" "kiezellisp/help/index.html")))
     (let $input-dir "${projects}/kiezellisp/public/src/doc")
     (let $output-dir "${home}/www/local/jantolenaar/kiezellisp")
     ;; Mdk files containing an index directive are added to the 
     ;; master index of the public api. If $master-index is null no 
     ;; master index is created.
     (let $master-index (vector))
-    ;; this code is duplicated in make-html
-    ;; styles.css must be present in $input-dir
-    (let info (file-info:new (path:combine $input-dir $style-sheet)))
-    (let $style-sheet-version (string (time-stamp (.last-write-time info))))
     (rewrite-md-change-log)
     (make-html))
 
@@ -67,9 +86,6 @@
     ;; used when wrapping api links and pretty printing examples
     ;; width of <pre> in html
     (let $right 66)
-    ;; styles.css must be present in $input-dir
-    (let info (file-info:new (path:combine $input-dir $style-sheet)))
-    (let $style-sheet-version (string (time-stamp (.last-write-time info))))
     (rewrite-files)
     (if (vector? $master-index)
         (write-master-index)))
@@ -125,8 +141,7 @@
             (vector? $master-index))
         (.add $master-index item))
     (let md-text (.data item))
-    (let anchor (.anchor item))
-    (let html-text (render-html name (md:convert-to-html md-text) :anchor anchor))
+    (let html-text (render-html name (md:convert-to-html md-text)))
     (save-html-file name html-text))
 
 (defun rewrite-md-file (name)
@@ -141,9 +156,8 @@
     (let html-text (render-html "change-log" (md:convert-to-html md-text)))
     (save-html-file "change-log" html-text))
 
+
 (defun render-header (name &key etag math)
-    (let depth (count #(= %1 #\/) name))
-    (let root (.repeat "../" depth))
     (let head
         (<head>
             (<meta> :name "copyright"
@@ -153,9 +167,7 @@
             (<meta> :http-equiv "CACHE-CONTROL"
                     :content "NO-CACHE")
             (<title> name)
-            (<link> :rel "StyleSheet"
-                    :type "text/css"
-                    :href (string root $style-sheet "?v=" $style-sheet-version))
+            (<style> $styles)
             (if math
                 (<script> :type "text/x-mathjax-config" mathjax-config))
             (if math
@@ -165,21 +177,27 @@
         (xml:add head :etag etag))
     head)
 
-(defun render-body (name content &key anchor wide)
-    (let depth (count #(= %1 #\/) name))
+(defun render-body (name content &key is-master-index)
+    (let depth (inc (count #(= %1 #\/) name)))
     (let root (.repeat "../" depth))
-    (let content-id (if wide "wide-content" "content"))
-    (<body>        
-        (<a> :class "banner" :href "${root}index.html" $site-name)
-        "&nbsp;"
-        "&nbsp;"
-        "&nbsp;"
-        "&nbsp;"
-        "&nbsp;"
-        "&nbsp;"
-        (if (and anchor (vector? $master-index))
-            (<a> :class "banner" :href "${root}help/index.html" "index of everything"))
-        (<div> :id content-id content)))
+    (let class (if is-master-index "wide" "narrow"))
+    (<body>
+        (<div>
+            :class class
+            (<big>
+                (<b> 
+                    (if-let (crumb (first $crumbs))
+                        (<span>
+                            (<a> :href (string root (second crumb)) (first crumb))))
+                    (if-let (crumb (second $crumbs))
+                        (<span>
+                            "&nbsp;/&nbsp;"
+                            (<a> :href (string root (second crumb)) (first crumb))))
+                    (if-let (crumb (and (not is-master-index) (third $crumbs)))
+                        (<span>
+                            "&nbsp;/&nbsp;"
+                            (<a> :href (string root (second crumb)) (first crumb))))))
+            (<div> content))))
 
 (defun make-md5sum (content)
     (using (md5 (md5:create))
@@ -190,14 +208,14 @@
         ))))
 
 (defun get-etag (content)
-    (make-md5sum (string content "-" $style-sheet-version)))
+    (make-md5sum content))
 
 (defun get-math-flag (content)
     (and false (string? content)
          (or (/= (.index-of content "$") -1)
              (/= (.index-of content @"\(") -1))))
 
-(defun render-html(name body &key anchor wide)
+(defun render-html(name body &key is-master-index)
     (let etag (get-etag body))
     (let math (get-math-flag body))
     (html:to-string
@@ -205,7 +223,7 @@
             :lang "en"
             (render-header name :etag etag
                                 :math math)
-            (render-body name body :anchor anchor :wide wide))))
+            (render-body name body :is-master-index is-master-index))))
 
 (defun save-html-file (name html-text)
     (let path (path:combine $output-dir name))
@@ -217,7 +235,7 @@
         (file:write-all-text output-file html-text)))
 
 (defun write-master-index ()
-    (let lisp-package (find-package "lisp"))
+    (let lisp-package (get-package "lisp"))
     (letfun is-not-alnum (item)
         (let letter (elt (symbol-name (.anchor item)) 0))
         (not (char:is-letter-or-digit letter)))
@@ -244,7 +262,7 @@
     	(print-line "</div>")))
 
     (let name "help/index.html")
-    (let html-text (render-html name md-text :anchor "index" :wide true))
+    (let html-text (render-html name md-text :is-master-index true))
     (save-html-file name html-text))
 
 (defun* make-links
@@ -387,7 +405,7 @@
     (each do-prototype prototypes))
 
 (defun do-prototype (prototype)
-    (print-line "<code>")
+    (print-line "<code class=syntax>")
     (cond
         ((list? prototype)
             (cond
@@ -429,10 +447,10 @@
     (print (bold arg)))
 
 (defun bold (&rest args)
-    (string "__" (string:join " " args) "__"))
+    (string "<b>" (string:join " " args) "</b>"))
 
 (defun italic (&rest args)
-    (string "_" (string:join " " args) "_"))
+    (string "<i>" (string:join " " args) "</i>"))
 
 (defun small (&rest args)
     (string:join " " args))
@@ -479,6 +497,7 @@
     (let env (make-extended-environment))
     (var dbglevel 0)
     (var catch-exceptions false)
+    (var fake-it null)
     (gensym-reset)
     (with-output-to-string ($stdout)
         (loop
@@ -486,10 +505,17 @@
             (when (= example ":throws")
                 (setf catch-exceptions true)
                 (continue))
+            (when (.starts-with example ":fake-it ")
+                (setf fake-it (.substring example 9))
+                (continue))
             (let prompt (make-prompt dbglevel))
             (let indented-example (indent-example prompt example))
             (print-line indented-example)
             (continue-if (not eval?))
+            (when fake-it
+                (print-line (eval (read-from-string fake-it)))
+                (setf fake-it null)
+                (continue))
             (let example-code (delay (read-from-string example)))
             (case example
                 (":a"
@@ -524,6 +550,7 @@
                             (print "it: ")
                             (pprint result :left 4)))))
             (setf catch-exceptions false)
+            (setf fake-it null)
             (print-line))))
 
 (defun visit-example (code)
@@ -547,5 +574,5 @@
     (string prompt str2))
 
 (defun reformat-line (text width)
-    (shell:exec text "par" "-w${width}"))
+    (shell:exec-with-io-redirect text "par" "-w${width}"))
 

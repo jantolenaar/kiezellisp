@@ -48,7 +48,8 @@ namespace Kiezel
             {
                 return new BigInteger((decimal)a);
             }
-            else {
+            else
+            {
                 return (BigInteger)a;
             }
         }
@@ -60,7 +61,8 @@ namespace Kiezel
             {
                 return (BigRational)a;
             }
-            else {
+            else
+            {
                 return new BigRational(AsBigInteger(a));
             }
         }
@@ -72,7 +74,8 @@ namespace Kiezel
             {
                 return (Complex)a;
             }
-            else {
+            else
+            {
                 return new Complex(AsDouble(a), 0);
             }
         }
@@ -94,7 +97,8 @@ namespace Kiezel
                 var n = (BigRational)a;
                 return (decimal)n;
             }
-            else {
+            else
+            {
                 return Convert.ToDecimal(a);
             }
         }
@@ -116,7 +120,8 @@ namespace Kiezel
                 var n = (BigRational)a;
                 return (double)n;
             }
-            else {
+            else
+            {
                 return Convert.ToDouble(a);
             }
         }
@@ -142,7 +147,8 @@ namespace Kiezel
                 var n = (BigRational)a;
                 return (int)n;
             }
-            else {
+            else
+            {
                 return Convert.ToInt32(a);
             }
         }
@@ -164,7 +170,8 @@ namespace Kiezel
                 var n = (BigRational)a;
                 return (long)n;
             }
-            else {
+            else
+            {
                 return Convert.ToInt64(a);
             }
         }
@@ -186,7 +193,8 @@ namespace Kiezel
                 var n = (BigRational)a;
                 return (float)n;
             }
-            else {
+            else
+            {
                 return Convert.ToSingle(a);
             }
         }
@@ -225,7 +233,8 @@ namespace Kiezel
                 {
                     return s[0];
                 }
-                else {
+                else
+                {
                     return null;
                 }
             }
@@ -370,7 +379,17 @@ namespace Kiezel
                 return (Symbol)val;
             }
 
-            throw new LispException("{0} is not a keyword", val);
+            throw new LispException("'{0}' is not a keyword", val);
+        }
+
+        public static string CheckString(object val)
+        {
+            if (Stringp(val))
+            {
+                return (string)val;
+            }
+
+            throw new LispException("'{0}' is not a string", val);
         }
 
         public static Symbol CheckSymbol(object val)
@@ -381,7 +400,7 @@ namespace Kiezel
                 return sym;
             }
 
-            throw new LispException("{0} is not a non-keyword symbol", val);
+            throw new LispException("'{0}' is not a non-keyword symbol", val);
         }
 
         public static Symbol CheckSymbolOrKeyword(object val)
@@ -432,7 +451,8 @@ namespace Kiezel
                 {
                     return dt.ToString("yyyy-MM-dd");
                 }
-                else {
+                else
+                {
                     return dt.ToString("yyyy-MM-dd HH:mm:ss");
                 }
             }
@@ -466,13 +486,15 @@ namespace Kiezel
                     {
                         buf.Write(MakeStringFromObj(false, ((DictionaryEntry)item).Value));
                     }
-                    else {
+                    else
+                    {
                         buf.Write(MakeStringFromObj(false, item));
                     }
                 }
                 return buf.ToString();
             }
-            else {
+            else
+            {
                 return obj.ToString();
             }
         }
@@ -493,7 +515,8 @@ namespace Kiezel
             {
                 return (double)val;
             }
-            else {
+            else
+            {
                 return Convert.ToDouble(val);
             }
         }
@@ -509,7 +532,8 @@ namespace Kiezel
             {
                 return (ICollection)obj;
             }
-            else {
+            else
+            {
                 throw new LispException("Cannot cast to ICollection: {0}", ToPrintString(obj));
             }
         }
@@ -525,7 +549,8 @@ namespace Kiezel
             {
                 return (IList)obj;
             }
-            else {
+            else
+            {
                 throw new LispException("Cannot cast to IList: {0}", ToPrintString(obj));
             }
         }
@@ -536,7 +561,8 @@ namespace Kiezel
             {
                 return (int)val;
             }
-            else {
+            else
+            {
                 return Convert.ToInt32(val);
             }
         }
@@ -551,7 +577,8 @@ namespace Kiezel
             {
                 return defaultValue;
             }
-            else {
+            else
+            {
                 return Convert.ToInt32(val);
             }
         }
@@ -567,7 +594,8 @@ namespace Kiezel
             {
                 return (IEnumerable)obj;
             }
-            else {
+            else
+            {
                 throw new LispException("Cannot cast to IEnumerable: {0}", ToPrintString(obj));
             }
         }
@@ -586,7 +614,8 @@ namespace Kiezel
             {
                 return obj.ToString();
             }
-            else {
+            else
+            {
                 throw new LispException("Cannot cast to String: {0}", ToPrintString(obj));
             }
         }

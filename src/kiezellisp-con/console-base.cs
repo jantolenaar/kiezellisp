@@ -88,13 +88,20 @@ namespace Kiezel
         public static void EvalPrintCommand(string data, bool debugging)
         {
             var output = GetConsoleOut();
-            bool leadingSpace = char.IsWhiteSpace(data, 0);
+
+            if (data == null)
+            {
+                return;
+            }
+
             Cons code = Runtime.ReadAllFromString(data);
 
             if (code == null)
             {
                 return;
             }
+
+            bool leadingSpace = char.IsWhiteSpace(data, 0);
 
             Runtime.RestoreStackAndFrame(state.Peek());
 
@@ -392,65 +399,33 @@ namespace Kiezel
         public static string ReadCommand(bool debugging = false)
         {
             var output = GetConsoleOut();
-            var data = "";
+            string prompt;
+            string debugText = debugging ? "> debug " : "";
+            var package = Runtime.CurrentPackage();
 
-            while (string.IsNullOrWhiteSpace(data))
+            if (Console.IsInputRedirected)
             {
-                // This happens when only ENTER is pressed
-                // Show prompt again
-
-                string prompt;
-                string debugText = debugging ? "> debug " : "";
-                var package = Runtime.CurrentPackage();
-                if (Console.IsInputRedirected)
+                prompt = "";
+            }
+            else
+            {
+                if (state.Count == 1)
                 {
-                    if (state.Count == 1)
-                    {
-                        Runtime.PrintLine(output);
-                        prompt = string.Format("{0} {1}> ", package.Name, debugText);
-                    }
-                    else
-                    {
-                        Runtime.PrintLine(output);
-                        prompt = string.Format("{0} {1}: {2} > ", package.Name, debugText, state.Count - 1);
-                    }
+                    prompt = string.Format("\n{0} {1}> ", package.Name, debugText);
                 }
                 else
                 {
-                    if (state.Count == 1)
-                    {
-                        Runtime.PrintLine(output);
-                        prompt = string.Format("{0} {1}> ", package.Name, debugText);
-                    }
-                    else
-                    {
-                        Runtime.PrintLine(output);
-                        prompt = string.Format("{0} {1}: {2} > ", package.Name, debugText, state.Count - 1);
-                    }
-                }
-                Runtime.Print(output, prompt);
-
-                while (true)
-                {
-                    var chunk = ReplRead(true, true, true);
-                    if (chunk == null)
-                    {
-                        data = "";
-                    }
-                    else
-                    {
-                        data = data + (data.Length == 0 ? "" : " ") + chunk;
-                        if (IsCompleteSourceCode(data))
-                        {
-                            break;
-                        }
-                    }
+                    prompt = string.Format("\n{0} {1}: {2} > ", package.Name, debugText, state.Count - 1);
                 }
             }
 
-            History.Append(data);
-            History.Save();
+            var data = ReplRead(prompt, true, true, true);
 
+            if (!String.IsNullOrWhiteSpace(data))
+            {
+                History.Append(data);
+                History.Save();
+            }
             return data;
         }
 

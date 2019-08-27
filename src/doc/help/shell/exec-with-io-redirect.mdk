@@ -1,0 +1,15 @@
+.index shell:exec-with-io-redirect
+.usage builtin-function
+.syntax
+(shell:exec-with-io-redirect input prog &rest args)
+
+.description
+Executes the program `prog` with arguments `args`. The string `input` is
+used as standard input. Returns the standard output as a string.
+
+.examples
+(shell:exec-with-io-redirect null "uname" "-a")
+
+.see-also
+.api
+shell:exec-with-detach shell:exec

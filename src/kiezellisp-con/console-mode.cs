@@ -106,16 +106,16 @@ namespace Kiezel
         [Lisp("read-from-console")]
         public static string ReadFromConsole()
         {
-            return ReplRead(false, false, false);
+            return ReplRead(null, false, false, false);
         }
 
         [Lisp("read-line-from-console")]
         public static string ReadLineFromConsole()
         {
-            return ReplRead(false, false, true);
+            return ReplRead(null, false, false, true);
         }
 
-        public static string ReplRead(bool lispCompletion, bool symbolCompletion, bool crlf)
+        public static string ReplRead(string prompt, bool lispCompletion, bool symbolCompletion, bool crlf)
         {
             try
             {
@@ -130,7 +130,7 @@ namespace Kiezel
                 }
                 else
                 {
-                    var s = ReplReadImp(lispCompletion, symbolCompletion, crlf);
+                    var s = ReplReadImp(prompt, lispCompletion, symbolCompletion, crlf);
                     return s;
                 }
             }
@@ -160,9 +160,9 @@ namespace Kiezel
             }
         }
 
-        public static string ReplReadImp(bool lispCompletion, bool symbolCompletion, bool crlf)
+        public static string ReplReadImp(string prompt, bool lispCompletion, bool symbolCompletion, bool crlf)
         {
-            //ReplReadTest ();
+            //ReplReadTest();
 
             var top = Console.CursorTop;
             var left = Console.CursorLeft;
@@ -170,6 +170,7 @@ namespace Kiezel
             var buffer = new StringBuilder();
             var col = 0;
             var row = 0;
+            var scrolled = 0;
 
             Action<char> writeChar = (char ch) =>
             {
@@ -181,9 +182,9 @@ namespace Kiezel
                 if (r1 == Console.BufferHeight - 1)
                 {
                     // on last row
-                    if (c1 > c2 || ch == '\n')
+                    if (c2 == 0)
                     {
-                        // scrolled
+                        ++scrolled;
                         --top;
                         --row;
                     }
@@ -212,6 +213,14 @@ namespace Kiezel
                 //
 
                 cursorReset();
+
+                if (prompt != null)
+                {
+                    writeStr(prompt);
+                    row = Console.CursorTop;
+                    col = Console.CursorLeft;
+                }
+
                 for (var i = 0; i < buffer.Length; ++i)
                 {
                     writeChar(buffer[i]);
@@ -227,13 +236,29 @@ namespace Kiezel
 
             Action erase = () =>
             {
-                var start = Console.CursorLeft + Console.CursorTop * Console.BufferWidth;
-                var end = (Console.WindowTop + Console.WindowHeight) * Console.BufferWidth - 1;
-                if (start < end)
+                if (Runtime.HasFeature("ansi-terminal"))
                 {
-                    var blanks = new String(' ', end - start);
-                    Console.Write(blanks);
+                    Console.Write("\x1b[J");
                 }
+                else
+                {
+                    var start = Console.CursorLeft + Console.CursorTop * Console.BufferWidth;
+                    var end = (Console.WindowTop + Console.WindowHeight) * Console.BufferWidth - 1;
+                    if (start < end)
+                    {
+                        var blanks = new String(' ', end - start);
+                        Console.Write(blanks);
+                    }
+                }
+            };
+
+            Action setupNewPromptLocation = () =>
+            {
+                top = Console.CursorTop;
+                left = Console.CursorLeft;
+                col = 0;
+                row = 0;
+                scrolled = 0;
             };
 
             while (true)
@@ -253,9 +278,6 @@ namespace Kiezel
                 Console.SetCursorPosition(col, row);
 
                 keyInfo = ReplReadKey();
-
-            codeCompletionRetry:
-
                 key = keyInfo.Key;
                 mod = keyInfo.Modifiers;
                 ch = keyInfo.KeyChar;
@@ -348,11 +370,9 @@ namespace Kiezel
                         }
                     case ConsoleKey.Escape:
                         {
-                            buffer.Clear();
-                            pos = buffer.Length;
-                            paint();
+                            cursorReset();
                             erase();
-                            Console.SetCursorPosition(col, row);
+                            cursorReset();
                             return null;
                         }
                     case ConsoleKey.Tab:
@@ -368,90 +388,28 @@ namespace Kiezel
                             var suffix = line.Substring(loc.Begin + loc.Span);
                             var completions = GetCompletions(searchTerm);
                             var common = FindLongestCommonStringLength(completions);
-                            if (common != 0)
+                            if (common > loc.Span)
                             {
+                                // add extra common characters
                                 searchTerm = completions[0].Substring(0, common);
+                                buffer = new StringBuilder();
+                                buffer.Append(prefix);
+                                buffer.Append(searchTerm);
+                                pos = buffer.Length;
+                                buffer.Append(suffix);
                             }
-                            var index = -1;
-                            var done = false;
-                            pos = buffer.Length;
-                            while (!done)
+                            else
                             {
-                                var selectedTerm = index == -1 ? searchTerm : completions[index];
-
-                                if (completions.Count < 2)
-                                {
-                                    buffer = new StringBuilder();
-                                    buffer.Append(prefix);
-                                    buffer.Append(selectedTerm);
-                                    pos = buffer.Length;
-                                    buffer.Append(suffix);
-                                    break;
-                                }
-
-                                cursorReset();
-                                erase();
-
-                                cursorReset();
-
-                                writeStr(prefix);
-                                writeStr(selectedTerm);
-
-                                var col2 = Console.CursorLeft;
-                                var row2 = Console.CursorTop - row;
-
-                                writeStr(suffix);
-                                writeStr("\n");
-
-                                writeStr("Completing symbol ");
-                                writeStr(searchTerm);
-                                writeStr("\n");
-
+                                // show all options and a new prompt
+                                var width = -1;
                                 for (var i = 0; i < completions.Count; ++i)
                                 {
-                                    WriteReverse(completions[i], i == index);
-                                    writeChar(' ');
+                                    width = Math.Max(width, 1 + completions[i].Length);
                                 }
-
-                                Console.SetCursorPosition(col2, row + row2);
-
-                                var keyInfo2 = ReplReadKey();
-                                var key2 = keyInfo2.Key;
-                                if (key2 == ConsoleKey.Enter)
-                                {
-                                    buffer = new StringBuilder(prefix + selectedTerm);
-                                    pos = buffer.Length;
-                                    buffer.Append(suffix);
-                                    done = true;
-                                }
-                                else if (key2 == ConsoleKey.Tab && (keyInfo2.Modifiers & ConsoleModifiers.Shift) != 0)
-                                {
-                                    // Stay positive.
-                                    index = (index + completions.Count - 1) % completions.Count;
-                                }
-                                else if (key2 == ConsoleKey.Tab)
-                                {
-                                    index = (index + 1) % completions.Count;
-                                }
-                                else if (key2 == ConsoleKey.Escape)
-                                {
-                                    buffer = new StringBuilder(prefix + searchTerm);
-                                    pos = buffer.Length;
-                                    buffer.Append(suffix);
-                                    done = true;
-                                }
-                                else
-                                {
-                                    buffer = new StringBuilder(prefix + selectedTerm);
-                                    pos = buffer.Length;
-                                    buffer.Append(suffix);
-                                    keyInfo = keyInfo2;
-                                    paint();
-                                    erase();
-                                    Console.SetCursorPosition(col, row);
-                                    goto codeCompletionRetry;
-
-                                }
+                                var cols = Math.Max(1, Console.BufferWidth / width);
+                                Console.WriteLine();
+                                Runtime.PrintMultiColumn(GetConsoleOut(), cols, width, completions);
+                                setupNewPromptLocation();
                             }
                             break;
                         }
@@ -508,7 +466,7 @@ namespace Kiezel
                                     ++pos;
                                 }
                             }
-                            else //if (ch >= ' ')
+                            else if (ch >= ' ')
                             {
                                 buffer.Insert(pos, ch);
                                 ++pos;
@@ -561,7 +519,8 @@ namespace Kiezel
 
             if (options.ScriptName == null)
             {
-                Console.Clear();
+                //Console.Clear();
+                //Console.Write("\x1b[1J");
                 Console.WriteLine(Runtime.GetVersionString());
                 Console.WriteLine(Runtime.GetCopyrightString());
             }

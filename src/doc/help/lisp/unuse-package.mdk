@@ -1,0 +1,9 @@
+.index unuse-package
+.usage builtin-function
+.syntax
+(unuse-package name)
+
+.description
+Removes package `name` from the use list of the current package.
+
+

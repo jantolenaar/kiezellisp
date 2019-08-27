@@ -2,6 +2,7 @@
 .usage builtin-function
 .syntax
 (shadow-symbol name)
+(shadow-symbols &rest names)
 
 .description
 Interns the string `name` in the current package to avoid it being inherited

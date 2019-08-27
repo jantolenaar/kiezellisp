@@ -1,11 +1,11 @@
-.index shell:exec-detached
+.index shell:exec-with-detach
 .usage builtin-function
 .syntax
-(shell:exec-detached prog &rest args)
+(shell:exec-with-detach prog &rest args)
 
 .description
 Executes the server or gui program `prog` with arguments `args`.
 
 .see-also
 .api
-shell:run shell:exec
+shell:run shell:exec shell:exec-with-io-redirect

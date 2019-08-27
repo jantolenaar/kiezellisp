@@ -1,16 +1,15 @@
 .index shell:exec
 .usage builtin-function
 .syntax
-(shell:exec input prog &rest args)
+(shell:exec prog &rest args)
 
 .description
 Executes the program `prog` with arguments `args`.
-If the string `input` is not `null`, it is used as standard input.
-Returns the standard output as a string.
 
 .examples
-(shell:exec null "uname" "-a")
+:fake-it "Tue, 30 Apr 2019 19:03:27 +0200"
+(shell:exec "date" "-R")
 
 .see-also
 .api
-shell:exec-detached shell:run
+shell:exec-with-detach shell:exec-with-io-redirect

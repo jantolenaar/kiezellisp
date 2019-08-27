@@ -5,6 +5,6 @@ A user supplied function to return the contents of the clipboard
 as a string. Called by the paste (CTRL+V) keyboard shortcut in the REPL.
 The default unix implementation is:
 
-    (setq $get-clipboard-text-hook #(shell:exec null "xsel" "-o" "-b"))
+    (setq $get-clipboard-text-hook #(shell:exec-with-io-redirect null "xsel" "-o" "-b"))
 
 The program `xsel` can be installed through the `xsel` package (Debian).

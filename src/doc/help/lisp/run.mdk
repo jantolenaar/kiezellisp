@@ -4,6 +4,7 @@
 (run file)
 
 .description
-Loads `file` and executes the function `user:main` (if it exists).
+Loads `file` and executes the function value of the symbol
+`user:main` (if it exists and is exported).
 
 

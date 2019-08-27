@@ -8,5 +8,5 @@ Applies the `forms` to each element of `seq` in parallel. Uses the Task Parallel
 Library.
 
 .examples
-(parallel-foreach (x (series 15)) (print-line x))
-
+:fake-it "1\n2\n5\n\6\n3\n4"
+(parallel-foreach (x (series 6)) (print-line x))

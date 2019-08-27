@@ -5,6 +5,7 @@
 
 .description
 Returns an existing package or creates a new one. Called by the macro `defpackage`.
+The "lisp" package is automatically added to the use-list of the new package.
 
 .examples
 (make-package "csv")

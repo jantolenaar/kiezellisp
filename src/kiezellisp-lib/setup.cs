@@ -144,7 +144,7 @@ namespace Kiezel
             // all assemblies share one assemblyinfo file.
             var mscor = GetMsCorLibVersion();
             var netcore = mscor.FileDescription.IndexOf("CoreLib") != -1;
-            var env = netcore ? ".Net Core" : ".Net Framework";
+            var env = netcore ? ".NET Core" : ".NET Framework";
             var assembly = Assembly.GetExecutingAssembly();
             var ver = FileVersionInfo.GetVersionInfo(assembly.Location);
             var name = ver.ProductName;
@@ -254,7 +254,7 @@ namespace Kiezel
 
                     foreach (string symbolName in ((LispAttribute)lisp[0]).Names)
                     {
-                        var sym = FindSymbol(symbolName);
+                        var sym = CreateSymbol(symbolName, excludeUseList: true);
                         if (!sym.IsUndefined)
                         {
                             PrintWarning("Duplicate builtin name: ", sym.Name);
@@ -321,7 +321,41 @@ namespace Kiezel
         }
 
         [Lisp("shell:exec")]
-        public static string ShellExec(string input, string program, params string[] arguments)
+        public static void ShellExec(string program, params string[] arguments)
+        {
+            using (var proc = new Process())
+            {
+                var info = proc.StartInfo;
+                info.FileName = program;
+                info.RedirectStandardInput = false;
+                // Use redirection to get rid of curses stuff that interferes with
+                // the system.console class.
+                info.RedirectStandardError = true;
+                info.RedirectStandardOutput = true;
+                info.UseShellExecute = false;
+                if (arguments != null)
+                {
+                    info.Arguments = String.Join(" ", arguments.Select(SafeArgument));
+                }
+                proc.Start();
+                if (info.RedirectStandardOutput)
+                {
+                    using (var outp = proc.StandardOutput)
+                    {
+                        string s;
+                        while ((s = outp.ReadLine()) != null)
+                        {
+                            PrintLine(s);
+                        }
+                        outp.Close();
+                    }
+                }
+                proc.WaitForExit();
+            }
+        }
+
+        [Lisp("shell:exec-with-io-redirect")]
+        public static string ShellExecWithIoRedirect(string input, string program, params string[] arguments)
         {
             using (var proc = new Process())
             {
@@ -346,21 +380,25 @@ namespace Kiezel
                     }
                     inp.Close();
                     var result = outp.ReadToEnd();
+                    var errors = err.ReadToEnd();
                     outp.Close();
+                    err.Close();
                     proc.WaitForExit();
                     var ok = proc.ExitCode == 0;
-                    return ok ? result : null;
+                    if (ok)
+                    {
+                        return result;
+                    }
+                    else
+                    {
+                        throw new LispException("shell:exec-redirected exit code: {0}\n{1}", proc.ExitCode, errors);
+                    }
+                    //return ok ? result : null;
                 }
             }
         }
 
-        [Lisp("shell:run")]
-        public static void ShellRun(string program, params string[] arguments)
-        {
-            Say(ShellExec(null, program, arguments));
-        }
-
-        [Lisp("shell:exec-detached")]
+        [Lisp("shell:exec-with-detach")]
         public static void ShellExecDetached(string program, params string[] arguments)
         {
             using (var proc = new Process())
@@ -425,7 +463,7 @@ namespace Kiezel
                     AddFeature("windows");
                     break;
                 case PlatformID.Unix:
-                    var platform = ShellExec(null, "uname", "-s");
+                    var platform = ShellExecWithIoRedirect(null, "uname", "-s");
                     if (platform != null)
                     {
                         if (platform.ToLower().IndexOf("linux") != -1)
@@ -477,13 +515,13 @@ namespace Kiezel
         public static void RestartSymbols()
         {
             // these packages do not use lisp package
-            KeywordPackage = MakePackage3("keyword", reserved: true);
-            TempPackage = MakePackage3("temp", reserved: true);
-            LispPackage = MakePackage3("lisp", reserved: true);
-            LispDocPackage = MakePackage3("example", reserved: true);
-
+            KeywordPackage = MakePackage3("keyword", reserved: true, useLisp: false, automatic: true);
+            TempPackage = MakePackage3("temp", reserved: true, useLisp: false);
+            LispPackage = MakePackage3("lisp", reserved: true, useLisp: false);
+            LispDocPackage = MakePackage3("example", reserved: true, useLisp: false);
             // these packages do use lisp package
-            UserPackage = MakePackage3("user", useLisp: true);
+            UserPackage = MakePackage3("user", useLisp: true, automatic: true);
+            MakePackage3("about", automatic: true);
 
             Symbols.Create();
 

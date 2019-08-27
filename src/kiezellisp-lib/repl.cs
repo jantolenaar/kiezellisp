@@ -29,9 +29,8 @@ namespace Kiezel
             }
 
             var currentPackage = CurrentPackage();
-            VerifyNoMissingSymbols(currentPackage);
 
-            foreach (var sym in currentPackage.Dict.Values)
+            foreach (var sym in currentPackage.Symbols)
             {
                 var s = sym.Name;
 
@@ -43,13 +42,11 @@ namespace Kiezel
 
             foreach (var package in currentPackage.UseList)
             {
-                VerifyNoMissingSymbols(package);
-
-                foreach (var sym in package.Dict.Values)
+                foreach (var sym in package.ExternalSymbols)
                 {
                     var s = sym.Name;
 
-                    if (s.StartsWith(prefix) && package.IsExported(s))
+                    if (s.StartsWith(prefix))
                     {
                         nameset.Add(s);
                     }
@@ -77,19 +74,14 @@ namespace Kiezel
                         continue;
                     }
 
-                    VerifyNoMissingSymbols(package);
-
                     // Show only internal symbols
-                    foreach (var sym in package.Dict.Values)
+                    foreach (var sym in package.InternalSymbols)
                     {
-                        if (!package.IsExported(sym.Name))
-                        {
-                            var s = name + "::" + sym.Name;
+                        var s = name + "::" + sym.Name;
 
-                            if (s.StartsWith(prefix))
-                            {
-                                nameset.Add(s);
-                            }
+                        if (s.StartsWith(prefix))
+                        {
+                            nameset.Add(s);
                         }
                     }
                 }
@@ -105,19 +97,13 @@ namespace Kiezel
                         continue;
                     }
 
-                    VerifyNoMissingSymbols(package);
-
-                    // Show only external symbols
-                    foreach (var sym in package.Dict.Values)
+                    foreach (var sym in package.ExternalSymbols)
                     {
-                        if (package.IsExported(sym.Name))
-                        {
-                            var s = name + ":" + sym.Name;
+                        var s = name + ":" + sym.Name;
 
-                            if (s.StartsWith(prefix))
-                            {
-                                nameset.Add(s);
-                            }
+                        if (s.StartsWith(prefix))
+                        {
+                            nameset.Add(s);
                         }
                     }
                 }

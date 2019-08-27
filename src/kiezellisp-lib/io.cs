@@ -146,6 +146,7 @@ namespace Kiezel
         new CharacterRepresentation('\0', @"\0", "null"),
         new CharacterRepresentation('\a', @"\a", "alert"),
         new CharacterRepresentation('\b', @"\b", "backspace"),
+        new CharacterRepresentation('\x1b', @"\e", "escape"),
         new CharacterRepresentation(' ', null, "space"),
         new CharacterRepresentation(':', null, "colon"),
         new CharacterRepresentation(';', null, "semicolon"),
@@ -525,6 +526,25 @@ namespace Kiezel
             PrintHelper(true, false, items);
         }
 
+        public static void PrintMultiColumn(object stream, int cols, int width, List<string> seq)
+        {
+            var stream2 = ConvertToTextWriter(stream);
+            var rows = (seq.Count + cols - 1) / cols;
+            for (var r = 0; r < rows; ++r)
+            {
+                for (var c = 0; c < cols; ++c)
+                {
+                    var k = c * rows + r;
+                    if (k < seq.Count)
+                    {
+                        var s = seq[k].PadRight(width);
+                        stream2.Write(s);
+                    }
+                }
+                stream2.WriteLine();
+            }
+        }
+
         [Lisp("read")]
         public static object Read()
         {
@@ -740,11 +760,17 @@ namespace Kiezel
         public static void Run(object filespec, params object[] args)
         {
             Load(filespec, args);
-            var main = Symbols.Main.Value as IApply;
-            if (main != null)
+            var sym = UserPackage.FindExported("main");
+            if (sym == null)
             {
-                Funcall(main);
+                ThrowError("Entrypoint user:main not found");
             }
+            var main = sym.Value as IApply;
+            if (main == null)
+            {
+                ThrowError("Entrypoint user:main found but not a function");
+            }
+            Funcall(main);
         }
 
         [Lisp("say")]

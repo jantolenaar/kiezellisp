@@ -64,12 +64,17 @@
 (require "diagnostics")
 
 #if unix
-(setq $get-clipboard-text-hook #(shell:exec null "xsel" "-o" "-b"))
+(setq $get-clipboard-text-hook #(shell:exec-with-io-redirect null "xsel" "-o" "-b"))
 #endif
 
 (setq $repl-force-it true)
 (setq $repl-optional-parentheses false)
 
 (set-debug-level 2)
+
+#if ansi-terminal
+;; set terminal title
+(print "\e]2;Kiezellisp\a")
+#endif
 
 #endif

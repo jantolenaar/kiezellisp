@@ -2,10 +2,11 @@
 .usage builtin-function
 .syntax
 (import-symbol name)
+(import-symbols &rest names)
 
 .description
 Adds the symbol referenced by the string `name` to the current package. 
 `name` must specify a package name and a symbol name,
-e.g. `(import-symbol "csv.read-grid-from-string")`
+e.g. `(import-symbol "csv:read-grid-from-string")`
 
 

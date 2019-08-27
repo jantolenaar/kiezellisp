@@ -10,6 +10,7 @@
 
 (defpackage "shell"
     (:export
+        "$sudo"
         "$home"
         "$local-application-data"
         "$my-documents"
@@ -24,18 +25,28 @@
         "path"
         "pwd"
         "robocopy-mirror"
+        "run"
+        "sudo"
         "with-directory"
         ; already defined internally
         "exec"
-        "exec-detached"
-        "run"
+        "exec-with-detach"
+        "exec-with-io-redirect"
     )
     (:shadow
         "path"
+        "run"
     ))
 
 
 (in-package "shell")
+
+(def $sudo false)
+
+(defun run (&rest args)
+    (if $sudo
+        (apply exec "sudo" args)
+        (apply exec args)))
 
 (defun pwd ()
     (say (here)))
@@ -130,4 +141,9 @@
         ("~roaming-application-data" $roaming-application-data)
         ("~my-documents" $my-documents)
         (true head)))
+
+(defmacro sudo (&rest forms)
+    `(do
+        (let $sudo true)
+        ,@forms))
 

@@ -5,8 +5,7 @@
 .examples
 $package-name-prefix
 
-See:
-
+.see-also
 .api
 import
 

@@ -367,7 +367,7 @@ namespace Kiezel
 
         public static Expression CompileDefineSymbolMacro(Cons form, AnalysisScope scope)
         {
-            // define-compiler name form
+            // define-symbol-macro name form
             CheckLength(form, 3);
             var sym = CheckSymbol(Second(form));
             if (sym.IsDynamic)
@@ -1661,12 +1661,6 @@ namespace Kiezel
                 result.Add(item);
             }
             return AsList(result);
-        }
-
-        public static ImportedFunction GetBuiltinFunction(string name)
-        {
-            var sym = FindSymbol(name);
-            return (ImportedFunction)sym.Value;
         }
 
         public static Cons GetDeclarations(bool rawparams, Vector names, object values)

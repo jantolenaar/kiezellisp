@@ -12,7 +12,7 @@
 (in-package "asciidoc")
 
 (defun convert-to-html (str &key print-output)
-    (let html (shell:exec str "asciidoc" "-o" (or print-output "-") "-s" "-"))
+    (let html (shell:exec-with-io-redirect str "asciidoc" "-o" (or print-output "-") "-s" "-"))
     (if print-output
         (print html)
         html))

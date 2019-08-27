@@ -1,0 +1,14 @@
+.index list-external-symbols
+.usage builtin-function
+.syntax
+(list-external-symbols package-name)
+
+.description
+Returns a list with the exported symbols of package `package-name`.
+
+.examples
+(list-external-symbols "shell")
+
+.see-also
+.api
+list-symbols list-internal-symbols

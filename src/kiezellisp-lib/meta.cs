@@ -238,8 +238,8 @@ namespace Kiezel
         public static Symbol GenTemp(object prefix)
         {
             var count = Interlocked.Increment(ref GentempCounter);
-            var name = string.Format("temp:{0}-{1}", GetDesignatedString(prefix), count);
-            var sym = FindSymbol(name);
+            var name = string.Format("{0}-{1}", GetDesignatedString(prefix), count);
+            var sym = TempPackage.FindOrCreate(name);
             return sym;
         }
 

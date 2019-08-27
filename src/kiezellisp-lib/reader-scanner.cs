@@ -300,7 +300,53 @@ namespace Kiezel
             }
             else
             {
-                return Runtime.FindSymbol(token);
+                return CreateSymbol(token);
+            }
+        }
+
+        public Symbol CreateSymbol(string name)
+        {
+            var descr = Runtime.ParseSymbol(name);
+            if (descr.Package == null)
+            {
+                throw MakeScannerException("Undefined package: {0}", descr.PackageName);
+            }
+
+            if (descr.Package == null)
+            {
+                throw MakeScannerException("Undefined package: {0}", descr.PackageName);
+            }
+
+            if (descr.PackageName == "" || descr.Package.AutoCreate)
+            {
+                var sym = descr.Package.FindOrCreate(descr.SymbolName, useMissing: true);
+                return sym;
+            }
+            else if (descr.Exported)
+            {
+                var sym = descr.Package.FindExported(descr.SymbolName, useMissing: true);
+                if (sym == null)
+                {
+                    sym = descr.Package.Find(descr.SymbolName, useMissing: true);
+                    if (sym == null)
+                    {
+                        throw MakeScannerException("Symbol {0} not found", name);
+                    }
+                    else
+                    {
+                        throw MakeScannerException("Symbol {0} not exported", name);
+                    }
+                }
+                return sym;
+            }
+            else
+            {
+                var sym = descr.Package.Find(descr.SymbolName, useMissing: true);
+                if (sym == null)
+                {
+                    throw MakeScannerException("Symbol {0} not found", name);
+                }
+                return sym;
             }
         }
 
