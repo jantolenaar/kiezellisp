@@ -10,7 +10,7 @@ Web site generated on: <%= (date-time:today) %>
 
 Kiezellisp's REPL on .NET Core 1 or 2 on Linux requires a **fast** terminal 
 program such as `urxvt` or `xterm`. Anything that is `libvte` based is too slow.
-.NET Core 3 is ok.
+.NET Core 3 is ok and works better than Mono.
 
 ## Features
 
@@ -40,9 +40,6 @@ program such as `urxvt` or `xterm`. Anything that is `libvte` based is too slow.
 ## Get Kiezellisp
 
 Current development version: <%= (get-version-string) %>
-
-This version can be built with Visual Studio on Windows and with MonoDevelop
-on linux.
 
 *   [Change Log](change-log.html)
 *   Source code: [https://github.com/jantolenaar/kiezellisp](https://github.com/jantolenaar/kiezellisp)

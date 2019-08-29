@@ -38,9 +38,10 @@ The program `kiezellisp-con.exe` is designed to run in a terminal, has a REPL an
 allows the use of winforms, gtk# or another graphical framework that has a .NET binding.
 
 The program `kiezellisp-gui.exe` is designed to run outside a terminal and requires
-the use of winforms, gtk# or another graphical framework that has a .NET binding.
+the use of winforms, gtk# or another graphical framework that has a .NET binding. 
 
-During development you should use `kiezellisp-con.exe`.
+During development you should use `kiezellisp-con.exe`. On linux/bsd/unix systems there
+is no need to use `kiezellisp-gui.exe` at all.
 
 ## Usefull scripts
 

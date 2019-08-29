@@ -27,7 +27,7 @@ Customize the contents of the copy.
 The solution file `kiezellisp.sln` contains projects to build Kiezellisp 
 for .NET Framework. The solution file `kiezellisp-nc.sln` contains 
 projects to build Kiezellisp for .NET Core. The solution files are compatible
-with Visual Studio and Monodevelop.
+with Visual Studio, Monodevelop and VSCode.
 
 Open the solution file `c:\abc\kiezellisp\src\kiezellisp.sln` and build 
 the solution.
