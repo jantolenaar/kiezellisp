@@ -13,9 +13,8 @@ using System.Runtime.InteropServices;
 #else
 [assembly: AssemblyDescription("Release Build")]
 #endif
-[assembly: AssemblyCompany("Tolenaar IT Services")]
 [assembly: AssemblyProduct("Kiezellisp")]
-[assembly: AssemblyCopyright("Copyright \u00a9 Jan Tolenaar 2009-2019")]
+[assembly: AssemblyCopyright("Copyright \u00a9 Jan Tolenaar 2009-2020")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 

@@ -55,60 +55,28 @@ namespace Kiezel
             }
         }
 
-        public static string ExtractCommand(Cons code)
-        {
-            var head = Runtime.First(code);
-            var sym = head as Symbol;
-            var cons = head as Cons;
-
-            if (sym != null)
-            {
-                if (Runtime.Keywordp(sym))
-                {
-                    return sym.Name;
-                }
-                else if (sym.Name == "?")
-                {
-                    return "?";
-                }
-            }
-
-            if (cons != null)
-            {
-                var head2 = Runtime.First(cons);
-                if (head2 == Symbols.Unquote)
-                {
-                    return Runtime.MakeString(Runtime.Second(cons));
-                }
-            }
-
-            return null;
-        }
-
         public static void EvalPrintCommand(string data, bool debugging)
         {
             var output = GetConsoleOut();
 
-            if (data == null)
+            if (String.IsNullOrWhiteSpace(data))
             {
                 return;
             }
-
-            Cons code = Runtime.ReadAllFromString(data);
-
-            if (code == null)
-            {
-                return;
-            }
-
-            bool leadingSpace = char.IsWhiteSpace(data, 0);
 
             Runtime.RestoreStackAndFrame(state.Peek());
 
-            var dotCommand = ExtractCommand(code);
+            var leadingSpace = data[0] == ' ';
+            var haveCommand = data[0] == ':' || data[0] == ';';
 
-            if (dotCommand != null)
+            if (haveCommand)
             {
+                var code = Runtime.ReadAllFromString(data.Substring(1));
+                if (code == null)
+                {
+                    return;
+                }
+                var dotCommand = Runtime.First(code).ToString();
                 var command = "";
                 var commandsPrefix = ReplCommands.Where(x => x.StartsWith(dotCommand)).ToList();
                 var commandsExact = ReplCommands.Where(x => x == dotCommand).ToList();
@@ -128,11 +96,11 @@ namespace Kiezel
                 }
                 else
                 {
-                    Runtime.PrintLine(output, "Ambiguous command. Did you mean:");
+                    Runtime.Print(output, "Ambiguous command. Did you mean");
                     for (var i = 0; i < commandsPrefix.Count; ++i)
                     {
-                        var str = string.Format("{0} {1}", (i == 0 ? "" : i + 1 == commandsPrefix.Count ? " or" : ","), commandsPrefix[i]);
-                        Runtime.PrintLine(output, str);
+                        var str = string.Format("{0} :{1}", (i == 0 ? "" : i + 1 == commandsPrefix.Count ? " or" : ","), commandsPrefix[i]);
+                        Runtime.Print(output, str);
                     }
                     Runtime.PrintLine(output, "?");
                     return;
@@ -151,7 +119,6 @@ namespace Kiezel
                     case "clear":
                         {
                             History.Clear();
-                            Console.Clear();
                             state = new Stack<ThreadContextState>();
                             state.Push(Runtime.SaveStackAndFrame());
                             break;
@@ -293,13 +260,9 @@ namespace Kiezel
                 }
             }
             else
-            if (leadingSpace || !Runtime.ToBool(Symbols.ReplOptionalParentheses.Value))
             {
-                RunCommand(null, code, smartParens: false);
-            }
-            else
-            {
-                RunCommand(null, code, smartParens: true);
+                var code = Runtime.ReadAllFromString(data);
+                RunCommand(null, code);
             }
         }
 
@@ -307,11 +270,27 @@ namespace Kiezel
         {
             var nameset = new HashSet<string>();
 
-            foreach (string s in ReplCommands)
+            if (prefix.StartsWith(":"))
             {
-                if (s.StartsWith(prefix))
+                var prefix2 = prefix.Substring(1);
+                foreach (var s in ReplCommands)
                 {
-                    nameset.Add(s);
+                    if (s.StartsWith(prefix2))
+                    {
+                        nameset.Add(":" + s);
+                    }
+                }
+            }
+
+            if (prefix.StartsWith(";"))
+            {
+                var prefix2 = prefix.Substring(1);
+                foreach (var s in ReplCommands)
+                {
+                    if (s.StartsWith(prefix2))
+                    {
+                        nameset.Add(";" + s);
+                    }
                 }
             }
 
@@ -540,21 +519,13 @@ namespace Kiezel
             }
         }
 
-        public static void RunCommand(Action<object> func, Cons lispCode, bool showTime = false, bool smartParens = false)
+        public static void RunCommand(Action<object> func, Cons lispCode, bool showTime = false)
         {
             var output = GetConsoleOut();
 
             if (lispCode != null)
             {
                 var head = Runtime.First(lispCode) as Symbol;
-
-                if (smartParens && head != null)
-                {
-                    if (Runtime.LooksLikeFunction(head))
-                    {
-                        lispCode = Runtime.MakeCons(lispCode, (Cons)null);
-                    }
-                }
 
                 var t1 = Runtime.GetCpuTime();
 

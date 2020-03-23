@@ -284,6 +284,11 @@ namespace Kiezel
 
                 switch (key)
                 {
+                    case ConsoleKey.Clear:
+                        {
+                            Console.Clear();
+                            return null;
+                        }
                     case ConsoleKey.Backspace:
                         {
                             if (pos > 0)
@@ -301,10 +306,26 @@ namespace Kiezel
                             }
                             break;
                         }
+                    case ConsoleKey.F12:
+                        {
+                            var s = buffer.ToString();
+                            if (lispCompletion && s != "")
+                            {
+                                buffer = new StringBuilder("(" + s + ")");
+                                pos = buffer.Length;
+                                paint();
+                                if (crlf)
+                                {
+                                    writeChar('\n');
+                                }
+                                return buffer.ToString();
+                            }
+                            break;
+                        }
                     case ConsoleKey.Enter:
                         {
                             var s = buffer.ToString();
-                            if (!lispCompletion || (mod != ConsoleModifiers.Control && IsCompleteSourceCode(s)))
+                            if (!lispCompletion || IsCompleteSourceCode(s))
                             {
                                 pos = buffer.Length;
                                 paint();
@@ -444,6 +465,9 @@ namespace Kiezel
                                         buffer.Remove(loc.Begin, pos - loc.Begin);
                                         pos = loc.Begin;
                                         break;
+                                    case ConsoleKey.L:
+                                        Console.Clear();
+                                        return null;
                                 }
                             }
                             else if (ch == '\n')
@@ -519,8 +543,6 @@ namespace Kiezel
 
             if (options.ScriptName == null)
             {
-                //Console.Clear();
-                //Console.Write("\x1b[1J");
                 Console.WriteLine(Runtime.GetVersionString());
                 Console.WriteLine(Runtime.GetCopyrightString());
             }

@@ -19,7 +19,8 @@ The scope of a package alias is the current package.
 ## See also
 
 .api
-defpackage use-package unuse-package list-all-packages list-exported-symbols 
+defpackage use-package unuse-package list-all-packages list-internal-symbols 
+list-external-symbols list-symbols
 get-package in-package $package delete-package make-package find-package
 export-symbol import-symbol shadow-symbol use-package-alias 
 

@@ -1,8 +1,0 @@
-.index $repl-optional-parentheses
-.usage special-variable
-.description
-When true, the REPL invisibly adds parentheses when it makes sense.
-
-.examples
-$repl-optional-parentheses
-

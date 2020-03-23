@@ -37,11 +37,6 @@
     </Compile>
   </ItemGroup>
   <ItemGroup>
-    <None Include="..\kiezellisp-con\lisp-icon.ico">
-      <Link>lisp-icon.ico</Link>
-    </None>
-  </ItemGroup>
-  <ItemGroup>
     <Folder Include="Properties\" />
   </ItemGroup>
 </Project>

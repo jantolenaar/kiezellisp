@@ -4,18 +4,15 @@ Non-trivial Editor Keys:
 
     ENTER           Execute input when it is a complete lisp expression,
                     otherwise add a LF to the command string and continue editing.
-    CTRL+ENTER      Add a LF to the command string and continue editing.
-    TAB             Show completion list for the symbol before the cursor.
-                    Press TAB,SHIFT+TAB to navigate in the completion list.
-                    Press ESCAPE to cancel.
-                    Press ENTER to accept the current choice.
-                    Press any other key to accept the current choice and that key.
-    ESC             Cancel input or code completion.
+    F12             Execute input after surrounding it in parentheses.
+    TAB             Show completion list for the symbol before the cursor.                    
+    ESC             Cancel input.
     UP              Move up in history.
     DOWN            Move down in history.
     CTRL+V          Paste source code from the clipboard into the REPL.
     CTRL+W          Delete word before the cursor.
     CTRL+U          Erase to the begin of the line.
     CTRL+K          Erase to the end of the line.
+    CTRL+L          Erase screen and cancel input.
 
 Your terminal program provides scrolling through the scrollbars.

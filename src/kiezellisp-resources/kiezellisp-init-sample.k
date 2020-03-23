@@ -68,7 +68,6 @@
 #endif
 
 (setq $repl-force-it true)
-(setq $repl-optional-parentheses false)
 
 (set-debug-level 2)
 

@@ -74,7 +74,7 @@ margin-left: 1em;
                    ("kiezellisp" "kiezellisp/index.html")
                    ("index-of-everything" "kiezellisp/help/index.html")))
     (let $input-dir "${projects}/kiezellisp/public/src/doc")
-    (let $output-dir "${home}/www/local/jantolenaar/kiezellisp")
+    (let $output-dir "${home}/www/local/github/kiezellisp")
     ;; Mdk files containing an index directive are added to the 
     ;; master index of the public api. If $master-index is null no 
     ;; master index is created.

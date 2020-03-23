@@ -11,6 +11,15 @@
 :d
 (.regex-match "SLAAp" #/(a*)(p)/i)
 
+### Regular expression options
+
+    i   RegexOptions.IgnoreCase
+    m   RegexOptions.Multiline
+    s   RegexOptions.Singleline
+    n   RegexOptions.ExplicitCapture
+    x   RegexOptions.IgnorePatternWhitespace
+    w   wildcard pattern
+
 ### Regular expression from a wildcard pattern
 
 .examples

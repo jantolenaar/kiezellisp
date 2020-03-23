@@ -1,7 +1,7 @@
 ;;;; Copyright (C) Jan Tolenaar. See the file LICENSE for details.
 
 ;;;;
-;;;; prerequisites: apt get install lftp
+;;;; prerequisites: apt install lftp
 ;;;;
 
 (require "shell")

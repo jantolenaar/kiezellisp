@@ -8,6 +8,9 @@
    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
    <Deterministic>false</Deterministic>
 </PropertyGroup> 
+<PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+  <DebugType></DebugType>
+</PropertyGroup>
   <ItemGroup>
     <PackageReference Include="Microsoft.CSharp" Version="4.5.0" />
   </ItemGroup>
@@ -198,19 +201,5 @@
   </ItemGroup>
   <ItemGroup>
     <None Remove="timestamp2.txt" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="..\kiezellisp-lib\kiezellisp-init-sample.k">
-      <Link>kiezellisp-init-sample.k</Link>
-    </None>
-    <None Include="..\kiezellisp-lib\lisp-icon.bmp">
-      <Link>lisp-icon.bmp</Link>
-    </None>
-    <None Include="..\kiezellisp-lib\lisp-icon.ico">
-      <Link>lisp-icon.ico</Link>
-    </None>
-    <None Include="..\kiezellisp-lib\lisp-icon.pdn">
-      <Link>lisp-icon.pdn</Link>
-    </None>
   </ItemGroup>
 </Project>

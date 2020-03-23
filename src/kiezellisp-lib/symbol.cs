@@ -733,7 +733,6 @@ namespace Kiezel
         public static Symbol ProgArgs;
         public static Symbol Redo;
         public static Symbol ReplForceIt;
-        public static Symbol ReplOptionalParentheses;
         public static Symbol[] ReservedVariables;
         public static Symbol Rest;
         public static Symbol Return;
@@ -928,7 +927,6 @@ namespace Kiezel
             ProgArgs = MakeSymbol("%prog-args");
             Redo = MakeSymbol("redo");
             ReplForceIt = MakeSymbol("$repl-force-it");
-            ReplOptionalParentheses = MakeSymbol("$repl-optional-parentheses");
             Rest = MakeSymbol("&rest");
             Return = MakeSymbol("return");
             ReturnFrom = MakeSymbol("return-from");

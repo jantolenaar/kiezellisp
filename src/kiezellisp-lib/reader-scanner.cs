@@ -483,6 +483,16 @@ namespace Kiezel
                             options |= RegexOptions.Multiline;
                             break;
                         }
+                    case 'n':
+                        {
+                            options |= RegexOptions.ExplicitCapture;
+                            break;
+                        }
+                    case 'x':
+                        {
+                            options |= RegexOptions.IgnorePatternWhitespace;
+                            break;
+                        }
                     case 'w':
                         {
                             wildcard = true;

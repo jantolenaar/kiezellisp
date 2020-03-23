@@ -1,12 +1,22 @@
 # Change Log
 
+### 2020/02/16
+
+*   Removed `$repl-optional-parentheses` setting.
+*   Added `F12` to wrap form in parentheses and then execute.
+*   Added regex options `n` and `x`.
+
+### 2019/08/31
+
+*   Fixed `as-multiple-elements` function: initialize tail with `nulls`.
+
 ### 2019/08/27
 
 *   Documentation changes mostly related to .NET Core.
 
 ### 2019/04/20
 
-*   Added `"\e"` and `\#escape` character.
+*   Added `"\e"` and `#\escape` character.
 *   Refactored autocomplete to work as bash autocomplete.
 
 ### 2019/04/13

@@ -1,11 +1,11 @@
 .index about:repl-commands
 .description
-Lines starting with a colon or comma are top-level commands 
+Lines starting with a colon or semicolon are top-level commands 
 which may be abbreviated. Other lines are lisp expressions.
 
 General top-level commands:
 
-    :clear                  Clear screen and history.
+    :clear                  Clear history.
     :describe [expr]        Describe expression or last result.
     :force [expr]           Force lazy expression or last result.
     :globals [pattern]      Show global variables that contain the pattern.
@@ -32,12 +32,6 @@ While in the debugger, the existing lexical environments on the call stack
 are readonly, so no `setq` or `setf`. You can still fix the value of a lexical 
 variable with the `:modify` command.
 
-Lisp expressions:
-
-If the variable `$repl-optional-parentheses` is true and if the line has no leading
-whitespace and the first term is a symbol that names a function, special form or macro, 
-then the line will be enclosed in parentheses and executed.
-
 .see-also
 .api
-$repl-force-it $repl-optional-parentheses
+$repl-force-it

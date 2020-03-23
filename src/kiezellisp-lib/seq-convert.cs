@@ -111,6 +111,13 @@ namespace Kiezel
                 {
                     v[1] = de.Value;
                 }
+                if (size > 2)
+                {
+                    for (var i = 2; i < size; ++i)
+                    {
+                        v[i] = null;
+                    }
+                }
                 return v;
             }
             else if (seq is KeyValuePair<object, object>)
@@ -125,6 +132,13 @@ namespace Kiezel
                 if (size > 1)
                 {
                     v[1] = de.Value;
+                }
+                if (size > 2)
+                {
+                    for (var i = 2; i < size; ++i)
+                    {
+                        v[i] = null;
+                    }
                 }
                 return v;
             }
@@ -144,6 +158,10 @@ namespace Kiezel
                             break;
                         }
                         v[i++] = item;
+                    }
+                    while (i < size)
+                    {
+                        v[i++] = null;
                     }
                     return v;
                 }
