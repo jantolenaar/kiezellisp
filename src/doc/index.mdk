@@ -1,20 +1,13 @@
 
 # Kiezellisp
 
-**Kiezellisp** is a lisp compiler/interpreter that runs on .NET Framework
-and on .NET Core. 
+**Kiezellisp** is a lisp compiler/interpreter that runs on .NET Core. 
 
 Web site generated on: <%= (date-time:today) %>
 
-## Important notice
-
-Kiezellisp's REPL on .NET Core 1 or 2 on Linux requires a **fast** terminal 
-program such as `urxvt` or `xterm`. Anything that is `libvte` based is too slow.
-.NET Core 3 is ok and works better than Mono.
-
 ## Features
 
-+   A reasonable startup time of 0.340s on an Intel i7-4790 (mono)
++   A reasonable startup time of 0.3s on an Intel i7-4790 
 +   Big numbers
 +   Futures
 +   Multi-methods
@@ -30,8 +23,7 @@ program such as `urxvt` or `xterm`. Anything that is `libvte` based is too slow.
 
 ## Introduction
 
-*   [Getting Started on Windows](getting-started-on-windows.html)
-*   [Getting Started on Linux](getting-started-on-linux.html)
+*   [Getting Started](getting-started.html)
 
 ## Documentation
 

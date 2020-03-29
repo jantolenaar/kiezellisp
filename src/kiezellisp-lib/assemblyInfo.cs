@@ -39,4 +39,4 @@ using System.Runtime.InteropServices;
 // In framework, the build numbers are inserted in the file version and the product version.
 // In net core, the build numbers are inserted in the product version only.
 
-[assembly: AssemblyVersion("4.0.*")]
+[assembly: AssemblyVersion("5.0.*")]

@@ -453,7 +453,14 @@ namespace Kiezel
 
         public static Expression CompileDynamicExpression(CallSiteBinder binder, Type returnType, IEnumerable<Expression> args)
         {
-            return Expression.Dynamic(binder, returnType, args);
+            if (AdaptiveCompilation)
+            {
+                return Microsoft.Scripting.Ast.Utils.LightDynamic(binder, returnType, new ReadOnlyCollectionBuilder<Expression>(args));
+            }
+            else
+            {
+                return Expression.Dynamic(binder, returnType, args);
+            }
         }
 
         public static Expression CompileDynamicVarInScope(Cons form, AnalysisScope scope, bool future, bool lazy, bool constant)
@@ -955,6 +962,7 @@ namespace Kiezel
             template.Code = code;
             template.ProcBuilder = () => CompileToFunction4(code, lambdaListNative, selfNative, argsNative, hoistedArgsNative);
             //template.Proc = template.ProcBuilder();
+            //template.ProcInitialized = true;
             template.HoistNames = funscope.HoistNames;
 
             var hoisted = Expression.RuntimeVariables(funscope.HoistParameters);
@@ -982,7 +990,8 @@ namespace Kiezel
             var code = Expression.Block(
                 Expression.Assign(blockScope.ResultVar, value),
                 CallRuntime(RestoreStackAndFrameMethod, blockScope.SavedState),
-                Expression.Goto(blockScope.LeaveLabel, value, typeof(object)));
+                Expression.Goto(blockScope.LeaveLabel),
+                Expression.Constant(null,typeof(object)));
             return code;
         }
 
@@ -1245,7 +1254,8 @@ namespace Kiezel
             var value = CompileLiteral(null);
             var code = Expression.Block(
                CallRuntime(RestoreStackAndFrameMethod, blockScope.SavedState),
-               Expression.Goto(blockScope.RedoLabel, value, typeof(object)));
+               Expression.Goto(blockScope.RedoLabel),
+               value);
             return code;
         }
 
@@ -1392,7 +1402,14 @@ namespace Kiezel
                 lambda = Expression.Lambda(expr, parameters);
             }
 
-            return lambda.Compile();
+            if (AdaptiveCompilation)
+            {
+                return Microsoft.Scripting.Generation.CompilerHelpers.LightCompile(lambda);
+            }
+            else
+            {
+                return lambda.Compile();
+            }
         }
 
         public static Func<object> CompileToFunction(Expression expr)

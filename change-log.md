@@ -1,5 +1,12 @@
 # Change Log
 
+### 2020/03/25
+
+*   Added Nuget package Dynamic Language Runtime 1.2.3-rc1
+*   Fixed bug: `Expression.Goto` usage by `leave` and `redo` incompatible
+    with DLR interpreter.
+*   Moved from .NET Framework/Core to .NET Core only.
+
 ### 2020/02/16
 
 *   Removed `$repl-optional-parentheses` setting.

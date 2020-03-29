@@ -19,6 +19,7 @@ namespace Kiezel
     {
         #region Static Fields
 
+        public static bool AdaptiveCompilation = true;
         public static Dictionary<Type, List<Type>> AbstractTypes;
         public static Readtable DefaultReadtable;
         public static int DebugLevel;
@@ -28,7 +29,7 @@ namespace Kiezel
         public static Package LispDocPackage;
         public static Package LispPackage;
         public static Missing MissingValue = Missing.Value;
-        public static string ProgramFeature;
+        public static bool Embedded;
         public static bool ReadDecimalNumbers;
         public static bool Repl;
         public static string ScriptName;
@@ -496,7 +497,10 @@ namespace Kiezel
                 AddFeature("x86");
             }
 
-            AddFeature(ProgramFeature);
+            if (Embedded)
+            {
+                AddFeature("embedded");
+            }
 
             AddFeature("kiezellisp");
 

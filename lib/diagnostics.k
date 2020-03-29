@@ -16,6 +16,9 @@
 (import "System.Reflection.MethodInfo" :package-name-prefix "reflection-")
 (import "System.Reflection.PropertyInfo" :package-name-prefix "reflection-")
 
+;(import-namespace "Microsoft.Scripting.Ast.*" :package-name-prefix "ast-")
+(import "Microsoft.Scripting.Ast.LightTypedDynamicExpressionN" :package-name-prefix "ast-")
+
 ;(import-namespace "System.Linq.Expressions.*" :package-name-prefix "linq-")
 (import "System.Linq.Expressions.AssignBinaryExpression" :package-name-prefix "linq-")
 (import "System.Linq.Expressions.BlockExpression" :package-name-prefix "linq-")
@@ -38,8 +41,11 @@
 (defmulti decompile (code))
 
 (defmethod decompile (code)
-    (.get-type code)
-	#;code)
+    code)
+
+(defmethod decompile ((code (eql null)))
+    (declare (ignore code))
+    null)
 
 (defmethod decompile ((code cons))
 	(decompile (compile code)))
@@ -50,8 +56,11 @@
 (defmethod decompile ((code lambda-definition))
 	(decompile (.code code)))
 
-(defmethod decompile ((code linq-scope-expression))
-    (decompile-scope code))
+(defmethod decompile ((code ast-light-typed-dynamic-expression-n))
+   `(DYNAMIC ,(decompile (.binder code)) ,@(map decompile (.arguments code))))
+
+;(defmethod decompile ((code linq-scope-expression))
+;    (decompile-scope code))
 
 (defmethod decompile ((code linq-block-expression))
     (decompile-block code))

@@ -1,0 +1,64 @@
+
+# Getting Started
+
+This is written for Linux, but most things apply to windows as well.
+
+## Prerequisites
+
++   .net core.
++   monodevelop and/or vscode.
++   git
+
+## Installation
+
+Switch to your preferred source code directory (e.g. `~/abc`) and 
+execute the line:
+
+    git clone https://github.com/jantolenaar/kiezellisp.git
+
+## Configuration
+
+Make a copy of `~/abc/kiezellisp/src/kiezellisp-lib/kiezellisp-init-sample.k` 
+to `~/.config/kiezellisp/kiezellisp-init.k`. 
+Customize the contents of the copy.
+
+## Build
+
+The solution file `kiezellisp.sln` contains projects to build Kiezellisp 
+for .NET Core. The solution files are compatible with Visual Studio, Monodevelop and VSCode.
+
+Open the solution file `~/abc/kiezellisp/src/kiezellisp.sln` and build 
+the solution.
+
+## Terminal and window versions
+
+The project `kiezellisp-con` creates an executable `kiezellisp`. The program is designed 
+to run in a terminal, has a REPL and allows the use of winforms, gtk# or another 
+graphical framework that has a .NET binding.
+
+For Windows only: the folder `kiezellisp-gui` contains the source files to create a
+program without a console window and thus without a REPL. 
+
+## Installation
+
+One of the following methods may be convenient to you:
+
+*   Copy the executable to your bin folder.
+
+*   Make a symbolic link from bin folder to the executable.
+
+*   Make an executable script.
+
+## Running the REPL in a terminal
+
+Start Kiezellisp by running your script: `kiezellisp`
+
+You will be greeted by Kiezellisp's Read-Eval-Print-Loop:
+
+    <%= (get-version-string) %>
+    <%= (get-copyright-string) %>
+    
+    user >
+
+The word `user` is the name of the current package. 
+

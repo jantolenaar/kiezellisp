@@ -1,0 +1,6 @@
+<Project>
+ <PropertyGroup>
+   <Deterministic>false</Deterministic>
+   <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+  </PropertyGroup>
+</Project>

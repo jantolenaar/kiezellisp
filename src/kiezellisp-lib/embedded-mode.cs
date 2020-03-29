@@ -25,7 +25,7 @@ namespace Kiezel
 
         public static void Init()
         {
-            Runtime.ProgramFeature = "kiezellisp-lib";
+            Runtime.Embedded = true;
             Runtime.Repl = false;
             Runtime.Reset();
             Runtime.RestartLoadFiles(0);

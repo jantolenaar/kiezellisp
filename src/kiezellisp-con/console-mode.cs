@@ -536,7 +536,7 @@ namespace Kiezel
 
         public static void RunConsoleMode(CommandLineOptions options)
         {
-            Runtime.ProgramFeature = "kiezellisp-con";
+            Runtime.Embedded = false;
             Runtime.Repl = options.Repl;
             Runtime.ScriptName = options.ScriptName;
             Runtime.UserArguments = options.UserArguments;

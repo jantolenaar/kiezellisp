@@ -158,8 +158,7 @@ namespace Kiezel
 
         public static string CollectParameterInfo(params DynamicMetaObject[] args)
         {
-            //return "(" + ", ".Join(args.Select(x => ToPrintString(x.Value))) + ")";
-            return "(" + ", ".Join(args.Select(x => x.Value == null ? "null" : x.Value.GetType().ToString())) + ")";
+            return "(" + ", ".Join(args.Select(x => x.LimitType.ToString() + ":" + ToPrintString(x.Value))) + ")";
         }
 
         public static string CollectParameterInfo(DynamicMetaObject target, DynamicMetaObject[] args)
