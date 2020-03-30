@@ -1,5 +1,9 @@
 # Change Log
 
+### 2020/03/30
+
+*   Rewrote code to import .net classes.
+
 ### 2020/03/25
 
 *   Added Nuget package Dynamic Language Runtime 1.2.3-rc1

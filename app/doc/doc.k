@@ -4,10 +4,14 @@
 ;;;; doc
 ;;;;
 
-(load "make-html")
+(defpackage "lisp"
+    (:export "doc" "$doc-root"))
 
-(def $doc-root "file:///home/jan/www/local/github/kiezellisp/help/")
-;(def $doc-root "https://jantolenaar.github.io/kiezellisp/help/")
+(in-package "lisp")
+
+(require "make-html")
+
+(def $doc-root "https://jantolenaar.github.io/kiezellisp/help/")
 
 (defun syntax (topic)
     (chain (~)
@@ -34,7 +38,7 @@
 (defun doc (topic)
     (let text
         (chain (~)
-            (transform-topic-to-path-name topic)
+            (make-html:transform-topic-to-path-name topic)
             (string $doc-root ~ ".html")
             (list "w3m" "-dump" ~)
             (apply shell:exec-with-io-redirect null ~)

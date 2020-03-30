@@ -15,6 +15,19 @@
 ;;;;
 ;;;; Uses linux `par` utility to reformat paragraphs.
 
+(defpackage "make-html"
+    (:export 
+        "make-html"
+        "make-kiezellisp-html"
+        "transform-topic-to-path-name"
+        "$input-dir"
+        "$output-dir"
+        "$master-index"
+        "$crumbs"
+        "$styles"))
+
+(in-package "make-html")
+
 (require "common-mark")
 (use-package-alias "common-mark" "md")
 
@@ -340,6 +353,7 @@ margin-left: 1em;
     (new :anchor anchor :file name :data data))
 
 (defun evaluate (lines)
+    (let $package (find-package "make-html"))
 	(chain (~)
 	    (string:join "\n" lines)
 	    (interpolate-string ~)

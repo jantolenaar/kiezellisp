@@ -22,7 +22,6 @@ namespace Kiezel
             UseList = new List<Package>();
             Reserved = false;
             Aliases = new Dictionary<string, Package>();
-            ImportMissingDone = false;
             AutoCreate = false;
             AutoExport = false;
         }
@@ -64,37 +63,28 @@ namespace Kiezel
             ExportedNames.Add(key);
         }
 
-        public Symbol Find(string key, bool useMissing = false, bool excludeUseList = false)
+        public Symbol Find(string key, bool excludeUseList = false)
         {
-            var sym = FindInternal(key, useMissing);
+            var sym = FindInternal(key);
 
             if (sym == null && !excludeUseList)
             {
-                sym = FindInUseList(key, useMissing);
+                sym = FindInUseList(key);
             }
 
             return sym;
         }
 
-        public Symbol FindExported(string key, bool useMissing = false)
+        public Symbol FindExported(string key)
         {
             if (IsExported(key))
             {
                 return FindInternal(key);
             }
-            else if (useMissing && ImportedType != null)
-            {
-                Runtime.ImportMissingSymbol(key, this);
-                if (IsExported(key))
-                {
-                    return FindInternal(key);
-                }
-            }
-
             return null;
         }
 
-        public Symbol FindInternal(string key, bool useMissing = false)
+        public Symbol FindInternal(string key)
         {
             Symbol sym;
 
@@ -102,25 +92,16 @@ namespace Kiezel
             {
                 return sym;
             }
-            else if (useMissing && ImportedType != null && !ImportMissingDone)
-            {
-                Runtime.ImportMissingSymbol(key, this);
-                if (Dict.TryGetValue(key, out sym))
-                {
-                    return sym;
-                }
-            }
-
             return null;
         }
 
-        public Symbol FindInUseList(string key, bool useMissing = false)
+        public Symbol FindInUseList(string key)
         {
             Symbol sym;
 
             foreach (var package in UseList)
             {
-                if ((sym = package.FindExported(key, useMissing)) != null)
+                if ((sym = package.FindExported(key)) != null)
                 {
                     return sym;
                 }
@@ -129,9 +110,9 @@ namespace Kiezel
             return null;
         }
 
-        public Symbol FindOrCreate(string key, bool useMissing = false, bool excludeUseList = false, bool export = false)
+        public Symbol FindOrCreate(string key, bool excludeUseList = false, bool export = false)
         {
-            Symbol sym = Find(key, useMissing: useMissing, excludeUseList: excludeUseList);
+            Symbol sym = Find(key, excludeUseList: excludeUseList);
 
             if (sym == null)
             {
@@ -165,7 +146,6 @@ namespace Kiezel
         {
             get
             {
-                VerifyNoMissingSymbols();
                 var seq = new List<Symbol>();
                 foreach (Symbol item in Runtime.ToIter(Runtime.Sort(Dict.Values)))
                 {
@@ -204,19 +184,6 @@ namespace Kiezel
                     }
                 }
                 return seq;
-            }
-        }
-
-        public void VerifyNoMissingSymbols()
-        {
-            if (ImportedType != null && !ImportMissingDone)
-            {
-                ImportMissingDone = true;
-                var names = ImportedType.GetMembers(Runtime.ImportBindingFlags).Select(x => x.Name).Distinct().ToArray();
-                foreach (var name in names)
-                {
-                    Runtime.ImportMissingSymbol(name, this);
-                }
             }
         }
 
@@ -315,7 +282,7 @@ namespace Kiezel
             }
 
             var sym = descr.Package.FindOrCreate(descr.SymbolName,
-                                excludeUseList: excludeUseList, useMissing: true, export: descr.Exported);
+                                excludeUseList: excludeUseList, export: descr.Exported);
             return sym;
         }
 
@@ -362,7 +329,7 @@ namespace Kiezel
             {
                 return null;
             }
-            var sym = package.FindInternal(name, useMissing: true);
+            var sym = package.FindInternal(name);
             if (sym == null)
             {
                 return null;
@@ -406,7 +373,7 @@ namespace Kiezel
             {
                 throw new LispException("Undefined package: {0}", descr.PackageName);
             }
-            var sym = descr.Package.Find(descr.SymbolName, useMissing: true);
+            var sym = descr.Package.Find(descr.SymbolName);
 
             if (sym == null)
             {

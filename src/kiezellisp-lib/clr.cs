@@ -267,8 +267,6 @@ namespace Kiezel
 
         public static void ImportExtensionMethodsIntoPackage(Package package, Type type)
         {
-            package.VerifyNoMissingSymbols();
-
             var isbuiltin = type.Assembly == Assembly.GetExecutingAssembly();
             var extendedType = (Type)package.Dict["T"].CheckedValue;
             var restrictedImport = type.GetCustomAttributes(typeof(RestrictedImportAttribute), true).Length != 0;
@@ -294,7 +292,7 @@ namespace Kiezel
                     continue;
                 }
 
-                var sym = package.FindOrCreate(name.LispName(), useMissing: true, excludeUseList: true, export: true);
+                var sym = package.FindOrCreate(name.LispName(), excludeUseList: true, export: true);
                 var builtin = sym.Value as ImportedFunction;
 
                 if (builtin == null)
@@ -331,63 +329,42 @@ namespace Kiezel
             sym.ConstantValue = type;
             sym.Documentation = string.Format("The .NET type <{0}> imported in this package.", type);
 
-            if (!ToBool(Symbols.LazyImport.Value))
-            {
-                package.VerifyNoMissingSymbols();
-            }
+            ImportMembers(package);
         }
 
-        public static void ImportMissingSymbol(string key, Package package)
+        public static void ImportMembers(Package package)
         {
-            var name = key.LispToPascalCaseName();
-
-            if (key == "new")
+            var type = package.ImportedType;
+            var names = type.GetMembers(Runtime.ImportBindingFlags).Select(x => x.Name).Distinct().ToArray();
+            foreach (var name in names)
             {
-                name = ".ctor";
-            }
-
-            if (ImportMissingSymbol2(name, package))
-            {
-                return;
-            }
-
-            if (key.StartsWith("set-"))
-            {
-                // choice between setter and ordinary method
-                var name2 = "set_" + name.Substring(3);
-                if (ImportMissingSymbol2(name2, package))
-                {
-                    return;
-                }
-            }
-
-            var name3 = key.Replace("-", "_");
-
-            ImportMissingSymbol2(name3, package);
+                var members = type.GetMember(name, ImportBindingFlags).Select(x => ResolveGenericMethod(x)).ToArray();
+                Runtime.ImportMembers(members, package);
+            }              
         }
 
-        public static bool ImportMissingSymbol2(string name, Package package)
+        public static bool ImportMembers(MemberInfo[] members,Package package)
         {
-            var members = package.ImportedType.GetMember(name, ImportBindingFlags).Select(x => ResolveGenericMethod(x)).ToArray();
-
             if (members.Length == 0)
             {
                 return false;
             }
 
-            var importable = !package.RestrictedImport || members[0].GetCustomAttributes(typeof(LispAttribute), true).Length != 0;
+            var member = members[0];
+            var importable = !package.RestrictedImport || member.GetCustomAttributes(typeof(LispAttribute), true).Length != 0;
 
             if (!importable)
             {
                 return false;
             }
 
-            var field = members[0] as FieldInfo;
-            var ucName = members[0].Name.LispName().ToUpper();
-            var lcName = members[0].Name.LispName();
+            var name = member.Name;
+            var ucName = name.LispName().ToUpper();
+            var lcName = name.LispName();
 
-            if (field != null)
+            if (member is FieldInfo)
             {
+                var field = member as FieldInfo;
                 if (field.IsLiteral || (field.IsStatic && field.IsInitOnly))
                 {
                     var sym = package.FindOrCreate(ucName, excludeUseList: true, export: true);
@@ -396,14 +373,14 @@ namespace Kiezel
                 return true;
             }
 
-            if (members[0] is EventInfo)
+            if (member is EventInfo)
             {
                 var sym = package.FindOrCreate(lcName, excludeUseList: true, export: true);
-                sym.ConstantValue = members[0];
+                sym.ConstantValue = member;
                 return true;
             }
 
-            if (members[0] is ConstructorInfo)
+            if (member is ConstructorInfo)
             {
                 var builtin = new ImportedConstructor(members.Cast<ConstructorInfo>().ToArray());
                 var sym = package.FindOrCreate("new", excludeUseList: true, export: true);
@@ -412,19 +389,15 @@ namespace Kiezel
                 return true;
             }
 
-            if (members[0] is MethodInfo)
+            if (member is MethodInfo)
             {
-                //if ( !name.StartsWith( "get_" ) && !name.StartsWith( "set_" ) )
-                {
-                    var sym = package.FindOrCreate(lcName, excludeUseList: true, export: true);
-                    var builtin = new ImportedFunction(members[0].Name, members[0].DeclaringType, members.Cast<MethodInfo>().ToArray(), false);
-                    sym.FunctionValue = builtin;
-                }
-
+                var sym = package.FindOrCreate(lcName, excludeUseList: true, export: true);
+                var builtin = new ImportedFunction(name, member.DeclaringType, members.Cast<MethodInfo>().ToArray(), false);
+                sym.FunctionValue = builtin;
                 return true;
             }
 
-            if (members[0] is PropertyInfo)
+            if (member is PropertyInfo)
             {
                 var properties = members.Cast<PropertyInfo>().ToArray();
                 var getters = properties.Select(x => x.GetGetMethod()).Where(x => x != null).ToArray();
@@ -433,7 +406,7 @@ namespace Kiezel
                 if (getters.Length != 0)
                 {
                     var sym = package.FindOrCreate(lcName, excludeUseList: true, export: true);
-                    var builtin = new ImportedFunction(members[0].Name, members[0].DeclaringType, getters, false);
+                    var builtin = new ImportedFunction(name, member.DeclaringType, getters, false);
                     sym.FunctionValue = builtin;
                 }
 
@@ -443,7 +416,7 @@ namespace Kiezel
                     package.FindOrCreate(lcName, excludeUseList: true, export: true);
                     // use set-xxx
                     var sym = package.FindOrCreate("set-" + lcName, excludeUseList: true, export: true);
-                    var builtin = new ImportedFunction(members[0].Name, members[0].DeclaringType, setters, false);
+                    var builtin = new ImportedFunction(name, member.DeclaringType, setters, false);
                     sym.FunctionValue = builtin;
                 }
 

@@ -319,15 +319,15 @@ namespace Kiezel
 
             if (descr.PackageName == "" || descr.Package.AutoCreate)
             {
-                var sym = descr.Package.FindOrCreate(descr.SymbolName, useMissing: true);
+                var sym = descr.Package.FindOrCreate(descr.SymbolName);
                 return sym;
             }
             else if (descr.Exported)
             {
-                var sym = descr.Package.FindExported(descr.SymbolName, useMissing: true);
+                var sym = descr.Package.FindExported(descr.SymbolName);
                 if (sym == null)
                 {
-                    sym = descr.Package.Find(descr.SymbolName, useMissing: true);
+                    sym = descr.Package.Find(descr.SymbolName);
                     if (sym == null)
                     {
                         throw MakeScannerException("Symbol {0} not found", name);
@@ -341,7 +341,7 @@ namespace Kiezel
             }
             else
             {
-                var sym = descr.Package.Find(descr.SymbolName, useMissing: true);
+                var sym = descr.Package.Find(descr.SymbolName);
                 if (sym == null)
                 {
                     throw MakeScannerException("Symbol {0} not found", name);

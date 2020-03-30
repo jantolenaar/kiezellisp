@@ -867,7 +867,6 @@ namespace Kiezel
             Key = MakeSymbol("&key");
             Lambda = MakeSymbol("lambda");
             LambdaList = MakeSymbol("%lambdas");
-            LazyImport = MakeSymbol("$lazy-import");
             LazyVar = MakeSymbol("lazy");
             Leave = MakeSymbol("leave");
             Left = MakeSymbol(":left");

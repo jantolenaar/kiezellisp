@@ -541,7 +541,6 @@ namespace Kiezel
             Symbols.GetClipboardTextHook.VariableValue = null;
             Symbols.I.ConstantValue = Complex.ImaginaryOne;
             Symbols.It.VariableValue = null;
-            Symbols.LazyImport.VariableValue = true;
             Symbols.LoadPath.ReadonlyValue = null;
             Symbols.LoadPrint.VariableValue = false;
             Symbols.LoadVerbose.VariableValue = false;
