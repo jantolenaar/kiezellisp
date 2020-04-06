@@ -5,15 +5,12 @@
 ;;;; match.k
 ;;;;
 
-(defpackage "lisp"
-    (:export
-        "case-match"
+(package "lisp")
+
+(public "case-match"
         "ecase-match"
         "if-match"
-        "when-match"
-    ))
-
-(in-package "lisp")
+        "when-match")
 
 (defmacro case-match (expr &rest clauses)
     (do-case-match expr clauses false))

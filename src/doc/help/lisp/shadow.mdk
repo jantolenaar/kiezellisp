@@ -1,0 +1,16 @@
+.index shadow
+.usage builtin-function
+.syntax
+(shadow &rest names)
+
+.description
+Asserts symbols with the given `names` exist in the current package.
+Symbol names used in `def` and similar special forms must be found
+in the current package and cannot be inherited from a package on the 
+use list.
+
+.see-also
+.api
+use-package-symbols
+
+

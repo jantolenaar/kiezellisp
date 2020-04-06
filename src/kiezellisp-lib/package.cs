@@ -9,6 +9,7 @@ namespace Kiezel
     using System;
     using System.Collections.Generic;
     using System.Linq;
+    using System.Runtime.CompilerServices;
 
     public class Package : IPrintsValue
     {
@@ -18,73 +19,43 @@ namespace Kiezel
         {
             Name = name;
             Dict = new Dictionary<string, Symbol>();
-            ExportedNames = new HashSet<string>();
-            UseList = new List<Package>();
             Reserved = false;
-            Aliases = new Dictionary<string, Package>();
             AutoCreate = false;
-            AutoExport = false;
         }
 
         #endregion Constructors
 
         #region Public Properties
 
-        public Dictionary<string, Package> Aliases { get; set; }
-
-        public Dictionary<string, Symbol> Dict { get; set; }
-
-        public HashSet<string> ExportedNames { get; set; }
-
-        public ImportedConstructor ImportedConstructor { get; set; }
+        public Dictionary<string,Symbol> Dict { get; set; }
 
         public Type ImportedType { get; set; }
-
-        public bool ImportMissingDone { get; set; }
 
         public string Name { get; set; }
 
         public bool AutoCreate { get; set; }
 
-        public bool AutoExport { get; set; }
-
         public bool Reserved { get; set; }
 
         public bool RestrictedImport { get; set; }
-
-        public List<Package> UseList { get; set; }
 
         #endregion Public Properties
 
         #region Public Methods
 
-        public void Export(string key)
+        public Symbol MakePrivate(string key)
         {
-            ExportedNames.Add(key);
-        }
-
-        public Symbol Find(string key, bool excludeUseList = false)
-        {
-            var sym = FindInternal(key);
-
-            if (sym == null && !excludeUseList)
-            {
-                sym = FindInUseList(key);
-            }
-
+            var sym = Create(key, false);
             return sym;
         }
 
-        public Symbol FindExported(string key)
+        public Symbol MakePublic(string key)
         {
-            if (IsExported(key))
-            {
-                return FindInternal(key);
-            }
-            return null;
+            var sym = Create(key, true);
+            return sym;
         }
 
-        public Symbol FindInternal(string key)
+        public Symbol Find(string key)
         {
             Symbol sym;
 
@@ -92,54 +63,48 @@ namespace Kiezel
             {
                 return sym;
             }
+
             return null;
         }
 
-        public Symbol FindInUseList(string key)
+        public Symbol FindExported(string key)
         {
-            Symbol sym;
-
-            foreach (var package in UseList)
+            var sym = Find(key);
+            if (sym != null && sym.IsPublic)
             {
-                if ((sym = package.FindExported(key)) != null)
-                {
-                    return sym;
-                }
+                return sym;
+            }
+            return null;
+        }
+
+        public Symbol Create(string key)
+        {
+            // SetupMode takes care of lisp function visibility.
+            // Existing symbols are unchanged.
+            Symbol sym = Find(key);
+
+            if (sym == null)
+            {
+                Dict[key] = sym = new Symbol(key, this);
+                sym.IsPublic = Runtime.SetupMode;
             }
 
-            return null;
+            return sym;
         }
 
-        public Symbol FindOrCreate(string key, bool excludeUseList = false, bool export = false)
+        public Symbol Create(string key, bool ispublic)
         {
-            Symbol sym = Find(key, excludeUseList: excludeUseList);
+            // Existing symbols are changed to match visibility.
+            Symbol sym = Find(key);
 
             if (sym == null)
             {
                 Dict[key] = sym = new Symbol(key, this);
             }
 
-            if (export || AutoExport || Runtime.SetupMode)
-            {
-                Export(key);
-            }
+            sym.IsPublic = ispublic;
 
             return sym;
-        }
-
-        public void Import(Symbol sym)
-        {
-            if (sym.Package == null)
-            {
-                sym.Package = this;
-            }
-
-            Dict[sym.Name] = sym;
-        }
-
-        public bool IsExported(string key)
-        {
-            return ExportedNames.Contains(key);
         }
 
         public List<Symbol> Symbols
@@ -155,14 +120,14 @@ namespace Kiezel
             }
         }
 
-        public List<Symbol> ExternalSymbols
+        public List<Symbol> PublicSymbols
         {
             get
             {
                 var seq = new List<Symbol>();
                 foreach (var sym in Symbols)
                 {
-                    if (IsExported(sym.Name))
+                    if (sym.IsPublic)
                     {
                         seq.Add(sym);
                     }
@@ -171,14 +136,14 @@ namespace Kiezel
             }
         }
 
-        public List<Symbol> InternalSymbols
+        public List<Symbol> PrivateSymbols
         {
             get
             {
                 var seq = new List<Symbol>();
                 foreach (var sym in Symbols)
                 {
-                    if (!IsExported(sym.Name))
+                    if (!sym.IsPublic)
                     {
                         seq.Add(sym);
                     }
@@ -186,28 +151,6 @@ namespace Kiezel
                 return seq;
             }
         }
-
-        public void Unexport(string key)
-        {
-            ExportedNames.Remove(key);
-        }
-
-        public void UnusePackage(Package package)
-        {
-            if (UseList.Contains(package))
-            {
-                UseList.Remove(package);
-            }
-        }
-
-        public void UsePackage(Package package)
-        {
-            if (!UseList.Contains(package))
-            {
-                UseList.Insert(0, package);
-            }
-        }
-
 
         public override string ToString()
         {
@@ -221,15 +164,13 @@ namespace Kiezel
     {
         #region Static Fields
 
-        public static Dictionary<string, Package> Packages;
-        public static Dictionary<Type, Package> PackagesByType;
         public static char PackageSymbolSeparator = ':';
 
         #endregion Static Fields
 
         #region Private Methods
 
-        static Package MakePackage3(object name, bool reserved = false, bool useLisp = false, bool automatic = false)
+        static Package MakePackage3(object name, bool reserved = false, bool automatic = false)
         {
             var n = GetDesignatedString(name);
             if (n.IndexOf(PackageSymbolSeparator) != -1)
@@ -248,11 +189,7 @@ namespace Kiezel
 
             Packages[n] = package = new Package(n);
             package.Reserved = reserved;
-            package.AutoCreate = package.AutoExport = automatic;
-            if (useLisp)
-            {
-                package.UsePackage(LispPackage);
-            }
+            package.AutoCreate = automatic;
 
             return package;
         }
@@ -268,21 +205,7 @@ namespace Kiezel
 
         public static Symbol CreateDocSymbol(string key)
         {
-            var sym = LispDocPackage.FindOrCreate(key, export: true);
-            return sym;
-        }
-
-        [Lisp("create-symbol")]
-        public static Symbol CreateSymbol(string name, bool excludeUseList = false)
-        {
-            var descr = ParseSymbol(name);
-            if (descr.Package == null)
-            {
-                descr.Package = MakePackage(descr.PackageName);
-            }
-
-            var sym = descr.Package.FindOrCreate(descr.SymbolName,
-                                excludeUseList: excludeUseList, export: descr.Exported);
+            var sym = LispDocPackage.Create(key, true);
             return sym;
         }
 
@@ -300,7 +223,7 @@ namespace Kiezel
         }
 
         [Lisp("delete-package")]
-        public static void DeletePackage(object name)
+        public static Package DeletePackage(object name)
         {
             var n = GetDesignatedString(name);
             Package package;
@@ -308,18 +231,7 @@ namespace Kiezel
             {
                 Packages.Remove(n);
             }
-        }
-
-        [Lisp("export-symbol")]
-        public static void ExportSymbol(string name)
-        {
-            CurrentPackage().Export(name);
-        }
-
-        [Lisp("export-symbol")]
-        public static void ExportSymbol(Symbol sym)
-        {
-            sym.Package.Export(sym.Name);
+            return package;
         }
 
         public static ImportedFunction FindImportedFunction(Type type, string name)
@@ -329,7 +241,7 @@ namespace Kiezel
             {
                 return null;
             }
-            var sym = package.FindInternal(name);
+            var sym = package.Find(name);
             if (sym == null)
             {
                 return null;
@@ -338,21 +250,33 @@ namespace Kiezel
             return builtin;
         }
 
+        public static Symbol FindInUseList(string key)
+        {
+            Symbol sym;
+            bool ok = false;
+            
+            foreach (Package package in ToIter(GetDynamic(Symbols.UseList)))
+            {
+                if (package == LispPackage) ok = true;
+                if ((sym = package.FindExported(key)) != null)
+                {
+                    return sym;
+                }
+            }
+            if (!ok)
+            {
+                ThrowError("Missing lisp in uselist");
+            }
+            return null;
+        }
+
         [Lisp("find-package")]
         public static Package FindPackage(object name)
         {
-            var currentPackage = CurrentPackage();
-            var n = GetDesignatedString(name);
-            Package package = null;
-            if (currentPackage != null && currentPackage.Aliases.TryGetValue(n, out package))
-            {
-                return package;
-            }
-            if (Packages.TryGetValue(n, out package))
-            {
-                return package;
-            }
-            return null;
+            var name2 = GetDesignatedString(name);
+            Package package;
+            Packages.TryGetValue(name2, out package);
+            return package;
         }
 
         public static Package FindPackageByType(Type type)
@@ -365,28 +289,22 @@ namespace Kiezel
             return null;
         }
 
-        [Lisp("find-symbol")]
+
+        //[Lisp("find-symbol")]
         public static Symbol FindSymbol(string name)
         {
-            var descr = ParseSymbol(name);
-            if (descr.Package == null)
-            {
-                throw new LispException("Undefined package: {0}", descr.PackageName);
-            }
-            var sym = descr.Package.Find(descr.SymbolName);
-
-            if (sym == null)
-            {
-                throw new LispException("Symbol {0} not found", name);
-            }
-
-            //if (descr.Exported)
-            //{
-            //    descr.Package.Export(sym.Name);
-            //}
-
+            var sym = ResolveSymbol(name, calledByFindSymbol: true);
             return sym;
         }
+
+        [Lisp("make-symbol")]
+        public static Symbol MakeSymbol(params object[] args)
+        {
+            var name = MakeString(args);
+            var sym = ResolveSymbol(name, calledByMakeSymbol: true);
+            return sym;
+        }
+
 
         [Lisp("get-package")]
         public static Package GetPackage(object name)
@@ -399,59 +317,24 @@ namespace Kiezel
             return package;
         }
 
-        [Lisp("import-symbol")]
-        public static Symbol ImportSymbol(string name)
-        {
-            CheckString(name);
-            var package = CurrentPackage();
-            var descr = ParseSymbol(name);
-            Symbol sym;
-            if (descr.PackageName == "")
-            {
-                throw new LispException("Package name not specified: {0}", name);
-            }
-            if (descr.Exported)
-            {
-                sym = descr.Package.FindExported(descr.SymbolName);
-            }
-            else
-            {
-                sym = descr.Package.Find(descr.SymbolName);
-            }
-            if (sym == null)
-            {
-                throw new LispException("Symbol not found: {0}", name);
-            }
-            package.Import(sym);
-            return sym;
-        }
-
-        [Lisp("in-package")]
-        public static Package InPackage(object name)
-        {
-            var package = GetPackage(name);
-            SetDynamic(Symbols.Package, package);
-            return package;
-        }
-
         [Lisp("list-all-packages")]
         public static Cons ListAllPackages()
         {
             return (Cons)Force(Sort(Packages.Keys));
         }
 
-        [Lisp("list-external-symbols")]
-        public static Cons ListExternalSymbols(object name)
+        [Lisp("list-public-symbols")]
+        public static Cons ListPublicSymbols(object name)
         {
             var package = GetPackage(name);
-            return AsList(package.ExternalSymbols);
+            return AsList(package.PublicSymbols);
         }
 
-        [Lisp("list-internal-symbols")]
-        public static Cons ListInternalSymbols(object name)
+        [Lisp("list-private-symbols")]
+        public static Cons ListPrivateSymbols(object name)
         {
             var package = GetPackage(name);
-            return AsList(package.InternalSymbols);
+            return AsList(package.PrivateSymbols);
         }
 
         [Lisp("list-symbols")]
@@ -461,27 +344,12 @@ namespace Kiezel
             return AsList(package.Symbols);
         }
 
-        public static List<string> ListVisiblePackageNames()
-        {
-            var currentPackage = CurrentPackage();
-            var aliases = currentPackage.Aliases.Keys.Cast<string>();
-            var names = Packages.Keys.Cast<string>();
-            return aliases.Concat(names).ToList();
-        }
-
         [Lisp("make-package")]
         public static Package MakePackage(object name)
         {
-            return MakePackage3(name, reserved: false, useLisp: true);
+            return MakePackage3(name, reserved: false);
         }
 
-        [Lisp("make-symbol")]
-        public static Symbol MakeSymbol(params object[] args)
-        {
-            var str = MakeString(args);
-            var sym = CreateSymbol(str, excludeUseList: false);
-            return sym;
-        }
 
         public static SymbolDescriptor ParseSymbol(string name)
         {
@@ -492,7 +360,7 @@ namespace Kiezel
             {
                 descr.Package = KeywordPackage;
                 descr.PackageName = "keyword";
-                descr.Exported = true;
+                descr.IsPublic = true;
                 descr.SymbolName = name.Substring(1);
                 descr.SymbolName = descr.SymbolName.TrimStart(PackageSymbolSeparator);
                 if (descr.SymbolName.Length == 0)
@@ -508,13 +376,13 @@ namespace Kiezel
                 {
                     descr.Package = LispPackage;
                     descr.PackageName = "lisp";
-                    descr.Exported = true;
+                    descr.IsPublic = true;
                 }
                 else
                 {
                     descr.Package = CurrentPackage();
                     descr.PackageName = "";
-                    descr.Exported = false;
+                    descr.IsPublic = false;
                 }
 
                 descr.SymbolName = name;
@@ -528,14 +396,14 @@ namespace Kiezel
             if (index + 1 < name.Length && name[index + 1] == PackageSymbolSeparator)
             {
                 // two consecutives colons
-                descr.Exported = false;
+                descr.IsPublic = false;
                 descr.PackageName = name.Substring(0, index);
                 descr.SymbolName = name.Substring(index + 2);
             }
             else
             {
                 // one colon
-                descr.Exported = true;
+                descr.IsPublic = true;
                 descr.PackageName = name.Substring(0, index);
                 descr.SymbolName = name.Substring(index + 1);
             }
@@ -550,60 +418,128 @@ namespace Kiezel
                 descr.PackageName = "keyword";
             }
 
-            if (SetupMode)
+            descr.Package = FindPackage(descr.PackageName);
+
+            if (SetupMode && descr.PackageName == null)
             {
                 descr.Package = MakePackage(descr.PackageName);
-            }
-            else
-            {
-                descr.Package = FindPackage(descr.PackageName);
             }
 
             return descr;
         }
 
-        public static Cons PackageUseList(object name)
+        [Lisp("package")]
+        public static Package InPackage(object name)
         {
-            var package = GetPackage(name);
-            return AsList(package.UseList);
-        }
-
-        [Lisp("shadow-symbol")]
-        public static void ShadowSymbol(string name)
-        {
-            CurrentPackage().FindOrCreate(name, excludeUseList: true);
-        }
-
-        [Lisp("unexport-symbol")]
-        public static void UnexportSymbol(string name)
-        {
-            CurrentPackage().Unexport(name);
-        }
-
-        [Lisp("unuse-package")]
-        public static Package UnusePackage(object name)
-        {
-            var package = GetPackage(name);
-            CurrentPackage().UnusePackage(package);
+            var package = MakePackage(name);
+            SetDynamic(Symbols.Package, package);
             return package;
         }
 
-        [Lisp("use-package")]
-        public static Package UsePackage(object name)
+
+        [Lisp("private")]
+        public static void MakePrivateSymbols(params string[] names)
+        {
+            var package = CurrentPackage();
+
+            foreach (var name in names)
+            {
+                package.MakePrivate(name);
+            }
+        }
+
+        [Lisp("public")]
+        public static void MakePublicSymbols(params string[] names)
+        {
+            var package = CurrentPackage();
+
+            foreach (var name in names)
+            {
+                package.MakePublic(name);
+            }
+        }
+
+        public static Symbol ResolveSymbol(string longname, bool calledByFindSymbol = false, bool calledByReader = false, bool calledByMakeSymbol = false )
+        {
+            // calledByFindSymbol: no new packages or symbols.
+            // calledByMakeSymbol: new packages and symbols.
+            // calledByReader: no new packages, new symbols in current/default package and some others.
+            var descr = Runtime.ParseSymbol(longname);
+            var name = descr.SymbolName;
+            var package = descr.Package;
+
+            if (package == null)
+            {
+                if (calledByReader || calledByFindSymbol)
+                {
+                    throw new LispException("Undefined package: {0}", descr.PackageName);
+                }
+                else
+                {
+                    package = MakePackage(descr.PackageName);
+                }
+            }
+
+            Symbol sym = package.Find(name);
+            
+            if (sym == null && descr.PackageName == "")
+            {
+                sym = FindInUseList(name);
+            }
+
+            if (sym != null)
+            {
+                if (descr.IsPublic && !sym.IsPublic)
+                {
+                    throw new LispException("Symbol {0} not public", longname);
+                }
+                return sym;
+            }
+
+            if (calledByFindSymbol)
+            {
+                throw new LispException("Symbol {0} not found", longname);
+            }
+            
+            if (descr.PackageName == "" || package.AutoCreate || calledByMakeSymbol)
+            {
+                sym = package.Create(name, descr.IsPublic);
+            }
+
+            return sym;
+
+        }
+
+        [Lisp("shadow")]
+        public static void ShadowSymbols(params string[] names)
+        {
+            var package = CurrentPackage();
+      
+            foreach (var name in names)
+            {
+                package.Create(name);
+            }
+        }
+
+        [Lisp("use-package-symbols")]
+        public static Package UsePackageSymbols(object name)
         {
             var package = GetPackage(name);
-            CurrentPackage().UsePackage(package);
+            var list = (Cons)GetDynamic(Symbols.UseList);
+            var seq = AsVector(list);
+            seq.Remove(package);
+            seq.Insert(0,package);
+            SetDynamic(Symbols.UseList, AsList(seq));
             return package;
         }
 
         [Lisp("use-package-alias")]
         public static string UsePackageAlias(object packageName, object nickName)
         {
-            var currentPackage = CurrentPackage();
-            var n = GetDesignatedString(nickName);
+            var name = GetDesignatedString(nickName);
             var package = GetPackage(packageName);
-            currentPackage.Aliases[n] = package;
-            return n;
+            Packages[name] = package;
+            return name;
         }
 
         #endregion Public Methods
@@ -615,7 +551,7 @@ namespace Kiezel
         {
             #region Fields
 
-            public bool Exported;
+            public bool IsPublic;
             public Package Package;
             public string PackageName;
             public string SymbolName;

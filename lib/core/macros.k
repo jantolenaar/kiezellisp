@@ -5,9 +5,9 @@
 ;;;;
 
 
-(defpackage "lisp"
-    (:export
-        "$tracing"
+(package "lisp")
+
+(public "$tracing"
         "assert"
         "assert-throws-exception"
         "assert-throws-no-exception"
@@ -42,9 +42,7 @@
         "with-multiple-let"
         "with-multiple-var"
         "with-output-to-string"
-    ))
-
-(in-package "lisp")
+    )
 
 ;;;
 ;;; removable do; eliminates do block when it is not necessary.

@@ -1,16 +1,13 @@
 ;;;; Copyright (c) Jan Tolenaar. See the file LICENSE for details.
 
 
-(defpackage "ftp"
-    (:export
-        "get-bytes"
+(package "ftp")
+
+(public "get-bytes"
         "get-file"
         "make-credentials"
         "put-bytes"
-        "put-file"
-    ))
-
-(in-package "ftp")
+        "put-file")
 
 (import "System.Byte")
 (import "System.IO.FileMode")

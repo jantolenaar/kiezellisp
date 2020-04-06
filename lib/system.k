@@ -4,10 +4,9 @@
 ;;;; system.k
 ;;;;
 
-(in-package "lisp")
+(package "lisp")
 
 (load "core/clr")
-(load "core/package")
 (load "core/functions")
 (load "core/macros")
 (load "core/setf")

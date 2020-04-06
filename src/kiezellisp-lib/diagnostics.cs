@@ -202,14 +202,7 @@ namespace Kiezel
 
                 if (sym.Package != null)
                 {
-                    if (sym.Package.IsExported(sym.Name))
-                    {
-                        z["exported"] = true;
-                    }
-                    else
-                    {
-                        z["exported"] = false;
-                    }
+                    z["public"] = sym.IsPublic;
                 }
 
                 switch (sym.CompilerUsage)
@@ -629,7 +622,6 @@ namespace Kiezel
         [Lisp("print-warning")]
         public static void PrintWarning(params object[] args)
         {
-            //if (DebugMode && ToBool(GetDynamic(Symbols.EnableWarnings)))
             if (ToBool(GetDynamic(Symbols.EnableWarnings)))
             {
                 var stream = GetDynamic(Symbols.StdErr);

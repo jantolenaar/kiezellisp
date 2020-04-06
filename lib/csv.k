@@ -1,11 +1,8 @@
 ;;;; Copyright (c) Jan Tolenaar. See the file LICENSE for details.
 
+(package "csv")
 
-(defpackage "csv"
-    (:use
-        "lisp")
-	(:export
-        "$options"
+(public "$options"
         "convert-to-date"
         "convert-to-default"
         "convert-to-number"
@@ -20,11 +17,7 @@
         "write-records-to-grid"
         "write-records-to-string"
         "write-value-to-string"
-    ))
-
-
-(in-package "csv")
-
+    )
 
 ;;;
 ;;; Comma Separated Values

@@ -8,10 +8,9 @@
 ;;;;
 ;;;;     installation of pandoc (www.pandoc.org)
 
-(defpackage "pandoc"
-    (:export "convert-to-html"))
+(package "pandoc")
 
-(in-package "pandoc")
+(public "convert-to-html")
 
 (require "shell")
 

@@ -1,0 +1,13 @@
+.index use-package-symbols
+.usage builtin-function
+.syntax
+(use-package-symbols name)
+
+.description
+Adds package `name` to the use list of the REPL or current file.
+
+.see-also
+.api
+$use-list
+
+

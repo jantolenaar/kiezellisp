@@ -4,9 +4,9 @@
 ;;;; http-server.k
 ;;;;
 
-(defpackage "http-server"
-	(:export
-		"$request"
+(package "http-server")
+
+(public "$request"
 		"$response"
 		"create-exact-dispatcher"
 		"create-prefix-dispatcher"
@@ -17,12 +17,9 @@
 		"write-response-bytes"
 		"write-response-error"
 		"write-response-file"
-		"write-response-text"
-		))
-
-(in-package "http-server")
-
-(load "mime-types")
+		"write-response-text"   )
+		
+(require "mime-types")
 
 (import "System.Convert")
 (import "System.Net.IPAddress" :package-name "ip-address")

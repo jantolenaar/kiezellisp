@@ -1,0 +1,14 @@
+.index package
+.usage function
+.syntax
+(package name)
+
+.description
+Asserts a package exists and makes it the current package. 
+Parameter `name` is a string.
+
+.see-also
+.api 
+about:packages $package
+
+

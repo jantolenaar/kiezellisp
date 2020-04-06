@@ -5,14 +5,11 @@
 ;;;;
 
 
-(defpackage "lisp"
-    (:export
-        "foreach"
-        "loop"
-        "while"
-    ))
+(package "lisp")
 
-(in-package "lisp")
+(public "foreach"
+        "loop"
+        "while")
 
 (def $env null)
 
@@ -74,8 +71,8 @@
     :with 'with-clause
     ))
 
-(each export-symbol (prototype:keys loop-clauses))
-(each export-symbol (prototype:keys loop-top-level-clauses))
+(each public (prototype:keys loop-clauses))
+(each public (prototype:keys loop-top-level-clauses))
 
 (defun loop-macroexpand-1 (form env)
     (when (and (cons? form)

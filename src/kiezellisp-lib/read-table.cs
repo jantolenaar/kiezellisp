@@ -168,7 +168,6 @@ namespace Kiezel
             SetDispatchMacroCharacter("#", "endif", Runtime.ReadEndifExprHandler);
             SetDispatchMacroCharacter("#", "\\", Runtime.ReadCharacterHandler);
             SetDispatchMacroCharacter("#", "c", Runtime.ReadComplexNumberHandler);
-            SetDispatchMacroCharacter("#", "i", Runtime.ReadInfixHandler);
             SetDispatchMacroCharacter("#", ":", Runtime.ReadUninternedSymbolHandler);
         }
 

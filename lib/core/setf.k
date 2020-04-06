@@ -4,9 +4,9 @@
 ;;;; setf expansion
 ;;;;
 
-(defpackage "lisp"
-    (:export
-        "get-setf-expansion"
+(package "lisp")
+
+(public "get-setf-expansion"
         "define-modify-macro"
         "decf"
         "defsetf"
@@ -15,9 +15,7 @@
         "push"
         "pushnew"
         "setf"
-    ))
-
-(in-package "lisp")
+    )
 
 (defun get-setf-expansion (place)
     (let place (macroexpand place))

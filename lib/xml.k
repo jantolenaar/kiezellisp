@@ -4,16 +4,13 @@
 ;;;; xml.k
 ;;;;
 
-(defpackage "xml"
-    (:export
-        "add"
+(package "xml")
+
+(public "add"
         "add-range"
         "DOC-TYPE"
         "make-xml-function"
-        "to-string"
-    ))
-
-(in-package "xml")
+        "to-string" )
 
 (def DOC-TYPE "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n")
 

@@ -1,7 +1,7 @@
 
 (require :unit-test)
 
-(defpackage "unit-test-kiezellisp"
+(package "unit-test-kiezellisp"
     (:export
         "data-types"
         "operators"
@@ -12,7 +12,7 @@
         "prototypes"
     ))
 
-(in-package "unit-test-kiezellisp")
+(package "unit-test-kiezellisp")
 
 (defun data-types ()
     (assert

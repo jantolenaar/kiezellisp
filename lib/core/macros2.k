@@ -3,15 +3,12 @@
 ;;;; macros2.k
 ;;;;
 
-(defpackage "lisp"
-    (:export
-        "psetq"
+(package "lisp")
+
+(public "psetq"
         "psetf"
         "lambda*"
-        "defun*"
-        ))
-
-(in-package "lisp")
+        "defun*")
 
 ;;;
 ;;; parallel assignment

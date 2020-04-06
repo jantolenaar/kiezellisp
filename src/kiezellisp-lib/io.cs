@@ -1043,6 +1043,7 @@ namespace Kiezel
             DefDynamic(Symbols.PackageNamePrefix, null);
             DefDynamic(Symbols.LoadVerbose, loadVerbose);
             DefDynamic(Symbols.LoadPrint, loadPrint);
+            DefDynamic(Symbols.UseList, MakeList(LispPackage));
 
             var oldDir = Environment.CurrentDirectory;
             if (newDir != null)

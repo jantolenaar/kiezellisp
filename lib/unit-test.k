@@ -4,14 +4,11 @@
 ;;;; unit-test.k
 ;;;;
 
-(defpackage "unit-test"
-    (:export
-        "run-all"
-        "run-function"
-        "run-package"
-    ))
+(package "unit-test")
 
-(in-package "unit-test")
+(public "run-all"
+        "run-function"
+        "run-package" )
 
 (defun run-function (name)
     (let result (try-and-catch (funcall name)))

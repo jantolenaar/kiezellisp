@@ -203,15 +203,6 @@ namespace Kiezel
             EraseVariable(sym);
         }
 
-        public static void WarnWhenShadowing(string context, Symbol sym)
-        {
-            var package = CurrentPackage();
-            if (sym.Package != package && sym.Package != UserPackage)
-            {
-                PrintWarning("(", context, " ", sym.Name, " ...) overwrites the value of ", sym.LongName);
-            }
-        }
-
         #endregion Public Methods
     }
 
@@ -375,6 +366,8 @@ namespace Kiezel
                 return Usage == SymbolUsage.Function;
             }
         }
+
+        public bool IsPublic { get; internal set; }
 
         public bool IsReadonlyVariable
         {
@@ -637,6 +630,7 @@ namespace Kiezel
         public static Symbol E;
         public static Symbol EnableWarnings;
         public static Symbol Environment;
+        public static Symbol Eql;
         public static Symbol Equality;
         public static Symbol Escape;
         public static Symbol Eval;
@@ -772,6 +766,7 @@ namespace Kiezel
         public static Symbol Underscore;
         public static Symbol Unquote;
         public static Symbol UnquoteSplicing;
+        public static Symbol UseList;
         public static Symbol Var;
         public static Symbol Variable;
         public static Symbol Vector;
@@ -833,6 +828,7 @@ namespace Kiezel
             E = MakeSymbol("math:E");
             EnableWarnings = MakeSymbol("$enable-warnings");
             Environment = MakeSymbol("&environment");
+            Eql = MakeSymbol("eql");
             Equality = MakeSymbol("=");
             Escape = MakeSymbol(":escape");
             Eval = MakeSymbol("eval");
@@ -963,6 +959,7 @@ namespace Kiezel
             Underscore = MakeSymbol("_");
             Unquote = MakeSymbol("system:unquote");
             UnquoteSplicing = MakeSymbol("system:unquote-splicing");
+            UseList = MakeSymbol("$use-list");
             Var = MakeSymbol("var");
             Variable = MakeSymbol("variable");
             Vector = MakeSymbol("&vector");

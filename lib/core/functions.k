@@ -4,15 +4,12 @@
 ;;;; functions.k
 ;;;;
 
-(defpackage "lisp"
-    (:export
-        "constantly"
+(package "lisp")
+
+(public "constantly"
         "filterv"
         "partially-apply"
-        "mapv"
-    ))
-
-(in-package "lisp")
+        "mapv")
 
 ;;;
 ;;; Misc functions

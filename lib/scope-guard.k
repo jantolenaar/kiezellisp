@@ -19,15 +19,12 @@
 ;;;      'y)
 ;;;
 
-(defpackage "scope-guard"
-    (:export
-        "scope-exit"
+(package "scope-guard")
+
+(public "scope-exit"
         "scope-exit-fail"
         "scope-exit-pass"
-        "with-scope"
-    ))
-
-(in-package "scope-guard")
+        "with-scope" )
 
 (defmacro with-scope (&body forms)
     (let $scope-list (gentemp "scope-list"))

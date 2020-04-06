@@ -239,7 +239,7 @@ namespace Kiezel
         {
             var count = Interlocked.Increment(ref GentempCounter);
             var name = string.Format("{0}-{1}", GetDesignatedString(prefix), count);
-            var sym = TempPackage.FindOrCreate(name);
+            var sym = TempPackage.Create(name);
             return sym;
         }
 

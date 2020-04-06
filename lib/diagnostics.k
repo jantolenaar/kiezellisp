@@ -5,12 +5,9 @@
 ;;;; diagnostics.k
 ;;;;
 
-(defpackage "lisp"
-    (:export
-        "decompile"
-    ))
+(package "lisp")
 
-(in-package "lisp")
+(public "decompile")
 
 ;(import-namespace "System.Reflection.*" :package-name-prefix "reflection-")
 (import "System.Reflection.MethodInfo" :package-name-prefix "reflection-")

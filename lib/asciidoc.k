@@ -6,10 +6,9 @@
 
 (require "shell")
 
-(defpackage "asciidoc"
-    (:export "convert-to-html"))
+(package "asciidoc")
 
-(in-package "asciidoc")
+(public "convert-to-html")
 
 (defun convert-to-html (str &key print-output)
     (let html (shell:exec-with-io-redirect str "asciidoc" "-o" (or print-output "-") "-s" "-"))

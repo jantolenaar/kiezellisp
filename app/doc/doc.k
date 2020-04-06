@@ -4,10 +4,10 @@
 ;;;; doc
 ;;;;
 
-(defpackage "lisp"
-    (:export "doc" "$doc-root"))
+(package "lisp")
 
-(in-package "lisp")
+(public "doc" 
+        "$doc-root")
 
 (require "make-html")
 

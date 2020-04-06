@@ -1,0 +1,14 @@
+.index list-private-symbols
+.usage builtin-function
+.syntax
+(list-private-symbols package-name)
+
+.description
+Returns a list with the private symbols of package `package-name`.
+
+.examples
+(list-private-symbols "shell")
+
+.see-also
+.api
+list-symbols list-public-symbols

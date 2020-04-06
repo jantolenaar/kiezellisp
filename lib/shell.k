@@ -8,9 +8,9 @@
 (import "System.Environment")
 (import "System.Environment+SpecialFolder")
 
-(defpackage "shell"
-    (:export
-        "$sudo"
+(package "shell")
+
+(public "$sudo"
         "$home"
         "$local-application-data"
         "$my-documents"
@@ -31,15 +31,10 @@
         ; already defined internally
         "exec"
         "exec-with-detach"
-        "exec-with-io-redirect"
-    )
-    (:shadow
-        "path"
-        "run"
-    ))
+        "exec-with-io-redirect")
 
-
-(in-package "shell")
+(shadow "path"
+          "run")
 
 (def $sudo false)
 

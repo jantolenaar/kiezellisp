@@ -308,7 +308,7 @@ namespace Kiezel
         {
             if (!Definition.ProcInitialized)
             {
-                // race condition??
+                // avoid race condition
                 lock (Definition)
                 {
                     if (!Definition.ProcInitialized)
@@ -365,7 +365,7 @@ namespace Kiezel
 
                 if (input.Length < n)
                 {
-                    throw new LispException("Missing required parameters");
+                    throw new LispException("{0}: missing required arguments", Name);
                 }
                 Array.Copy(input, 0, output, offsetOutput, n);
                 offsetOutput += n;
@@ -415,7 +415,7 @@ namespace Kiezel
                         {
                             if (!Runtime.Keywordp(input[i]) || i + 1 == input.Length)
                             {
-                                throw new LispException("Invalid keyword/value list");
+                                throw new LispException("{0}: invalid keyword/value list", Name);
                             }
                         }
                     }
@@ -443,7 +443,7 @@ namespace Kiezel
                 }
                 else
                 {
-                    throw new LispException("Missing required argument: {0}", arg.Sym);
+                    throw new LispException("{0}: missing required argument: {1}", Name, arg.Sym);
                 }
 
                 if (val == Runtime.MissingValue)
@@ -494,7 +494,7 @@ namespace Kiezel
 
             if (offset < input.Length && !haveAll && firstKey == -1)
             {
-                throw new LispException("Too many parameters supplied");
+                throw new LispException("{0}: too many arguments supplied", Name);
             }
 
             return null;
@@ -515,17 +515,24 @@ namespace Kiezel
             return output;
         }
 
+        public string Name
+        {
+            get
+            {
+                var sym = Definition.Name;
+                return sym == null ? "anonymous" : sym.Name;
+            }
+        }
+
         public override string ToString()
         {
-            var name = Definition.Name;
-
             if (Kind == LambdaKind.Macro)
             {
-                return string.Format("Macro Name=\"{0}\"", name == null ? "" : name.Name);
+                return string.Format("Macro Name=\"{0}\"", Name);
             }
             else
             {
-                return string.Format("Lambda Name=\"{0}\"", name == null ? "" : name.Name);
+                return string.Format("Lambda Name=\"{0}\"", Name);
             }
         }
 
@@ -588,7 +595,7 @@ namespace Kiezel
             {
                 if (offset >= input.Length)
                 {
-                    throw new LispException("Missing required parameters");
+                    throw new LispException("Missing required arguments");
                 }
                 output.Add(Expression.Convert(input[offset].Expression, elementType));
             }

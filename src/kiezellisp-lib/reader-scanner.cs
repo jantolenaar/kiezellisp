@@ -300,53 +300,14 @@ namespace Kiezel
             }
             else
             {
-                return CreateSymbol(token);
-            }
-        }
-
-        public Symbol CreateSymbol(string name)
-        {
-            var descr = Runtime.ParseSymbol(name);
-            if (descr.Package == null)
-            {
-                throw MakeScannerException("Undefined package: {0}", descr.PackageName);
-            }
-
-            if (descr.Package == null)
-            {
-                throw MakeScannerException("Undefined package: {0}", descr.PackageName);
-            }
-
-            if (descr.PackageName == "" || descr.Package.AutoCreate)
-            {
-                var sym = descr.Package.FindOrCreate(descr.SymbolName);
-                return sym;
-            }
-            else if (descr.Exported)
-            {
-                var sym = descr.Package.FindExported(descr.SymbolName);
-                if (sym == null)
+                try
                 {
-                    sym = descr.Package.Find(descr.SymbolName);
-                    if (sym == null)
-                    {
-                        throw MakeScannerException("Symbol {0} not found", name);
-                    }
-                    else
-                    {
-                        throw MakeScannerException("Symbol {0} not exported", name);
-                    }
+                   return Runtime.ResolveSymbol(token, calledByReader: true);                   
                 }
-                return sym;
-            }
-            else
-            {
-                var sym = descr.Package.Find(descr.SymbolName);
-                if (sym == null)
+                catch (LispException ex)
                 {
-                    throw MakeScannerException("Symbol {0} not found", name);
+                    throw MakeScannerException(ex.Message);
                 }
-                return sym;
             }
         }
 
@@ -373,13 +334,6 @@ namespace Kiezel
             }
 
             return StringWithoutTerminator(buf, terminator);
-        }
-
-        public object ParseInfixExpression()
-        {
-            var str = ReadInfixExpressionString();
-            var code = Infix.CompileString(str);
-            return code;
         }
 
         public string ParseMultiLineString()
@@ -880,39 +834,6 @@ namespace Kiezel
                     }
                 }
             }
-        }
-
-        public string ReadInfixExpressionString()
-        {
-            var buf = new StringBuilder();
-            var count = 0;
-
-            while (true)
-            {
-                var ch = ReadChar();
-
-                if (IsEof)
-                {
-                    throw MakeScannerException("EOF: Unterminated infix expression");
-                }
-
-                buf.Append(ch);
-
-                if (ch == '(')
-                {
-                    ++count;
-                }
-                else if (ch == ')')
-                {
-                    --count;
-                    if (count == 0)
-                    {
-                        break;
-                    }
-                }
-            }
-
-            return buf.ToString();
         }
 
         public string ReadLine()

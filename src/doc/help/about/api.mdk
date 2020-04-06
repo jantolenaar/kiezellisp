@@ -110,9 +110,9 @@ print write write-line write-to-string with-output-to-string
 
 # Packages
 .api
-in-package defpackage make-package delete-package
+package make-package delete-package
 find-package get-package
-use-package unuse-package use-package-alias
-list-all-packages list-symbols list-internal-symbols list-external-symbols
-import-symbol export-symbol unexport-symbol
-make-symbol shadow-symbol
+use-package-symbols use-package-alias
+list-all-packages list-symbols list-public-symbols list-private-symbols
+public private shadow
+make-symbol 

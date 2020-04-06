@@ -106,12 +106,6 @@ We can also include/exclude more than one (usually top-level) form:
 Please note that this feature is form-aware and not line-aware and that the
 forms in the choosen branch are executed as a single top-level form.
 
-## Infix notation
-
-.examples
-'#i(1+x)
-'#i(math:sin(x)**(1+1)+math:cos(x)**2)
-
 ## Structures
 
 The `#s(...)` reader macro produces a prototype object as a literal. When the

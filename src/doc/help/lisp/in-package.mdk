@@ -1,7 +1,7 @@
 .index in-package
 .usage builtin-function
 .syntax
-(in-package name)
+(package name)
 
 .description
 Sets the current package. The special variable `$package` holds the 
@@ -9,8 +9,8 @@ value of the current package.
 
 .examples
 :throws
-(in-package "test-not-found")
-(in-package "user")
+(package "test-not-found")
+(package "user")
 
 .see-also
 make-package package

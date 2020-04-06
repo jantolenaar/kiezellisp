@@ -4,9 +4,12 @@
 (use-package-alias package-name nick-name)
 
 .description
-Gives the package with the long offical name `package-name` a short `nick-name`
-but only within the current package.
+Gives the package with the long offical name `package-name` a short `nick-name`.
 
 .examples
-(use-package-alias "lisp" "l")
+(package "very-annoying-name")
+(use-package-alias "very-annoying-name" "van")
 
+.see-also
+.api
+delete-package

@@ -28,6 +28,8 @@ namespace Kiezel
         public static Package KeywordPackage;
         public static Package LispDocPackage;
         public static Package LispPackage;
+        public static Dictionary<string,Package> Packages;
+        public static Dictionary<Type, Package> PackagesByType;
         public static Missing MissingValue = Missing.Value;
         public static bool Embedded;
         public static bool ReadDecimalNumbers;
@@ -85,7 +87,6 @@ namespace Kiezel
         public static string GetKiezellispDataFolder()
         {
             var folder = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
-            //var folder2 = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
             return Path.Combine(folder, "kiezellisp");
         }
 
@@ -255,13 +256,13 @@ namespace Kiezel
 
                     foreach (string symbolName in ((LispAttribute)lisp[0]).Names)
                     {
-                        var sym = CreateSymbol(symbolName, excludeUseList: true);
+                        var sym = MakeSymbol(symbolName);
                         if (!sym.IsUndefined)
                         {
                             PrintWarning("Duplicate builtin name: ", sym.Name);
                         }
                         sym.FunctionValue = builtin;
-                        sym.Package.Export(sym.Name);
+                        sym.IsPublic = true;
                     }
                 }
             }
@@ -319,6 +320,7 @@ namespace Kiezel
         {
             Symbols.Cat.FunctionValue = Cat();
             Symbols.MacroexpandHook.VariableValue = Symbols.Funcall.Value;
+            UsePackageSymbols("lisp");
         }
 
         [Lisp("shell:exec")]
@@ -519,12 +521,12 @@ namespace Kiezel
         public static void RestartSymbols()
         {
             // these packages do not use lisp package
-            KeywordPackage = MakePackage3("keyword", reserved: true, useLisp: false, automatic: true);
-            TempPackage = MakePackage3("temp", reserved: true, useLisp: false);
-            LispPackage = MakePackage3("lisp", reserved: true, useLisp: false);
-            LispDocPackage = MakePackage3("example", reserved: true, useLisp: false);
+            KeywordPackage = MakePackage3("keyword", reserved: true, automatic: true);
+            TempPackage = MakePackage3("temp", reserved: true);
+            LispPackage = MakePackage3("lisp", reserved: true);
+            LispDocPackage = MakePackage3("example", reserved: true);
             // these packages do use lisp package
-            UserPackage = MakePackage3("user", useLisp: true, automatic: true);
+            UserPackage = MakePackage3("user",automatic: true);
             MakePackage3("about", automatic: true);
 
             Symbols.Create();
@@ -568,6 +570,7 @@ namespace Kiezel
             Symbols.StdLog.VariableValue = null;
             Symbols.StdOut.VariableValue = null;
             Symbols.StdScr.VariableValue = null;
+            Symbols.UseList.VariableValue = null;
         }
 
         public static void RestartVariables()
@@ -578,7 +581,7 @@ namespace Kiezel
             LispDocPackage = null;
             KeywordPackage = null;
             UserPackage = null;
-            Packages = new Dictionary<string, Package>();
+            Packages = new Dictionary<string,Package>();
             PackagesByType = new Dictionary<Type, Package>();
             Types = new Dictionary<Symbol, object>();
 

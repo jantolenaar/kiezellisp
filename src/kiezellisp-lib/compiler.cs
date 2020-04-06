@@ -332,7 +332,7 @@ namespace Kiezel
             CheckMinLength(form, 3);
             CheckMaxLength(form, 4);
             var sym = CheckSymbol(Second(form));
-            WarnWhenShadowing("def", sym);
+            sym = CheckImplicitOverride("def", sym);
             var value = Compile(Third(form), scope);
             var doc = (string)Fourth(form);
             return Expression.Call(DefineVariableMethod, Expression.Constant(sym), value, Expression.Constant(doc, typeof(string)));
@@ -344,7 +344,7 @@ namespace Kiezel
             CheckMinLength(form, 3);
             CheckMaxLength(form, 4);
             var sym = CheckSymbol(Second(form));
-            WarnWhenShadowing("defconstant", sym);
+            sym = CheckImplicitOverride("defconstant", sym);
             var value = Compile(Third(form), scope);
             var doc = (string)Fourth(form);
             return Expression.Call(DefineConstantMethod, Expression.Constant(sym), value, Expression.Constant(doc, typeof(string)));
@@ -359,7 +359,7 @@ namespace Kiezel
             {
                 throw new LispException("Invalid macro name: {0}", sym);
             }
-            WarnWhenShadowing("define-compiler-macro", sym);
+            sym = CheckImplicitOverride("define-compiler-macro", sym);
             string doc;
             var lambda = CompileLambdaDef(sym, Cddr(form), scope, LambdaKind.Macro, out doc);
             return Expression.Call(DefineCompilerMacroMethod, Expression.Constant(sym), lambda, Expression.Constant(doc, typeof(string)));
@@ -374,7 +374,7 @@ namespace Kiezel
             {
                 throw new LispException("Invalid symbol-macro name: {0}", sym);
             }
-            WarnWhenShadowing("define-symbol-macro", sym);
+            sym = CheckImplicitOverride("define-symbol-macro", sym);
             string doc = "";
             var macro = new SymbolMacro(Third(form));
             return Expression.Call(DefineSymbolMacroMethod, Expression.Constant(sym), Expression.Constant(macro), Expression.Constant(doc, typeof(string)));
@@ -389,7 +389,7 @@ namespace Kiezel
             {
                 throw new LispException("Invalid macro name: {0}", sym);
             }
-            WarnWhenShadowing("defmacro", sym);
+            sym = CheckImplicitOverride("defmacro", sym);
             string doc;
             var lambda = CompileLambdaDef(sym, Cddr(form), scope, LambdaKind.Macro, out doc);
             return Expression.Call(DefineMacroMethod, Expression.Constant(sym), lambda, Expression.Constant(doc, typeof(string)));
@@ -404,7 +404,7 @@ namespace Kiezel
             {
                 throw new LispException("Invalid method name: {0}", sym);
             }
-            WarnWhenShadowing("defmethod", sym);
+            sym = CheckImplicitOverride("defmethod", sym);
             string doc;
             var lambda = CompileLambdaDef(sym, Cddr(form), scope, LambdaKind.Method, out doc);
             return CallRuntime(DefineMethodMethod, Expression.Constant(sym), lambda);
@@ -419,7 +419,7 @@ namespace Kiezel
             {
                 throw new LispException("Invalid method name: {0}", sym);
             }
-            WarnWhenShadowing("defmulti", sym);
+            sym = CheckImplicitOverride("defmulti", sym);
             var args = (Cons)Third(form);
             var body = Cdr(Cddr(form));
             var lispParams = CompileFormalArgs(args, new AnalysisScope(), LambdaKind.Function);
@@ -440,7 +440,7 @@ namespace Kiezel
             {
                 throw new LispException("Invalid function name: {0}", sym);
             }
-            WarnWhenShadowing("defun", sym);
+            sym = CheckImplicitOverride("defun", sym);
             string doc;
             var lambda = CompileLambdaDef(sym, Cddr(form), scope, LambdaKind.Function, out doc);
             return CallRuntime(DefineFunctionMethod, Expression.Constant(sym), lambda, Expression.Constant(doc, typeof(string)));
@@ -604,7 +604,7 @@ namespace Kiezel
                             signature.Parameters.Add(arg);
                             signature.Names.Add(sym);
                         }
-                        else if (type is Cons && First(type) == FindSymbol("lisp:eql"))
+                        else if (type is Cons && First(type) == Symbols.Eql)
                         {
                             // Compile time constants!
                             var expr = Eval(Second(type));
@@ -683,7 +683,7 @@ namespace Kiezel
             }
             else if (member != null && First(member) == Symbols.NullableDot)
             {
-                // (.name args) or ((. "name") args)
+                // (?name args) or ((? "name") args)
                 var name = (string)Second(member);
                 var args = ToIter(formArgs).Cast<object>().Select(x => Compile(x, scope)).ToArray();
                 return AccessorLambdaMetaObject.MakeExpression(true, name, args);
@@ -1102,7 +1102,7 @@ namespace Kiezel
                     // Wrap initializer in DELAY macro and wrap references to the variable in a
                     // FORCE call.
                     flags |= ScopeFlags.Lazy;
-                    val = Compile(MakeList(MakeSymbol("system:create-delayed-expression"), MakeList(Symbols.Lambda, null, initForm)), scope);
+                    val = Compile(MakeList(Symbols.CreateDelayedExpression, MakeList(Symbols.Lambda, null, initForm)), scope);
                 }
                 else if (future)
                 {
@@ -1235,7 +1235,7 @@ namespace Kiezel
             }
             var values = Cdr(form);
             var code = MakeList(Symbols.Do,
-                                MakeList(Symbols.Setq, Symbols.ProgArgs, MakeListStar(MakeSymbol("array"), values)),
+                                MakeList(Symbols.Setq, Symbols.ProgArgs, MakeListStar(Symbols.Array, values)),
                                 MakeList(Symbols.Redo, Symbols.Prog));
             return Compile(code, scope);
         }
@@ -1919,6 +1919,21 @@ namespace Kiezel
                 return code;
             }
         }
+
+        public static Symbol CheckImplicitOverride(string context, Symbol sym)
+        {
+            var package = CurrentPackage();
+            if (sym.Package != package && sym.Package != UserPackage)
+            {
+                var sym2 = package.Create(sym.Name);
+                PrintWarning("changed (", context, " ", sym.LongName, " ...)  to (", context, " ", sym2.LongName, " ...)");
+                PrintWarning("use (override \"", sym.Name, "\") to make this change explicit and avoid this warning");
+                ThrowError("checkimplicitoverride");
+                return sym;
+            }
+            return sym;
+        }
+
 
         public static Expression WrapEvaluationCallStack(Expression code, Cons form)
         {

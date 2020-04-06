@@ -1,0 +1,12 @@
+.index $use-list
+.usage special-variable
+.description
+Returns the ordered list of packages whose symbols can be referenced 
+without specifying the package name.
+
+.examples
+$use-list
+
+.see-also
+.api
+use-package-symbols

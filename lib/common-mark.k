@@ -10,10 +10,9 @@
 ;;;;
 
 
-(defpackage "common-mark"
-    (:export "convert-to-html"))
+(package "common-mark")
 
-(in-package "common-mark")
+(public "convert-to-html")
 
 (reference "CommonMark.dll")
 

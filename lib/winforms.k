@@ -7,10 +7,7 @@
 (reference "System.Windows.Forms" )
 (reference "System.Drawing")
 
-(defpackage :winforms)
-
-(in-package :winforms)
-
+(package :winforms)
 
 (import "System.ComponentModel.Container" )
 (import "System.Drawing.SolidBrush")

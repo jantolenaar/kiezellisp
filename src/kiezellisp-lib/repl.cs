@@ -40,9 +40,9 @@ namespace Kiezel
                 }
             }
 
-            foreach (var package in currentPackage.UseList)
+            foreach (Package package in ToIter((Cons)GetDynamic(Symbols.UseList)))
             {
-                foreach (var sym in package.ExternalSymbols)
+                foreach (var sym in package.PublicSymbols)
                 {
                     var s = sym.Name;
 
@@ -53,9 +53,9 @@ namespace Kiezel
                 }
             }
 
-            var packageNames = ListVisiblePackageNames();
+            var packageNames = ListAllPackages();
 
-            foreach (var package in packageNames)
+            foreach (string package in packageNames)
             {
                 if (package.StartsWith(prefix))
                 {
@@ -75,7 +75,7 @@ namespace Kiezel
                     }
 
                     // Show only internal symbols
-                    foreach (var sym in package.InternalSymbols)
+                    foreach (var sym in package.PrivateSymbols)
                     {
                         var s = name + "::" + sym.Name;
 
@@ -97,7 +97,7 @@ namespace Kiezel
                         continue;
                     }
 
-                    foreach (var sym in package.ExternalSymbols)
+                    foreach (var sym in package.PublicSymbols)
                     {
                         var s = name + ":" + sym.Name;
 

@@ -2,15 +2,14 @@
 
 (require "html")
 
-(defpackage "html"
-	(:export
-		"MAGIC-NUMBER"
+(use-package-symbols "html-elements")
+
+(package "html")
+
+(public "MAGIC-NUMBER"
 		"make-table"
 		"format-html-list"
 		"get-default-stylesheet")
-    (:use "html-elements"))
-
-(in-package "html")
 
 (def MAGIC-NUMBER -424242)
 

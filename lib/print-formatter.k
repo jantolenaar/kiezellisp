@@ -4,12 +4,10 @@
 ;;;; print-formatter.k
 ;;;;
 
-(defpackage "print"
-    (:export
-    	"make-field"
-        "print-records"))
+(package "print")
 
-(in-package "print")
+(public "make-field"
+        "print-records")
 
 (defun make-field-from-list (field)
     (var name null)

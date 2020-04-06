@@ -4,17 +4,15 @@
 ;;;; threading.k
 ;;;;
 
-(defpackage "lisp"
-    (:export
-        "delay"
+(package "lisp")
+
+(public "delay"
         "generator"
         "parallel-foreach"
         "parallel-list"
         "task"
         "fork"
-    ))
-
-(in-package "lisp")
+    )
 
 (defmacro fork (&body forms)
     `(system:create-thread (lambda () ,@forms)))

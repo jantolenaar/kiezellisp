@@ -1,0 +1,12 @@
+.index private
+.usage builtin-function
+.syntax
+(private &rest names)
+
+.description
+Asserts symbols with the given `names` exist in the current package and makes 
+them private.
+
+.examples
+(private "test")
+

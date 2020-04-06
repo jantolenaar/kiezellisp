@@ -1,11 +1,9 @@
 ;;;; Copyright (c) Jan Tolenaar. See the file LICENSE for details.
 
-(defpackage :constructor-factory
-    (:export
-        "make-constructors"
-        "make-constructor"))
+(package :constructor-factory)
 
-(in-package :constructor-factory)
+(public "make-constructors"
+        "make-constructor")
 
 (defun make-constructors (tags)
     (each make-constructor tags))
@@ -18,7 +16,7 @@
     (let macro-sym (make-symbol macro-name))
     (eval `(defmacro ,macro-sym (&rest args)
             (make-obj ',new-method args)))
-    (export-symbol macro-name))
+    (public macro-name))
 
 (defun make-obj (type args)
     (let obj (gentemp "obj"))

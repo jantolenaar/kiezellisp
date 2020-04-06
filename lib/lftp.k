@@ -6,18 +6,15 @@
 
 (require "shell")
 
-(defpackage "lftp"
-    (:shadow
-        "run")
-    (:export
-        "with-ftp-connection"
+(package "lftp")
+
+(shadow "run")
+
+(public "with-ftp-connection"
         "open"
         "put"
         "mirror"
-        "run"
-     ))
-
-(in-package "lftp")
+        "run"  )
 
 (defmacro with-ftp-connection ((handle) &body body)
     (let commands (gensym "commands"))

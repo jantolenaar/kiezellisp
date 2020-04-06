@@ -2,8 +2,7 @@
 
 (require "xml")
 
-(defpackage "html-elements")
-(in-package "html-elements")
+(package "html-elements")
 
 (def tags '(html head title etag meta link style body script
             div span form input button textarea center
@@ -34,19 +33,16 @@
                                     :attributes (new)
                                     :elements (vector)))
                     (xml:add-range target args))))
-    (export-symbol func-name))
+    (public func-name))
 
 (each make-html-function tags)
 
+(use-package-symbols "html-elements")
 
-(defpackage "html"
-    (:export
-        "DOC-TYPE"
+(package "html")
+
+(public "DOC-TYPE"
         "to-string")
-    (:use 
-        "html-elements"))
-
-(in-package "html")
 
 (def DOC-TYPE "<!DOCTYPE HTML>\n")
 

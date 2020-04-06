@@ -4,15 +4,11 @@
 ;;;; mime.type.k
 ;;;;
 
-(defpackage "mime-types"
-	(:export
-		"get-mime-type"
+(package "mime-types")
+
+(public "get-mime-type"
         "define-mime-type"
-        "init-mime-types"
-	))
-
-(in-package "mime-types")
-
+        "init-mime-types")
 
 (def mime-type-list '(
      ("application/andrew-inset" "ez")

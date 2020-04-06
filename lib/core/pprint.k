@@ -4,14 +4,11 @@
 ;;;; pprint.k
 ;;;;
 
-(defpackage "lisp"
-    (:export
-        "$pprint-left-margin"
-        "$pprint-right-margin"
-        "pprint"
-    ))
+(package "lisp")
 
-(in-package "lisp")
+(public "$pprint-left-margin"
+        "$pprint-right-margin"
+        "pprint")
 
 (defconstant default-right-margin 80)
 (defconstant default-indent-size 2)
@@ -49,7 +46,7 @@
       (defmethod 2)
       (defmulti 2)
       (defonce 2)
-      (defpackage 1)
+      (package 1)
       (defun 2)
       (defun* 1)
       (defsetf 1)

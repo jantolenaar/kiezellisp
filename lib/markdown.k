@@ -8,10 +8,9 @@
 ;;;;
 ;;;;     git clone https://github.com/toptensoftware/markdowndeep
 
-(defpackage "markdown"
-    (:export "convert-to-html"))
+(package "markdown")
 
-(in-package "markdown")
+(public "convert-to-html")
 
 (reference "MarkdownDeep.dll")
 

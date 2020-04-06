@@ -4,14 +4,10 @@
 ;;;; www.k
 ;;;;
 
-(defpackage "www"
-    (:export
-        "ddg"
-        "get"
-    ))
+(package "www")
 
-
-(in-package "www")
+(public "ddg"
+        "get" )
 
 (import "System.Net.CookieContainer")
 (import "System.Net.HttpStatusCode")

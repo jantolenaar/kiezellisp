@@ -4,12 +4,10 @@
 ;;;; struct.k
 ;;;;
 
-(defpackage "lisp"
-    (:export
-        "defclass"
-        "defstruct"))
+(package "lisp")
 
-(in-package "lisp")
+(public "defclass"
+        "defstruct")
 
 (defmacro defclass (name arg1 &optional arg2)
     (let have-descr (string? arg1))

@@ -240,7 +240,7 @@ namespace Kiezel
                         throw new LispException("Cannot import into a reserved package name");
                     }
 
-                    var typeSym = package.FindInternal("T");
+                    var typeSym = package.Find("T");
                     if (typeSym != null && Eq(typeSym.Value, type))
                     {
                         // silently do nothing
@@ -248,13 +248,13 @@ namespace Kiezel
                     else
                     {
                         Packages.Remove(packageName);
-                        package = MakePackage3(packageName, useLisp: false);
+                        package = MakePackage3(packageName);
                         ImportIntoPackage(package, type);
                     }
                 }
                 else
                 {
-                    package = MakePackage3(packageName, useLisp: false);
+                    package = MakePackage3(packageName);
                     ImportIntoPackage(package, type);
                 }
 
@@ -292,7 +292,7 @@ namespace Kiezel
                     continue;
                 }
 
-                var sym = package.FindOrCreate(name.LispName(), excludeUseList: true, export: true);
+                var sym = package.Create(name.LispName(), ispublic: true);
                 var builtin = sym.Value as ImportedFunction;
 
                 if (builtin == null)
@@ -325,7 +325,7 @@ namespace Kiezel
 
             package.ImportedType = type;
             package.RestrictedImport = restrictedImport;
-            var sym = package.FindOrCreate("T", excludeUseList: true, export: true);
+            var sym = package.Create("T", ispublic: true);
             sym.ConstantValue = type;
             sym.Documentation = string.Format("The .NET type <{0}> imported in this package.", type);
 
@@ -367,7 +367,7 @@ namespace Kiezel
                 var field = member as FieldInfo;
                 if (field.IsLiteral || (field.IsStatic && field.IsInitOnly))
                 {
-                    var sym = package.FindOrCreate(ucName, excludeUseList: true, export: true);
+                    var sym = package.Create(ucName, ispublic: true);
                     sym.ConstantValue = field.GetValue(null);
                 }
                 return true;
@@ -375,7 +375,7 @@ namespace Kiezel
 
             if (member is EventInfo)
             {
-                var sym = package.FindOrCreate(lcName, excludeUseList: true, export: true);
+                var sym = package.Create(lcName, ispublic: true);
                 sym.ConstantValue = member;
                 return true;
             }
@@ -383,15 +383,14 @@ namespace Kiezel
             if (member is ConstructorInfo)
             {
                 var builtin = new ImportedConstructor(members.Cast<ConstructorInfo>().ToArray());
-                var sym = package.FindOrCreate("new", excludeUseList: true, export: true);
+                var sym = package.Create("new", ispublic: true);
                 sym.FunctionValue = builtin;
-                package.ImportedConstructor = builtin;
                 return true;
             }
 
             if (member is MethodInfo)
             {
-                var sym = package.FindOrCreate(lcName, excludeUseList: true, export: true);
+                var sym = package.Create(lcName, ispublic: true);
                 var builtin = new ImportedFunction(name, member.DeclaringType, members.Cast<MethodInfo>().ToArray(), false);
                 sym.FunctionValue = builtin;
                 return true;
@@ -405,7 +404,7 @@ namespace Kiezel
 
                 if (getters.Length != 0)
                 {
-                    var sym = package.FindOrCreate(lcName, excludeUseList: true, export: true);
+                    var sym = package.Create(lcName, ispublic: true);
                     var builtin = new ImportedFunction(name, member.DeclaringType, getters, false);
                     sym.FunctionValue = builtin;
                 }
@@ -413,9 +412,9 @@ namespace Kiezel
                 if (setters.Length != 0)
                 {
                     // create getter symbol for setf/setq
-                    package.FindOrCreate(lcName, excludeUseList: true, export: true);
+                    package.Create(lcName, ispublic: true);
                     // use set-xxx
-                    var sym = package.FindOrCreate("set-" + lcName, excludeUseList: true, export: true);
+                    var sym = package.Create("set-" + lcName, ispublic: true);
                     var builtin = new ImportedFunction(name, member.DeclaringType, setters, false);
                     sym.FunctionValue = builtin;
                 }

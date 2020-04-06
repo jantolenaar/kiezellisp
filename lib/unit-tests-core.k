@@ -6,14 +6,10 @@
 
 (require "unit-test")
 
-(defpackage "unit-test-core"
-    (:export
-        "test-numbers"
-        "test-predicates"
+(package "unit-test-core")
 
-    ))
-
-(in-package "unit-test-core")
+(public "test-numbers"
+        "test-predicates" )
 
 (defun test-numbers ()
     (assert 

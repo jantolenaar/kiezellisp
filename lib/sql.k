@@ -15,9 +15,9 @@
 ;;;;     System.Data.MySqlClient.MySqlFactory
 ;;;;
 
-(defpackage "sql"
-    (:export
-        "$provider"
+(package "sql")
+
+(public "$provider"
         "create-table"
         "execute-non-query"
         "execute-reader"
@@ -26,10 +26,7 @@
         "get-non-text-fields"
         "get-schema"
         "get-text-fields"
-        "with-open-database"
-    ))
-
-(in-package "sql")
+        "with-open-database" )
 
 (import "System.Data.Common.DbProviderFactories")
 (import "System.Data.ConnectionState")

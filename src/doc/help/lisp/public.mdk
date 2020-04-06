@@ -1,0 +1,12 @@
+.index public
+.usage builtin-function
+.syntax
+(public &rest names)
+
+.description
+Asserts symbols with the given `names` exist in the current package and makes 
+them public.
+
+.examples
+(public "test")
+

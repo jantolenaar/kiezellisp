@@ -15,18 +15,16 @@
 ;;;;
 ;;;; Uses linux `par` utility to reformat paragraphs.
 
-(defpackage "make-html"
-    (:export 
-        "make-html"
+(package "make-html")
+
+(public "make-html"
         "make-kiezellisp-html"
         "transform-topic-to-path-name"
         "$input-dir"
         "$output-dir"
         "$master-index"
         "$crumbs"
-        "$styles"))
-
-(in-package "make-html")
+        "$styles")
 
 (require "common-mark")
 (use-package-alias "common-mark" "md")
@@ -35,7 +33,7 @@
 
 (require "xml")
 (require "html")
-(use-package "html-elements")
+(use-package-symbols "html-elements")
 
 (def home shell:$home)
 (def projects "${home}/projects")

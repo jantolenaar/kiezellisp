@@ -5,7 +5,7 @@
 ;;;; clr.k
 ;;;;
 
-(in-package "lisp")
+(package "lisp")
 
 ;;;
 ;;; pseudo classes

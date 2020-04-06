@@ -1,5 +1,11 @@
 # Change Log
 
+### 2020/04/06
+
+*   BREAKING CHANGES:
+*   Replaced `defpackage`, `in-package` by `package`.
+*   Changed terminology from `export` to `public/private`.
+
 ### 2020/03/30
 
 *   Rewrote code to import .net classes.
