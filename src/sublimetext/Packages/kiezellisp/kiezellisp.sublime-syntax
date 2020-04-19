@@ -110,13 +110,13 @@ contexts:
                 {{leading_parens}}
                 (
                     simple-lambda|lambda\*|lambda|case-lambda|make-lambda|
-                    declare|public|private|import|
+                    declare|public|private|import|shadow
                     var|let|letfun|letmacro|let-symbol-macro|lazy|future|
                     set|setf|setq|psetf|psetq|quote|quasi-quote|
                     with-multiple-let|with-multiple-var|multiple-setf|
                     do|block|
                     prog|reprog|self|
-                    doseq|loop|foreach|while|
+                    doseq|loop|loopv|foreach|while|
                     or|and|new|
                     case(-match)?|ecase(-match)?|
                     if(-let|-match)?|when(-let|-match)?|unless|
@@ -126,6 +126,7 @@ contexts:
                     try(-and-catch)?|finally|catch|ignore-errors|
                     using|
                     with(-scope)?|scope-exit-pass|scope-exit-fail|scope-exit|
+                    load|require|reference|
                 ){{word_break}}
 
       scope: keyword.specialform.kiezellisp

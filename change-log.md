@@ -1,5 +1,10 @@
 # Change Log
 
+### 2020/04/17
+
+*   Added `loopv`.
+*   Refactored compiler usage of `SetMemberBinder` and `GetMemberBinder`.
+
 ### 2020/04/06
 
 *   BREAKING CHANGES:

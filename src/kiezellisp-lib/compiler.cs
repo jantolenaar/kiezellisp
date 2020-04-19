@@ -731,41 +731,26 @@ namespace Kiezel
             return args2;
         }
 
-        public static Expression[] CompileConstantArgs(object[] args)
-        {
-            var args2 = args.Cast<object>().Select(x => CompileLiteral(x)).ToArray();
-            return args2;
-        }
-
-        public static Expression[] CompileConstantTargetArgs(object target, object[] args)
-        {
-            var args1 = CompileLiteral(target);
-            var args2 = args.Cast<object>().Select(x => CompileLiteral(x)).ToList();
-            args2.Insert(0, args1);
-            return args2.ToArray();
-        }
-
         public static Expression CompileGetMember(Cons form, AnalysisScope scope)
         {
-            // (attr target property arg...)
-            CheckMinLength(form, 3);
+            // (attr target property)
+            CheckLength(form, 3);
             var target = Second(form);
             var member = Third(form);
-            var args = Cdr(Cdr(Cdr(form)));
 
             if (member is string || Keywordp(member))
             {
                 var name = GetDesignatedString(member);
-                var args2 = CompileArgs(MakeCons(target, args), scope);
-                var expr = AccessorLambdaMetaObject.MakeExpression(false, name, args2);
-                return expr;
+                var target2 = Compile(Second(form), scope);
+                var binder = GetGetMemberBinder(name);
+                return CompileDynamicExpression(binder, typeof(object), new Expression[] { target2 });
             }
             else if (member is Cons && First(member) == Symbols.Quote && Second(member) is Symbol)
             {
                 var name = ((Symbol)Second(member)).Name;
-                var args2 = CompileArgs(MakeCons(target, args), scope);
-                var expr = AccessorLambdaMetaObject.MakeExpression(false, name, args2);
-                return expr;
+                var target2 = Compile(Second(form), scope);
+                var binder = GetGetMemberBinder(name);
+                return CompileDynamicExpression(binder, typeof(object), new Expression[] { target2 });
             }
             else
             {

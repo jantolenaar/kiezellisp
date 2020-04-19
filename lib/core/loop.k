@@ -9,11 +9,20 @@
 
 (public "foreach"
         "loop"
+        "loopv"
         "while")
 
 (def $env null)
 
 (defmacro loop (&body forms &environment env)
+    (loop-imp forms env true))
+
+(defmacro loopv (&body forms &environment env)
+    (loop-imp forms env false))
+
+
+(defun loop-imp (forms env list-result?)
+    (let $list-result? list-result?)
     (let $env (make-environment env))
     (let $initial-steps (vector))
     (let $tests (vector))
@@ -313,14 +322,21 @@
             (throw-error "Invalid <collect-each> clause in loop")))
 
 (defun do-collect (sym val)
-    (let tail-sym (tail-symbol sym))
-    `(cond
-        ((null? ,tail-sym)
-            (setf ,tail-sym (cons ,val null))
-            (setf ,sym ,tail-sym))
-        (true
-            (setf (cdr ,tail-sym) (cons ,val null))
-            (setf ,tail-sym (cdr ,tail-sym)))))
+    (if $list-result?
+        (do
+            (let tail-sym (tail-symbol sym))
+            `(cond
+                ((null? ,tail-sym)
+                    (setf ,tail-sym (cons ,val null))
+                    (setf ,sym ,tail-sym))
+                (true
+                    (setf (cdr ,tail-sym) (cons ,val null))
+                    (setf ,tail-sym (cdr ,tail-sym)))))
+        (do
+            `(do
+                (if (null? ,sym)
+                    (setf ,sym (vector)))
+                (.add ,sym ,val)))))
 
 (define-clause-pattern collecting-clause
         ((match '(collecting ? :into ?))

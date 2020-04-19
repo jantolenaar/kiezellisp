@@ -32,12 +32,13 @@ syn keyword lispForm contained if case typecase ecase etypecase cond when unless
 syn keyword lispForm contained ecase-match block redo leave lambda new quote
 syn keyword lispForm contained ignore-errors try-and-catch try catch finally throw return-or-throw using
 syn keyword lispForm contained with-scope scope-exit-pass scope-exit-fail scope-exit
-syn keyword lispForm contained loop while foreach do merging-do
+syn keyword lispForm contained loop loopv while foreach do merging-do
 syn keyword lispform contained prog reprog self with
 syn keyword lispForm contained and or
 syn keyword lispForm contained parallel-foreach parallel-list
 syn keyword lispForm contained set setf setq psetq psetf
 syn keyword lispForm contained with-multiple-let with-multiple-var multiple-setf defsetf
+syn keyword lispForm contained public private shadow load require reference package import
 
 syn keyword lispDebug contained throw-error trace breakpoint assert assert-throws-exception assert-throws-no-exception
 

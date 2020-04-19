@@ -2,10 +2,12 @@
 .usage macro
 .syntax
 (loop &body forms)
+(loopv &body forms)
 
 .description
 Creates a loop. The `loop` macro is based on the Common Lisp `iterate` macro 
-by Jonathan Amsterdam.
+by Jonathan Amsterdam. `loop` can collect items into a list. `loopv` can
+collect items in a vector.
 
 ### Elements of a loop
 

@@ -14,11 +14,13 @@ namespace Kiezel
         #region Public Methods
 
         [Lisp("attr")]
-        public static object Attr(object target, object attr, params object[] args)
+        public static object Attr(object target, object attr)
         {
             var name = GetDesignatedString(attr);
-            var accessor = new AccessorLambda(false, name);
-            var result = ApplyStar(accessor, target, args);
+            var binder = GetGetMemberBinder(name);
+            var arg1 = CompileLiteral(target);
+            var code = CompileDynamicExpression(binder, typeof(object), new Expression[] { arg1 });
+            var result = Execute(code);
             return result;
         }
 
@@ -37,12 +39,13 @@ namespace Kiezel
         }
 
         [Lisp("set-attr")]
-        public static object SetAttr(object target, object attr, params object[] args)
+        public static object SetAttr(object target, object attr, object value)
         {
-            // last args is the value
             var name = GetDesignatedString(attr);
             var binder = GetSetMemberBinder(name);
-            var code = CompileDynamicExpression(binder, typeof(object), CompileConstantTargetArgs(target, args));
+            var arg1 = CompileLiteral(target);
+            var arg2 = CompileLiteral(value);
+            var code = CompileDynamicExpression(binder, typeof(object), new Expression[] { arg1, arg2 });
             var result = Execute(code);
             return result;
         }

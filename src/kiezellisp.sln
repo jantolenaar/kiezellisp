@@ -6,11 +6,11 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "kiezellisp-con", "kiezellisp-con\kiezellisp-con.csproj", "{BE6014C1-9E4F-4BFD-95B6-2D003EB451EC}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{ADE3A993-1872-4B02-A4A6-5B3E65C2E4B2}"
-    ProjectSection(SolutionItems) = preProject
-        kiezellisp-resources\kiezellisp-init-sample.k = kiezellisp-resources\kiezellisp-init-sample.k
-        kiezellisp-resources\lisp-icon.bmp = kiezellisp-resources\lisp-icon.bmp
-        kiezellisp-resources\lisp-icon.ico = kiezellisp-resources\lisp-icon.ico
-    EndProjectSection
+	ProjectSection(SolutionItems) = preProject
+		kiezellisp-resources\kiezellisp-init-sample.k = kiezellisp-resources\kiezellisp-init-sample.k
+		kiezellisp-resources\lisp-icon.bmp = kiezellisp-resources\lisp-icon.bmp
+		kiezellisp-resources\lisp-icon.ico = kiezellisp-resources\lisp-icon.ico
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -26,5 +26,9 @@ Global
 		{BE6014C1-9E4F-4BFD-95B6-2D003EB451EC}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{BE6014C1-9E4F-4BFD-95B6-2D003EB451EC}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{BE6014C1-9E4F-4BFD-95B6-2D003EB451EC}.Release|Any CPU.Build.0 = Release|Any CPU
+		{36DAB345-01C5-447B-9943-1515EE064B82}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{36DAB345-01C5-447B-9943-1515EE064B82}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{36DAB345-01C5-447B-9943-1515EE064B82}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{36DAB345-01C5-447B-9943-1515EE064B82}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal
