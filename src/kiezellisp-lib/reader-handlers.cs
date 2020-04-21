@@ -322,6 +322,11 @@ namespace Kiezel
             }
         }
 
+        public static object ReadInfixHandler(LispReader stream, string ch, int arg)
+        {
+            return stream.ParseInfixExpression();
+        }
+
         public static object ReadLineCommentHandler(LispReader stream, char ch)
         {
             // ;

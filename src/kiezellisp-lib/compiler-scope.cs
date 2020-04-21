@@ -133,6 +133,13 @@ namespace Kiezel
                 }
             }
 
+            if (context == null)
+            {
+                // If there is no lambda, this code is probably running in the repl
+                // and warnings are not very usefull.
+                return;
+            }
+
             foreach (var v in Variables)
             {
                 if (v.Ignorable)

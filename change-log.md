@@ -1,5 +1,9 @@
 # Change Log
 
+### 2020-04-19
+
+*   Restored `#i` infix expressions as `#infix`.
+
 ### 2020/04/17
 
 *   Added `loopv`.

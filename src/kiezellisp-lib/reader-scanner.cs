@@ -336,6 +336,13 @@ namespace Kiezel
             return StringWithoutTerminator(buf, terminator);
         }
 
+        public object ParseInfixExpression()
+        {
+            var str = ReadInfixExpressionString();
+            var code = Infix.CompileString(str);
+            return code;
+        }
+
         public string ParseMultiLineString()
         {
             // @"..."
@@ -834,6 +841,39 @@ namespace Kiezel
                     }
                 }
             }
+        }
+
+        public string ReadInfixExpressionString()
+        {
+            var buf = new StringBuilder();
+            var count = 0;
+
+            while (true)
+            {
+                var ch = ReadChar();
+
+                if (IsEof)
+                {
+                    throw MakeScannerException("EOF: Unterminated infix expression");
+                }
+
+                buf.Append(ch);
+
+                if (ch == '(')
+                {
+                    ++count;
+                }
+                else if (ch == ')')
+                {
+                    --count;
+                    if (count == 0)
+                    {
+                        break;
+                    }
+                }
+            }
+
+            return buf.ToString();
         }
 
         public string ReadLine()
